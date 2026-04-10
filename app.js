@@ -250,34 +250,28 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateBuyerSuggestions(data) {
         if (!data || !Array.isArray(data) || data.length === 0) return;
         
-        // Tìm tên cột chứa khách hàng (linh hoạt với nhiều kiểu đặt tên)
-        const possibleKeys = ["Khách Hàng", "Khách hàng", "Người mua", "Khách"];
-        let buyerKey = "";
-        
-        // Kiểm tra xem dữ liệu thực tế dùng cột nào
-        if (data.length > 0) {
-            const firstRow = data[0];
-            buyerKey = possibleKeys.find(k => firstRow.hasOwnProperty(k)) || "Khách Hàng";
-        }
-
-        // Lấy danh sách tên khách hàng thật sự
+        // Cố gắng tìm tên khách hàng từ các cột phổ biến nhất
         const buyers = data
-            .filter(row => {
-                const name = row[buyerKey];
-                return name && typeof name === 'string' && name.trim() !== "" && name !== "Nông Trại";
+            .map(row => {
+                // Ưu tiên cột "Khách Hàng", nếu không có thì tìm các cột chứa chữ "Khách" hoặc "Người"
+                const name = row["Khách Hàng"] || row["Khách hàng"] || row["Người mua"] || row["Khách"];
+                return name ? String(name).trim() : null;
             })
-            .sort((a, b) => {
-                const dateA = a.parsedDate ? new Date(a.parsedDate).getTime() : 0;
-                const dateB = b.parsedDate ? new Date(b.parsedDate).getTime() : 0;
-                return dateB - dateA;
-            })
-            .map(row => row[buyerKey].trim());
+            .filter(name => name && name !== "" && name !== "Nông Trại" && name !== "undefined" && name !== "null")
+            .reverse(); // Đảo ngược để lấy các giao dịch mới nhất trước
 
         // Lấy 5 tên khách hàng duy nhất và mới nhất
-        const uniqueRecentBuyers = [...new Set(buyers)].slice(0, 5);
+        const uniqueRecentBuyers = [];
+        for (const name of buyers) {
+            if (!uniqueRecentBuyers.includes(name)) {
+                uniqueRecentBuyers.push(name);
+            }
+            if (uniqueRecentBuyers.length >= 5) break;
+        }
         
         const datalist = document.getElementById('buyer-suggestions');
-        if (datalist && uniqueRecentBuyers.length > 0) {
+        if (datalist) {
+            // Luôn xóa trắng trước khi đổ mới
             datalist.innerHTML = uniqueRecentBuyers
                 .map(name => `<option value="${name}">${name}</option>`)
                 .join('');
