@@ -3597,6 +3597,36 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('receipt-modal').style.display = 'none';
     };
 
+    window.downloadPDF = function() {
+        const element = document.querySelector('.receipt-paper');
+        const buyerName = currentSelectedBuyer ? currentSelectedBuyer.name : 'KhachHang';
+        const dateStr = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-');
+        
+        const opt = {
+            margin:       10,
+            filename:     `HoaDon_${buyerName}_${dateStr}.pdf`,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // Hiện thông báo đang xử lý
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo PDF...';
+        btn.disabled = true;
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }).catch(err => {
+            console.error("PDF Export Error:", err);
+            alert("Có lỗi khi xuất PDF. Hãy thử dùng nút 'In Máy In' thay thế.");
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    };
+
     const btnExportReceipt = document.getElementById('btn-export-receipt');
     if (btnExportReceipt) {
         btnExportReceipt.addEventListener('click', showReceipt);

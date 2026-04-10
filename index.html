@@ -811,9 +811,12 @@
                 </div>
 
                 <div class="receipt-actions-bottom">
-                    <p style="color: white; font-size: 0.85rem; margin-bottom: 10px; opacity: 0.8;">Hệ thống đã tối ưu cho chụp màn hình (Screenshot)</p>
-                    <button class="btn-primary" style="width: 100%; background: var(--secondary-color);" onclick="window.print()">
-                        <i class="fa-solid fa-print"></i> Tải về / In Hóa đơn
+                    <p style="color: white; font-size: 0.85rem; margin-bottom: 10px; opacity: 0.8;">Hóa đơn xuất ra PDF chuẩn, sắc nét (Searchable)</p>
+                    <button class="btn-primary" style="width: 100%; background: var(--secondary-color);" onclick="downloadPDF()">
+                        <i class="fa-solid fa-file-pdf"></i> Tải PDF Hóa đơn
+                    </button>
+                    <button class="btn-primary" style="width: 100%; background: #64748b; margin-top: 10px; font-size: 0.8rem;" onclick="window.print()">
+                        <i class="fa-solid fa-print"></i> In Máy In (Print)
                     </button>
                 </div>
             </div>
@@ -841,8 +844,10 @@
     </div>
 
     <!-- Scripts -->
+    <!-- Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="config.js"></script>
     <script src="data.js"></script>

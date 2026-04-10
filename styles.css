@@ -2106,8 +2106,42 @@ tr.swiping td:first-child::before {
 }
 
 @media print {
-    .modal-overlay { background: white; padding: 0; position: absolute; }
-    .receipt-actions-top, .receipt-actions-bottom, .mobile-nav, .app-header { display: none !important; }
-    .receipt-container { max-width: 100%; margin: 0; box-shadow: none; }
-    .receipt-paper { box-shadow: none; border: none; }
+    /* Ẩn tất cả mọi thứ trừ hóa đơn */
+    body * {
+        visibility: hidden;
+    }
+    #receipt-modal, #receipt-modal * {
+        visibility: visible;
+    }
+    #receipt-modal {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: auto;
+        display: block !important;
+        background: white !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .modal-content-receipt {
+        box-shadow: none !important;
+        margin: 0 auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+    .receipt-paper {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 20px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    /* Ẩn các nút thao tác khi in */
+    .receipt-actions-top, 
+    .receipt-actions-bottom, 
+    .modal-close-circle {
+        display: none !important;
+    }
 }
