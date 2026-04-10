@@ -1,16 +1,7 @@
 {
-  "name": "farm-management",
+  "name": "the-harvest-farm",
   "version": "1.0.0",
-  "description": "Farm management dashboard",
-  "main": "index.html",
   "scripts": {
-    "start": "npx serve .",
-    "deploy": "vercel --prod"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "serve": "^14.2.0"
+    "build": "node build.js"
   }
 }
