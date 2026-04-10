@@ -124,7 +124,10 @@
 
                                 <div class="form-group span-full">
                                     <label for="buyer-input" id="label-buyer-input">Khách Hàng</label>
-                                    <input type="text" id="buyer-input" placeholder="Tên khách hàng" required>
+                                    <input type="text" id="buyer-input" placeholder="Tên khách hàng" list="buyer-suggestions" required>
+                                    <datalist id="buyer-suggestions">
+                                        <!-- Will be populated by JS with 5 most recent buyers -->
+                                    </datalist>
                                 </div>
 
                                 <!-- FLOWER ITEMS CONTAINER (Shared for Farm and Vựa) -->

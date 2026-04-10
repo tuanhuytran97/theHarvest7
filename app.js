@@ -247,6 +247,30 @@ document.addEventListener("DOMContentLoaded", () => {
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(number);
     }
 
+    function updateBuyerSuggestions(data) {
+        if (!data || !Array.isArray(data)) return;
+        
+        // Lấy danh sách tên khách hàng từ các giao dịch, loại bỏ Chi Phí
+        const buyers = data
+            .filter(row => row["Khách Hàng"] && row["Khách Hàng"] !== "Nông Trại" && !row["Phân Loại Chi Phí"])
+            .sort((a, b) => {
+                const dateA = new Date(a.parsedDate).getTime();
+                const dateB = new Date(b.parsedDate).getTime();
+                return dateB - dateA; // Mới nhất lên đầu
+            })
+            .map(row => row["Khách Hàng"]);
+
+        // Lấy 5 tên khách hàng duy nhất và mới nhất
+        const uniqueRecentBuyers = [...new Set(buyers)].slice(0, 5);
+        
+        const datalist = document.getElementById('buyer-suggestions');
+        if (datalist) {
+            datalist.innerHTML = uniqueRecentBuyers
+                .map(name => `<option value="${name}"></option>`)
+                .join('');
+        }
+    }
+
     // Process initial data: normalize dates
     farmData = farmData.map(item => {
         return {
@@ -255,6 +279,8 @@ document.addEventListener("DOMContentLoaded", () => {
             "Status": (item["Status"] && item["Status"].trim() !== "") ? item["Status"].trim() : "Chưa Xong"
         };
     });
+
+    updateBuyerSuggestions(farmData); // Call on startup
 
     // 2. DOM Elements
     const tableBody = document.getElementById('table-body');
@@ -2836,6 +2862,7 @@ document.addEventListener("DOMContentLoaded", () => {
             farmData = processRawSheetData(parsedData);
 
             applyFiltersAndRender();
+            updateBuyerSuggestions(farmData);
             populateYears();
             if (document.getElementById('view-report').style.display === 'block') {
                 updateDashboard();
