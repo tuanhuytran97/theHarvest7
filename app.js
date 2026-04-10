@@ -744,11 +744,39 @@ document.addEventListener("DOMContentLoaded", () => {
                             </button>
                             ` : (getRole() === 'EMP_LV2' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Khóa'}</span>`)}
                         </div>
-                    </td>
                 `;
             }
             tableBody.appendChild(tr);
         });
+
+        // THÊM DÒNG TỔNG DOANH THU (Chỉ hiện khi có dữ liệu)
+        if (dataToRender.length > 0) {
+            let totalRevenue = 0;
+            dataToRender.forEach(row => {
+                const dtBong = parseFloat(String(row["Doanh Thu Bông"] || "0").replace(/[^\d]/g, '')) || 0;
+                const dtKhac = parseFloat(String(row["Doanh Thu Khác"] || "0").replace(/[^\d]/g, '')) || 0;
+                totalRevenue += (dtBong + dtKhac);
+            });
+
+            const totalTr = document.createElement('tr');
+            totalTr.className = 'total-row';
+            totalTr.style.cssText = 'background: rgba(16, 185, 129, 0.05); border-top: 2px dashed var(--success); font-weight: 800;';
+            
+            const colCount = currentTableTab === 'expense' ? 6 : 10;
+
+            let cellsHtml = '';
+            for (let i = 0; i < colCount; i++) {
+                if (i === 4) { // Cột Phân Loại / Số Lượng
+                    cellsHtml += `<td style="text-align: right; color: var(--text-dark);">TỔNG DOANH THU:</td>`;
+                } else if (i === 6) { // Cột Doanh Thu
+                    cellsHtml += `<td style="color: var(--success); font-size: 1.1rem;">${formatCurrency(totalRevenue)}</td>`;
+                } else {
+                    cellsHtml += `<td></td>`;
+                }
+            }
+            totalTr.innerHTML = cellsHtml;
+            tableBody.appendChild(totalTr);
+        }
 
         if (typeof updateBulkDeleteUI === 'function') updateBulkDeleteUI();
     }
