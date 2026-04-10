@@ -3476,4 +3476,12 @@ document.addEventListener("DOMContentLoaded", () => {
             syncData();
         });
     }
+
+    // --- AUTO-SYNC ON STARTUP ---
+    if (getRole() && syncBtn) {
+        setTimeout(() => {
+            console.log("Auto-syncing data on startup...");
+            syncBtn.click();
+        }, 800); // Đợi một chút để UI ổn định rồi mới sync
+    }
 });
