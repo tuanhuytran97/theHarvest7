@@ -2040,6 +2040,16 @@ tr.swiping td:first-child::before {
     padding: 12px 0;
     font-size: 0.85rem;
     border-bottom: 1px dashed #f1f5f9;
+    vertical-align: top; /* Căn lề trên để đẹp hơn khi xuống dòng */
+    word-break: break-word; /* Tự động xuống dòng */
+}
+
+.receipt-table th:last-child,
+.receipt-table td:last-child {
+    text-align: right;
+    white-space: nowrap; /* Số tiền không được xuống dòng */
+    padding-left: 10px;
+    width: 90px;
 }
 
 .receipt-summary {
