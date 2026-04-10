@@ -3484,7 +3484,11 @@ document.addEventListener("DOMContentLoaded", () => {
         itemsBody.innerHTML = '';
         currentSelectedBuyer.transactions.forEach(t => {
             const row = document.createElement('tr');
-            const summary = t.lines.map(l => `${l.qty} ${l.flowerType}`).join(', ');
+            const summary = t.lines.map(l => {
+                // Định dạng giá kiểu rút gọn (ví dụ 2500 -> 2.5k) cho gọn hóa đơn
+                const shortPrice = l.price >= 1000 ? (l.price / 1000).toLocaleString('en-US', {maximumFractionDigits: 1}) + 'k' : l.price;
+                return `${l.qty} ${l.flowerType} x ${shortPrice}`;
+            }).join(', ');
             
             // Định dạng lại ngày từ DD/MM/YYYY sang DD/MM/YY
             let shortDateWithYear = t.dateStr;
