@@ -1217,11 +1217,11 @@ document.addEventListener("DOMContentLoaded", () => {
         // Keep detail view open if it was already open and buyer still has debt
         if (currentSelectedBuyer && buyers[currentSelectedBuyer.name]) {
             showDebtDetail(buyers[currentSelectedBuyer.name]);
-        } else {
             currentSelectedBuyer = null;
             if (masterView) masterView.style.display = 'block';
             if (detailView) detailView.style.display = 'none';
         }
+    }
     }
 
     // Switch to detail view
@@ -1239,15 +1239,19 @@ document.addEventListener("DOMContentLoaded", () => {
         let sumExpected = 0;
         let sumPaid = 0;
 
-        const sortedTx = buyerObj.transactions.sort((a, b) => b.rawDate - a.rawDate);
+        // Sắp xếp từ ngày XA NHẤT đến ngày GẦN NHẤT (Oldest first)
+        const sortedTx = [...buyerObj.transactions].sort((a, b) => a.rawDate - b.rawDate);
 
         sortedTx.forEach((t, idx) => {
-            sumQty += t.totalQty;
-            sumExpected += t.totalExpected;
-            sumPaid += t.paid;
+            sumQty += (t.totalQty || 0);
+            sumExpected += (t.totalExpected || 0);
+            sumPaid += (t.paid || 0);
 
             const parts = t.dateStr.split('/');
-            const shortDate = (parts.length >= 2) ? `${parts[0]}.${parts[1]}` : t.dateStr;
+            let shortDate = t.dateStr;
+            if (parts.length === 3) {
+                shortDate = `${parts[0]}/${parts[1]}/${parts[2].slice(-2)}`;
+            }
 
             const invoiceItem = document.createElement('div');
             invoiceItem.className = 'invoice-item-compact';
