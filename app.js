@@ -3494,11 +3494,23 @@ document.addEventListener("DOMContentLoaded", () => {
             itemsBody.appendChild(row);
         });
         
-        // Cập nhật tổng kết
-        document.getElementById('receipt-summary-qty').innerText = formatNumber(currentSelectedBuyer.totalQty) + " bông";
-        document.getElementById('receipt-summary-total').innerText = formatCurrency(currentSelectedBuyer.totalAmount);
-        document.getElementById('receipt-summary-paid').innerText = formatCurrency(currentSelectedBuyer.totalPaid);
-        document.getElementById('receipt-summary-debt').innerText = formatCurrency(currentSelectedBuyer.totalDebt);
+        // Tính toán tổng kết từ danh sách giao dịch
+        let totalQty = 0;
+        let totalAmount = 0;
+        let totalPaid = 0;
+        
+        currentSelectedBuyer.transactions.forEach(t => {
+            totalQty += (t.totalQty || 0);
+            totalAmount += (t.totalExpected || 0);
+            totalPaid += (t.paid || 0);
+        });
+
+        const totalDebt = totalAmount - totalPaid;
+
+        document.getElementById('receipt-summary-qty').innerText = formatNumber(totalQty) + " bông";
+        document.getElementById('receipt-summary-total').innerText = formatCurrency(totalAmount);
+        document.getElementById('receipt-summary-paid').innerText = formatCurrency(totalPaid);
+        document.getElementById('receipt-summary-debt').innerText = formatCurrency(totalDebt);
         
         modal.style.display = 'flex';
     };
