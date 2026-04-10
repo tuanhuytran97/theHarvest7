@@ -119,8 +119,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return r === 'ADMIN' || r === 'EMP_LV1';
     };
 
-    const isAuthorizedForSync = () => canMutate();
-    const isAuthorizedForEntry = () => canMutate();
+    const isAuthorizedForSync = () => !!getRole(); // Mọi user đăng nhập đều được sync (đọc) dữ liệu 
+    const isAuthorizedForEntry = () => canMutate(); 
     const isAuthorizedForDebt = () => canMutate();
 
     if (!checkAuth()) {
@@ -3456,10 +3456,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- AUTO-SYNC ON STARTUP ---
-    if (getRole() && syncBtn) {
+    const role = getRole();
+    if (role && syncBtn) {
         setTimeout(() => {
-            console.log("Auto-syncing data on startup...");
-            syncBtn.click();
-        }, 800); // Đợi một chút để UI ổn định rồi mới sync
+            console.log("Auto-syncing data for role:", role);
+            // Kích hoạt sync trực tiếp thay vì click button (vì button có thể bị ẩn với EMP_LV2)
+            syncData(); 
+        }, 800);
     }
 });
