@@ -1,146 +1,36 @@
-// Configuration is loaded from config.js
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxS7z1duOFpG90jZF0FgoVOVgQsoiSKBF4NVm-3wMyfUA1TXvgi_5PDk9Ty4D6z3nUFUg/exec";
 
 document.addEventListener("DOMContentLoaded", () => {
-    // 0. Internal Access Control (Server-side validation)
+    // 0. Internal Access Control
+    const ADMIN_PASSWORD = "REDACTED_USER1";
     const loginOverlay = document.getElementById("login-overlay");
     const loginForm = document.getElementById("login-form");
     const appContainer = document.querySelector(".app-container");
     const passwordInput = document.getElementById("admin-password");
     const loginError = document.getElementById("login-error");
 
-    const getRole = () => sessionStorage.getItem("user-role");
-    const getUserName = () => sessionStorage.getItem("user-name");
-    const getToken = () => sessionStorage.getItem("user-token");
-
-    const updateUserProfile = () => {
-        const name = getUserName() || "Ng∆∞·ªùi d√πng";
-        const role = getRole();
-        const displayNameEl = document.getElementById("user-display-name");
-        const avatarEl = document.getElementById("user-avatar");
-        const roleBadgeEl = document.getElementById("user-role-badge");
-
-        if (displayNameEl) displayNameEl.innerText = name;
-        if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0D8ABC&color=fff`;
-
-        if (roleBadgeEl) {
-            roleBadgeEl.className = 'role-badge'; // reset
-            if (role === 'ADMIN') {
-                roleBadgeEl.innerText = 'Qu·∫£n tr·ªã';
-                roleBadgeEl.classList.add('admin');
-            } else if (role === 'EMP_LV1') {
-                roleBadgeEl.innerText = 'B·∫≠c 1';
-                roleBadgeEl.classList.add('emp1');
-            } else if (role === 'EMP_LV2') {
-                roleBadgeEl.innerText = 'B·∫≠c 2';
-                roleBadgeEl.classList.add('emp2');
-            } else {
-                roleBadgeEl.style.display = 'none';
-            }
-        }
-    };
-
-    // User Profile Dropdown Logic
-    const userTrigger = document.getElementById("user-avatar-trigger");
-    const userDropdown = document.getElementById("user-dropdown");
-    if (userTrigger && userDropdown) {
-        userTrigger.addEventListener("click", (e) => {
-            e.stopPropagation();
-            userDropdown.classList.toggle("active");
-        });
-
-        document.addEventListener("click", () => {
-            userDropdown.classList.remove("active");
-        });
-    }
-
     const checkAuth = () => {
-        const role = getRole();
-        if (role) {
+        if (sessionStorage.getItem("admin_auth") === "true") {
             loginOverlay.style.display = "none";
             appContainer.style.display = "flex";
-            applyRolePermissions(role);
-            updateUserProfile();
             return true;
         }
         return false;
     };
 
-    function applyRolePermissions(role) {
-        // Elements to hide for specific roles
-        const syncBtn = document.getElementById('sync-gsheet-btn');
-        const entryCard = document.querySelector('.card:has(#dataEntryForm)');
-        const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
-        const debtActionBox = document.querySelector('.invoice-footer-actions');
-
-        // EMP_LV2: Readonly, hide sensitive/entry tools
-        if (role === 'EMP_LV2') {
-            if (syncBtn) syncBtn.style.display = 'none';
-            if (entryCard) entryCard.style.display = 'none';
-            if (bulkDeleteBtn) bulkDeleteBtn.style.display = 'none';
-            if (debtActionBox) debtActionBox.style.display = 'none';
-        }
-    }
-
-    // Protection Guards for Mutating Functions
-    const canMutate = () => {
-        const r = getRole();
-        return r === 'ADMIN' || r === 'EMP_LV1';
-    };
-
-    const isAuthorizedForSync = () => canMutate();
-    const isAuthorizedForEntry = () => canMutate();
-    const isAuthorizedForDebt = () => canMutate();
-
     if (!checkAuth()) {
-        loginForm.addEventListener("submit", async (e) => {
+        loginForm.addEventListener("submit", (e) => {
             e.preventDefault();
-            const pw = passwordInput.value;
-            if (!pw) return;
-
-            const submitBtn = loginForm.querySelector('button');
-            const originalText = submitBtn.innerText;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ƒêang x√°c th·ª±c...';
-            submitBtn.disabled = true;
-
-            try {
-                // G·ª≠i m·∫≠t kh·∫©u l√™n Apps Script ƒë·ªÉ ki·ªÉm tra
-                const response = await fetch(CONFIG.WEB_APP_URL, {
-                    method: "POST",
-                    body: JSON.stringify({ action: "login", password: pw }),
-                    headers: { "Content-Type": "text/plain;charset=utf-8" }
-                });
-                const result = await response.json();
-
-                if (result.status === "success") {
-                    // L·∫•y th√¥ng tin t·ª´ danh s√°ch ·∫©n trong config.js n·∫øu c√≥
-                    const userConfig = CONFIG.USERS[pw];
-                    const userName = userConfig ? userConfig.name : (result.userName || "Ng∆∞·ªùi d√πng");
-                    
-                    sessionStorage.setItem("user-role", result.role);
-                    sessionStorage.setItem("user-name", userName);
-                    sessionStorage.setItem("user-token", pw); // D√πng password l√†m token x√°c th·ª±c
-
-                    loginOverlay.style.display = "none";
-                    appContainer.style.display = "flex";
-                    applyRolePermissions(result.role);
-                    updateUserProfile();
-                    
-                    if (typeof initDashboard === "function") initDashboard();
-
-                    // Th√¥ng b√°o th√†nh c√¥ng m∆∞·ª£t m√†
-                    setTimeout(() => location.reload(), 500);
-                } else {
-                    loginError.style.display = "block";
-                    loginError.innerText = result.message || "M·∫≠t kh·∫©u kh√¥ng ƒë√∫ng!";
-                    passwordInput.value = "";
-                    passwordInput.focus();
-                }
-            } catch (err) {
-                console.error(err);
-                alert("L·ªói k·∫øt n·ªëi Server! Vui l√≤ng ki·ªÉm tra l·∫°i Google Apps Script.");
-            } finally {
-                submitBtn.innerText = originalText;
-                submitBtn.disabled = false;
+            if (passwordInput.value === ADMIN_PASSWORD) {
+                sessionStorage.setItem("admin_auth", "true");
+                loginOverlay.style.display = "none";
+                appContainer.style.display = "flex";
+                // Trigger any initial data loading if needed
+                if (typeof initDashboard === "function") initDashboard();
+            } else {
+                loginError.style.display = "block";
+                passwordInput.value = "";
+                passwordInput.focus();
             }
         });
     }
@@ -148,23 +38,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const logoutBtn = document.getElementById("logout-btn");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", () => {
-            sessionStorage.removeItem("user-role");
-            sessionStorage.removeItem("user-name");
+            sessionStorage.removeItem("admin_auth");
             location.reload();
         });
     }
 
     // 1. Data Initialization & Utility Functions
     let farmData = window.farmData || [];
-    let sortState = { column: 'Ng√†y', direction: 'desc' };
+    let sortState = { column: 'Ng+·y', direction: 'desc' };
     let currentTableTab = 'all';
-    let currentLimit = 20;
-    let dataToRenderRef = []; // module-level ref for deleteRowByIndex
-    let annualQtyChartInstance = null;
-    let annualRevProfitChartInstance = null;
-    let annualExpenseChartInstance = null;
-    let monthlyCombinedChartInstance = null;
-    let currentEditRowData = null; // Track row being edited
 
     // Convert Excel Serial Date to JS Date Object
     function excelToJsDate(serial) {
@@ -193,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function formatCurrency(number) {
-        if (!number) return "0 ‚Ç´";
+        if (!number) return "0 GÈΩ";
         return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(number);
     }
 
@@ -201,8 +83,8 @@ document.addEventListener("DOMContentLoaded", () => {
     farmData = farmData.map(item => {
         return {
             ...item,
-            parsedDate: excelToJsDate(item["Ng√†y"]),
-            "Status": (item["Status"] && item["Status"].trim() !== "") ? item["Status"].trim() : "Ch∆∞a Xong"
+            parsedDate: excelToJsDate(item["Ng+·y"]),
+            "Status": (item["Status"] || "").trim()
         };
     });
 
@@ -229,6 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const vuaPackCostInput = document.getElementById('vua-packing-cost');
     const vuaTotalCostInput = document.getElementById('vua-total-cost');
     const vuaTotalCollectInput = document.getElementById('vua-total-collect');
+    const vuaExpectedRevenueInput = document.getElementById('vua-expected-revenue');
 
     const expenseFields = document.getElementById('expense-fields');
     const addExpenseBtn = document.getElementById('add-expense-btn');
@@ -286,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (flowerContainerBlock) flowerContainerBlock.style.display = "flex";
                 if (flowerListBlock) flowerListBlock.style.display = "flex";
                 if (flowerDivider) flowerDivider.style.display = "block";
-                if (labelBuyerInput) labelBuyerInput.innerText = "Kh√°ch H√†ng (T√™n Kh√°ch)";
+                if (labelBuyerInput) labelBuyerInput.innerText = "Kh+Ìch H+·ng (T+¨n Kh+Ìch)";
                 if (buyerInput) { buyerInput.value = ""; buyerInput.required = true; }
                 if (vuaTotalCollectInput) vuaTotalCollectInput.required = false;
                 toggleFlowerReq(true);
@@ -299,8 +182,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (flowerContainerBlock) flowerContainerBlock.style.display = "flex";
                 if (flowerListBlock) flowerListBlock.style.display = "flex";
                 if (flowerDivider) flowerDivider.style.display = "block";
-                if (labelBuyerInput) labelBuyerInput.innerText = "ƒê·ªëi So√°t V·ª±a (T√™n V·ª±a)";
-                if (buyerInput) { buyerInput.value = "ƒêoan CR"; buyerInput.required = true; }
+                if (labelBuyerInput) labelBuyerInput.innerText = "-…ﬂ+Êi So+Ìt Vﬂ+¶a (T+¨n Vﬂ+¶a)";
+                if (buyerInput) { buyerInput.value = "-…oan CR"; buyerInput.required = true; }
                 if (vuaTotalCollectInput) vuaTotalCollectInput.required = true;
                 toggleFlowerReq(true);
                 toggleExpenseReq(false);
@@ -328,41 +211,27 @@ document.addEventListener("DOMContentLoaded", () => {
             const tabBtns = document.querySelectorAll('.table-tab-btn');
             tabBtns.forEach(btn => {
                 if (btn.dataset.tab === targetTab) {
-                    // C·∫≠p nh·∫≠t class active
+                    // Cﬂ¶°p nhﬂ¶°t class active
                     tabBtns.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-                    // C·∫≠p nh·∫≠t state v√† render l·∫°i
+                    // Cﬂ¶°p nhﬂ¶°t state v+· render lﬂ¶Ìi
                     currentTableTab = targetTab;
                     applyFiltersAndRender();
                 }
             });
         });
+        entryTypeSelect.dispatchEvent(new Event("change"));
     }
 
     function calculateVuaTotals() {
         let totalCost = 0;
-        let totalSL = 0;
-        let flowerNames = [];
-
         if (flowerItemsContainer) {
             flowerItemsContainer.querySelectorAll('.flower-item').forEach(item => {
                 const q = parseFloat(item.querySelector('.fw-qty').value) || 0;
                 const p = parseMoney(item.querySelector('.fw-price').value);
-                const type = item.querySelector('.fw-type').value;
-
                 totalCost += (q * p);
-                totalSL += q;
-                if (q > 0 && !flowerNames.includes(type)) flowerNames.push(type);
             });
         }
-
-        // Update Dynamic Label for Gi√° v·ªën
-        const labelTotalCost = document.getElementById('label-vua-total-cost');
-        if (labelTotalCost) {
-            const nameDisplay = flowerNames.length > 0 ? flowerNames.join(', ') : 'B√¥ng';
-            labelTotalCost.textContent = `üí∞ Gi√° v·ªën (${totalSL.toLocaleString('vi-VN')} ${nameDisplay})`;
-        }
-
         if (vuaTotalCostInput) vuaTotalCostInput.value = formatCurrency(totalCost);
 
         const shipping = parseMoney(vuaShipCostInput ? vuaShipCostInput.value : "0");
@@ -371,8 +240,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let totalCollect = totalCost + shipping + vattu + packing;
 
+        // Automatically update the advised total collect ONLY if user hasn't explicitly typed something else
+        // Wait, for simplicity, we just forcefully update it, or let user edit it but if costs change we re-advise?
+        // Let's forcefully update it because it's a sum.
         if (vuaTotalCollectInput) {
             vuaTotalCollectInput.value = formatMoneyStr(totalCollect);
+        }
+
+        // Expected Revenue = Total Collect - Total Cost (Wait, the user said Doanh Thu Dﬂ+¶ Kiﬂ¶+n = Sﬂ+Ê Tiﬂ+¸n Phﬂ¶˙i Thu Kh+Ìch - Tﬂ+Úng Gi+Ì Vﬂ+Ên).
+        // Actually Doanh thu dﬂ+¶ kiﬂ¶+n = (Tiﬂ+¸n phﬂ¶˙i thu) - (Tﬂ+Úng Gi+Ì Vﬂ+Ên) - Ph+° (nﬂ¶+u c+¶)?
+        // User explicitly said: Doanh Thu dﬂ+¶ kiﬂ+Án = Sﬂ+Ê Tiﬂ+¸n Phﬂ¶˙i Thu Kh+Ìch (VN-…) - Tﬂ+Úng Gi+Ì Vﬂ+Ên (Tﬂ¶Ìm t+°nh)
+        if (vuaExpectedRevenueInput) {
+            const userCollect = parseMoney(vuaTotalCollectInput.value);
+            const expected = userCollect - totalCost;
+            vuaExpectedRevenueInput.value = formatCurrency(expected);
+        }
+
+        if (vuaTotalCollectInput) {
             calculateBundlesAndPrice(vuaTotalCollectInput.value);
         }
     }
@@ -404,11 +288,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const pricePerBundle = actualCollect / totalBundles;
             vuaPricePerBundleEl.value = formatCurrency(pricePerBundle);
 
-            // Suggest rounding to nearest 5000 (VND 5k) - e.g. 62->60, 63->65
+            // Suggest rounding to nearest 5000 (VND 5k)
             const roundedPrice = Math.round(pricePerBundle / 5000) * 5000;
 
             // Check if it's already perfectly rounded or diff is extremely small
-            if (Math.abs(roundedPrice - pricePerBundle) < 100) {
+            if (Math.abs(roundedPrice - pricePerBundle) < 10) {
                 if (suggestBox) suggestBox.style.display = 'none';
             } else {
                 const targetCollect = roundedPrice * totalBundles;
@@ -418,7 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (suggestBox && suggestBtn && newPacking >= 0) {
                     suggestBox.style.display = 'block';
-                    suggestBtn.innerHTML = `üí° G·ª£i √Ω L·ª£i nhu·∫≠n: ${formatCurrency(newPacking)} => Gi√° b√≥ ch·∫µn: ${formatCurrency(roundedPrice)}`;
+                    suggestBtn.innerHTML = `=ÉÓÉ Gﬂ+˙i ++ -…+¶ng G+¶i: ${formatCurrency(newPacking)} => Gi+Ì b+¶ chﬂ¶¶n: ${formatCurrency(roundedPrice)}`;
                     suggestBtn.onclick = () => {
                         if (vuaPackCostInput) {
                             vuaPackCostInput.value = formatMoneyStr(newPacking);
@@ -430,7 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
         } else {
-            if (vuaPricePerBundleEl) vuaPricePerBundleEl.value = "0 ‚Ç´";
+            if (vuaPricePerBundleEl) vuaPricePerBundleEl.value = "0 GÈΩ";
             if (suggestBox) suggestBox.style.display = 'none';
         }
     }
@@ -455,7 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     row.remove();
                     calculateVuaTotals();
                 } else {
-                    alert('Ph·∫£i c√≥ √≠t nh·∫•t 1 d√≤ng B√¥ng!');
+                    alert('Phﬂ¶˙i c+¶ +°t nhﬂ¶—t 1 d+¶ng B+¶ng!');
                 }
             });
         }
@@ -472,38 +356,29 @@ document.addEventListener("DOMContentLoaded", () => {
         addFlowerBtn.addEventListener('click', () => {
             const item = document.createElement('div');
             item.className = 'flower-item';
+            item.style = 'display: grid; grid-template-columns: 1.2fr 0.6fr 1.2fr 1.5fr 30px; gap: 10px; align-items: center;';
             item.innerHTML = `
                 <div class="form-group" style="margin: 0;">
-                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Lo·∫°i m·∫∑t h√†ng</label>
-                    <select class="fw-type" required>
-                        <option value="X√¥ ngo·∫°i">X√¥ ngo·∫°i</option>
-                        <option value="X√¥ n·ªôi">X√¥ n·ªôi</option>
+                    <select class="fw-type" style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;" required>
+                        <option value="X+¶ ngoﬂ¶Ìi">X+¶ ngoﬂ¶Ìi</option>
+                        <option value="X+¶ nﬂ+÷i">X+¶ nﬂ+÷i</option>
                         <option value="Ecuador">Ecuador</option>
-                        <option value="Ph√°p">Ph√°p</option>
-                        <option value="Tr·∫Øng √π">Tr·∫Øng √π</option>
-                        <option value="√î H·ªìng">√î H·ªìng</option>
-                        <option value="√î Tr·∫Øng">√î Tr·∫Øng</option>
+                        <option value="Ph+Ìp">Ph+Ìp</option>
+                        <option value="Trﬂ¶ªng +¶">Trﬂ¶ªng +¶</option>
+                        <option value="+ˆ Hﬂ+Ùng">+ˆ Hﬂ+Ùng</option>
+                        <option value="+ˆ Trﬂ¶ªng">+ˆ Trﬂ¶ªng</option>
                         <option value="Simmo">Simmo</option>
-                        <option value="Cam Ch√°y">Cam Ch√°y</option>
+                        <option value="Cam Ch+Ìy">Cam Ch+Ìy</option>
                         <option value="Vitto">Vitto</option>
-                        <option value="L·∫°c Th·∫ßn">L·∫°c Th·∫ßn</option>
-                        <option value="H·ª∑ Tr·ª©ng">H·ª∑ Tr·ª©ng</option>
-                        <option value="Kh√°c">Kh√°c</option>
+                        <option value="Lﬂ¶Ìc Thﬂ¶∫n">Lﬂ¶Ìc Thﬂ¶∫n</option>
+                        <option value="Hﬂ++ Trﬂ+¨ng">Hﬂ++ Trﬂ+¨ng</option>
+                        <option value="Kh+Ìc">Kh+Ìc</option>
                     </select>
                 </div>
-                <div class="form-group" style="margin: 0;">
-                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
-                    <input type="number" placeholder="0" class="fw-qty" min="0" required>
-                </div>
-                <div class="form-group" style="margin: 0;">
-                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">ƒê∆°n Gi√°</label>
-                    <input type="text" placeholder="0" class="fw-price money-input" required>
-                </div>
-                <div class="form-group" style="margin: 0;">
-                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Th√†nh ti·ªÅn</label>
-                    <input type="text" placeholder="0" class="fw-total" readonly style="background: #f1f5f9; color: #0f172a; font-weight: 800; border: 1.5px solid #cbd5e1 !important;">
-                </div>
-                <button type="button" class="del-flower-btn" title="Xo√°"><i class="fa-solid fa-trash-can"></i></button>
+                <div class="form-group" style="margin: 0;"><input type="number" placeholder="SL" class="fw-qty" min="0" required></div>
+                <div class="form-group" style="margin: 0;"><input type="text" placeholder="Gi+Ì" class="fw-price money-input" required></div>
+                <div class="form-group" style="margin: 0;"><input type="text" placeholder="Th+·nh tiﬂ+¸n" class="fw-total" readonly style="background: #f9fafb; color: #374151; font-weight: bold; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px; width: 100%;"></div>
+                <button type="button" class="del-flower-btn" style="background: none; border: none; color: var(--danger); font-size: 1.2rem; cursor: pointer; padding: 0;" title="Xo+Ì"><i class="fa-solid fa-circle-xmark"></i></button>
             `;
             flowerItemsContainer.appendChild(item);
             attachFlowerRowEvents(item);
@@ -529,52 +404,55 @@ document.addEventListener("DOMContentLoaded", () => {
         const newPacking = userCollect - (sumCost + shipping + vattu);
         if (vuaPackCostInput) vuaPackCostInput.value = formatMoneyStr(Math.max(0, newPacking));
 
+        // Auto update Expected Revenue when user edits the collect amount
+        const expected = userCollect - sumCost;
+        if (vuaExpectedRevenueInput) vuaExpectedRevenueInput.value = formatCurrency(expected);
+
         calculateBundlesAndPrice(vuaTotalCollectInput.value);
     });
 
 
     // 3. Table Rendering Logic
     function renderTable(dataToRender) {
-        dataToRenderRef = dataToRender; // expose to delete handler
         tableBody.innerHTML = '';
 
-        // C·∫≠p nh·∫≠t Header ti√™u ƒë·ªÅ c·ªôt d·ª±a tr√™n Tab
+        // Cﬂ¶°p nhﬂ¶°t Header ti+¨u -Êﬂ+¸ cﬂ+÷t dﬂ+¶a tr+¨n Tab
         const thead = document.querySelector('#farm-data-table thead tr');
         if (thead) {
             if (currentTableTab === 'expense') {
                 thead.innerHTML = `
                     <th><input type="checkbox" id="select-all-checkbox"></th>
-                    <th data-sort="Ng√†y">Ng√†y <i class="fa-solid fa-sort"></i></th>
-                    <th>Ph√¢n Lo·∫°i CP</th>
-                    <th>Ghi Ch√∫ Chi Ph√≠</th>
-                    <th>S·ªë ti·ªÅn</th>
-                    <th>Thao T√°c</th>
+                    <th data-sort="Ng+·y">Ng+·y <i class="fa-solid fa-sort"></i></th>
+                    <th>Ph+Ûn Loﬂ¶Ìi CP</th>
+                    <th>Ghi Ch+¶ Chi Ph+°</th>
+                    <th>Sﬂ+Ê tiﬂ+¸n</th>
+                    <th>Thao T+Ìc</th>
                 `;
             } else if (currentTableTab === 'vua') {
                 thead.innerHTML = `
                     <th><input type="checkbox" id="select-all-checkbox"></th>
-                    <th data-sort="Ng√†y">Ng√†y <i class="fa-solid fa-sort"></i></th>
-                    <th data-sort="Ng∆∞·ªùi Mua">T√™n V·ª±a <i class="fa-solid fa-sort"></i></th>
-                    <th>Ph√¢n Lo·∫°i</th>
-                    <th data-sort="S·ªë l∆∞·ª£ng">SL <i class="fa-solid fa-sort"></i></th>
-                    <th data-sort="Ti·ªÅn Ph·∫£i Thu">Ph·∫£i Thu <i class="fa-solid fa-sort"></i></th>
-                    <th data-sort="Doanh Thu Kh√°c">Doanh Thu <i class="fa-solid fa-sort"></i></th>
+                    <th data-sort="Ng+·y">Ng+·y <i class="fa-solid fa-sort"></i></th>
+                    <th data-sort="Ng¶¶ﬂ+•i Mua">T+¨n Vﬂ+¶a <i class="fa-solid fa-sort"></i></th>
+                    <th>Ph+Ûn Loﬂ¶Ìi</th>
+                    <th data-sort="Sﬂ+Ê l¶¶ﬂ+˙ng">SL <i class="fa-solid fa-sort"></i></th>
+                    <th data-sort="Tiﬂ+¸n Phﬂ¶˙i Thu">Phﬂ¶˙i Thu <i class="fa-solid fa-sort"></i></th>
+                    <th data-sort="Doanh Thu Kh+Ìc">Doanh Thu <i class="fa-solid fa-sort"></i></th>
                     <th>Status</th>
-                    <th>Ghi Ch√∫</th>
-                    <th>Thao T√°c</th>
+                    <th>Ghi Ch+¶</th>
+                    <th>Thao T+Ìc</th>
                 `;
             } else {
                 thead.innerHTML = `
                     <th><input type="checkbox" id="select-all-checkbox"></th>
-                    <th data-sort="Ng√†y">Ng√†y <i class="fa-solid fa-sort"></i></th>
-                    <th data-sort="Ng∆∞·ªùi Mua">Ng∆∞·ªùi Mua <i class="fa-solid fa-sort"></i></th>
-                    <th>Ph√¢n Lo·∫°i</th>
-                    <th data-sort="S·ªë l∆∞·ª£ng">S·ªë L∆∞·ª£ng <i class="fa-solid fa-sort"></i></th>
-                    <th data-sort="Gi√°">Gi√° <i class="fa-solid fa-sort"></i></th>
-                    <th data-sort="Doanh Thu B√¥ng">Doanh Thu B√¥ng <i class="fa-solid fa-sort"></i></th>
-                    <th>Tr·∫°ng Th√°i</th>
-                    <th>Ghi Ch√∫</th>
-                    <th>Thao T√°c</th>
+                    <th data-sort="Ng+·y">Ng+·y <i class="fa-solid fa-sort"></i></th>
+                    <th data-sort="Ng¶¶ﬂ+•i Mua">Ng¶¶ﬂ+•i Mua <i class="fa-solid fa-sort"></i></th>
+                    <th>Ph+Ûn Loﬂ¶Ìi</th>
+                    <th data-sort="Sﬂ+Ê l¶¶ﬂ+˙ng">Sﬂ+Ê L¶¶ﬂ+˙ng <i class="fa-solid fa-sort"></i></th>
+                    <th data-sort="Gi+Ì">Gi+Ì <i class="fa-solid fa-sort"></i></th>
+                    <th data-sort="Doanh Thu B+¶ng">Doanh Thu B+¶ng <i class="fa-solid fa-sort"></i></th>
+                    <th>Trﬂ¶Ìng Th+Ìi</th>
+                    <th>Ghi Ch+¶</th>
+                    <th>Thao T+Ìc</th>
                 `;
             }
 
@@ -593,7 +471,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (dataToRender.length === 0) {
             const colCount = currentTableTab === 'expense' ? 6 : 10;
-            tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;color:var(--text-light)">Kh√¥ng t√¨m th·∫•y giao d·ªãch n√†o.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;color:var(--text-light)">Kh+¶ng t+ºm thﬂ¶—y giao dﬂ+Ôch n+·o.</td></tr>`;
             return;
         }
 
@@ -606,90 +484,68 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const rowDateStr = formatDateInput(row.parsedDate);
             const isToday = rowDateStr === todayStr;
-            const rowIndex = index; // use array index as stable reference
-            const rowJson = JSON.stringify(row).replace(/'/g, "&apos;").replace(/"/g, "&quot;"); // kept for checkbox value only
+            const rowJson = JSON.stringify(row).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
 
             if (currentTableTab === 'expense') {
-                const amount = parseFloat(String(row["Chi Ph√≠"] || "0").replace(/,/g, ''));
+                const amount = parseFloat(String(row["Chi Ph+°"] || "0").replace(/,/g, ''));
                 tr.innerHTML = `
-                    <td data-label="Ch·ªçn" style="text-align: center;">
-                        ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `<input type="checkbox" class="row-checkbox" data-row-index="${rowIndex}" style="cursor:pointer;">` : `<input type="checkbox" disabled>`}
+                    <td style="text-align: center;">
+                        ${isToday ? `<input type="checkbox" class="row-checkbox" style="cursor:pointer;" value='${rowJson}'>` : `<input type="checkbox" disabled>`}
                     </td>
-                    <td data-label="Ng√†y">${formatDateVietnamese(row.parsedDate)}</td>
-                    <td data-label="Lo·∫°i CP" style="font-weight:600;">${row["Lo·∫°i CP"] || 'Chi ph√≠'}</td>
-                    <td data-label="Ghi ch√∫" title="${row["Ghi Ch√∫ Chi Ph√≠"] || row["Ghi Ch√∫"] || ''}">${(row["Ghi Ch√∫ Chi Ph√≠"] || row["Ghi Ch√∫"] || '').substring(0, 30)}</td>
-                    <td data-label="S·ªë ti·ªÅn" style="color:#ef4444; font-weight:700;">${formatCurrency(amount)}</td>
-                    <td data-label="Thao t√°c">
-                        <div style="display: flex; gap: 8px; justify-content: center;">
-                            ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
-                            <button class="action-btn" data-row-index="${rowIndex}" onclick="switchToInlineEdit(this)" title="S·ª≠a" style="color:var(--primary-color);">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-                            ` : ''}
-                            ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
-                            <button class="action-btn" data-row-index="${rowIndex}" onclick="deleteRowByIndex(this)" title="Xo√°">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                            ` : (getRole() === 'EMP_LV2' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Kh√≥a'}</span>`)}
-                        </div>
+                    <td>${formatDateVietnamese(row.parsedDate)}</td>
+                    <td style="font-weight:600;">${row["Loﬂ¶Ìi CP"] || 'Chi ph+°'}</td>
+                    <td title="${row["Ghi Ch+¶ Chi Ph+°"] || row["Ghi Ch+¶"] || ''}">${(row["Ghi Ch+¶ Chi Ph+°"] || row["Ghi Ch+¶"] || '').substring(0, 30)}</td>
+                    <td style="color:#ef4444; font-weight:700;">${formatCurrency(amount)}</td>
+                    <td>
+                        ${isToday ? `
+                        <button class="action-btn" onclick="deleteRow('${rowJson}')" title="Xo+Ì">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                        ` : `<span style="color:var(--text-light);font-size:12px">Kh+¶a</span>`}
                     </td>
                 `;
             } else if (currentTableTab === 'vua') {
-                const pt = parseFloat(String(row["Ti·ªÅn Ph·∫£i Thu"] || "0").replace(/[^\d]/g, '')) || 0;
-                const dt = parseFloat(String(row["Doanh Thu Kh√°c"] || "0").replace(/[^\d]/g, '')) || 0;
+                const pt = parseFloat(String(row["Tiﬂ+¸n Phﬂ¶˙i Thu"] || "0").replace(/[^\d]/g, '')) || 0;
+                const dt = parseFloat(String(row["Doanh Thu Kh+Ìc"] || "0").replace(/[^\d]/g, '')) || 0;
                 tr.innerHTML = `
-                    <td data-label="Ch·ªçn" style="text-align: center;">
-                        ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `<input type="checkbox" class="row-checkbox" data-row-index="${rowIndex}" style="cursor:pointer;">` : `<input type="checkbox" disabled>`}
+                    <td style="text-align: center;">
+                        ${isToday ? `<input type="checkbox" class="row-checkbox" style="cursor:pointer;" value='${rowJson}'>` : `<input type="checkbox" disabled>`}
                     </td>
-                    <td data-label="Ng√†y">${formatDateVietnamese(row.parsedDate)}</td>
-                    <td data-label="T√™n V·ª±a" style="font-weight:600;">${row["Ng∆∞·ªùi Mua"] || ''}</td>
-                    <td data-label="Lo·∫°i B√¥ng">${row["Ph√¢n Lo·∫°i B√¥ng"] || ''}</td>
-                    <td data-label="SL">${row["S·ªë l∆∞·ª£ng"] ? row["S·ªë l∆∞·ª£ng"].toLocaleString('vi-VN') : 0}</td>
-                    <td data-label="Ph·∫£i Thu" style="color:var(--primary-color); font-weight:600;">${formatCurrency(pt)}</td>
-                    <td data-label="Doanh Thu" style="color:#ec4899; font-weight:700;">${formatCurrency(dt)}</td>
-                    <td data-label="Status">${row["Status"] ? `<span class="${statusClass}">${row["Status"]}</span>` : ''}</td>
-                    <td data-label="Ghi ch√∫" title="${row["Ghi Ch√∫"] || ''}">${(row["Ghi Ch√∫"] || '').substring(0, 15)}${(row["Ghi Ch√∫"] || '').length > 15 ? '...' : ''}</td>
-                    <td data-label="Thao t√°c">
-                        <div style="display: flex; gap: 8px; justify-content: center;">
-                            ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
-                            <button class="action-btn" data-row-index="${rowIndex}" onclick="switchToInlineEdit(this)" title="S·ª≠a" style="color:var(--primary-color);">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-                            ` : ''}
-                            ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
-                            <button class="action-btn" data-row-index="${rowIndex}" onclick="deleteRowByIndex(this)" title="Xo√°">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                            ` : (getRole() === 'EMP_LV2' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Kh√≥a'}</span>`)}
-                        </div>
+                    <td>${formatDateVietnamese(row.parsedDate)}</td>
+                    <td style="font-weight:600;">${row["Ng¶¶ﬂ+•i Mua"] || ''}</td>
+                    <td>${row["Ph+Ûn Loﬂ¶Ìi B+¶ng"] || ''}</td>
+                    <td>${row["Sﬂ+Ê l¶¶ﬂ+˙ng"] ? row["Sﬂ+Ê l¶¶ﬂ+˙ng"].toLocaleString('vi-VN') : 0}</td>
+                    <td style="color:var(--primary-color); font-weight:600;">${formatCurrency(pt)}</td>
+                    <td style="color:#ec4899; font-weight:700;">${formatCurrency(dt)}</td>
+                    <td>${row["Status"] ? `<span class="${statusClass}">${row["Status"]}</span>` : ''}</td>
+                    <td title="${row["Ghi Ch+¶"] || ''}">${(row["Ghi Ch+¶"] || '').substring(0, 15)}${(row["Ghi Ch+¶"] || '').length > 15 ? '...' : ''}</td>
+                    <td>
+                        ${isToday ? `
+                        <button class="action-btn" onclick="deleteRow('${rowJson}')" title="Xo+Ì">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                        ` : `<span style="color:var(--text-light);font-size:12px">Kh+¶a</span>`}
                     </td>
                 `;
             } else {
                 tr.innerHTML = `
-                    <td data-label="Ch·ªçn" style="text-align: center;">
-                        ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `<input type="checkbox" class="row-checkbox" data-row-index="${rowIndex}" style="cursor:pointer;">` : `<input type="checkbox" disabled>`}
+                    <td style="text-align: center;">
+                        ${isToday ? `<input type="checkbox" class="row-checkbox" style="cursor:pointer;" value='${rowJson}'>` : `<input type="checkbox" disabled>`}
                     </td>
-                    <td data-label="Ng√†y">${formatDateVietnamese(row.parsedDate)}</td>
-                    <td data-label="Ng∆∞·ªùi Mua" style="font-weight:600;">${row["Ng∆∞·ªùi Mua"] || ''}</td>
-                    <td data-label="Lo·∫°i B√¥ng">${row["Ph√¢n Lo·∫°i B√¥ng"] || ''}</td>
-                    <td data-label="S·ªë L∆∞·ª£ng">${row["S·ªë l∆∞·ª£ng"] ? row["S·ªë l∆∞·ª£ng"].toLocaleString('vi-VN') : 0}</td>
-                    <td data-label="Gi√°">${formatCurrency(row["Gi√°"])}</td>
-                    <td data-label="Doanh Thu" style="color:var(--secondary-color); font-weight:600;">${formatCurrency(row["Doanh Thu B√¥ng"])}</td>
-                    <td data-label="Status">${row["Status"] ? `<span class="status-badge ${statusClass}">${row["Status"]}</span>` : ''}</td>
-                    <td data-label="Ghi ch√∫" title="${row["Ghi Ch√∫"] || ''}">${(row["Ghi Ch√∫"] || '').substring(0, 20)}${row["Ghi Ch√∫"] && row["Ghi Ch√∫"].length > 20 ? '...' : ''}</td>
-                    <td data-label="Thao t√°c">
-                        <div style="display: flex; gap: 8px; justify-content: center;">
-                            ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
-                            <button class="action-btn" data-row-index="${rowIndex}" onclick="switchToInlineEdit(this)" title="S·ª≠a" style="color:var(--primary-color);">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-                            ` : ''}
-                            ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
-                            <button class="action-btn" data-row-index="${rowIndex}" onclick="deleteRowByIndex(this)" title="Xo√°">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                            ` : (getRole() === 'EMP_LV2' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Kh√≥a'}</span>`)}
-                        </div>
+                    <td>${formatDateVietnamese(row.parsedDate)}</td>
+                    <td style="font-weight:600;">${row["Ng¶¶ﬂ+•i Mua"] || ''}</td>
+                    <td>${row["Ph+Ûn Loﬂ¶Ìi B+¶ng"] || ''}</td>
+                    <td>${row["Sﬂ+Ê l¶¶ﬂ+˙ng"] ? row["Sﬂ+Ê l¶¶ﬂ+˙ng"].toLocaleString('vi-VN') : 0}</td>
+                    <td>${formatCurrency(row["Gi+Ì"])}</td>
+                    <td style="color:var(--secondary-color); font-weight:600;">${formatCurrency(row["Doanh Thu B+¶ng"])}</td>
+                    <td>${row["Status"] ? `<span class="status-badge ${statusClass}">${row["Status"]}</span>` : ''}</td>
+                    <td title="${row["Ghi Ch+¶"] || ''}">${(row["Ghi Ch+¶"] || '').substring(0, 20)}${row["Ghi Ch+¶"] && row["Ghi Ch+¶"].length > 20 ? '...' : ''}</td>
+                    <td>
+                        ${isToday ? `
+                        <button class="action-btn" onclick="deleteRow('${rowJson}')" title="Xo+Ì">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                        ` : `<span style="color:var(--text-light);font-size:12px">Kh+¶a</span>`}
                     </td>
                 `;
             }
@@ -699,246 +555,57 @@ document.addEventListener("DOMContentLoaded", () => {
         if (typeof updateBulkDeleteUI === 'function') updateBulkDeleteUI();
     }
 
-    // Strip client-side fields before sending to Apps Script for deletion
-    // Apps Script uses getDisplayValues() so "Ng√†y" must be "DD/MM/YYYY" format
-    function cleanRowForDelete(row) {
-        const cleaned = { ...row };
-
-        // Convert "Ng√†y" to DD/MM/YYYY ‚Äî Apps Script reads display values from Sheet
-        if (cleaned.parsedDate && !isNaN(cleaned.parsedDate.getTime())) {
-            const d = cleaned.parsedDate;
-            const dd = String(d.getDate()).padStart(2, '0');
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const yyyy = d.getFullYear();
-            cleaned["Ng√†y"] = `${dd}/${mm}/${yyyy}`;
-        }
-
-        delete cleaned.parsedDate; // remove JS Date object ‚Äî not in Sheet
-
-        // Convert numeric fields back to String (Sheet stores as strings)
-        const numFields = ["S·ªë l∆∞·ª£ng", "Gi√°", "Doanh Thu B√¥ng", "Chi Ph√≠", "Ti·ªÅn Ph·∫£i Thu", "Doanh Thu Kh√°c", "ƒê√£ Thu"];
-        numFields.forEach(f => {
-            if (cleaned[f] !== undefined && cleaned[f] !== "") {
-                cleaned[f] = String(cleaned[f]);
-            }
-        });
-        return cleaned;
-    }
-
-    // deleteRowByIndex: look up real object from dataToRender by index
-
-    window.deleteRowByIndex = async function (btn) {
-        if (!canMutate()) {
-            alert("B·∫°n kh√¥ng c√≥ quy·ªÅn x√≥a d·ªØ li·ªáu!");
-            return;
-        }
-        const idx = parseInt(btn.getAttribute('data-row-index'));
-        const rowData = dataToRenderRef[idx];
-        if (!rowData) {
-            alert("Kh√¥ng t√¨m th·∫•y d·ªØ li·ªáu ƒë·ªÉ x√≥a!");
-            return;
-        }
-        const sheetRow = rowData._sheetRowNumber;
-        if (!sheetRow) {
-            alert("D√≤ng n√†y ch∆∞a c√≥ s·ªë th·ª© t·ª± Sheet ‚Äî h√£y ƒë·ªìng b·ªô l·∫°i d·ªØ li·ªáu t·ª´ Google Sheets.");
-            return;
-        }
-        if (!confirm(`X√≥a d√≤ng ${sheetRow} tr√™n Google Sheets?`)) return;
+    // Expose delete to global scope for row buttons
+    window.deleteRow = async function (rowJsonStr) {
+        if (!confirm("Bﬂ¶Ìn c+¶ chﬂ¶ªc chﬂ¶ªn muﬂ+Ên x+¶a bﬂ¶˙n ghi n+·y tr+¨n Google Sheets?")) return;
 
         try {
-            if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
-                farmData.splice(farmData.indexOf(rowData), 1);
+            const rowData = JSON.parse(rowJsonStr);
+            if (WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+                alert("Vui l+¶ng cﬂ¶—u h+ºnh WEB_APP_URL trong app.js tr¶¶ﬂ+¢c khi xo+Ì dﬂ+ª liﬂ+Áu.");
+                // Fallback delete locally
+                const indexToRemove = farmData.findIndex(r =>
+                    r["Ng+·y"] === rowData["Ng+·y"] &&
+                    r["Ng¶¶ﬂ+•i Mua"] === rowData["Ng¶¶ﬂ+•i Mua"] &&
+                    r["Sﬂ+Ê l¶¶ﬂ+˙ng"] == rowData["Sﬂ+Ê l¶¶ﬂ+˙ng"]
+                );
+                if (indexToRemove >= 0) farmData.splice(indexToRemove, 1);
                 applyFiltersAndRender();
                 return;
             }
+
+            // Gﬂ¶ªn loading
             document.body.style.cursor = 'wait';
-            const response = await fetch(CONFIG.WEB_APP_URL, {
+
+            const response = await fetch(WEB_APP_URL, {
                 method: "POST",
-                body: JSON.stringify({ action: "deleteByRow", rowNumber: sheetRow, token: getToken() }),
-                headers: { "Content-Type": "text/plain;charset=utf-8" }
+                body: JSON.stringify({
+                    action: "delete",
+                    data: rowData
+                }),
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8" // bypass CORS preflight
+                }
             });
             const result = await response.json();
             if (result.status === "success") {
-                showToast("X√≥a th√†nh c√¥ng!", "success");
-                const syncBtn = document.getElementById('sync-gsheet-btn');
-                if (syncBtn) syncBtn.click();
+                alert("X+¶a th+·nh c+¶ng khﬂ+≈i Google Sheets!");
+                // Optionally reload data via existing sync logic, or remote local
+                const indexToRemove = farmData.findIndex(r =>
+                    r["Ng+·y"] === rowData["Ng+·y"] &&
+                    r["Ng¶¶ﬂ+•i Mua"] === rowData["Ng¶¶ﬂ+•i Mua"] &&
+                    r["Sﬂ+Ê l¶¶ﬂ+˙ng"] == rowData["Sﬂ+Ê l¶¶ﬂ+˙ng"]
+                );
+                if (indexToRemove >= 0) farmData.splice(indexToRemove, 1);
+                applyFiltersAndRender();
             } else {
-                alert("L·ªói khi x√≥a: " + result.message);
+                alert("Lﬂ+˘i khi x+¶a: " + result.message);
             }
-        } catch (e) {
-            console.error(e);
-            alert("L·ªói k·∫øt n·ªëi khi x√≥a.");
+        } catch (error) {
+            console.error(error);
+            alert("Lﬂ+˘i kﬂ¶+t nﬂ+Êi khi x+¶a.");
         } finally {
             document.body.style.cursor = 'default';
-        }
-    };
-
-    window.deleteRow = async function () {
-        alert("Phi√™n b·∫£n x√≥a c≈© kh√¥ng c√≤n ƒë∆∞·ª£c h·ªó tr·ª£. Vui l√≤ng t·∫£i l·∫°i trang.");
-    };
-
-    window.switchToInlineEdit = function (btn) {
-        const idx = parseInt(btn.getAttribute('data-row-index'));
-        const rowData = dataToRenderRef[idx];
-        const tr = btn.closest('tr');
-        if (!rowData || !tr) return;
-
-        // Save original HTML for cancel
-        tr.dataset.originalHtml = tr.innerHTML;
-        tr.classList.add('editing-row');
-
-        if (currentTableTab === 'expense') {
-            const amount = parseFloat(String(rowData["Chi Ph√≠"] || "0").replace(/[^\d]/g, ''));
-            tr.innerHTML = `
-                <td></td>
-                <td>${formatDateVietnamese(rowData.parsedDate)}</td>
-                <td>
-                    <select class="inline-edit-input" id="edit-exp-type">
-                        <option value="${rowData["Lo·∫°i CP"]}">${rowData["Lo·∫°i CP"]}</option>
-                        <option value="Chi Ph√≠ Kh√°c">Chi Ph√≠ Kh√°c</option>
-                        <option value="Thu·ªëc">Thu·ªëc</option>
-                        <option value="Ph√¢n">Ph√¢n</option>
-                        <option value="L√£i">L√£i</option>
-                        <option value="C√¥ng">C√¥ng</option>
-                        <option value="Mua B√¥ng">Mua B√¥ng</option>
-                        <option value="V·∫≠t T∆∞ KD">V·∫≠t T∆∞ KD</option>
-                        <option value="V·∫≠n Chuy·ªÉn">V·∫≠n Chuy·ªÉn</option>
-                    </select>
-                </td>
-                <td><input type="text" class="inline-edit-input" id="edit-exp-note" value="${rowData["Ghi Ch√∫ Chi Ph√≠"] || ""}"></td>
-                <td><input type="text" class="inline-edit-input money-input" id="edit-exp-amount" value="${formatMoneyStr(amount)}"></td>
-                <td>
-                    <div style="display:flex; gap:5px;">
-                        <button onclick="saveInlineEdit(${idx}, this)" class="btn-primary" style="padding:4px 8px; font-size:12px; background:var(--success); color:white; border:none; cursor:pointer;"><i class="fa-solid fa-check"></i></button>
-                        <button onclick="cancelInlineEdit(this)" class="btn-primary" style="padding:4px 8px; font-size:12px; background:var(--danger); color:white; border:none; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
-                </td>
-            `;
-        } else if (currentTableTab === 'vua') {
-             tr.innerHTML = `
-                <td></td>
-                <td>${formatDateVietnamese(rowData.parsedDate)}</td>
-                <td><input type="text" class="inline-edit-input" id="edit-buyer" value="${rowData["Ng∆∞·ªùi Mua"] || ""}"></td>
-                <td><input type="text" class="inline-edit-input" id="edit-flower-type" value="${rowData["Ph√¢n Lo·∫°i B√¥ng"] || ""}"></td>
-                <td><input type="number" class="inline-edit-input" id="edit-qty" value="${rowData["S·ªë l∆∞·ª£ng"] || 0}"></td>
-                <td>-</td>
-                <td>-</td>
-                <td>
-                    <select class="inline-edit-input" id="edit-status">
-                        <option value="Ch∆∞a Xong" ${rowData["Status"] === "Ch∆∞a Xong" ? "selected" : ""}>Ch∆∞a Xong</option>
-                        <option value="Xong" ${rowData["Status"] === "Xong" ? "selected" : ""}>Xong</option>
-                    </select>
-                </td>
-                <td><input type="text" class="inline-edit-input" id="edit-note" value="${rowData["Ghi Ch√∫"] || ""}"></td>
-                <td>
-                    <div style="display:flex; gap:5px;">
-                        <button onclick="saveInlineEdit(${idx}, this)" class="btn-primary" style="padding:5px; background:var(--success); color:white; border:none; cursor:pointer;"><i class="fa-solid fa-check"></i></button>
-                        <button onclick="cancelInlineEdit(this)" class="btn-primary" style="padding:5px; background:var(--danger); color:white; border:none; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
-                </td>
-            `;
-        } else {
-            // Farm Mode
-            tr.innerHTML = `
-                <td></td>
-                <td>${formatDateVietnamese(rowData.parsedDate)}</td>
-                <td><input type="text" class="inline-edit-input" id="edit-buyer" value="${rowData["Ng∆∞·ªùi Mua"] || ""}"></td>
-                <td><input type="text" class="inline-edit-input" id="edit-flower-type" value="${rowData["Ph√¢n Lo·∫°i B√¥ng"] || ""}"></td>
-                <td><input type="number" class="inline-edit-input" id="edit-qty" value="${rowData["S·ªë l∆∞·ª£ng"] || 0}"></td>
-                <td><input type="text" class="inline-edit-input money-input" id="edit-price" value="${formatMoneyStr(rowData["Gi√°"] || 0)}"></td>
-                <td>-</td>
-                <td>
-                    <select class="inline-edit-input" id="edit-status">
-                        <option value="Ch∆∞a Xong" ${rowData["Status"] === "Ch∆∞a Xong" ? "selected" : ""}>Ch∆∞a Xong</option>
-                        <option value="Xong" ${rowData["Status"] === "Xong" ? "selected" : ""}>Xong</option>
-                    </select>
-                </td>
-                <td><input type="text" class="inline-edit-input" id="edit-note" value="${rowData["Ghi Ch√∫"] || ""}"></td>
-                <td>
-                    <div style="display:flex; gap:5px;">
-                        <button onclick="saveInlineEdit(${idx}, this)" class="btn-primary" style="padding:5px; background:var(--success); color:white; border:none; cursor:pointer;"><i class="fa-solid fa-check"></i></button>
-                        <button onclick="cancelInlineEdit(this)" class="btn-primary" style="padding:5px; background:var(--danger); color:white; border:none; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
-                </td>
-            `;
-        }
-    };
-
-    window.cancelInlineEdit = function (btn) {
-        const tr = btn.closest('tr');
-        if (tr && tr.dataset.originalHtml) {
-            tr.innerHTML = tr.dataset.originalHtml;
-            tr.classList.remove('editing-row');
-        }
-    };
-
-    window.saveInlineEdit = async function (idx, btn) {
-        const tr = btn.closest('tr');
-        const originalData = dataToRenderRef[idx];
-        if (!originalData || !tr) return;
-
-        if (!confirm("X√°c nh·∫≠n c·∫≠p nh·∫≠t d√≤ng d·ªØ li·ªáu n√†y?")) return;
-
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
-        try {
-            // 1. Collect Data
-            let newRow = { ...originalData };
-            const dateStr = formatDateVietnamese(originalData.parsedDate);
-            
-            if (currentTableTab === 'expense') {
-                newRow["Lo·∫°i CP"] = document.getElementById('edit-exp-type').value;
-                newRow["Ghi Ch√∫ Chi Ph√≠"] = document.getElementById('edit-exp-note').value;
-                newRow["Chi Ph√≠"] = parseMoney(document.getElementById('edit-exp-amount').value).toString();
-                newRow["Status"] = "Xong";
-            } else {
-                newRow["Ng∆∞·ªùi Mua"] = document.getElementById('edit-buyer').value;
-                newRow["Ph√¢n Lo·∫°i B√¥ng"] = document.getElementById('edit-flower-type').value;
-                newRow["S·ªë l∆∞·ª£ng"] = document.getElementById('edit-qty').value;
-                newRow["Status"] = document.getElementById('edit-status').value;
-                newRow["Ghi Ch√∫"] = document.getElementById('edit-note').value;
-                
-                if (currentTableTab === 'farm') {
-                    const price = parseMoney(document.getElementById('edit-price').value);
-                    newRow["Gi√°"] = price.toString();
-                    newRow["Doanh Thu B√¥ng"] = (parseFloat(newRow["S·ªë l∆∞·ª£ng"]) * price).toString();
-                }
-            }
-
-            // Clean for sending
-            const payloadData = { ...newRow };
-            delete payloadData.parsedDate;
-            delete payloadData._sheetRowNumber;
-            payloadData["Ng√†y"] = dateStr;
-
-            // 2. Delete old
-            const oldSheetRow = originalData._sheetRowNumber;
-            const delResp = await fetch(CONFIG.WEB_APP_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "deleteByRow", rowNumber: oldSheetRow, token: getToken() }),
-                headers: { "Content-Type": "text/plain;charset=utf-8" }
-            });
-            const delRes = await delResp.json();
-            if (delRes.status !== "success") throw new Error("L·ªói khi x√≥a d√≤ng c≈©: " + delRes.message);
-
-            // 3. Add new
-            const addAction = (currentTableTab === 'expense') ? 'add_expense' : 'add';
-            const addResp = await fetch(CONFIG.WEB_APP_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: addAction, data: payloadData, token: getToken() }),
-                headers: { "Content-Type": "text/plain;charset=utf-8" }
-            });
-            const addRes = await addResp.json();
-            if (addRes.status !== "success") throw new Error("L·ªói khi l∆∞u d√≤ng m·ªõi: " + addRes.message);
-
-            showToast("C·∫≠p nh·∫≠t th√†nh c√¥ng!", "success");
-            const syncBtn = document.getElementById('sync-gsheet-btn');
-            if (syncBtn) syncBtn.click();
-        } catch (e) {
-            alert(e.message);
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-check"></i>';
         }
     };
 
@@ -947,7 +614,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const menuReport = document.getElementById('menu-report');
     const menuDebt = document.getElementById('menu-debt');
     const menuCashFlow = document.getElementById('menu-cashflow'); // NEW
-    const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
 
     const viewData = document.getElementById('view-data');
     const viewReport = document.getElementById('view-report');
@@ -960,87 +626,51 @@ document.addEventListener("DOMContentLoaded", () => {
         if (menuDebt) menuDebt.classList.remove('active');
         if (menuCashFlow) menuCashFlow.classList.remove('active');
 
-        mobileNavItems.forEach(i => i.classList.remove('active'));
-
         if (viewData) viewData.style.display = 'none';
         if (viewReport) viewReport.style.display = 'none';
         if (viewDebt) viewDebt.style.display = 'none';
         if (viewCashFlow) viewCashFlow.style.display = 'none';
     }
 
-    function syncMobileNav(viewId) {
-        mobileNavItems.forEach(item => {
-            if (item.dataset.view === viewId) {
-                item.classList.add('active');
-            } else {
-                item.classList.remove('active');
-            }
-        });
-    }
-
-    function switchView(viewId) {
-        hideAllViews();
-        localStorage.setItem("active_app_view", viewId);
-
-        if (viewId === 'data') {
-            if (menuData) menuData.classList.add('active');
-            syncMobileNav('data');
-            if (viewData) viewData.style.display = 'block';
-            applyFiltersAndRender();
-        } else if (viewId === 'report') {
-            if (menuReport) menuReport.classList.add('active');
-            syncMobileNav('report');
-            if (viewReport) viewReport.style.display = 'block';
-            updateDashboard();
-        } else if (viewId === 'debt') {
-            if (menuDebt) menuDebt.classList.add('active');
-            syncMobileNav('debt');
-            if (viewDebt) viewDebt.style.display = 'block';
-            renderDebtTable();
-        } else if (viewId === 'cashflow') {
-            if (menuCashFlow) menuCashFlow.classList.add('active');
-            syncMobileNav('cashflow');
-            if (viewCashFlow) viewCashFlow.style.display = 'block';
-            updateCashFlowReport();
-        }
-    }
-
     if (menuData) {
         menuData.addEventListener('click', (e) => {
             e.preventDefault();
-            switchView('data');
+            hideAllViews();
+            menuData.classList.add('active');
+            viewData.style.display = 'block';
+            applyFiltersAndRender();
         });
     }
 
     if (menuReport) {
         menuReport.addEventListener('click', (e) => {
             e.preventDefault();
-            switchView('report');
+            hideAllViews();
+            menuReport.classList.add('active');
+            viewReport.style.display = 'block';
+            updateDashboard();
         });
     }
 
     if (menuDebt) {
         menuDebt.addEventListener('click', (e) => {
             e.preventDefault();
-            switchView('debt');
+            hideAllViews();
+            menuDebt.classList.add('active');
+            viewDebt.style.display = 'block';
+            renderDebtTable();
         });
     }
 
     if (menuCashFlow) {
         menuCashFlow.addEventListener('click', (e) => {
             e.preventDefault();
-            switchView('cashflow');
+            hideAllViews();
+            menuCashFlow.classList.add('active');
+            viewCashFlow.style.display = 'block';
+            updateCashFlowReport();
         });
     }
-
-    // Mobile Nav Click Listener
-    mobileNavItems.forEach(item => {
-        item.addEventListener('click', (e) => {
-            e.preventDefault();
-            const view = item.dataset.view;
-            switchView(view);
-        });
-    });
 
     // Debt Filter Listener
     const debtFilter = document.getElementById('debt-filter');
@@ -1068,8 +698,8 @@ document.addEventListener("DOMContentLoaded", () => {
         debtData.forEach(row => {
             if (!row.parsedDate || isNaN(row.parsedDate.getTime())) return;
             const dateStr = formatDateVietnamese(row.parsedDate);
-            const buyer = (row["Ng∆∞·ªùi Mua"] || "Kh√°ch L·∫ª").trim();
-            const isVua = (row["Lo·∫°i DT"] || "") === "V·ª±a";
+            const buyer = (row["Ng¶¶ﬂ+•i Mua"] || "Kh+Ìch Lﬂ¶+").trim();
+            const isVua = (row["Loﬂ¶Ìi DT"] || "") === "Vﬂ+¶a";
             const key = `${dateStr}_${buyer}`;
 
             if (!transactions[key]) {
@@ -1087,21 +717,21 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const t = transactions[key];
-            const qty = parseFloat(row["S·ªë l∆∞·ª£ng"]) || 0;
-            const priceStr = row["Gi√°"];
+            const qty = parseFloat(row["Sﬂ+Ê l¶¶ﬂ+˙ng"]) || 0;
+            const priceStr = row["Gi+Ì"];
             const price = priceStr ? parseFloat(String(priceStr).replace(/[^\d]/g, '')) || 0 : 0;
-            const dtBongStr = row["Doanh Thu B√¥ng"];
+            const dtBongStr = row["Doanh Thu B+¶ng"];
             const dtBong = dtBongStr ? parseFloat(String(dtBongStr).replace(/[^\d]/g, '')) || 0 : 0;
 
-            const flowerType = row["Ph√¢n Lo·∫°i B√¥ng"] || "B√¥ng";
-            const ptStr = row["Ti·ªÅn Ph·∫£i Thu"];
+            const flowerType = row["Ph+Ûn Loﬂ¶Ìi B+¶ng"] || "B+¶ng";
+            const ptStr = row["Tiﬂ+¸n Phﬂ¶˙i Thu"];
             const tPhaiThu = ptStr ? parseFloat(String(ptStr).replace(/[^\d]/g, '')) || 0 : 0;
-            const daThuStr = row["ƒê√£ Thu"];
+            const daThuStr = row["-…+˙ Thu"];
             const actualPaid = daThuStr ? parseFloat(String(daThuStr).replace(/[^\d]/g, '')) || 0 : 0;
 
             t.lines.push({ qty, price, flowerType, dtBong, rawRow: row, isVua });
             t.totalQty += qty;
-            t.paid += actualPaid; // This now safely extracts millions from e.g. "1.600.000ƒë"
+            t.paid += actualPaid; // This now safely extracts millions from e.g. "1.600.000-Ê"
 
             if (isVua) {
                 // Remove the 'vuaExpectedAdded' logic completely so multiple batches on the same day sum correctly
@@ -1123,7 +753,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 buyers[t.buyer].isVua = true;
             }
             buyers[t.buyer].totalDebt += (t.totalExpected - t.paid);
-            buyers[t.buyer].orderCount += t.lines.length; // Count each sheet row as 1 "ƒë∆°n"
+            buyers[t.buyer].orderCount += t.lines.length; // Count each sheet row as 1 "-Ê¶Ìn"
             buyers[t.buyer].transactions.push(t);
         });
 
@@ -1160,8 +790,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (b.totalDebt < 1000000) debtFormatted = (b.totalDebt / 1000).toFixed(0) + "k";
 
             btn.innerHTML = `
-                 <span class="buyer-name-part">üë§ <span>${b.name}</span></span>
-                 <span class="debt-amount-part">üî¥ ${debtFormatted} <span class="order-count-tag">(${b.orderCount} ƒë∆°n)</span></span>
+                 <span class="buyer-name-part">=ÉÊÒ <span>${b.name}</span></span>
+                 <span class="debt-amount-part">=Éˆ¶ ${debtFormatted} <span class="order-count-tag">(${b.orderCount} -Ê¶Ìn)</span></span>
              `;
 
             btn.onclick = () => showDebtDetail(b);
@@ -1178,10 +808,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (farmCount === 0) {
-            farmListContainer.innerHTML = `<div style="text-align: center; color: var(--text-dark); padding: 10px; background: white; border-radius: 8px;">Hoan h√¥! Kh√¥ng c√≥ c√¥ng n·ª£.</div>`;
+            farmListContainer.innerHTML = `<div style="text-align: center; color: var(--text-dark); padding: 10px; background: white; border-radius: 8px;">Hoan h+¶! Kh+¶ng c+¶ c+¶ng nﬂ+˙.</div>`;
         }
         if (vuaCount === 0) {
-            vuaListContainer.innerHTML = `<div style="text-align: center; color: var(--text-dark); padding: 10px; background: white; border-radius: 8px;">Hoan h√¥! Kh√¥ng c√≥ c√¥ng n·ª£.</div>`;
+            vuaListContainer.innerHTML = `<div style="text-align: center; color: var(--text-dark); padding: 10px; background: white; border-radius: 8px;">Hoan h+¶! Kh+¶ng c+¶ c+¶ng nﬂ+˙.</div>`;
         }
 
         if (masterTotalEl) masterTotalEl.innerText = formatCurrency(globalDebt);
@@ -1204,7 +834,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('debt-master-view').style.display = 'none';
         document.getElementById('debt-detail-view').style.display = 'block';
 
-        document.getElementById('detail-buyer-name').innerHTML = `üë§ ${buyerObj.name}`;
+        document.getElementById('detail-buyer-name').innerHTML = `=ÉÊÒ ${buyerObj.name}`;
 
         const txList = document.getElementById('detail-transaction-list');
         txList.innerHTML = '';
@@ -1238,7 +868,7 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
 
             if (t.lines.length > 0 && t.lines[0].isVua) {
-                // V·ª±a Rendering
+                // Vﬂ+¶a Rendering
                 const combinedFlowers = t.lines.map(l => `${l.qty} ${l.flowerType}`).join(', ');
                 let phiVC = 150000;
                 let giaBong = t.totalExpected - phiVC;
@@ -1249,8 +879,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span class="invoice-desc">${combinedFlowers}</span>
                     </div>
                     <div class="invoice-sub-row">
-                        <span class="invoice-badge-fee"><i class="fa-solid fa-truck-fast"></i> V·∫≠n chuy·ªÉn: ${formatCurrency(phiVC)}</span>
-                        ${t.paid > 0 ? `<span class="invoice-badge-paid"><i class="fa-solid fa-circle-check"></i> ƒê√£ thu: ${formatCurrency(t.paid)}</span>` : ''}
+                        <span class="invoice-badge-fee"><i class="fa-solid fa-truck-fast"></i> Vﬂ¶°n chuyﬂ+‚n: ${formatCurrency(phiVC)}</span>
+                        ${t.paid > 0 ? `<span class="invoice-badge-paid"><i class="fa-solid fa-circle-check"></i> -…+˙ thu: ${formatCurrency(t.paid)}</span>` : ''}
                     </div>
                 `;
             } else {
@@ -1270,13 +900,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 itemHtml += `<div class="invoice-sub-row">`;
                 if (diff > 0) {
-                    itemHtml += `<span class="invoice-badge-fee"><i class="fa-solid fa-box"></i> Ph√≠ kh√°c: ${formatCurrency(diff)}</span>`;
+                    itemHtml += `<span class="invoice-badge-fee"><i class="fa-solid fa-box"></i> Ph+° kh+Ìc: ${formatCurrency(diff)}</span>`;
                 } else {
                     itemHtml += `<span></span>`;
                 }
 
                 if (t.paid > 0) {
-                    itemHtml += `<span class="invoice-badge-paid"><i class="fa-solid fa-circle-check"></i> ƒê√£ thu: ${formatCurrency(t.paid)}</span>`;
+                    itemHtml += `<span class="invoice-badge-paid"><i class="fa-solid fa-circle-check"></i> -…+˙ thu: ${formatCurrency(t.paid)}</span>`;
                 }
                 itemHtml += `</div>`;
             }
@@ -1293,7 +923,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Add Select All functionality
         const selectAllContainer = document.createElement('div');
         selectAllContainer.style.cssText = 'padding: 10px 15px; border-bottom: 2px solid #e2e8f0; background: #fff; display: flex; align-items: center; gap: 12px; font-weight: 700;';
-        selectAllContainer.innerHTML = `<input type="checkbox" id="detail-select-all" style="width: 20px; height: 20px; cursor: pointer;"> <label for="detail-select-all" style="cursor: pointer;">CH·ªåN T·∫§T C·∫¢ ƒê∆†N</label>`;
+        selectAllContainer.innerHTML = `<input type="checkbox" id="detail-select-all" style="width: 20px; height: 20px; cursor: pointer;"> <label for="detail-select-all" style="cursor: pointer;">CHﬂ+ÓN Tﬂ¶ÒT Cﬂ¶Û -…¶·N</label>`;
         txList.prepend(selectAllContainer);
 
         const selectAllCb = selectAllContainer.querySelector('#detail-select-all');
@@ -1304,7 +934,7 @@ document.addEventListener("DOMContentLoaded", () => {
             txCheckboxes.forEach(cb => cb.checked = isChecked);
         });
 
-        document.getElementById('detail-total-qty').innerText = sumQty.toLocaleString('vi-VN') + ' b√¥ng';
+        document.getElementById('detail-total-qty').innerText = sumQty.toLocaleString('vi-VN') + ' b+¶ng';
         document.getElementById('detail-total-amount').innerText = formatCurrency(sumExpected);
         document.getElementById('detail-paid-amount').innerText = formatCurrency(sumPaid);
         document.getElementById('detail-debt-amount').innerText = formatCurrency(sumExpected - sumPaid);
@@ -1322,34 +952,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Process payment calls
     async function processPayment(isFull) {
-        if (!isAuthorizedForDebt()) {
-            alert("B·∫°n kh√¥ng c√≥ quy·ªÅn th·ª±c hi·ªán thanh to√°n!");
-            return;
-        }
         if (!currentSelectedBuyer) return;
         const totalDebt = currentSelectedBuyer.totalDebt;
         let amountToPay = totalDebt;
 
         if (!isFull) {
-            const rawInput = prompt(`T·ªïng n·ª£ hi·ªán t·∫°i l√† ${formatCurrency(totalDebt)}.\nNh·∫≠p s·ªë ti·ªÅn mu·ªën thanh to√°n (VNƒê):`, "");
+            const rawInput = prompt(`Tﬂ+Úng nﬂ+˙ hiﬂ+Án tﬂ¶Ìi l+· ${formatCurrency(totalDebt)}.\nNhﬂ¶°p sﬂ+Ê tiﬂ+¸n muﬂ+Ên thanh to+Ìn (VN-…):`, "");
             if (!rawInput) return;
             amountToPay = parseFloat(rawInput.replace(/[^\d]/g, ''));
             if (isNaN(amountToPay) || amountToPay <= 0 || amountToPay > totalDebt) {
-                alert("S·ªë ti·ªÅn kh√¥ng h·ª£p l·ªá ho·∫∑c l·ªõn h∆°n t·ªïng n·ª£!");
+                alert("Sﬂ+Ê tiﬂ+¸n kh+¶ng hﬂ+˙p lﬂ+Á hoﬂ¶+c lﬂ+¢n h¶Ìn tﬂ+Úng nﬂ+˙!");
                 return;
             }
         } else {
-            if (!confirm(`X√°c nh·∫≠n thanh to√°n H·∫æT to√†n b·ªô s·ªë n·ª£ ${formatCurrency(totalDebt)} c·ªßa ${currentSelectedBuyer.name}?`)) return;
+            if (!confirm(`X+Ìc nhﬂ¶°n thanh to+Ìn Hﬂ¶+T to+·n bﬂ+÷ sﬂ+Ê nﬂ+˙ ${formatCurrency(totalDebt)} cﬂ+∫a ${currentSelectedBuyer.name}?`)) return;
         }
 
-        if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
-            alert("Vui l√≤ng c·∫•u h√¨nh WEB_APP_URL!");
+        if (WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+            alert("Vui l+¶ng cﬂ¶—u h+ºnh WEB_APP_URL!");
             return;
         }
 
         document.body.style.cursor = 'wait';
 
-        // Ph√¢n b·ªï s·ªë ti·ªÅn tr·∫£ cho c√°c ƒë∆°n n·ª£ (t·ª´ c≈© nh·∫•t ƒë·∫øn m·ªõi nh·∫•t)
+        // Ph+Ûn bﬂ+Ú sﬂ+Ê tiﬂ+¸n trﬂ¶˙ cho c+Ìc -Ê¶Ìn nﬂ+˙ (tﬂ+Ω c+¨ nhﬂ¶—t -Êﬂ¶+n mﬂ+¢i nhﬂ¶—t)
         let remainingPayment = amountToPay;
         const sortedTxAsc = [...currentSelectedBuyer.transactions].sort((a, b) => a.rawDate - b.rawDate);
         const updatesList = [];
@@ -1365,20 +991,20 @@ document.addEventListener("DOMContentLoaded", () => {
             const newPaid = t.paid + amountForThisTx;
             remainingPayment -= amountForThisTx;
 
-            // Chu·∫©n b·ªã payload l·∫•y giao d·ªãch d√≤ng ƒë·∫ßu ti√™n (ƒë·ªÉ g√°n ƒê√£ Thu)
+            // Chuﬂ¶¨n bﬂ+Ô payload lﬂ¶—y giao dﬂ+Ôch d+¶ng -Êﬂ¶∫u ti+¨n (-Êﬂ+‚ g+Ìn -…+˙ Thu)
             if (t.lines.length > 0) {
                 const firstRow = t.lines[0].rawRow;
-                // C·∫≠p nh·∫≠t C·ªôt tr·∫°ng th√°i
+                // Cﬂ¶°p nhﬂ¶°t Cﬂ+÷t trﬂ¶Ìng th+Ìi
                 let newStatus = firstRow["Status"]; // ""
                 if (newPaid >= t.totalExpected) {
                     newStatus = "Xong";
                 }
 
-                // C·∫≠p nh·∫≠t Ghi ch√∫
+                // Cﬂ¶°p nhﬂ¶°t Ghi ch+¶
                 const now = new Date();
                 const dateTimeStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-                let newGhiChu = `Thanh to√°n ${isFull ? 'h·∫øt' : 'm·ªôt ph·∫ßn'} ng√†y ${dateTimeStr}`;
-                const existingNote = firstRow["Ghi Ch√∫"] || "";
+                let newGhiChu = `Thanh to+Ìn ${isFull ? 'hﬂ¶+t' : 'mﬂ+÷t phﬂ¶∫n'} ng+·y ${dateTimeStr}`;
+                const existingNote = firstRow["Ghi Ch+¶"] || "";
                 if (existingNote.trim() !== '') {
                     newGhiChu = existingNote + " | " + newGhiChu;
                 }
@@ -1386,16 +1012,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 updatesList.push({
                     targetRow: firstRow,
                     updates: {
-                        "ƒê√£ Thu": newPaid,
+                        "-…+˙ Thu": newPaid,
                         "Status": newStatus,
-                        "Ghi Ch√∫": newGhiChu
+                        "Ghi Ch+¶": newGhiChu
                     }
                 });
 
                 // Update in memory immediately for snappy UI
-                firstRow["ƒê√£ Thu"] = newPaid;
+                firstRow["-…+˙ Thu"] = newPaid;
                 firstRow["Status"] = newStatus;
-                firstRow["Ghi Ch√∫"] = newGhiChu;
+                firstRow["Ghi Ch+¶"] = newGhiChu;
             }
         }
 
@@ -1404,9 +1030,9 @@ document.addEventListener("DOMContentLoaded", () => {
             // Send sequentially 
             for (let i = 0; i < updatesList.length; i++) {
                 const req = updatesList[i];
-                const response = await fetch(CONFIG.WEB_APP_URL, {
+                const response = await fetch(WEB_APP_URL, {
                     method: "POST",
-                    body: JSON.stringify({ action: "update", targetRow: req.targetRow, updates: req.updates, token: getToken() }),
+                    body: JSON.stringify({ action: "update", targetRow: req.targetRow, updates: req.updates }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
                 const result = await response.json();
@@ -1414,7 +1040,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     successC++;
                 }
             }
-            showToast(`ƒê√£ thanh to√°n th√†nh c√¥ng ${formatCurrency(amountToPay)}!`, "success");
+            alert(`-…+˙ thanh to+Ìn th+·nh c+¶ng ${formatCurrency(amountToPay)}!`);
             // Refresh data visibly right away without waiting for backend
             renderDebtTable();
 
@@ -1425,7 +1051,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         } catch (err) {
             console.error(err);
-            alert("L·ªói k·∫øt n·ªëi khi thanh to√°n.");
+            alert("Lﬂ+˘i kﬂ¶+t nﬂ+Êi khi thanh to+Ìn.");
         } finally {
             document.body.style.cursor = 'default';
         }
@@ -1443,14 +1069,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!currentSelectedBuyer) return;
         const checkedBoxes = document.querySelectorAll('.tx-checkbox:checked');
         if (checkedBoxes.length === 0) {
-            alert("Vui l√≤ng ch·ªçn √≠t nh·∫•t m·ªôt ƒë∆°n h√†ng ƒë·ªÉ thanh to√°n.");
+            alert("Vui l+¶ng chﬂ+Ïn +°t nhﬂ¶—t mﬂ+÷t -Ê¶Ìn h+·ng -Êﬂ+‚ thanh to+Ìn.");
             return;
         }
 
-        if (!confirm(`X√°c nh·∫≠n thanh to√°n ${checkedBoxes.length} ƒë∆°n h√†ng ƒë√£ ch·ªçn cho ${currentSelectedBuyer.name}?`)) return;
+        if (!confirm(`X+Ìc nhﬂ¶°n thanh to+Ìn ${checkedBoxes.length} -Ê¶Ìn h+·ng -Ê+˙ chﬂ+Ïn cho ${currentSelectedBuyer.name}?`)) return;
 
-        if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
-            alert("Vui l√≤ng c·∫•u h√¨nh WEB_APP_URL!");
+        if (WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+            alert("Vui l+¶ng cﬂ¶—u h+ºnh WEB_APP_URL!");
             return;
         }
 
@@ -1458,7 +1084,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const payBtn = document.getElementById('btn-pay-selected');
         const originalHtml = payBtn.innerHTML;
         payBtn.disabled = true;
-        payBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ƒêang x·ª≠ l√Ω...';
+        payBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> -…ang xﬂ+° l++...';
 
         const selectedKeys = Array.from(checkedBoxes).map(cb => cb.dataset.txkey);
         const transactionsToPay = currentSelectedBuyer.transactions.filter(t => selectedKeys.includes(t.key));
@@ -1468,30 +1094,30 @@ document.addEventListener("DOMContentLoaded", () => {
         const dateTimeStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
         transactionsToPay.forEach(t => {
-            // X√°c ƒë·ªãnh t·ªïng ti·ªÅn c·ªßa to√†n b·ªô transaction n√†y ƒë·ªÉ g√°n v√†o d√≤ng ƒë·∫ßu ti√™n (ho·∫∑c ph√¢n b·ªï)
-            // Tuy nhi√™n ƒë∆°n gi·∫£n nh·∫•t l√† mark "Xong" cho m·ªçi d√≤ng trong transaction n√†y.
+            // X+Ìc -Êﬂ+Ônh tﬂ+Úng tiﬂ+¸n cﬂ+∫a to+·n bﬂ+÷ transaction n+·y -Êﬂ+‚ g+Ìn v+·o d+¶ng -Êﬂ¶∫u ti+¨n (hoﬂ¶+c ph+Ûn bﬂ+Ú)
+            // Tuy nhi+¨n -Ê¶Ìn giﬂ¶˙n nhﬂ¶—t l+· mark "Xong" cho mﬂ+Ïi d+¶ng trong transaction n+·y.
             t.lines.forEach((line, index) => {
                 const row = line.rawRow;
-                const existingNote = row["Ghi Ch√∫"] || "";
-                const newNote = existingNote ? `${existingNote} | Thanh to√°n ƒë∆°n l·∫ª ${dateTimeStr}` : `Thanh to√°n ƒë∆°n l·∫ª ${dateTimeStr}`;
+                const existingNote = row["Ghi Ch+¶"] || "";
+                const newNote = existingNote ? `${existingNote} | Thanh to+Ìn -Ê¶Ìn lﬂ¶+ ${dateTimeStr}` : `Thanh to+Ìn -Ê¶Ìn lﬂ¶+ ${dateTimeStr}`;
 
-                // T√≠nh to√°n gi√° tr·ªã thanh to√°n cho d√≤ng n√†y
-                const valToPay = t.isVua ? (parseFloat(String(row["Ti·ªÅn Ph·∫£i Thu"] || "0").replace(/[^\d]/g, '')) || 0)
-                    : (parseFloat(String(row["Doanh Thu B√¥ng"] || "0").replace(/[^\d]/g, '')) || 0);
+                // T+°nh to+Ìn gi+Ì trﬂ+Ô thanh to+Ìn cho d+¶ng n+·y
+                const valToPay = t.isVua ? (parseFloat(String(row["Tiﬂ+¸n Phﬂ¶˙i Thu"] || "0").replace(/[^\d]/g, '')) || 0)
+                    : (parseFloat(String(row["Doanh Thu B+¶ng"] || "0").replace(/[^\d]/g, '')) || 0);
 
                 updatesList.push({
                     targetRow: row,
                     updates: {
                         "Status": "Xong",
-                        "Ghi Ch√∫": newNote,
-                        "ƒê√£ Thu": valToPay > 0 ? valToPay : (parseFloat(String(row["ƒê√£ Thu"] || "0").replace(/[^\d]/g, '')) || 0)
+                        "Ghi Ch+¶": newNote,
+                        "-…+˙ Thu": valToPay > 0 ? valToPay : (parseFloat(String(row["-…+˙ Thu"] || "0").replace(/[^\d]/g, '')) || 0)
                     }
                 });
 
                 // Update local memory
                 row["Status"] = "Xong";
-                row["Ghi Ch√∫"] = newNote;
-                if (valToPay > 0) row["ƒê√£ Thu"] = valToPay;
+                row["Ghi Ch+¶"] = newNote;
+                if (valToPay > 0) row["-…+˙ Thu"] = valToPay;
             });
         });
 
@@ -1499,27 +1125,32 @@ document.addEventListener("DOMContentLoaded", () => {
             let successC = 0;
             for (let i = 0; i < updatesList.length; i++) {
                 const req = updatesList[i];
-                const response = await fetch(CONFIG.WEB_APP_URL, {
+                const response = await fetch(WEB_APP_URL, {
                     method: "POST",
-                    body: JSON.stringify({ action: "update", targetRow: req.targetRow, updates: req.updates, token: getToken() }),
+                    body: JSON.stringify({ action: "update", targetRow: req.targetRow, updates: req.updates }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
                 const result = await response.json();
                 if (result.status === "success") successC++;
             }
-            alert(`ƒê√£ thanh to√°n th√†nh c√¥ng ${checkedBoxes.length} ƒë∆°n h√†ng!`);
+            alert(`-…+˙ thanh to+Ìn th+·nh c+¶ng ${checkedBoxes.length} -Ê¶Ìn h+·ng!`);
             renderDebtTable();
             const syncBtn = document.getElementById('sync-gsheet-btn');
             if (syncBtn) syncBtn.click();
         } catch (err) {
             console.error(err);
-            alert("L·ªói k·∫øt n·ªëi khi thanh to√°n.");
+            alert("Lﬂ+˘i kﬂ¶+t nﬂ+Êi khi thanh to+Ìn.");
         } finally {
             document.body.style.cursor = 'default';
             payBtn.disabled = false;
             payBtn.innerHTML = originalHtml;
         }
     }
+
+    let annualQtyChartInstance = null;
+    let annualRevProfitChartInstance = null;
+    let annualExpenseChartInstance = null;
+    let monthlyCombinedChartInstance = null;
 
     // Report Setup
     const reportRangeSelect = document.getElementById('report-range');
@@ -1532,32 +1163,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (reportRangeSelect) {
         reportRangeSelect.addEventListener('change', () => {
-            const val = reportRangeSelect.value;
-            const isMonth = val === 'month';
-            const isQuarter = val.startsWith('q');
-
+            const isMonth = reportRangeSelect.value === 'month';
             monthSelectContainer.style.display = isMonth ? 'block' : 'none';
-
-            // Adjust chart displays
-            document.getElementById('yearly-report-charts').style.display = (isMonth || isQuarter) ? 'none' : 'grid';
-            document.getElementById('monthly-report-charts').style.display = (isMonth || isQuarter) ? 'grid' : 'none';
+            document.getElementById('yearly-report-charts').style.display = isMonth ? 'none' : 'grid';
+            document.getElementById('monthly-report-charts').style.display = isMonth ? 'grid' : 'none';
 
             const kpiLabels = document.querySelectorAll('.kpi-cards h3');
             kpiLabels.forEach(label => {
-                let context = isMonth ? 'T.Th√°ng' : (isQuarter ? 'T.Qu√Ω' : 'T.NƒÉm');
-                label.innerText = label.innerText.replace(/T\.(Th√°ng|NƒÉm|Qu√Ω)/g, context);
+                if (label.innerText.includes('T.N-‚m')) {
+                    label.innerText = label.innerText.replace('T.N-‚m', isMonth ? 'T.Th+Ìng' : 'T.N-‚m');
+                } else if (label.innerText.includes('T.Th+Ìng')) {
+                    label.innerText = label.innerText.replace('T.Th+Ìng', isMonth ? 'T.Th+Ìng' : 'T.N-‚m');
+                }
             });
             updateDashboard();
-            syncMainToComparison();
         });
     }
 
-    if (reportMonthSelect) {
-        reportMonthSelect.addEventListener('change', () => {
-            updateDashboard();
-            syncMainToComparison();
-        });
-    }
+    if (reportMonthSelect) reportMonthSelect.addEventListener('change', updateDashboard);
 
     if (cmpPeriodSelect) {
         cmpPeriodSelect.addEventListener('change', () => {
@@ -1569,54 +1192,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (cmpMonth1Select) cmpMonth1Select.addEventListener('change', updateComparison);
     if (cmpMonth2Select) cmpMonth2Select.addEventListener('change', updateComparison);
-
-    // Toggle Comparison Button & Sync logic
-    const toggleCmpBtn = document.getElementById('toggle-comparison-btn');
-    if (toggleCmpBtn) {
-        toggleCmpBtn.addEventListener('click', () => {
-            const unifiedControls = document.getElementById('unified-cmp-controls');
-            const btnSpan = toggleCmpBtn.querySelector('span');
-            const icon = toggleCmpBtn.querySelector('i');
-
-            if (unifiedControls.style.display === 'none' || !unifiedControls.style.display) {
-                // OPEN MODE
-                unifiedControls.style.display = 'flex';
-                toggleCmpBtn.style.backgroundColor = 'var(--primary-color)';
-                toggleCmpBtn.style.color = 'white';
-                if (btnSpan) btnSpan.innerText = "ƒê√≥ng so s√°nh";
-                if (icon) { icon.className = "fa-solid fa-xmark"; }
-
-                // Set default comparison year/month if not set
-                const mainYear = document.getElementById('report-year').value;
-                const mainMonth = document.getElementById('report-month').value;
-                const reportYearPrev = document.getElementById('report-year-prev');
-                const reportMonthPrev = document.getElementById('report-month-prev');
-
-                if (reportYearPrev && !reportYearPrev.value) reportYearPrev.value = parseInt(mainYear) - 1;
-                if (reportMonthPrev && !reportMonthPrev.value) reportMonthPrev.value = mainMonth;
-                const reportQuarterPrev = document.getElementById('report-quarter-prev');
-                if (reportQuarterPrev && !reportQuarterPrev.value) reportQuarterPrev.value = document.getElementById('report-range').value;
-
-                updateDashboard();
-            } else {
-                // CLOSE MODE
-                unifiedControls.style.display = 'none';
-                toggleCmpBtn.style.backgroundColor = '#f1f5f9';
-                toggleCmpBtn.style.color = '#475569';
-                if (btnSpan) btnSpan.innerText = "So s√°nh kh√°c";
-                if (icon) { icon.className = "fa-solid fa-calendar-days"; }
-                updateDashboard();
-            }
-        });
-    }
-
-    // New unified baseline listeners
-    const reportYearPrev = document.getElementById('report-year-prev');
-    const reportMonthPrev = document.getElementById('report-month-prev');
-    const reportQuarterPrev = document.getElementById('report-quarter-prev');
-    if (reportYearPrev) reportYearPrev.addEventListener('change', updateDashboard);
-    if (reportMonthPrev) reportMonthPrev.addEventListener('change', updateDashboard);
-    if (reportQuarterPrev) reportQuarterPrev.addEventListener('change', updateDashboard);
     function populateYears() {
         const yearSelect = document.getElementById('report-year');
         const cmpY1Select = document.getElementById('cmp-year1');
@@ -1629,30 +1204,33 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const sortedYears = Array.from(years).sort((a, b) => b - a);
-        const prevYearSelect = document.getElementById('report-year-prev');
-        const cfYearSelect = document.getElementById('cashflow-year');
-        const cfYearSelect2 = document.getElementById('cashflow-year-2');
-
         yearSelect.innerHTML = '';
         if (cmpY1Select) cmpY1Select.innerHTML = '';
         if (cmpY2Select) cmpY2Select.innerHTML = '';
-        if (prevYearSelect) prevYearSelect.innerHTML = '';
-        if (cfYearSelect) cfYearSelect.innerHTML = '';
-        if (cfYearSelect2) cfYearSelect2.innerHTML = '';
 
         sortedYears.forEach(year => {
-            const createOpt = (y) => {
-                const opt = document.createElement('option');
-                opt.value = y; opt.textContent = y;
-                return opt;
-            };
+            const option = document.createElement('option');
+            option.value = year; option.textContent = year;
+            yearSelect.appendChild(option);
 
-            yearSelect.appendChild(createOpt(year));
-            if (cmpY1Select) cmpY1Select.appendChild(createOpt(year));
-            if (cmpY2Select) cmpY2Select.appendChild(createOpt(year));
-            if (prevYearSelect) prevYearSelect.appendChild(createOpt(year));
-            if (cfYearSelect) cfYearSelect.appendChild(createOpt(year));
-            if (cfYearSelect2) cfYearSelect2.appendChild(createOpt(year));
+            if (cmpY1Select) {
+                const opt1 = document.createElement('option'); opt1.value = year; opt1.textContent = year;
+                cmpY1Select.appendChild(opt1);
+            }
+            if (cmpY2Select) {
+                const opt2 = document.createElement('option'); opt2.value = year; opt2.textContent = year;
+                cmpY2Select.appendChild(opt2);
+            }
+            const cfYearSelect = document.getElementById('cashflow-year');
+            const cfYearSelect2 = document.getElementById('cashflow-year-2');
+            if (cfYearSelect) {
+                const opt3 = document.createElement('option'); opt3.value = year; opt3.textContent = year;
+                cfYearSelect.appendChild(opt3);
+            }
+            if (cfYearSelect2) {
+                const opt4 = document.createElement('option'); opt4.value = year; opt4.textContent = year;
+                cfYearSelect2.appendChild(opt4);
+            }
         });
 
         const currentYear = new Date().getFullYear();
@@ -1678,16 +1256,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (cmpY1Select) {
                 cmpY1Select.value = years.has(currentYear - 1) ? currentYear - 1 : currentYear;
             }
-
-            // Set Dashboard Baseline (Report Prev) defaults to same period last year
-            const reportYearPrev = document.getElementById('report-year-prev');
-            const reportMonthPrev = document.getElementById('report-month-prev');
-            if (reportYearPrev) {
-                reportYearPrev.value = years.has(currentYear - 1) ? currentYear - 1 : currentYear;
-            }
-            if (reportMonthPrev) {
-                reportMonthPrev.value = currentMonthNum;
-            }
         }
     }
 
@@ -1703,32 +1271,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedYear = parseInt(yearSelect.value) || new Date().getFullYear();
         const selectedMonth = parseInt(monthSelect.value) || (new Date().getMonth() + 1);
         const reportType = filterSelect ? filterSelect.value : "Chung";
-        const rangeVal = rangeSelect ? rangeSelect.value : 'month';
-        const isMonthlyRange = rangeVal === 'month';
-        const isQuarterRange = rangeVal.startsWith('q');
-
-        // Baseline determination (default is same period last year)
-        let baselineYear = selectedYear - 1;
-        let baselineMonth = selectedMonth;
-        let baselineQuarter = isQuarterRange ? rangeVal : null;
-
-        const customCmpBox = document.getElementById('unified-cmp-controls');
-        if (customCmpBox && customCmpBox.style.display !== 'none') {
-            const yPrev = document.getElementById('report-year-prev');
-            const mPrev = document.getElementById('report-month-prev');
-            const qPrev = document.getElementById('report-quarter-prev');
-            if (yPrev) baselineYear = parseInt(yPrev.value);
-            if (mPrev && isMonthlyRange) baselineMonth = parseInt(mPrev.value);
-            if (qPrev && isQuarterRange) baselineQuarter = qPrev.value;
-        }
+        const isMonthlyRange = rangeSelect ? rangeSelect.value === 'month' : false;
 
         let totalQty = 0, totalRevenue = 0, totalExpense = 0;
         let prevQty = 0, prevRevenue = 0, prevExpense = 0;
 
+        // Detailed statement stats
         const statement = {
             revFarm: 0, revCompany: 0, revVua: 0,
-            expensed: 0, phanBon: 0, thuoc: 0, luong: 0, lai: 0, vatTu: 0, muaBong: 0, vanHanh: 0,
-            totalRev: 0, totalExp: 0, netProfit: 0
+            expensed: 0, phanBon: 0, thuoc: 0, luong: 0, lai: 0, vatTu: 0, muaBong: 0, vanHanh: 0
         };
 
         const yearlyMonthlyData = Array.from({ length: 12 }, () => ({ qty: 0, revenue: 0, expense: 0 }));
@@ -1740,88 +1291,68 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const rowYear = d.getFullYear();
             const rowMonth = d.getMonth() + 1;
+            const isPrevYear = (rowYear === selectedYear - 1);
+            const isCurrYear = (rowYear === selectedYear);
 
-            let isCurr = false;
-            let isPrev = false;
+            if (isMonthlyRange && rowMonth !== selectedMonth) return;
+            if (!isCurrYear && !isPrevYear) return;
 
-            if (isQuarterRange) {
-                const qTarget = baselineQuarter || rangeVal;
-                let inCurrQ = false;
-                if (rangeVal === 'q1' && rowMonth >= 1 && rowMonth <= 3) inCurrQ = true;
-                if (rangeVal === 'q2' && rowMonth >= 4 && rowMonth <= 6) inCurrQ = true;
-                if (rangeVal === 'q3' && rowMonth >= 7 && rowMonth <= 9) inCurrQ = true;
-                if (rangeVal === 'q4' && rowMonth >= 10 && rowMonth <= 12) inCurrQ = true;
-
-                let inPrevQ = false;
-                if (qTarget === 'q1' && rowMonth >= 1 && rowMonth <= 3) inPrevQ = true;
-                if (qTarget === 'q2' && rowMonth >= 4 && rowMonth <= 6) inPrevQ = true;
-                if (qTarget === 'q3' && rowMonth >= 7 && rowMonth <= 9) inPrevQ = true;
-                if (qTarget === 'q4' && rowMonth >= 10 && rowMonth <= 12) inPrevQ = true;
-
-                if (inCurrQ && rowYear === selectedYear) isCurr = true;
-                if (inPrevQ && rowYear === baselineYear) isPrev = true;
-            } else if (isMonthlyRange) {
-                if (rowYear === selectedYear && rowMonth === selectedMonth) isCurr = true;
-                if (rowYear === baselineYear && rowMonth === baselineMonth) isPrev = true;
-            } else { // Yearly
-                if (rowYear === selectedYear) isCurr = true;
-                if (rowYear === baselineYear) isPrev = true;
-            }
-
-            if (!isCurr && !isPrev) return;
-
-            const typeDT = (row["Lo·∫°i DT"] || "").trim();
+            const typeDT = (row["Loﬂ¶Ìi DT"] || "").trim();
             const isCompany = typeDT === "Company";
-            const isVua = typeDT.toLowerCase().includes("v·ª±a") || typeDT.toLowerCase().includes("vua");
+            const isVua = typeDT === "Vﬂ+¶a" || typeDT === "vﬂ+¶a";
             const isFarm = typeDT === "Farm" || typeDT === "";
-            const loaiCP = (row["Lo·∫°i CP"] || "").trim();
+            const loaiCP = (row["Loﬂ¶Ìi CP"] || "").trim();
 
-            const rawQty = parseFloat(row["S·ªë l∆∞·ª£ng"]) || 0;
-            const dtBong = parseFloat(row["Doanh Thu B√¥ng"]) || 0;
-            const dtKhac = parseFloat(row["Doanh Thu Kh√°c"]) || 0;
-            const chiPhi = parseFloat(row["Chi Ph√≠"]) || 0;
+            const rawQty = parseFloat(row["Sﬂ+Ê l¶¶ﬂ+˙ng"]) || 0;
+            const dtBong = parseFloat(row["Doanh Thu B+¶ng"]) || 0;
+            const dtKhac = parseFloat(row["Doanh Thu Kh+Ìc"]) || 0;
+            const chiPhi = parseFloat(row["Chi Ph+°"]) || 0;
 
             let rev = 0, exp = 0, q = 0;
             const isExpenseCompany = (loaiCP === "Expensed");
-            const isExpenseVua = (loaiCP === "V·∫≠t T∆∞ KD" || loaiCP === "V·∫≠n Chuy·ªÉn" || loaiCP === "Mua B√¥ng");
+            const isExpenseVua = (loaiCP === "Vﬂ¶°t T¶¶ KD" || loaiCP === "Vﬂ¶°n Chuyﬂ+‚n" || loaiCP === "Mua B+¶ng");
             const isExpenseFarm = (!isExpenseCompany && !isExpenseVua);
 
             if (reportType === "Company") {
                 if (isCompany) rev = dtKhac;
                 if (isExpenseCompany) exp = chiPhi;
-            } else if (reportType === "V·ª±a") {
+            } else if (reportType === "Vﬂ+¶a") {
                 if (isVua) rev = dtKhac;
                 if (isExpenseVua) exp = chiPhi;
             } else if (reportType === "Farm") {
-                rev = dtBong + (isFarm ? dtKhac : 0);
+                rev = dtBong + (isFarm ? dtKhac : 0); // All dtBong is Farm production rev
                 q = rawQty;
                 if (isExpenseFarm) exp = chiPhi;
-            } else {
+            } else { // "Chung"
                 q = rawQty; rev = dtBong + dtKhac; exp = chiPhi;
             }
 
-            if (isCurr) {
-                totalQty += q; totalRevenue += rev; totalExpense += exp;
+            if (isCurrYear) {
+                totalQty += q;
+                totalRevenue += rev;
+                totalExpense += exp;
 
+                // Detail aggregation for current year
                 statement.revFarm += dtBong + (isFarm ? dtKhac : 0);
                 statement.revCompany += dtBong + (isCompany ? dtKhac : 0);
                 if (isVua) statement.revVua += dtKhac;
 
+                // Match exact backend categories provided by user
                 if (loaiCP === "Expensed") statement.expensed += chiPhi;
-                else if (loaiCP === "Ph√¢n") statement.phanBon += chiPhi;
-                else if (loaiCP === "Thu·ªëc") statement.thuoc += chiPhi;
-                else if (loaiCP === "C√¥ng") statement.luong += chiPhi;
-                else if (loaiCP === "L√£i") statement.lai += chiPhi;
-                else if (loaiCP === "V·∫≠t T∆∞" || loaiCP === "V·∫≠t T∆∞ KD") statement.vatTu += chiPhi;
-                else if (loaiCP === "Mua B√¥ng") statement.muaBong += chiPhi;
-                else if (loaiCP === "V·∫≠n Chuy·ªÉn" || loaiCP === "Chi Ph√≠ Kh√°c") statement.vanHanh += chiPhi;
+                else if (loaiCP === "Ph+Ûn") statement.phanBon += chiPhi;
+                else if (loaiCP === "Thuﬂ+Êc") statement.thuoc += chiPhi;
+                else if (loaiCP === "C+¶ng") statement.luong += chiPhi;
+                else if (loaiCP === "L+˙i") statement.lai += chiPhi;
+                else if (loaiCP === "Vﬂ¶°t T¶¶" || loaiCP === "Vﬂ¶°t T¶¶ KD") statement.vatTu += chiPhi;
+                else if (loaiCP === "Mua B+¶ng") statement.muaBong += chiPhi;
+                else if (loaiCP === "Vﬂ¶°n Chuyﬂ+‚n" || loaiCP === "Chi Ph+° Kh+Ìc") statement.vanHanh += chiPhi;
                 else if (chiPhi > 0) statement.vanHanh += chiPhi;
 
-                if (!isMonthlyRange && !isQuarterRange) {
+                if (!isMonthlyRange) {
                     yearlyMonthlyData[d.getMonth()].qty += q;
                     yearlyMonthlyData[d.getMonth()].revenue += rev;
                     yearlyMonthlyData[d.getMonth()].expense += exp;
-                } else if (isMonthlyRange) {
+                } else {
                     const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
                     if (dailyData.length === 0) {
                         for (let i = 0; i < daysInMonth; i++) dailyData.push({ qty: 0, revFarm: 0, revVua: 0, expense: 0 });
@@ -1834,8 +1365,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         dailyData[dayIdx].expense += exp;
                     }
                 }
-            } else if (isPrev) {
-                prevQty += q; prevRevenue += rev; prevExpense += exp;
+            } else if (isPrevYear) {
+                prevQty += q;
+                prevRevenue += rev;
+                prevExpense += exp;
             }
         });
 
@@ -1856,49 +1389,68 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
             const diffPct = ((curr - prev) / prev) * 100;
+            const diffVal = curr - prev;
             const isPositive = diffPct >= 0;
             const colorClass = inverse ? (isPositive ? 'negative' : 'positive') : (isPositive ? 'positive' : 'negative');
             const icon = isPositive ? 'fa-arrow-up' : 'fa-arrow-down';
 
-            // Format comparison value
-            let prevFormatted = '';
-            if (unit === '‚Ç´') {
-                const absPrev = Math.abs(prev);
-                if (absPrev >= 1000000) {
-                    prevFormatted = (prev / 1000000).toFixed(1) + 'tr';
-                } else if (absPrev >= 1000) {
-                    prevFormatted = (prev / 1000).toFixed(0) + 'k';
+            // Format absolute difference
+            let diffFormatted = '';
+            if (unit === 'GÈΩ') {
+                const absDiff = Math.abs(diffVal);
+                if (absDiff >= 1000000) {
+                    diffFormatted = (diffVal / 1000000).toFixed(1) + 'tr';
+                } else if (absDiff >= 1000) {
+                    diffFormatted = (diffVal / 1000).toFixed(0) + 'k';
                 } else {
-                    prevFormatted = prev.toString();
+                    diffFormatted = diffVal.toString();
                 }
+                if (diffVal > 0) diffFormatted = '+' + diffFormatted;
             } else {
-                prevFormatted = prev.toLocaleString('vi-VN');
+                diffFormatted = (diffVal > 0 ? '+' : '') + diffVal.toLocaleString('vi-VN');
             }
 
             el.className = `growth-badge ${colorClass}`;
-            el.innerHTML = `<i class="fa-solid ${icon}"></i> ${Math.abs(diffPct).toFixed(1)}% <span style="font-size: 0.85em; margin-left: 4px; opacity: 0.9;">(${prevFormatted} vs ${compTitle})</span>`;
+            el.innerHTML = `
+                <i class="fa-solid ${icon}"></i> 
+                ${Math.abs(diffPct).toFixed(1)}%
+                <span style="font-size: 0.85em; font-weight: 500; margin-left: 4px; opacity: 0.9;">
+                    (${diffFormatted} vs ${compYear})
+                </span>
+            `;
         }
 
-        const compTitle = isMonthlyRange ? `T${baselineMonth}/${baselineYear}` : (isQuarterRange ? `Qu√Ω ${(baselineQuarter || rangeVal).substring(1).toUpperCase()} ${baselineYear}` : `NƒÉm ${baselineYear}`);
-        updateGrowth('growth-qty', totalQty, prevQty, compTitle, '');
-        updateGrowth('growth-revenue', totalRevenue, prevRevenue, compTitle, '‚Ç´');
-        updateGrowth('growth-expense', totalExpense, prevExpense, compTitle, '‚Ç´', true);
-        updateGrowth('growth-profit', totalProfit, prevProfit, compTitle, '‚Ç´');
+        const compYear = selectedYear - 1;
+        updateGrowth('growth-qty', totalQty, prevQty, compYear, '');
+        updateGrowth('growth-revenue', totalRevenue, prevRevenue, compYear, 'GÈΩ');
+        updateGrowth('growth-expense', totalExpense, prevExpense, compYear, 'GÈΩ', true);
+        updateGrowth('growth-profit', totalProfit, prevProfit, compYear, 'GÈΩ');
 
+        // Render Detailed Statement (Update logic: only render here if we are technically in dashboard report mode, 
+        // but now we've moved it to its own tab, so we might want to consolidate or handle both).
         renderDetailedStatement(statement, totalRevenue, totalExpense, totalProfit);
 
-        if (!isMonthlyRange && !isQuarterRange) {
+        if (!isMonthlyRange) {
             const labels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
             renderYearlyCharts(labels, yearlyMonthlyData, selectedYear);
-        } else if (isMonthlyRange) {
+        } else {
+            // Filter out days with no data
             const filteredDays = [];
             dailyData.forEach((d, i) => {
                 if (d.qty > 0 || d.revFarm > 0 || d.revVua > 0 || d.expense > 0) {
-                    filteredDays.push({ label: `${i + 1}`, data: d });
+                    filteredDays.push({
+                        label: `${i + 1}`,
+                        data: d
+                    });
                 }
             });
-            renderMonthlyCombinedChart(filteredDays.map(fd => fd.label), filteredDays.map(fd => fd.data), selectedMonth, selectedYear);
+
+            const labels = filteredDays.map(fd => fd.label);
+            const filteredData = filteredDays.map(fd => fd.data);
+
+            renderMonthlyCombinedChart(labels, filteredData, selectedMonth, selectedYear);
         }
+        updateComparison();
     }
 
     // Cashflow Filter listeners
@@ -1919,13 +1471,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (cfComparisonPicker) {
                 cfComparisonPicker.style.display = e.target.checked ? 'block' : 'none';
                 if (e.target.checked) {
-                    // T·ª± ƒë·ªông ch·ªçn c√πng k·ª≥ nƒÉm tr∆∞·ªõc khi g·∫°t n√∫t so s√°nh
+                    // Tﬂ+¶ -Êﬂ+÷ng chﬂ+Ïn c+¶ng kﬂ+¶ n-‚m tr¶¶ﬂ+¢c khi gﬂ¶Ìt n+¶t so s+Ình
                     const currentYear = new Date().getFullYear();
                     const currentMonthNum = new Date().getMonth() + 1;
                     const prevYear = currentYear - 1;
 
                     if (cfYear2) {
-                        // Ki·ªÉm tra xem nƒÉm tr∆∞·ªõc c√≥ trong danh s√°ch ch·ªçn kh√¥ng
+                        // Kiﬂ+‚m tra xem n-‚m tr¶¶ﬂ+¢c c+¶ trong danh s+Ìch chﬂ+Ïn kh+¶ng
                         const hasPrevYear = Array.from(cfYear2.options).some(opt => opt.value == prevYear);
                         if (hasPrevYear) cfYear2.value = prevYear;
                     }
@@ -1946,7 +1498,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const selectedMonthStr = monthSelect.value;
 
             const statement = {
-                period: selectedMonthStr === "all" ? `NƒÉm ${selectedYear}` : `Th√°ng ${selectedMonthStr}/${selectedYear}`,
+                period: selectedMonthStr === "all" ? `N-‚m ${selectedYear}` : `Th+Ìng ${selectedMonthStr}/${selectedYear}`,
                 revFarm: 0, revCompany: 0, revVua: 0,
                 expensed: 0, phanBon: 0, thuoc: 0, luong: 0, lai: 0, vatTu: 0, muaBong: 0, vanHanh: 0,
                 totalRev: 0, totalExp: 0, netProfit: 0
@@ -1961,41 +1513,35 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (rowYear !== selectedYear) return;
                 if (selectedMonthStr !== "all" && rowMonth !== parseInt(selectedMonthStr)) return;
 
-                const typeDT = (row["Lo·∫°i DT"] || "").trim();
+                const typeDT = (row["Loﬂ¶Ìi DT"] || "").trim();
                 const isCompany = typeDT === "Company";
-                const isVua = typeDT.toLowerCase().includes("v·ª±a") || typeDT.toLowerCase().includes("vua");
+                const isVua = typeDT.toLowerCase().includes("vﬂ+¶a") || typeDT.toLowerCase().includes("vua");
                 const isFarm = typeDT === "Farm" || typeDT === "";
 
-                const loaiCP = (row["Lo·∫°i CP"] || "").trim().toLowerCase();
+                const loaiCP = (row["Loﬂ¶Ìi CP"] || "").trim().toLowerCase();
 
-                const dtBong = parseFloat(row["Doanh Thu B√¥ng"]) || 0;
-                const dtKhac = parseFloat(row["Doanh Thu Kh√°c"]) || 0;
-                const chiPhi = parseFloat(row["Chi Ph√≠"]) || 0;
+                const dtBong = parseFloat(row["Doanh Thu B+¶ng"]) || 0;
+                const dtKhac = parseFloat(row["Doanh Thu Kh+Ìc"]) || 0;
+                const chiPhi = parseFloat(row["Chi Ph+°"]) || 0;
 
                 const rowRevenue = (chiPhi > 0 && dtKhac === chiPhi) ? 0 : dtKhac;
 
-                // Doanh thu Farm chu·∫©n theo y√™u c·∫ßu: T·ªïng c·ªôt F (Doanh Thu B√¥ng)
-                statement.revFarm += dtBong;
-
-                if (isCompany) statement.revCompany += rowRevenue;
+                if (isFarm) statement.revFarm += (dtBong + rowRevenue);
+                else if (isCompany) statement.revCompany += rowRevenue;
                 else if (isVua) statement.revVua += rowRevenue;
-                else if (isFarm && rowRevenue > 0) {
-                    statement.revCompany += rowRevenue;
-                }
 
                 statement.totalRev += (dtBong + rowRevenue);
                 statement.totalExp += chiPhi;
 
                 if (loaiCP === "expensed") statement.expensed += chiPhi;
-                else if (loaiCP === "ph√¢n" || loaiCP === "phan") statement.phanBon += chiPhi;
-                else if (loaiCP === "thu·ªëc" || loaiCP === "thuoc") statement.thuoc += chiPhi;
-                else if (loaiCP === "c√¥ng" || loaiCP === "cong") statement.luong += chiPhi;
-                else if (loaiCP === "l√£i" || loaiCP === "lai") statement.lai += chiPhi;
-                else if (loaiCP === "v·∫≠t t∆∞" || loaiCP === "vat tu" || loaiCP === "v·∫≠t t∆∞ kd") statement.vatTu += chiPhi;
-                else if (loaiCP === "mua b√¥ng") statement.muaBong += chiPhi;
-                else {
-                    statement.vanHanh += chiPhi;
-                }
+                else if (loaiCP === "ph+Ûn" || loaiCP === "phan") statement.phanBon += chiPhi;
+                else if (loaiCP === "thuﬂ+Êc" || loaiCP === "thuoc") statement.thuoc += chiPhi;
+                else if (loaiCP === "c+¶ng" || loaiCP === "cong") statement.luong += chiPhi;
+                else if (loaiCP === "l+˙i" || loaiCP === "lai") statement.lai += chiPhi;
+                else if (loaiCP === "vﬂ¶°t t¶¶" || loaiCP === "vat tu" || loaiCP === "vﬂ¶°t t¶¶ kd") statement.vatTu += chiPhi;
+                else if (loaiCP === "mua b+¶ng") statement.muaBong += chiPhi;
+                else if (loaiCP === "vﬂ¶°n chuyﬂ+‚n" || loaiCP === "chi ph+° kh+Ìc" || loaiCP === "van chuyen" || loaiCP === "chi phi khac") statement.vanHanh += chiPhi;
+                else if (chiPhi > 0) statement.vanHanh += chiPhi;
             });
 
             statement.netProfit = statement.totalRev - statement.totalExp;
@@ -2024,14 +1570,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const pct = v2 !== 0 ? ((diff / Math.abs(v2)) * 100).toFixed(1) : (v1 !== 0 ? 100 : 0);
             const cls = diff > 0 ? 'diff-up' : (diff < 0 ? 'diff-down' : '');
             const sign = diff > 0 ? '+' : '';
-            return `<div class="comparison-col ${cls}"><span class="diff-tag">(${sign}${pct}%)</span></div>`;
+            return `<div class="comparison-col ${cls}"><span class="diff-tag">${sign}${formatCurrency(diff)} (${sign}${pct}%)</span></div>`;
         }
 
         function renderRow(label, v1, v2, type = "normal") {
             let rowClass = "statement-row";
             if (type === "title") rowClass += " main-title";
             if (type === "indented") rowClass += " indented";
-            if (type === "sub-indented") rowClass += " sub-indented";
             if (type === "total") rowClass += " total-line";
             if (type === "net") rowClass += " net-profit";
 
@@ -2039,52 +1584,44 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="${rowClass}">
                     <span class="statement-label">${label}</span>
                     <div class="comparison-col statement-value">${formatVal(v1)}</div>
-                    ${isCmp ? `<div class="comparison-col statement-value" style="color: var(--text-light); text-transform:none;">${formatVal(v2)}</div>` : ''}
+                    ${isCmp ? `<div class="comparison-col statement-value" style="color: var(--text-light);">${formatVal(v2)}</div>` : ''}
                     ${getDiffHtml(v1, v2)}
                 </div>
             `;
         }
 
-        let html = `
-            <div class="statement-title-main">B√°o C√°o D√≤ng Ti·ªÅn Chi Ti·∫øt</div>
-            <div class="statement-header-row">
-                <span class="statement-label">Di·ªÖn gi·∫£i h·∫°ng m·ª•c</span>
-                <div class="comparison-col" style="text-align: right;">${s1.period}</div>
-                ${isCmp ? `<div class="comparison-col" style="text-align: right; color: var(--text-light); text-transform:none;">${s2.period}</div>` : ''}
-                ${isCmp ? `<div class="comparison-col" style="text-align: right;">% +/-</div>` : ''}
-            </div>
-        `;
+        let html = '';
+
+        if (isCmp) {
+            html += `
+                <div class="statement-row comparison-header">
+                    <span class="statement-label">Hﬂ¶Ìng mﬂ+—c</span>
+                    <div class="comparison-col">${s1.period}</div>
+                    <div class="comparison-col">${s2.period}</div>
+                    <div class="comparison-col">T-‚ng/Giﬂ¶˙m</div>
+                </div>
+            `;
+        }
 
         html += renderRow("Doanh thu Farm", s1.revFarm, isCmp ? s2.revFarm : 0, "title");
-        html += renderRow("Doanh thu kh√°c", s1.revCompany + s1.revVua, isCmp ? (s2.revCompany + s2.revVua) : 0, "title");
+        html += renderRow("Doanh thu kh+Ìc", s1.revCompany + s1.revVua, isCmp ? (s2.revCompany + s2.revVua) : 0, "title");
         html += renderRow("Company", s1.revCompany, isCmp ? s2.revCompany : 0, "indented");
-        html += renderRow("V·ª±a", s1.revVua, isCmp ? s2.revVua : 0, "indented");
+        html += renderRow("Vﬂ+¶a", s1.revVua, isCmp ? s2.revVua : 0, "indented");
 
-        html += renderRow("T·ªïng Doanh Thu", s1.totalRev, isCmp ? s2.totalRev : 0, "total");
+        html += renderRow("Tﬂ+Úng Doanh Thu", s1.totalRev, isCmp ? s2.totalRev : 0, "total");
 
-        html += renderRow("Kh·∫•u tr·ª´:", 0, 0, "title");
+        html += renderRow("Khﬂ¶—u trﬂ+Ω:", 0, 0, "title");
         html += renderRow("Expensed", s1.expensed, isCmp ? s2.expensed : 0, "indented");
+        html += renderRow("Ph+Ûn b+¶n", s1.phanBon, isCmp ? s2.phanBon : 0, "indented");
+        html += renderRow("Thuﬂ+Êc", s1.thuoc, isCmp ? s2.thuoc : 0, "indented");
+        html += renderRow("L¶¶¶Ìng", s1.luong, isCmp ? s2.luong : 0, "indented");
+        html += renderRow("L+˙i", s1.lai, isCmp ? s2.lai : 0, "indented");
+        html += renderRow("Vﬂ¶°t T¶¶", s1.vatTu, isCmp ? s2.vatTu : 0, "indented");
+        html += renderRow("Mua B+¶ng", s1.muaBong, isCmp ? s2.muaBong : 0, "indented");
+        html += renderRow("Chi Ph+° Vﬂ¶°n H+·nh", s1.vanHanh, isCmp ? s2.vanHanh : 0, "indented");
 
-        // Group 1: Chi Ph√≠ V·ª±a
-        const totalVua1 = s1.vatTu + s1.muaBong;
-        const totalVua2 = isCmp ? (s2.vatTu + s2.muaBong) : 0;
-        html += renderRow("Chi Ph√≠ V·ª±a", totalVua1, totalVua2, "indented");
-        html += renderRow("V·∫≠t T∆∞", s1.vatTu, isCmp ? s2.vatTu : 0, "sub-indented");
-        html += renderRow("Mua B√¥ng", s1.muaBong, isCmp ? s2.muaBong : 0, "sub-indented");
-
-        // Group 2: Chi Ph√≠ V·∫≠n H√†nh
-        const totalOps1 = s1.vanHanh + s1.phanBon + s1.thuoc + s1.luong + s1.lai;
-        const totalOps2 = isCmp ? (s2.vanHanh + s2.phanBon + s2.thuoc + s2.luong + s2.lai) : 0;
-
-        html += renderRow("Chi Ph√≠ V·∫≠n H√†nh", totalOps1, totalOps2, "indented");
-        html += renderRow("Ph√¢n b√≥n", s1.phanBon, isCmp ? s2.phanBon : 0, "sub-indented");
-        html += renderRow("Thu·ªëc", s1.thuoc, isCmp ? s2.thuoc : 0, "sub-indented");
-        html += renderRow("L∆∞∆°ng", s1.luong, isCmp ? s2.luong : 0, "sub-indented");
-        html += renderRow("L√£i", s1.lai, isCmp ? s2.lai : 0, "sub-indented");
-        html += renderRow("Chi ph√≠ kh√°c", s1.vanHanh, isCmp ? s2.vanHanh : 0, "sub-indented");
-
-        html += renderRow("T·ªïng Chi Ph√≠", s1.totalExp, isCmp ? s2.totalExp : 0, "total");
-        html += renderRow("L·ª£i nhu·∫≠n r√≤ng", s1.netProfit, isCmp ? s2.netProfit : 0, "net");
+        html += renderRow("Tﬂ+Úng Chi Ph+°", s1.totalExp, isCmp ? s2.totalExp : 0, "total");
+        html += renderRow("Lﬂ+˙i nhuﬂ¶°n r+¶ng", s1.netProfit, isCmp ? s2.netProfit : 0, "net");
 
         container.innerHTML = isCmp ? `<div class="comparison-table-wrapper">${html}</div>` : html;
     }
@@ -2101,7 +1638,7 @@ document.addEventListener("DOMContentLoaded", () => {
             type: 'bar',
             data: {
                 labels: labels,
-                datasets: [{ label: `S·∫£n L∆∞·ª£ng (${year})`, data: qtyData, backgroundColor: 'rgba(245, 158, 11, 0.7)', borderRadius: 4 }]
+                datasets: [{ label: `Sﬂ¶˙n L¶¶ﬂ+˙ng (${year})`, data: qtyData, backgroundColor: 'rgba(245, 158, 11, 0.7)', borderRadius: 4 }]
             },
             options: getChartOptions(),
             plugins: [ChartDataLabels]
@@ -2115,7 +1652,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 labels: labels,
                 datasets: [
                     { label: 'Doanh Thu', data: revData, backgroundColor: 'rgba(14, 165, 233, 0.7)', borderRadius: 4 },
-                    { label: 'L·ª£i Nhu·∫≠n', data: profitData, backgroundColor: 'rgba(16, 185, 129, 0.7)', borderRadius: 4 }
+                    { label: 'Lﬂ+˙i Nhuﬂ¶°n', data: profitData, backgroundColor: 'rgba(16, 185, 129, 0.7)', borderRadius: 4 }
                 ]
             },
             options: getChartOptions(),
@@ -2128,7 +1665,7 @@ document.addEventListener("DOMContentLoaded", () => {
             type: 'bar',
             data: {
                 labels: labels,
-                datasets: [{ label: `Chi Ph√≠ (${year})`, data: expData, backgroundColor: 'rgba(239, 68, 68, 0.7)', borderRadius: 4 }]
+                datasets: [{ label: `Chi Ph+° (${year})`, data: expData, backgroundColor: 'rgba(239, 68, 68, 0.7)', borderRadius: 4 }]
             },
             options: getChartOptions(),
             plugins: [ChartDataLabels]
@@ -2155,17 +1692,17 @@ document.addEventListener("DOMContentLoaded", () => {
                         stack: 'revenue'
                     },
                     {
-                        type: 'bar', label: 'Doanh Thu V·ª±a', data: revVuaData,
+                        type: 'bar', label: 'Doanh Thu Vﬂ+¶a', data: revVuaData,
                         backgroundColor: 'rgba(59, 130, 246, 0.85)', yAxisID: 'y',
                         stack: 'revenue'
                     },
                     {
-                        type: 'bar', label: 'Chi Ph√≠', data: expData,
+                        type: 'bar', label: 'Chi Ph+°', data: expData,
                         backgroundColor: 'rgba(239, 68, 68, 0.8)', yAxisID: 'y',
                         stack: 'expense'
                     },
                     {
-                        type: 'line', label: 'S·∫£n L∆∞·ª£ng (B√¥ng)', data: qtyData,
+                        type: 'line', label: 'Sﬂ¶˙n L¶¶ﬂ+˙ng (B+¶ng)', data: qtyData,
                         borderColor: 'rgb(249, 115, 22)', backgroundColor: 'rgba(249, 115, 22, 0.1)',
                         borderWidth: 4, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
                         pointBorderColor: 'rgb(249, 115, 22)', yAxisID: 'y1'
@@ -2182,12 +1719,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     y: {
                         type: 'linear', display: true, position: 'left',
                         stacked: true,
-                        title: { display: true, text: 'Doanh Thu (VNƒê)', font: { weight: 'bold' } },
+                        title: { display: true, text: 'Doanh Thu (VN-…)', font: { weight: 'bold' } },
                         grid: { color: 'rgba(0,0,0,0.05)' }
                     },
                     y1: {
                         type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false },
-                        title: { display: true, text: 'S·∫£n l∆∞·ª£ng B√¥ng', font: { weight: 'bold' } }
+                        title: { display: true, text: 'Sﬂ¶˙n l¶¶ﬂ+˙ng B+¶ng', font: { weight: 'bold' } }
                     }
                 },
                 plugins: {
@@ -2211,12 +1748,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                     },
                     legend: { position: 'top', labels: { usePointStyle: true, font: { weight: 'bold' } } },
-                    title: { display: true, text: `BI·ªÇU ƒê·ªí DOANH THU & S·∫¢N L∆Ø·ª¢NG - TH√ÅNG ${month}/${year}`, font: { size: 16, weight: 'bold' }, padding: 20 },
+                    title: { display: true, text: `BIﬂ+ÈU -…ﬂ+∆ DOANH THU & Sﬂ¶ÛN L¶ªﬂ+ÛNG - TH+¸NG ${month}/${year}`, font: { size: 16, weight: 'bold' }, padding: 20 },
                     datalabels: {
-                        display: (context) => (window.innerWidth > 400 && context.dataset.data[context.dataIndex] > 0),
+                        display: (context) => context.dataset.data[context.dataIndex] > 0,
                         formatter: (val, context) => {
                             if (context.dataset.type === 'line') return val.toLocaleString('vi-VN');
-                            return val.toLocaleString('vi-VN') + ' ‚Ç´';
+                            return val.toLocaleString('vi-VN') + ' GÈΩ';
                         },
                         font: { size: 10, weight: 'bold' },
                         color: '#000',
@@ -2239,13 +1776,13 @@ document.addEventListener("DOMContentLoaded", () => {
     function getRichTooltipData(label, tooltipItems = []) {
         const year = document.getElementById('report-year').value;
         const reportMonth = document.getElementById('report-month').value;
-        const range = document.getElementById('report-range').value;
+        const range = document.getElementById('report-range').value; 
         const filter = document.getElementById('report-filter').value;
-
+        
         let filtered = [];
 
         if (range === 'year' || label.startsWith('T')) {
-            const mStr = label.replace('T', '').replace('Th√°ng ', '');
+            const mStr = label.replace('T', '').replace('Th+Ìng ', '');
             const m = parseInt(mStr);
             if (!isNaN(m)) {
                 filtered = farmData.filter(d => d.parsedDate.getMonth() + 1 === m && d.parsedDate.getFullYear() == year);
@@ -2254,9 +1791,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const day = parseInt(label);
             if (!isNaN(day)) {
                 const month = parseInt(reportMonth);
-                filtered = farmData.filter(dObj =>
-                    dObj.parsedDate.getDate() === day &&
-                    dObj.parsedDate.getMonth() + 1 === month &&
+                filtered = farmData.filter(dObj => 
+                    dObj.parsedDate.getDate() === day && 
+                    dObj.parsedDate.getMonth() + 1 === month && 
                     dObj.parsedDate.getFullYear() == year
                 );
             }
@@ -2264,10 +1801,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (filter !== "Chung" && filtered.length > 0) {
             filtered = filtered.filter(item => {
-                const type = (item["Lo·∫°i DT"] || "").trim().toLowerCase();
+                const type = (item["Loﬂ¶Ìi DT"] || "").trim().toLowerCase();
                 if (filter === "Farm") return type === "farm" || type === "";
-                if (filter === "V·ª±a") return type === "v·ª±a" || type === "vua";
-                if (filter === "Company") return type === "company" || type === "hƒëkd";
+                if (filter === "Vﬂ+¶a") return type === "vﬂ+¶a" || type === "vua";
+                if (filter === "Company") return type === "company" || type === "h-Êkd";
                 return true;
             });
         }
@@ -2277,16 +1814,16 @@ document.addEventListener("DOMContentLoaded", () => {
         // Check which dataset is being hovered to show specific details
         // In 'nearest' mode with intersect: true, tooltipItems should typically contain the one specific item.
         const hoveredLabels = tooltipItems.map(ti => ti.dataset.label);
-
+        
         // 1. If hovering over Expenses, show breakdown
-        if (hoveredLabels.some(l => l && l.includes("Chi Ph√≠"))) {
-            const expenseDetails = filtered.filter(r => (r["Chi Ph√≠"] || 0) > 0);
+        if (hoveredLabels.some(l => l && l.includes("Chi Ph+°"))) {
+            const expenseDetails = filtered.filter(r => (r["Chi Ph+°"] || 0) > 0);
             if (expenseDetails.length > 0) {
-                let lines = [" [CHI PH√ç CHI TI·∫æT]"];
+                let lines = [" [CHI PH+Ï CHI TIﬂ¶+T]"];
                 expenseDetails.forEach(r => {
-                    const cat = (r["Lo·∫°i CP"] || "Kh√°c").trim();
-                    const note = (r["Ghi ch√∫"] || "").trim();
-                    lines.push(`‚Ä¢ ${cat}: ${formatCurrency(r["Chi Ph√≠"]).replace('‚Ç´', '').trim()} ${note ? '- ' + note : ''}`);
+                    const cat = (r["Loﬂ¶Ìi CP"] || "Kh+Ìc").trim();
+                    const note = (r["Ghi ch+¶"] || "").trim();
+                    lines.push(`G«Û ${cat}: ${formatCurrency(r["Chi Ph+°"]).replace('GÈΩ', '').trim()} ${note ? '- ' + note : ''}`);
                 });
                 if (lines.length > 1) return lines;
             }
@@ -2295,57 +1832,57 @@ document.addEventListener("DOMContentLoaded", () => {
         // 2. If hovering over Doanh Thu Farm, show Buyers/Production details
         if (hoveredLabels.some(l => l && l.includes("Farm"))) {
             const revItems = filtered.filter(r => {
-                const type = (r["Lo·∫°i DT"] || "").trim().toLowerCase();
-                const isFarm = type === "farm" || type === "" || (r["Doanh Thu B√¥ng"] || 0) > 0;
-                return isFarm && ((r["Doanh Thu B√¥ng"] || 0) > 0 || (r["Doanh Thu Kh√°c"] || 0) > 0);
+                const type = (r["Loﬂ¶Ìi DT"] || "").trim().toLowerCase();
+                const isFarm = type === "farm" || type === "" || (r["Doanh Thu B+¶ng"] || 0) > 0;
+                return isFarm && ((r["Doanh Thu B+¶ng"] || 0) > 0 || (r["Doanh Thu Kh+Ìc"] || 0) > 0);
             });
             if (revItems.length > 0) {
-                let lines = [" [CHI TI·∫æT FARM]"];
+                let lines = [" [CHI TIﬂ¶+T FARM]"];
                 revItems.forEach(r => {
-                    const buyer = (r["Ng∆∞·ªùi Mua"] || "").trim();
-                    const amount = (r["Doanh Thu B√¥ng"] || 0) + (r["Doanh Thu Kh√°c"] || 0);
-                    const note = (r["Ghi ch√∫"] || "").trim();
-                    lines.push(`‚Ä¢ ${buyer || 'Kh√°ch l·∫ª'}: ${formatCurrency(amount).replace('‚Ç´', '').trim()} ${note ? '- ' + note : ''}`);
+                    const buyer = (r["Ng¶¶ﬂ+•i Mua"] || "").trim();
+                    const amount = (r["Doanh Thu B+¶ng"] || 0) + (r["Doanh Thu Kh+Ìc"] || 0);
+                    const note = (r["Ghi ch+¶"] || "").trim();
+                    lines.push(`G«Û ${buyer || 'Kh+Ìch lﬂ¶+'}: ${formatCurrency(amount).replace('GÈΩ', '').trim()} ${note ? '- ' + note : ''}`);
                 });
                 return lines;
             }
         }
 
-        // 3. If hovering over Doanh Thu V·ª±a, show V·ª±a details
-        if (hoveredLabels.some(l => l && l.includes("V·ª±a"))) {
+        // 3. If hovering over Doanh Thu Vﬂ+¶a, show Vﬂ+¶a details
+        if (hoveredLabels.some(l => l && l.includes("Vﬂ+¶a"))) {
             const revItems = filtered.filter(r => {
-                const type = (r["Lo·∫°i DT"] || "").trim().toLowerCase();
-                return (type === "v·ª±a" || type === "vua") && (r["Doanh Thu Kh√°c"] || 0) > 0;
+                const type = (r["Loﬂ¶Ìi DT"] || "").trim().toLowerCase();
+                return (type === "vﬂ+¶a" || type === "vua") && (r["Doanh Thu Kh+Ìc"] || 0) > 0;
             });
             if (revItems.length > 0) {
-                let lines = [" [CHI TI·∫æT V·ª∞A]"];
+                let lines = [" [CHI TIﬂ¶+T Vﬂ+¶A]"];
                 revItems.forEach(r => {
-                    const buyer = (r["Ng∆∞·ªùi Mua"] || "").trim();
-                    const amount = r["Doanh Thu Kh√°c"] || 0;
-                    const note = (r["Ghi ch√∫"] || "").trim();
-                    lines.push(`‚Ä¢ ${buyer || 'Kh√°ch l·∫ª'}: ${formatCurrency(amount).replace('‚Ç´', '').trim()} ${note ? '- ' + note : ''}`);
+                    const buyer = (r["Ng¶¶ﬂ+•i Mua"] || "").trim();
+                    const amount = r["Doanh Thu Kh+Ìc"] || 0;
+                    const note = (r["Ghi ch+¶"] || "").trim();
+                    lines.push(`G«Û ${buyer || 'Kh+Ìch lﬂ¶+'}: ${formatCurrency(amount).replace('GÈΩ', '').trim()} ${note ? '- ' + note : ''}`);
                 });
                 return lines;
             }
         }
 
         // 4. Default: General Summary (for total or point)
-        const farmRev = filtered.filter(r => (r["Lo·∫°i DT"] || "").trim() === "" || (r["Lo·∫°i DT"] || "").toLowerCase() === "farm")
-            .reduce((sum, r) => sum + (r["Doanh Thu B√¥ng"] || 0), 0);
-        const vuaRev = filtered.filter(r => (r["Lo·∫°i DT"] || "").toLowerCase().trim() === "v·ª±a" || (r["Lo·∫°i DT"] || "").toLowerCase().trim() === "vua")
-            .reduce((sum, r) => sum + (r["Doanh Thu Kh√°c"] || 0), 0);
-        const expTotal = filtered.reduce((sum, r) => sum + (r["Chi Ph√≠"] || 0), 0);
+        const farmRev = filtered.filter(r => (r["Loﬂ¶Ìi DT"] || "").trim() === "" || (r["Loﬂ¶Ìi DT"] || "").toLowerCase() === "farm")
+                               .reduce((sum, r) => sum + (r["Doanh Thu B+¶ng"] || 0), 0);
+        const vuaRev = filtered.filter(r => (r["Loﬂ¶Ìi DT"] || "").toLowerCase().trim() === "vﬂ+¶a" || (r["Loﬂ¶Ìi DT"] || "").toLowerCase().trim() === "vua")
+                              .reduce((sum, r) => sum + (r["Doanh Thu Kh+Ìc"] || 0), 0);
+        const expTotal = filtered.reduce((sum, r) => sum + (r["Chi Ph+°"] || 0), 0);
 
         let sumLines = [];
-        if (farmRev > 0) sumLines.push(`üöú Farm: ${formatCurrency(farmRev).replace('‚Ç´', '').trim()}`);
-        if (vuaRev > 0) sumLines.push(`üèòÔ∏è V·ª±a: ${formatCurrency(vuaRev).replace('‚Ç´', '').trim()}`);
-        if (expTotal > 0) sumLines.push(`üí∏ Chi ph√≠: ${formatCurrency(expTotal).replace('‚Ç´', '').trim()}`);
+        if (farmRev > 0) sumLines.push(`=É‹£ Farm: ${formatCurrency(farmRev).replace('GÈΩ', '').trim()}`);
+        if (vuaRev > 0) sumLines.push(`=É≈ˇn+≈ Vﬂ+¶a: ${formatCurrency(vuaRev).replace('GÈΩ', '').trim()}`);
+        if (expTotal > 0) sumLines.push(`=É∆+ Chi ph+°: ${formatCurrency(expTotal).replace('GÈΩ', '').trim()}`);
 
-        const buyers = [...new Set(filtered.map(r => r["Ng∆∞·ªùi Mua"]).filter(b => b))];
+        const buyers = [...new Set(filtered.map(r => r["Ng¶¶ﬂ+•i Mua"]).filter(b => b))];
         if (buyers.length > 0) {
-            sumLines.push(`üë§ Kh√°ch: ${buyers.slice(0, 3).join(', ')}${buyers.length > 3 ? '...' : ''}`);
+            sumLines.push(`=ÉÊÒ Kh+Ìch: ${buyers.slice(0, 3).join(', ')}${buyers.length > 3 ? '...' : ''}`);
         }
-
+        
         return sumLines;
     }
 
@@ -2384,7 +1921,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 },
                 datalabels: {
-                    display: () => window.innerWidth > 400,
                     anchor: 'end', align: 'top',
                     formatter: val => (val === 0 ? '' : new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(val)),
                     font: { size: 9, weight: 'bold' }
@@ -2444,29 +1980,29 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!isP1 && !isP2) return;
 
             // Reuse existing report-specific logic
-            const typeDT = (row["Lo·∫°i DT"] || "").trim();
+            const typeDT = (row["Loﬂ¶Ìi DT"] || "").trim();
             const isCompany = typeDT === "Company";
-            const isVua = typeDT === "V·ª±a" || typeDT === "v·ª±a";
+            const isVua = typeDT === "Vﬂ+¶a" || typeDT === "vﬂ+¶a";
             const isFarm = typeDT === "Farm" || typeDT === "";
 
-            const loaiCP = (row["Lo·∫°i CP"] || "").trim();
+            const loaiCP = (row["Loﬂ¶Ìi CP"] || "").trim();
 
-            const rawQty = parseFloat(row["S·ªë l∆∞·ª£ng"]) || 0;
-            const dtBong = parseFloat(row["Doanh Thu B√¥ng"]) || 0;
-            const dtKhac = parseFloat(row["Doanh Thu Kh√°c"]) || 0;
-            const chiPhi = parseFloat(row["Chi Ph√≠"]) || 0;
+            const rawQty = parseFloat(row["Sﬂ+Ê l¶¶ﬂ+˙ng"]) || 0;
+            const dtBong = parseFloat(row["Doanh Thu B+¶ng"]) || 0;
+            const dtKhac = parseFloat(row["Doanh Thu Kh+Ìc"]) || 0;
+            const chiPhi = parseFloat(row["Chi Ph+°"]) || 0;
 
             let rev = 0, exp = 0, q = 0;
 
             const isExpenseCompany = (loaiCP === "Expensed");
-            const isExpenseVua = (loaiCP === "V·∫≠t T∆∞ KD" || loaiCP === "V·∫≠n Chuy·ªÉn" || loaiCP === "Mua B√¥ng");
+            const isExpenseVua = (loaiCP === "Vﬂ¶°t T¶¶ KD" || loaiCP === "Vﬂ¶°n Chuyﬂ+‚n" || loaiCP === "Mua B+¶ng");
             const isExpenseFarm = (!isExpenseCompany && !isExpenseVua);
 
             if (reportFilter === "Company") {
                 rev = dtBong + (isCompany ? dtKhac : 0);
                 q = rawQty;
                 if (isExpenseCompany) exp = chiPhi;
-            } else if (reportFilter === "V·ª±a") {
+            } else if (reportFilter === "Vﬂ+¶a") {
                 if (isVua) rev = dtKhac;
                 if (isExpenseVua) exp = chiPhi;
             } else if (reportFilter === "Farm") {
@@ -2489,12 +2025,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.getElementById('cmp-qty-y1').innerText = dataY1.qty.toLocaleString('vi-VN');
         document.getElementById('cmp-qty-y2').innerText = dataY2.qty.toLocaleString('vi-VN');
-        document.getElementById('cmp-rev-y1').innerText = formatCompactStr(dataY1.rev) + ' ‚Ç´';
-        document.getElementById('cmp-rev-y2').innerText = formatCompactStr(dataY2.rev) + ' ‚Ç´';
-        document.getElementById('cmp-exp-y1').innerText = formatCompactStr(dataY1.exp) + ' ‚Ç´';
-        document.getElementById('cmp-exp-y2').innerText = formatCompactStr(dataY2.exp) + ' ‚Ç´';
-        document.getElementById('cmp-profit-y1').innerText = formatCompactStr(dataY1.profit) + ' ‚Ç´';
-        document.getElementById('cmp-profit-y2').innerText = formatCompactStr(dataY2.profit) + ' ‚Ç´';
+        document.getElementById('cmp-rev-y1').innerText = formatCompactStr(dataY1.rev) + ' GÈΩ';
+        document.getElementById('cmp-rev-y2').innerText = formatCompactStr(dataY2.rev) + ' GÈΩ';
+        document.getElementById('cmp-exp-y1').innerText = formatCompactStr(dataY1.exp) + ' GÈΩ';
+        document.getElementById('cmp-exp-y2').innerText = formatCompactStr(dataY2.exp) + ' GÈΩ';
+        document.getElementById('cmp-profit-y1').innerText = formatCompactStr(dataY1.profit) + ' GÈΩ';
+        document.getElementById('cmp-profit-y2').innerText = formatCompactStr(dataY2.profit) + ' GÈΩ';
 
         const renderPct = (id, v1, v2, inverse = false) => {
             const el = document.getElementById(id);
@@ -2528,20 +2064,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById('report-filter')) {
         document.getElementById('report-filter').addEventListener('change', updateDashboard);
     }
-    if (document.getElementById('report-month')) {
-        document.getElementById('report-month').addEventListener('change', updateDashboard);
-    }
-    if (document.getElementById('report-range')) {
-        document.getElementById('report-range').addEventListener('change', () => {
-            const range = document.getElementById('report-range').value;
-            const cmpMonth = document.getElementById('report-month-prev');
-            const cmpQuarter = document.getElementById('report-quarter-prev');
-
-            if (cmpMonth) cmpMonth.style.display = (range === 'month') ? 'inline-block' : 'none';
-            if (cmpQuarter) cmpQuarter.style.display = (range.startsWith('q')) ? 'inline-block' : 'none';
-            updateDashboard();
-        });
-    }
     if (document.getElementById('cmp-period')) {
         document.getElementById('cmp-period').addEventListener('change', updateComparison);
         document.getElementById('cmp-year1').addEventListener('change', updateComparison);
@@ -2556,29 +2078,25 @@ document.addEventListener("DOMContentLoaded", () => {
     function applyFiltersAndRender() {
         let filtered = [...farmData];
 
-        // Lu√¥n s·∫Øp x·∫øp theo Ng√†y gi·∫£m d·∫ßn, c√πng ng√†y th√¨ ƒë∆°n m·ªõi nh·∫•t (s·ªë d√≤ng l·ªõn h∆°n) l√™n ƒë·∫ßu
-        filtered.sort((a, b) => {
-            const dateDiff = (b.parsedDate?.getTime() || 0) - (a.parsedDate?.getTime() || 0);
-            if (dateDiff !== 0) return dateDiff;
-            return (b._sheetRowNumber || 0) - (a._sheetRowNumber || 0); // tie-breaker: ƒë∆°n m·ªõi nh·∫•t tr√™n c√πng
-        });
+        // Lu+¶n sﬂ¶ªp xﬂ¶+p theo Ng+·y giﬂ¶˙m dﬂ¶∫n (-Ê¶Ìn mﬂ+¢i nhﬂ¶—t l+¨n -Êﬂ¶∫u) l+·m mﬂ¶+c -Êﬂ+Ônh
+        filtered.sort((a, b) => (b.parsedDate?.getTime() || 0) - (a.parsedDate?.getTime() || 0));
 
         // Tab Filter
-        let sliceLimit = 20; // Gi·ªõi h·∫°n 20 h√†ng g·∫ßn nh·∫•t cho tab "T·∫•t C·∫£" theo y√™u c·∫ßu
+        let sliceLimit = 20; // Giﬂ+¢i hﬂ¶Ìn 20 h+·ng gﬂ¶∫n nhﬂ¶—t cho tab "Tﬂ¶—t Cﬂ¶˙" theo y+¨u cﬂ¶∫u
         if (currentTableTab === 'farm') {
             filtered = filtered.filter(item => {
-                const type = (item["Lo·∫°i DT"] || "").trim().toLowerCase();
-                const isVua = type.includes("v·ª±a") || type.includes("vua");
-                const isCmp = type.includes("company") || type.includes("hƒëkd");
+                const type = (item["Loﬂ¶Ìi DT"] || "").trim().toLowerCase();
+                const isVua = type.includes("vﬂ+¶a") || type.includes("vua");
+                const isCmp = type.includes("company") || type.includes("h-Êkd");
 
-                // N·∫øu l√† V·ª±a ho·∫∑c Company th√¨ ·∫©n kh·ªèi tab Farm
+                // Nﬂ¶+u l+· Vﬂ+¶a hoﬂ¶+c Company th+º ﬂ¶¨n khﬂ+≈i tab Farm
                 if (isVua || isCmp) return false;
 
-                // N·∫øu r√≤ng chi ph√≠ (kh√¥ng c√≥ doanh thu b√¥ng v√† kh√¥ng c√≥ ng∆∞·ªùi mua) th√¨ ·∫©n
-                const dtBong = parseFloat(String(item["Doanh Thu B√¥ng"] || "0").replace(/[^\d]/g, '')) || 0;
-                const note = (item["Ghi Ch√∫ Chi Ph√≠"] || item["Ghi Ch√∫"] || "").toLowerCase();
-                if (dtBong === 0 && (note.includes("chi ph√≠") || note.includes("ti·ªÅn l√£i"))) {
-                    // C√≥ th·ªÉ l√† chi ph√≠ r√≤ng
+                // Nﬂ¶+u r+¶ng chi ph+° (kh+¶ng c+¶ doanh thu b+¶ng v+· kh+¶ng c+¶ ng¶¶ﬂ+•i mua) th+º ﬂ¶¨n
+                const dtBong = parseFloat(String(item["Doanh Thu B+¶ng"] || "0").replace(/[^\d]/g, '')) || 0;
+                const note = (item["Ghi Ch+¶ Chi Ph+°"] || item["Ghi Ch+¶"] || "").toLowerCase();
+                if (dtBong === 0 && (note.includes("chi ph+°") || note.includes("tiﬂ+¸n l+˙i"))) {
+                    // C+¶ thﬂ+‚ l+· chi ph+° r+¶ng
                 }
 
                 return true;
@@ -2586,14 +2104,14 @@ document.addEventListener("DOMContentLoaded", () => {
             sliceLimit = 15;
         } else if (currentTableTab === 'vua') {
             filtered = filtered.filter(item => {
-                const type = (item["Lo·∫°i DT"] || "").trim().toLowerCase();
-                return type === "v·ª±a" || type === "vua";
+                const type = (item["Loﬂ¶Ìi DT"] || "").trim().toLowerCase();
+                return type === "vﬂ+¶a" || type === "vua";
             });
             sliceLimit = 15;
         } else if (currentTableTab === 'expense') {
             filtered = filtered.filter(item => {
-                const cpVal = parseFloat(String(item["Chi Ph√≠"] || "0").replace(/[^\d]/g, '')) || 0;
-                return cpVal > 0 || (item["Lo·∫°i CP"] && item["Lo·∫°i CP"].trim() !== "");
+                const cpVal = parseFloat(String(item["Chi Ph+°"] || "0").replace(/[^\d]/g, '')) || 0;
+                return cpVal > 0 || (item["Loﬂ¶Ìi CP"] && item["Loﬂ¶Ìi CP"].trim() !== "");
             });
             sliceLimit = 15;
         }
@@ -2602,10 +2120,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const searchTerm = searchBuyerInput.value.toLowerCase().trim();
         if (searchTerm) {
             filtered = filtered.filter(item =>
-                (item["Ng∆∞·ªùi Mua"] || "").toLowerCase().includes(searchTerm) ||
-                (item["Ghi Ch√∫"] || "").toLowerCase().includes(searchTerm) ||
-                (item["Lo·∫°i CP"] || "").toLowerCase().includes(searchTerm) ||
-                (item["Ng√†y"] || "").toLowerCase().includes(searchTerm)
+                (item["Ng¶¶ﬂ+•i Mua"] || "").toLowerCase().includes(searchTerm) ||
+                (item["Ghi Ch+¶"] || "").toLowerCase().includes(searchTerm) ||
+                (item["Loﬂ¶Ìi CP"] || "").toLowerCase().includes(searchTerm) ||
+                (item["Ng+·y"] || "").toLowerCase().includes(searchTerm)
             );
         }
         // Status Filter
@@ -2618,54 +2136,18 @@ document.addEventListener("DOMContentLoaded", () => {
             filtered.sort((a, b) => {
                 let valA = a[sortState.column];
                 let valB = b[sortState.column];
-                if (sortState.column === 'Ng√†y') {
-                    valA = a.parsedDate?.getTime() || 0;
-                    valB = b.parsedDate?.getTime() || 0;
+                if (sortState.column === 'Ng+·y') {
+                    valA = a.parsedDate.getTime();
+                    valB = b.parsedDate.getTime();
                 }
                 if (valA < valB) return sortState.direction === 'asc' ? -1 : 1;
                 if (valA > valB) return sortState.direction === 'asc' ? 1 : -1;
-                // Tie-breaker: c√πng gi√° tr·ªã th√¨ ƒë∆°n m·ªõi nh·∫•t (s·ªë d√≤ng l·ªõn h∆°n) l√™n tr√™n
-                return (b._sheetRowNumber || 0) - (a._sheetRowNumber || 0);
+                return 0;
             });
         }
 
-        const baseLimits = { all: 20, farm: 15, vua: 15, expense: 15 };
-        const baseLimit = baseLimits[currentTableTab] || 20;
-        const limit = Math.max(currentLimit, baseLimit);
-
-        // Update filter count badges
-        const countRow = document.getElementById('filter-count-row');
-        if (countRow) {
-            const total = filtered.length;
-            const done = filtered.filter(r => r["Status"] === "Xong").length;
-            const pending = total - done;
-            const currentStatus = document.getElementById('filter-status')?.value ?? 'all';
-            countRow.innerHTML = [
-                { label: `T·∫•t c·∫£ (${total})`, val: 'all', cls: '' },
-                { label: `‚úÖ Xong (${done})`, val: 'Xong', cls: 'badge-done' },
-                { label: `‚è≥ Ch∆∞a thu (${pending})`, val: 'Ch∆∞a Xong', cls: 'badge-pending' }
-            ].map(b => `<span class="filter-count-badge ${b.cls} ${currentStatus === b.val ? 'active' : ''}" data-status="${b.val}">${b.label}</span>`).join('');
-            countRow.querySelectorAll('.filter-count-badge').forEach(badge => {
-                badge.addEventListener('click', () => {
-                    const fs = document.getElementById('filter-status');
-                    if (fs) { fs.value = badge.dataset.status; fs.dispatchEvent(new Event('change')); }
-                });
-            });
-        }
-
-        const paginatedData = filtered.slice(0, limit);
+        const paginatedData = filtered.slice(0, sliceLimit);
         renderTable(paginatedData);
-
-        // Load More button
-        const loadMoreBtn = document.getElementById('load-more-btn');
-        if (loadMoreBtn) {
-            if (filtered.length > limit) {
-                loadMoreBtn.style.display = 'block';
-                loadMoreBtn.textContent = `‚¨á Xem th√™m (c√≤n ${filtered.length - limit} d√≤ng)`;
-            } else {
-                loadMoreBtn.style.display = 'none';
-            }
-        }
     }
 
     // --- SKELETON LOADING HELPERS ---
@@ -2716,17 +2198,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const CACHE_KEY = 'farm_management_data';
 
     function processRawSheetData(rawData) {
-        return rawData.map((item, idx) => {
-            let rowDate = new Date();
-            if (item["Ng√†y"]) {
-                if (!isNaN(item["Ng√†y"])) {
-                    rowDate = excelToJsDate(parseFloat(item["Ng√†y"]));
+        return rawData.map(item => {
+            let rowDate = new Date(); // Default if invalid
+            if (item["Ng+·y"]) {
+                if (!isNaN(item["Ng+·y"])) {
+                    rowDate = excelToJsDate(parseFloat(item["Ng+·y"]));
                 } else {
-                    const parts = item["Ng√†y"].split(/[-/]/);
+                    const parts = item["Ng+·y"].split(/[-/]/);
                     if (parts.length === 3) {
                         rowDate = new Date(parts[2], parts[1] - 1, parts[0]);
                     } else {
-                        rowDate = new Date(item["Ng√†y"]);
+                        rowDate = new Date(item["Ng+·y"]);
                     }
                 }
             }
@@ -2741,16 +2223,14 @@ document.addEventListener("DOMContentLoaded", () => {
             return {
                 ...item,
                 parsedDate: rowDate,
-                // Preserve _sheetRowNumber if already set (from gviz), else compute from idx
-                _sheetRowNumber: item._sheetRowNumber || (idx + 2),
                 "Status": (item["Status"] || "").trim(),
-                "S·ªë l∆∞·ª£ng": parseSheetNum(item["S·ªë l∆∞·ª£ng"]),
-                "Gi√°": parseSheetNum(item["Gi√°"]),
-                "Doanh Thu B√¥ng": parseSheetNum(item["Doanh Thu B√¥ng"]),
-                "Chi Ph√≠": parseSheetNum(item["Chi Ph√≠"]),
-                "Ti·ªÅn Ph·∫£i Thu": parseSheetNum(item["Ti·ªÅn Ph·∫£i Thu"]),
-                "Doanh Thu Kh√°c": parseSheetNum(item["Doanh Thu Kh√°c"]),
-                "ƒê√£ Thu": parseSheetNum(item["ƒê√£ Thu"])
+                "Sﬂ+Ê l¶¶ﬂ+˙ng": parseSheetNum(item["Sﬂ+Ê l¶¶ﬂ+˙ng"]),
+                "Gi+Ì": parseSheetNum(item["Gi+Ì"]),
+                "Doanh Thu B+¶ng": parseSheetNum(item["Doanh Thu B+¶ng"]),
+                "Chi Ph+°": parseSheetNum(item["Chi Ph+°"]),
+                "Tiﬂ+¸n Phﬂ¶˙i Thu": parseSheetNum(item["Tiﬂ+¸n Phﬂ¶˙i Thu"]),
+                "Doanh Thu Kh+Ìc": parseSheetNum(item["Doanh Thu Kh+Ìc"]),
+                "-…+˙ Thu": parseSheetNum(item["-…+˙ Thu"])
             };
         });
     }
@@ -2782,9 +2262,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 6. Google Sheets Sync Logic
-    async function syncData() {
-        const syncBtn = document.getElementById('sync-gsheet-btn');
-        if (syncBtn) syncBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ƒêang t·∫£i...';
+    document.getElementById('sync-gsheet-btn').addEventListener('click', () => {
+        document.getElementById('sync-gsheet-btn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> -…ang tﬂ¶˙i...';
 
         showTableSkeleton();
         showKPISkeleton();
@@ -2798,13 +2277,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (scriptNode) scriptNode.remove();
 
             if (data.status === 'error') {
-                alert("L·ªói t·ª´ Google Sheets: " + data.errors[0].detailed_message);
-                if (syncBtn) syncBtn.innerHTML = '<i class="fa-solid fa-sync"></i> ƒê·ªìng b·ªô d·ªØ li·ªáu m·ªõi';
+                alert("Lﬂ+˘i tﬂ+Ω Google Sheets: " + data.errors[0].detailed_message);
+                document.getElementById('sync-gsheet-btn').innerHTML = '<i class="fa-solid fa-sync"></i> -…ﬂ+Ùng bﬂ+÷ dﬂ+ª liﬂ+Áu mﬂ+¢i';
                 return;
             }
 
             const cols = data.table.cols.map(c => c ? c.label : '');
-            const parsedData = data.table.rows.map((row, rowIdx) => {
+            const parsedData = data.table.rows.map(row => {
                 const item = {};
                 cols.forEach((col, index) => {
                     if (!col) return;
@@ -2815,7 +2294,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                     item[col] = String(val);
                 });
-                item._sheetRowNumber = rowIdx + 2; // row 1 = header, data starts at row 2
                 return item;
             });
 
@@ -2831,7 +2309,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (document.getElementById('view-cashflow').style.display === 'block') {
                 updateCashFlowReport();
             }
-            if (syncBtn) syncBtn.innerHTML = '<i class="fa-solid fa-sync"></i> ƒê·ªìng b·ªô d·ªØ li·ªáu m·ªõi';
+            document.getElementById('sync-gsheet-btn').innerHTML = '<i class="fa-solid fa-sync"></i> -…ﬂ+Ùng bﬂ+÷ dﬂ+ª liﬂ+Áu mﬂ+¢i';
         };
 
         // Create script tag for JSONP
@@ -2841,51 +2319,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Handle network errors for script loading
         script.onerror = function () {
-            alert("Kh√¥ng th·ªÉ k·∫øt n·ªëi ƒë·∫øn Google Sheets. H√£y ki·ªÉm tra k·∫øt n·ªëi m·∫°ng c·ªßa b·∫°n.");
-            if (syncBtn) syncBtn.innerHTML = '<i class="fa-solid fa-sync"></i> ƒê·ªìng b·ªô d·ªØ li·ªáu m·ªõi';
+            alert("Kh+¶ng thﬂ+‚ kﬂ¶+t nﬂ+Êi -Êﬂ¶+n Google Sheets. H+˙y kiﬂ+‚m tra kﬂ¶+t nﬂ+Êi mﬂ¶Ìng cﬂ+∫a bﬂ¶Ìn.");
+            document.getElementById('sync-gsheet-btn').innerHTML = '<i class="fa-solid fa-sync"></i> -…ﬂ+Ùng bﬂ+÷ dﬂ+ª liﬂ+Áu mﬂ+¢i';
             script.remove();
         };
 
         document.body.appendChild(script);
-    }
-    // Make it available globally for inline calls if needed
-    window.syncData = syncData;
-
-    const syncBtnGlobal = document.getElementById('sync-gsheet-btn');
-    if (syncBtnGlobal) {
-        syncBtnGlobal.addEventListener('click', () => {
-            syncData();
-        });
-    }
+    });
 
     if (addExpenseBtn) {
         addExpenseBtn.addEventListener('click', () => {
             const row = document.createElement('div');
             row.className = 'expense-item';
+            row.style.cssText = 'display: grid; grid-template-columns: 1.5fr 1.5fr 2fr 35px; gap: 10px; align-items: center;';
             row.innerHTML = `
                 <div class="form-group" style="margin: 0;">
-                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">H·∫°ng m·ª•c</label>
-                    <select class="exp-type" style="border-color: #f87171;">
-                        <option value="Chi Ph√≠ Kh√°c">Chi Ph√≠ Kh√°c</option>
-                        <option value="Thu·ªëc">Thu·ªëc</option>
-                        <option value="Ph√¢n">Ph√¢n</option>
-                        <option value="L√£i">L√£i</option>
-                        <option value="C√¥ng">C√¥ng</option>
-                        <option value="Mua B√¥ng">Mua B√¥ng</option>
-                        <option value="V·∫≠t T∆∞ KD">V·∫≠t T∆∞ KD</option>
-                        <option value="V·∫≠n Chuy·ªÉn">V·∫≠n Chuy·ªÉn</option>
+                    <select class="exp-type" style="width: 100%; border: 1px solid #f87171;">
+                        <option value="Chi Ph+° Kh+Ìc">Chi Ph+° Kh+Ìc</option>
+                        <option value="Thuﬂ+Êc">Thuﬂ+Êc</option>
+                        <option value="Ph+Ûn">Ph+Ûn</option>
+                        <option value="L+˙i">L+˙i</option>
+                        <option value="C+¶ng">C+¶ng</option>
+                        <option value="Mua B+¶ng">Mua B+¶ng</option>
+                        <option value="Vﬂ¶°t T¶¶ KD">Vﬂ¶°t T¶¶ KD</option>
+                        <option value="Vﬂ¶°n Chuyﬂ+‚n">Vﬂ¶°n Chuyﬂ+‚n</option>
                         <option value="Expensed">Expensed</option>
                     </select>
                 </div>
-                <div class="form-group" style="margin: 0;">
-                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">S·ªë ti·ªÅn</label>
-                    <input type="text" placeholder="0" class="exp-amount money-input" style="border-color: #f87171; color: #b91c1c; font-weight: bold;">
-                </div>
-                <div class="form-group" style="margin: 0;">
-                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Ghi ch√∫ chi ti·∫øt</label>
-                    <input type="text" placeholder="Nh·∫≠p ghi ch√∫..." class="exp-note" style="border-color: #f87171;">
-                </div>
-                <button type="button" class="del-expense-btn" title="Xo√°"><i class="fa-solid fa-trash-can"></i></button>
+                <div class="form-group" style="margin: 0;"><input type="text" placeholder="Sﬂ+Ê tiﬂ+¸n" class="exp-amount money-input" style="border: 1px solid #f87171; color: #b91c1c; font-weight: bold;"></div>
+                <div class="form-group" style="margin: 0;"><input type="text" placeholder="Ghi ch+¶ chi ph+°" class="exp-note" style="border: 1px solid #f87171;"></div>
+                <button type="button" class="del-expense-btn" style="background: none; border: none; color: #ef4444; font-size: 1.2rem; cursor: pointer; padding: 0;" title="Xo+Ì"><i class="fa-solid fa-circle-xmark"></i></button>
             `;
             expenseItemsContainer.appendChild(row);
             attachExpenseRowEvents(row);
@@ -2900,7 +2363,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (rows.length > 1) {
                     row.remove();
                 } else {
-                    alert("Ph·∫£i c√≥ √≠t nh·∫•t m·ªôt d√≤ng chi ph√≠.");
+                    alert("Phﬂ¶˙i c+¶ +°t nhﬂ¶—t mﬂ+÷t d+¶ng chi ph+°.");
                 }
             });
         }
@@ -2970,62 +2433,61 @@ document.addEventListener("DOMContentLoaded", () => {
             const checkedBoxes = tableBody.querySelectorAll('.row-checkbox:checked');
             if (checkedBoxes.length === 0) return;
 
-            if (!confirm(`B·∫°n c√≥ ch·∫Øc ch·∫Øn mu·ªën xo√° ${checkedBoxes.length} d√≤ng d·ªØ li·ªáu n√†y kh·ªèi Google Sheets?`)) return;
+            if (!confirm(`Bﬂ¶Ìn c+¶ chﬂ¶ªc chﬂ¶ªn muﬂ+Ên xo+Ì ${checkedBoxes.length} d+¶ng dﬂ+ª liﬂ+Áu n+·y khﬂ+≈i Google Sheets?`)) return;
 
-            if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
-                alert("Vui l√≤ng c·∫•u h√¨nh WEB_APP_URL trong app.js!");
+            if (WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+                alert("Vui l+¶ng cﬂ¶—u h+ºnh WEB_APP_URL trong app.js!");
                 return;
             }
 
             document.body.style.cursor = 'wait';
-            bulkDeleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ƒêang Xo√°...';
+            bulkDeleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> -…ang Xo+Ì...';
             bulkDeleteBtn.disabled = true;
 
             let successCount = 0;
-            const rowsToDelete = Array.from(checkedBoxes).map(cb => {
-                const idx = parseInt(cb.getAttribute('data-row-index'));
-                return dataToRenderRef[idx];
-            }).filter(Boolean);
+            const rowsToDelete = Array.from(checkedBoxes).map(cb => JSON.parse(cb.value));
 
             try {
-                // S·∫Øp x·∫øp gi·∫£m d·∫ßn theo row number ‚Äî x√≥a t·ª´ d∆∞·ªõi l√™n ƒë·ªÉ tr√°nh d·ªãch chuy·ªÉn index
-                rowsToDelete.sort((a, b) => (b._sheetRowNumber || 0) - (a._sheetRowNumber || 0));
-
+                // Sﬂ¶ªp xﬂ¶+p ng¶¶ﬂ+˙c -Êﬂ+‚ tr+Ình vﬂ¶—n -Êﬂ+¸ index nﬂ¶+u c+¶ (nh¶¶ng ﬂ+É -Ê+Ûy m+ºnh d+¶ng findIndex n+¨n ko sao)
                 for (let i = 0; i < rowsToDelete.length; i++) {
                     const rowData = rowsToDelete[i];
-                    const sheetRow = rowData._sheetRowNumber;
-                    if (!sheetRow) continue;
+                    bulkDeleteBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> -…ang Xo+Ì (${i + 1}/${rowsToDelete.length})...`;
 
-                    bulkDeleteBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ƒêang Xo√° (${i + 1}/${rowsToDelete.length})...`;
-
-                    const response = await fetch(CONFIG.WEB_APP_URL, {
+                    const response = await fetch(WEB_APP_URL, {
                         method: "POST",
-                        body: JSON.stringify({ action: "deleteByRow", rowNumber: sheetRow, token: getToken() }),
+                        body: JSON.stringify({ action: "delete", data: rowData }),
                         headers: { "Content-Type": "text/plain;charset=utf-8" }
                     });
                     const result = await response.json();
                     if (result.status === "success") {
                         successCount++;
-                        // Adjust _sheetRowNumber for rows below this one
-                        farmData.forEach(r => { if (r._sheetRowNumber > sheetRow) r._sheetRowNumber--; });
-                        const fidx = farmData.indexOf(rowData);
-                        if (fidx >= 0) farmData.splice(fidx, 1);
+                        // T+ºm v+· x+¶a khﬂ+≈i bﬂ+÷ nhﬂ+¢ -Êﬂ+Ám local
+                        const idx = farmData.findIndex(r => {
+                            const matchNgay = r["Ng+·y"] === rowData["Ng+·y"];
+                            const matchNguoiMua = (r["Ng¶¶ﬂ+•i Mua"] || "") === (rowData["Ng¶¶ﬂ+•i Mua"] || "");
+                            const matchSL = String(r["Sﬂ+Ê l¶¶ﬂ+˙ng"] || "0") === String(rowData["Sﬂ+Ê l¶¶ﬂ+˙ng"] || "0");
+                            const matchLoai = (r["Ph+Ûn Loﬂ¶Ìi B+¶ng"] || "") === (rowData["Ph+Ûn Loﬂ¶Ìi B+¶ng"] || "");
+                            const matchCP = String(r["Chi Ph+°"] || "0") === String(rowData["Chi Ph+°"] || "0");
+                            const matchLoaiCP = (r["Loﬂ¶Ìi CP"] || "") === (rowData["Loﬂ¶Ìi CP"] || "");
+
+                            return matchNgay && matchNguoiMua && matchSL && matchLoai && matchCP && matchLoaiCP;
+                        });
+                        if (idx >= 0) farmData.splice(idx, 1);
                     }
-                    await new Promise(resolve => setTimeout(resolve, 150));
+                    // -…ﬂ+˙i 200ms giﬂ+ªa c+Ìc y+¨u cﬂ¶∫u -Êﬂ+‚ -Êﬂ¶˙m bﬂ¶˙o t+°nh ﬂ+Ún -Êﬂ+Ônh cﬂ+∫a Apps Script
+                    await new Promise(resolve => setTimeout(resolve, 200));
                 }
-                showToast(`ƒê√£ xo√° th√†nh c√¥ng ${successCount}/${rowsToDelete.length} ƒë∆°n d·ªØ li·ªáu.`, "success");
-                const syncBtn = document.getElementById('sync-gsheet-btn');
-                if (syncBtn) syncBtn.click();
+                alert(`-…+˙ xo+Ì th+·nh c+¶ng ${successCount}/${rowsToDelete.length} -Ê¶Ìn dﬂ+ª liﬂ+Áu.`);
             } catch (err) {
                 console.error(err);
-                alert("L·ªói k·∫øt n·ªëi khi xo√° h√†ng lo·∫°t.");
+                alert("Lﬂ+˘i kﬂ¶+t nﬂ+Êi khi xo+Ì h+·ng loﬂ¶Ìt.");
             } finally {
                 document.body.style.cursor = 'default';
-                bulkDeleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Xo√° C√°c D√≤ng ƒê√£ Ch·ªçn (<span id="bulk-delete-count">0</span>)';
+                bulkDeleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Xo+Ì C+Ìc D+¶ng -…+˙ Chﬂ+Ïn (<span id="bulk-delete-count">0</span>)';
                 bulkDeleteBtn.disabled = false;
                 selectAllCb.checked = false;
 
-                // Sync l·∫°i d·ªØ li·ªáu ƒë·ªÉ ƒë·∫£m b·∫£o kh·ªõp ho√†n to√†n v·ªõi Sheet
+                // Sync lﬂ¶Ìi dﬂ+ª liﬂ+Áu -Êﬂ+‚ -Êﬂ¶˙m bﬂ¶˙o khﬂ+¢p ho+·n to+·n vﬂ+¢i Sheet
                 const syncBtn = document.getElementById('sync-gsheet-btn');
                 if (syncBtn) {
                     syncBtn.click();
@@ -3060,22 +2522,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        if (!isAuthorizedForEntry()) {
-            alert("B·∫°n kh√¥ng c√≥ quy·ªÅn nh·∫≠p li·ªáu!");
-            return;
-        }
 
-        if (!confirm("B·∫°n c√≥ ch·∫Øc ch·∫Øn mu·ªën l∆∞u c√°c d√≤ng d·ªØ li·ªáu n√†y?")) {
+        if (!confirm("Bﬂ¶Ìn c+¶ chﬂ¶ªc chﬂ¶ªn muﬂ+Ên l¶¶u c+Ìc d+¶ng dﬂ+ª liﬂ+Áu n+·y?")) {
             return;
         }
 
         const entryMode = entryTypeSelect ? entryTypeSelect.value : 'farm';
         // Shared fields
         const dInput = new Date(document.getElementById('date-input').value);
-        const dateStr = formatDateVietnamese(dInput); // D√πng ƒë·ªãnh d·∫°ng chu·∫©n DD/MM/YYYY ƒë·ªÉ kh·ªõp v·ªõi Sheet
-        const statusVal = document.getElementById('status-input').value; // Removed default "Ch∆∞a Xong"
+        const dateStr = formatDateVietnamese(dInput); // D+¶ng -Êﬂ+Ônh dﬂ¶Ìng chuﬂ¶¨n DD/MM/YYYY -Êﬂ+‚ khﬂ+¢p vﬂ+¢i Sheet
+        const statusVal = document.getElementById('status-input').value; // Removed default "Ch¶¶a Xong"
         const buyerVal = document.getElementById('buyer-input').value;
-        const noteVal = ""; // Ghi Ch√∫ Cu·ªëc Xe ƒë√£ b·ªã lo·∫°i b·ªè
+        const noteVal = ""; // Ghi Ch+¶ Cuﬂ+Êc Xe -Ê+˙ bﬂ+Ô loﬂ¶Ìi bﬂ+≈
 
         const submitBtn = form.querySelector('button[type="submit"]');
 
@@ -3086,39 +2544,38 @@ document.addEventListener("DOMContentLoaded", () => {
             const items = flowerItemsContainer.querySelectorAll('.flower-item');
 
             if (items.length === 0) {
-                alert("Vui l√≤ng th√™m √≠t nh·∫•t 1 d√≤ng b√¥ng!");
+                alert("Vui l+¶ng th+¨m +°t nhﬂ¶—t 1 d+¶ng b+¶ng!");
                 return;
             }
 
             items.forEach((item, index) => {
-                const typeStr = item.querySelector('.fw-type').value || "B√¥ng";
+                const typeStr = item.querySelector('.fw-type').value || "B+¶ng";
                 const qValue = parseFloat(item.querySelector('.fw-qty').value) || 0;
                 const pValue = parseMoney(item.querySelector('.fw-price').value);
                 const dtBong = qValue * pValue;
 
                 payloadRowsStr.push({
-                    "Ng√†y": dateStr,
+                    "Ng+·y": dateStr,
                     "Status": statusVal,
-                    "Ng∆∞·ªùi Mua": buyerVal,
-                    "S·ªë l∆∞·ª£ng": qValue.toString(),
-                    "Gi√°": pValue.toString(),
-                    "Doanh Thu B√¥ng": dtBong.toString(),
-                    "Ph√¢n Lo·∫°i B√¥ng": typeStr,
-                    "Ghi Ch√∫": noteVal,
-                    "ƒê√£ Thu": "", "Ti·ªÅn Ph·∫£i Thu": "", "Ghi Ch√∫ V·ª±a thu": "", "Doanh Thu Kh√°c": "",
-                    "Lo·∫°i DT": "Farm", "Chi Ph√≠": "", "Lo·∫°i CP": "", "Ghi Ch√∫ Chi Ph√≠": ""
+                    "Ng¶¶ﬂ+•i Mua": buyerVal,
+                    "Sﬂ+Ê l¶¶ﬂ+˙ng": qValue.toString(),
+                    "Gi+Ì": pValue.toString(),
+                    "Doanh Thu B+¶ng": dtBong.toString(),
+                    "Ph+Ûn Loﬂ¶Ìi B+¶ng": typeStr,
+                    "Ghi Ch+¶": noteVal,
+                    "-…+˙ Thu": "", "Tiﬂ+¸n Phﬂ¶˙i Thu": "", "Ghi Ch+¶ Vﬂ+¶a thu": "", "Doanh Thu Kh+Ìc": "",
+                    "Loﬂ¶Ìi DT": "Farm", "Chi Ph+°": "", "Loﬂ¶Ìi CP": "", "Ghi Ch+¶ Chi Ph+°": ""
                 });
 
                 payloadRowsParsed.push({
-                    "Ng√†y": dateStr, "Status": statusVal, "Ng∆∞·ªùi Mua": buyerVal, "Ph√¢n Lo·∫°i B√¥ng": typeStr, "Ghi Ch√∫": noteVal,
-                    parsedDate: dInput, "S·ªë l∆∞·ª£ng": qValue, "Gi√°": pValue, "Doanh Thu B√¥ng": dtBong, "Chi Ph√≠": 0, "Ti·ªÅn Ph·∫£i Thu": 0, "Doanh Thu Kh√°c": 0, "Lo·∫°i DT": "Farm"
+                    "Ng+·y": dateStr, "Status": statusVal, "Ng¶¶ﬂ+•i Mua": buyerVal, "Ph+Ûn Loﬂ¶Ìi B+¶ng": typeStr, "Ghi Ch+¶": noteVal,
+                    parsedDate: dInput, "Sﬂ+Ê l¶¶ﬂ+˙ng": qValue, "Gi+Ì": pValue, "Doanh Thu B+¶ng": dtBong, "Chi Ph+°": 0, "Tiﬂ+¸n Phﬂ¶˙i Thu": 0, "Doanh Thu Kh+Ìc": 0, "Loﬂ¶Ìi DT": "Farm"
                 });
             });
         } else if (entryMode === 'vua') {
-            // V·ª±a Mode
+            // Vﬂ+¶a Mode
             const shipCost = parseMoney(vuaShipCostInput.value);
             const vattuCost = parseMoney(vuaVattuCostInput.value);
-            const packingCost = parseMoney(document.getElementById('vua-packing-cost') ? document.getElementById('vua-packing-cost').value : "0");
             const totalCollect = parseMoney(vuaTotalCollectInput.value);
             const items = flowerItemsContainer.querySelectorAll('.flower-item');
 
@@ -3128,10 +2585,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 const p = parseMoney(item.querySelector('.fw-price').value);
                 sumCost += (q * p);
             });
-            const expectedRevenue = packingCost; // User wants Profit recorded as Revenue
+            const expectedRevenue = totalCollect - sumCost;
 
             items.forEach((item, index) => {
-                const typeStr = item.querySelector('.fw-type').value || "B√¥ng";
+                const typeStr = item.querySelector('.fw-type').value || "B+¶ng";
                 const qValue = parseFloat(item.querySelector('.fw-qty').value) || 0;
                 const pValue = parseMoney(item.querySelector('.fw-price').value);
                 const dtBong = qValue * pValue;
@@ -3144,17 +2601,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (index === 0 && shipCost > 0) {
                     chiPhiStr = shipCost.toString();
-                    loaiCPStr = "V·∫≠n Chuy·ªÉn";
+                    loaiCPStr = "Vﬂ¶°n Chuyﬂ+‚n";
                 }
 
                 payloadRowsStr.push({
-                    "Ng√†y": dateStr, "Status": statusVal, "Ng∆∞·ªùi Mua": buyerVal, "S·ªë l∆∞·ª£ng": qValue.toString(), "Gi√°": pValue.toString(), "Doanh Thu B√¥ng": dtBong.toString(), "Ph√¢n Lo·∫°i B√¥ng": typeStr, "Ghi Ch√∫": noteVal,
-                    "ƒê√£ Thu": "", "Ti·ªÅn Ph·∫£i Thu": tPhaiThuStr, "Ghi Ch√∫ V·ª±a thu": "", "Doanh Thu Kh√°c": dtKhacStr, "Lo·∫°i DT": "V·ª±a", "Chi Ph√≠": chiPhiStr, "Lo·∫°i CP": loaiCPStr, "Ghi Ch√∫ Chi Ph√≠": ""
+                    "Ng+·y": dateStr, "Status": statusVal, "Ng¶¶ﬂ+•i Mua": buyerVal, "Sﬂ+Ê l¶¶ﬂ+˙ng": qValue.toString(), "Gi+Ì": pValue.toString(), "Doanh Thu B+¶ng": dtBong.toString(), "Ph+Ûn Loﬂ¶Ìi B+¶ng": typeStr, "Ghi Ch+¶": noteVal,
+                    "-…+˙ Thu": "", "Tiﬂ+¸n Phﬂ¶˙i Thu": tPhaiThuStr, "Ghi Ch+¶ Vﬂ+¶a thu": "", "Doanh Thu Kh+Ìc": dtKhacStr, "Loﬂ¶Ìi DT": "Vﬂ+¶a", "Chi Ph+°": chiPhiStr, "Loﬂ¶Ìi CP": loaiCPStr, "Ghi Ch+¶ Chi Ph+°": ""
                 });
 
                 payloadRowsParsed.push({
-                    "Ng√†y": dateStr, "Status": statusVal, "Ng∆∞·ªùi Mua": buyerVal, "Ph√¢n Lo·∫°i B√¥ng": typeStr, "Ghi Ch√∫": noteVal, "Lo·∫°i DT": "V·ª±a", "Lo·∫°i CP": loaiCPStr,
-                    parsedDate: dInput, "S·ªë l∆∞·ª£ng": qValue, "Gi√°": pValue, "Doanh Thu B√¥ng": dtBong, "Ti·ªÅn Ph·∫£i Thu": index === 0 ? totalCollect : 0, "Chi Ph√≠": index === 0 ? shipCost : 0, "Doanh Thu Kh√°c": index === 0 ? expectedRevenue : 0
+                    "Ng+·y": dateStr, "Status": statusVal, "Ng¶¶ﬂ+•i Mua": buyerVal, "Ph+Ûn Loﬂ¶Ìi B+¶ng": typeStr, "Ghi Ch+¶": noteVal, "Loﬂ¶Ìi DT": "Vﬂ+¶a", "Loﬂ¶Ìi CP": loaiCPStr,
+                    parsedDate: dInput, "Sﬂ+Ê l¶¶ﬂ+˙ng": qValue, "Gi+Ì": pValue, "Doanh Thu B+¶ng": dtBong, "Tiﬂ+¸n Phﬂ¶˙i Thu": index === 0 ? totalCollect : 0, "Chi Ph+°": index === 0 ? shipCost : 0, "Doanh Thu Kh+Ìc": index === 0 ? expectedRevenue : 0
                 });
             });
         } else if (entryMode === 'expense') {
@@ -3169,18 +2626,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     payloadRowsStr.push({
                         "action": "add_expense",
                         "data": {
-                            "Ng√†y": dateStr,
+                            "Ng+·y": dateStr,
                             "Status": "Xong",
-                            "Ng∆∞·ªùi Mua": buyerVal,
-                            "Chi Ph√≠": expAmount.toString(),
-                            "Lo·∫°i CP": expType,
-                            "Ghi Ch√∫ Chi Ph√≠": expNote
+                            "Ng¶¶ﬂ+•i Mua": buyerVal,
+                            "Chi Ph+°": expAmount.toString(),
+                            "Loﬂ¶Ìi CP": expType,
+                            "Ghi Ch+¶ Chi Ph+°": expNote
                         }
                     });
 
                     payloadRowsParsed.push({
-                        "Ng√†y": dateStr, "Status": "Xong", "Ng∆∞·ªùi Mua": buyerVal, "Chi Ph√≠": expAmount, "Lo·∫°i CP": expType, "Ghi Ch√∫ Chi Ph√≠": expNote,
-                        parsedDate: dInput, "S·ªë l∆∞·ª£ng": 0, "Gi√°": 0, "Doanh Thu B√¥ng": 0, "Ti·ªÅn Ph·∫£i Thu": 0, "Doanh Thu Kh√°c": 0
+                        "Ng+·y": dateStr, "Status": "Xong", "Ng¶¶ﬂ+•i Mua": buyerVal, "Chi Ph+°": expAmount, "Loﬂ¶Ìi CP": expType, "Ghi Ch+¶ Chi Ph+°": expNote,
+                        parsedDate: dInput, "Sﬂ+Ê l¶¶ﬂ+˙ng": 0, "Gi+Ì": 0, "Doanh Thu B+¶ng": 0, "Tiﬂ+¸n Phﬂ¶˙i Thu": 0, "Doanh Thu Kh+Ìc": 0
                     });
                 }
             });
@@ -3194,50 +2651,26 @@ document.addEventListener("DOMContentLoaded", () => {
             }));
         }
 
-        if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
-            alert("Vui l√≤ng c·∫•u h√¨nh WEB_APP_URL! D·ªØ li·ªáu hi·ªán t·∫°i ch·ªâ l∆∞u t·∫°m.");
+        if (WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+            alert("Vui l+¶ng cﬂ¶—u h+ºnh WEB_APP_URL! Dﬂ+ª liﬂ+Áu hiﬂ+Án tﬂ¶Ìi chﬂ+Î l¶¶u tﬂ¶Ìm.");
             payloadRowsParsed.forEach(p => farmData.unshift(p));
             applyFiltersAndRender();
             return;
         }
 
-        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ƒêang l∆∞u...';
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> -…ang l¶¶u...';
         submitBtn.disabled = true;
 
         try {
-            // IF EDIT MODE: Delete old row first
-            if (currentEditRowData) {
-                const sheetRow = currentEditRowData._sheetRowNumber;
-                if (sheetRow) {
-                    const delResp = await fetch(CONFIG.WEB_APP_URL, {
-                        method: "POST",
-                        body: JSON.stringify({ action: "deleteByRow", rowNumber: sheetRow, token: getToken() }),
-                        headers: { "Content-Type": "text/plain;charset=utf-8" }
-                    });
-                    const delRes = await delResp.json();
-                    if (delRes.status !== "success") {
-                        throw new Error("L·ªói khi x√≥a d√≤ng c≈©: " + delRes.message);
-                    }
-                }
-            }
-
             for (let i = 0; i < payloadRowsStr.length; i++) {
-                const response = await fetch(CONFIG.WEB_APP_URL, {
+                const response = await fetch(WEB_APP_URL, {
                     method: "POST",
-                    body: JSON.stringify({ ...payloadRowsStr[i], token: getToken() }),
+                    body: JSON.stringify(payloadRowsStr[i]),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
                 const result = await response.json();
-                if (result.status !== "success") throw new Error(result.message || "L·ªói c·∫≠p nh·∫≠t G-Sheet.");
+                if (result.status !== "success") throw new Error(result.message || "Lﬂ+˘i cﬂ¶°p nhﬂ¶°t G-Sheet.");
             }
-
-            showToast("L∆∞u d·ªØ li·ªáu th√†nh c√¥ng!", "success");
-            currentEditRowData = null; // Clear edit mode
-            const cancelBtn = document.getElementById('cancel-edit-btn');
-            if (cancelBtn) cancelBtn.remove();
-            
-            submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> L∆∞u D·ªØ Li·ªáu';
-            submitBtn.style.backgroundColor = '';
 
             // Re-fetch everything to ensure proper sync if possible
             const syncBtn = document.getElementById('sync-gsheet-btn');
@@ -3259,41 +2692,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 entryTypeSelect.dispatchEvent(new Event('change'));
             }
 
-            // Kh√¥i ph·ª•c l·∫°i m·ªôt d√≤ng chu·∫©n cho B√¥ng
+            // Kh+¶i phﬂ+—c lﬂ¶Ìi mﬂ+÷t d+¶ng chuﬂ¶¨n cho B+¶ng
             if (flowerItemsContainer) {
                 flowerItemsContainer.innerHTML = `
-                    <div class="flower-item">
+                    <div class="flower-item" style="display: grid; grid-template-columns: 1.2fr 0.6fr 1.2fr 1.5fr 30px; gap: 10px; align-items: center;">
                         <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Lo·∫°i m·∫∑t h√†ng</label>
-                            <select class="fw-type" required>
-                                <option value="X√¥ ngo·∫°i">X√¥ ngo·∫°i</option>
-                                <option value="X√¥ n·ªôi">X√¥ n·ªôi</option>
+                            <select class="fw-type" style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;" required>
+                                <option value="X+¶ ngoﬂ¶Ìi">X+¶ ngoﬂ¶Ìi</option>
+                                <option value="X+¶ nﬂ+÷i">X+¶ nﬂ+÷i</option>
                                 <option value="Ecuador">Ecuador</option>
-                                <option value="Ph√°p">Ph√°p</option>
-                                <option value="Tr·∫Øng √π">Tr·∫Øng √π</option>
-                                <option value="√î H·ªìng">√î H·ªìng</option>
-                                <option value="√î Tr·∫Øng">√î Tr·∫Øng</option>
+                                <option value="Ph+Ìp">Ph+Ìp</option>
+                                <option value="Trﬂ¶ªng +¶">Trﬂ¶ªng +¶</option>
+                                <option value="+ˆ Hﬂ+Ùng">+ˆ Hﬂ+Ùng</option>
+                                <option value="+ˆ Trﬂ¶ªng">+ˆ Trﬂ¶ªng</option>
                                 <option value="Simmo">Simmo</option>
-                                <option value="Cam Ch√°y">Cam Ch√°y</option>
+                                <option value="Cam Ch+Ìy">Cam Ch+Ìy</option>
                                 <option value="Vitto">Vitto</option>
-                                <option value="L·∫°c Th·∫ßn">L·∫°c Th·∫ßn</option>
-                                <option value="H·ª∑ Tr·ª©ng">H·ª∑ Tr·ª©ng</option>
-                                <option value="Kh√°c">Kh√°c</option>
+                                <option value="Lﬂ¶Ìc Thﬂ¶∫n">Lﬂ¶Ìc Thﬂ¶∫n</option>
+                                <option value="Hﬂ++ Trﬂ+¨ng">Hﬂ++ Trﬂ+¨ng</option>
+                                <option value="Kh+Ìc">Kh+Ìc</option>
                             </select>
                         </div>
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
-                            <input type="number" placeholder="0" class="fw-qty" min="0" required>
-                        </div>
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">ƒê∆°n Gi√°</label>
-                            <input type="text" placeholder="0" class="fw-price money-input" required>
-                        </div>
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Th√†nh ti·ªÅn</label>
-                            <input type="text" placeholder="0" class="fw-total" readonly style="background: #f1f5f9; color: #0f172a; font-weight: 800; border: 1.5px solid #cbd5e1 !important;">
-                        </div>
-                        <button type="button" class="del-flower-btn" title="Xo√°"><i class="fa-solid fa-trash-can"></i></button>
+                        <div class="form-group" style="margin: 0;"><input type="number" placeholder="SL" class="fw-qty" min="0" required></div>
+                        <div class="form-group" style="margin: 0;"><input type="text" placeholder="Gi+Ì" class="fw-price money-input" required></div>
+                        <div class="form-group" style="margin: 0;"><input type="text" placeholder="Th+·nh tiﬂ+¸n" class="fw-total" readonly style="background: #f9fafb; color: #374151; font-weight: bold; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px; width: 100%;"></div>
+                        <button type="button" class="del-flower-btn" style="background: none; border: none; color: var(--danger); font-size: 1.2rem; cursor: pointer; padding: 0;" title="Xo+Ì"><i class="fa-solid fa-circle-xmark"></i></button>
                     </div>
                 `;
                 attachFlowerRowEvents(flowerItemsContainer.querySelector('.flower-item'));
@@ -3301,149 +2724,47 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (entryTypeSelect && entryTypeSelect.value === 'vua') calculateVuaTotals();
 
-            // Kh√¥i ph·ª•c l·∫°i m·ªôt d√≤ng chu·∫©n cho Chi ph√≠
+            // Kh+¶i phﬂ+—c lﬂ¶Ìi mﬂ+÷t d+¶ng chuﬂ¶¨n cho Chi ph+°
             if (expenseItemsContainer) {
                 expenseItemsContainer.innerHTML = `
-                    <div class="expense-item">
+                    <div class="expense-item" style="display: grid; grid-template-columns: 1.5fr 1.5fr 2fr 35px; gap: 10px; align-items: center;">
                         <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">H·∫°ng m·ª•c</label>
-                            <select class="exp-type" style="border-color: #f87171;">
-                                <option value="Chi Ph√≠ Kh√°c">Chi Ph√≠ Kh√°c</option>
-                                <option value="Thu·ªëc">Thu·ªëc</option>
-                                <option value="Ph√¢n">Ph√¢n</option>
-                                <option value="L√£i">L√£i</option>
-                                <option value="C√¥ng">C√¥ng</option>
-                                <option value="Mua B√¥ng">Mua B√¥ng</option>
-                                <option value="V·∫≠t T∆∞ KD">V·∫≠t T∆∞ KD</option>
-                                <option value="V·∫≠n Chuy·ªÉn">V·∫≠n Chuy·ªÉn</option>
+                            <select class="exp-type" style="width: 100%; border: 1px solid #f87171;">
+                                <option value="Chi Ph+° Kh+Ìc">Chi Ph+° Kh+Ìc</option>
+                                <option value="Thuﬂ+Êc">Thuﬂ+Êc</option>
+                                <option value="Ph+Ûn">Ph+Ûn</option>
+                                <option value="L+˙i">L+˙i</option>
+                                <option value="C+¶ng">C+¶ng</option>
+                                <option value="Mua B+¶ng">Mua B+¶ng</option>
+                                <option value="Vﬂ¶°t T¶¶ KD">Vﬂ¶°t T¶¶ KD</option>
+                                <option value="Vﬂ¶°n Chuyﬂ+‚n">Vﬂ¶°n Chuyﬂ+‚n</option>
                                 <option value="Expensed">Expensed</option>
                             </select>
                         </div>
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">S·ªë ti·ªÅn</label>
-                            <input type="text" placeholder="0" class="exp-amount money-input" style="border-color: #f87171; color: #b91c1c; font-weight: bold;">
-                        </div>
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Ghi ch√∫ chi ti·∫øt</label>
-                            <input type="text" placeholder="Nh·∫≠p ghi ch√∫..." class="exp-note" style="border-color: #f87171;">
-                        </div>
-                        <button type="button" class="del-expense-btn" title="Xo√°"><i class="fa-solid fa-trash-can"></i></button>
+                        <div class="form-group" style="margin: 0;"><input type="text" placeholder="Sﬂ+Ê tiﬂ+¸n" class="exp-amount money-input" style="border: 1px solid #f87171; color: #b91c1c; font-weight: bold;"></div>
+                        <div class="form-group" style="margin: 0;"><input type="text" placeholder="Ghi ch+¶ chi ph+°" class="exp-note" style="border: 1px solid #f87171;"></div>
+                        <button type="button" class="del-expense-btn" style="background: none; border: none; color: #ef4444; font-size: 1.2rem; cursor: pointer; padding: 0;" title="Xo+Ì"><i class="fa-solid fa-circle-xmark"></i></button>
                     </div>
                 `;
                 attachExpenseRowEvents(expenseItemsContainer.querySelector('.expense-item'));
             }
 
-            showToast(`‚úÖ ƒê√£ l∆∞u th√†nh c√¥ng ${payloadRowsStr.length} d√≤ng d·ªØ li·ªáu!`, 'success');
+            alert("-…+˙ l¶¶u th+·nh c+¶ng " + payloadRowsStr.length + " d+¶ng dﬂ+ª liﬂ+Áu!");
 
         } catch (error) {
             console.error(error);
-            alert("L·ªói khi ghi d·ªØ li·ªáu l√™n Sheets: " + error.message);
+            alert("Lﬂ+˘i khi ghi dﬂ+ª liﬂ+Áu l+¨n Sheets: " + error.message);
         } finally {
-            submitBtn.innerHTML = 'L∆∞u D·ªØ Li·ªáu';
+            submitBtn.innerHTML = 'L¶¶u Dﬂ+ª Liﬂ+Áu';
             submitBtn.disabled = false;
         }
     });
 
-    // Load More
-    const loadMoreBtnEl = document.getElementById('load-more-btn');
-    if (loadMoreBtnEl) {
-        loadMoreBtnEl.addEventListener('click', () => {
-            currentLimit += 20;
-            applyFiltersAndRender();
-        });
-    }
-    document.querySelectorAll('.table-tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            currentLimit = 20;
-        });
-    });
-
-    // Toast System
-    window.showToast = function (message, type, duration) {
-        type = type || 'info';
-        duration = duration || 3000;
-        const container = document.getElementById('toast-container');
-        if (!container) return;
-        const toast = document.createElement('div');
-        const icons = { success: '‚úÖ', error: '‚ùå', info: '‚ÑπÔ∏è' };
-        toast.className = 'toast toast-' + type;
-        toast.innerHTML = (icons[type] || '‚ÑπÔ∏è') + ' ' + message;
-        container.appendChild(toast);
-        requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('show')));
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 350);
-        }, duration);
-    };
-
-    // Swipe-to-Delete
-    (function () {
-        const tb = document.getElementById('table-body');
-        if (!tb) return;
-        let sx = 0, sy = 0;
-        const THRESH = 80;
-        tb.addEventListener('touchstart', function (e) {
-            const row = e.target.closest('tr');
-            if (!row) return;
-            sx = e.touches[0].clientX;
-            sy = e.touches[0].clientY;
-            row._sx = sx;
-        }, { passive: true });
-        tb.addEventListener('touchmove', function (e) {
-            const row = e.target.closest('tr');
-            if (!row || !row._sx) return;
-            const dx = e.touches[0].clientX - row._sx;
-            const dy = e.touches[0].clientY - sy;
-            if (Math.abs(dy) > Math.abs(dx)) return;
-            if (dx < -10) {
-                const p = Math.min(Math.abs(dx) / THRESH, 1);
-                row.style.opacity = String(1 - p * 0.4);
-                row.style.transform = 'translateX(' + dx + 'px)';
-            }
-        }, { passive: true });
-        tb.addEventListener('touchend', function (e) {
-            const row = e.target.closest('tr');
-            if (!row || !row._sx) return;
-            const dx = e.changedTouches[0].clientX - row._sx;
-            row._sx = 0;
-            if (dx < -THRESH) {
-                const btn = row.querySelector('.action-btn[data-row-index]');
-                if (btn) {
-                    row.style.transition = 'transform 0.25s, opacity 0.25s';
-                    row.style.transform = 'translateX(-100%)';
-                    row.style.opacity = '0';
-                    setTimeout(() => btn.click(), 200);
-                    setTimeout(() => { row.style.transition = ''; row.style.transform = ''; row.style.opacity = ''; }, 500);
-                    return;
-                }
-            }
-            row.style.transition = 'transform 0.2s, opacity 0.2s';
-            row.style.transform = '';
-            row.style.opacity = '';
-            setTimeout(() => { row.style.transition = ''; }, 220);
-        }, { passive: true });
-    })();
-
-    // --- FINAL INITIALIZATION ---
+    // Initial render attempt: first from cache, then sync in background
     loadFromCache();
-    currentLimit = 20;
+    applyFiltersAndRender();
 
-    // Restore saved view on load (Centralized initialization)
-    const savedView = localStorage.getItem("active_app_view") || 'data';
-    switchView(savedView);
-
-    if (entryTypeSelect) {
-        entryTypeSelect.dispatchEvent(new Event("change"));
-    }
-
+    // Auto-sync data from Google Sheets on page load
     const syncBtn = document.getElementById('sync-gsheet-btn');
-    if (syncBtn) {
-        syncBtn.addEventListener('click', () => {
-            if (!isAuthorizedForSync()) {
-                console.log("Sync skipped: Read-only access");
-                return;
-            }
-            syncData();
-        });
-    }
+    if (syncBtn) syncBtn.click();
 });
