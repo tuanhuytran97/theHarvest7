@@ -8,6 +8,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const passwordInput = document.getElementById("admin-password");
     const loginError = document.getElementById("login-error");
 
+    // Safety check for CONFIG
+    if (typeof CONFIG === 'undefined') {
+        console.error("CRITICAL: config.js is missing or failed to load!");
+        window.CONFIG = { WEB_APP_URL: "NOT_CONFIGURED", USERS: {} };
+    }
+
     const getRole = () => sessionStorage.getItem("user-role");
     const getUserName = () => sessionStorage.getItem("user-name");
     const getToken = () => sessionStorage.getItem("user-token");
@@ -113,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (result.status === "success") {
                     // Lấy thông tin từ danh sách ẩn trong config.js nếu có
-                    const userConfig = CONFIG.USERS[pw];
+                    const userConfig = (typeof CONFIG !== 'undefined' && CONFIG.USERS) ? CONFIG.USERS[pw] : null;
                     const userName = userConfig ? userConfig.name : (result.userName || "Người dùng");
                     
                     sessionStorage.setItem("user-role", result.role);
