@@ -3486,8 +3486,18 @@ document.addEventListener("DOMContentLoaded", () => {
         currentSelectedBuyer.transactions.forEach(t => {
             const row = document.createElement('tr');
             const summary = t.lines.map(l => `${l.qty} ${l.flowerType}`).join(', ');
+            
+            // Định dạng lại ngày từ DD/MM/YYYY sang DD/MM/YY
+            let shortDateWithYear = t.dateStr;
+            if (t.dateStr.length >= 10) {
+                const parts = t.dateStr.split('/');
+                if (parts.length === 3) {
+                    shortDateWithYear = `${parts[0]}/${parts[1]}/${parts[2].slice(-2)}`;
+                }
+            }
+
             row.innerHTML = `
-                <td style="color: #64748b; width: 60px;">${t.dateStr.slice(0,5)}</td>
+                <td style="color: #64748b; width: 80px; font-size: 0.8rem;">${shortDateWithYear}</td>
                 <td>${summary}</td>
                 <td style="text-align: right; font-weight: 700;">${formatCurrency(t.totalExpected)}</td>
             `;
