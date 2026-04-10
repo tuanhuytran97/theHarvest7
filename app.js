@@ -226,7 +226,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const dd = String(dateObj.getDate()).padStart(2, '0');
         const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
         const yyyy = dateObj.getFullYear();
-        return `${dd}/${mm}/${yyyy}`; // Chỉnh lại định dạng VN cho hóa đơn
+        return `${yyyy}-${mm}-${dd}`; // Phải để YYYY-MM-DD cho ô Input
+    }
+
+    function formatDateVN(dateObj) {
+        if (!dateObj || isNaN(dateObj.getTime())) return "";
+        const dd = String(dateObj.getDate()).padStart(2, '0');
+        const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const yyyy = dateObj.getFullYear();
+        return `${dd}/${mm}/${yyyy}`;
     }
 
     function formatNumber(num) {
@@ -3482,7 +3490,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // Cập nhật thông tin chung
         document.getElementById('receipt-customer-name').innerText = currentSelectedBuyer.name;
-        document.getElementById('receipt-date').innerText = formatDateInput(new Date());
+        document.getElementById('receipt-date').innerText = formatDateVN(new Date());
         document.getElementById('receipt-id').innerText = "Số: INV-" + Date.now().toString().slice(-6);
         
         // Đổ dữ liệu mặt hàng (Lấy từ các đơn nợ hiện tại)
