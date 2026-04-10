@@ -1217,11 +1217,11 @@ document.addEventListener("DOMContentLoaded", () => {
         // Keep detail view open if it was already open and buyer still has debt
         if (currentSelectedBuyer && buyers[currentSelectedBuyer.name]) {
             showDebtDetail(buyers[currentSelectedBuyer.name]);
+        } else {
             currentSelectedBuyer = null;
             if (masterView) masterView.style.display = 'block';
             if (detailView) detailView.style.display = 'none';
         }
-    }
     }
 
     // Switch to detail view
@@ -3502,7 +3502,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
             row.innerHTML = `
                 <td style="color: #64748b; width: 80px; font-size: 0.8rem;">${shortDateWithYear}</td>
-                <td>${summary}</td>
+                <td>
+                    <div>${summary}</div>
+                    ${t.paid > 0 ? `<div style="font-size: 0.75rem; color: #059669; margin-top: 2px;">✅ Đã thu: ${formatCurrency(t.paid)}</div>` : ''}
+                </td>
                 <td style="text-align: right; font-weight: 700;">${formatCurrency(t.totalExpected)}</td>
             `;
             itemsBody.appendChild(row);
