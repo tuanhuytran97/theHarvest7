@@ -509,21 +509,8 @@ document.addEventListener("DOMContentLoaded", () => {
             item.innerHTML = `
                 <div class="form-group" style="margin: 0;">
                     <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Loại mặt hàng</label>
-                    <select class="fw-type" required>
-                        <option value="Xô ngoại">Xô ngoại</option>
-                        <option value="Xô nội">Xô nội</option>
-                        <option value="Ecuador">Ecuador</option>
-                        <option value="Pháp">Pháp</option>
-                        <option value="Trắng ù">Trắng ù</option>
-                        <option value="Ô Hồng">Ô Hồng</option>
-                        <option value="Ô Trắng">Ô Trắng</option>
-                        <option value="Simmo">Simmo</option>
-                        <option value="Cam Cháy">Cam Cháy</option>
-                        <option value="Vitto">Vitto</option>
-                        <option value="Lạc Thần">Lạc Thần</option>
-                        <option value="Hỷ Trứng">Hỷ Trứng</option>
-                        <option value="Khác">Khác</option>
-                    </select>
+                    <input type="text" class="fw-type" list="flower-types" placeholder="Tên hoa..." required
+                        style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;">
                 </div>
                 <div class="form-group" style="margin: 0;">
                     <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>

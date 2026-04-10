@@ -144,23 +144,8 @@
                                     <div class="flower-item"
                                         style="display: grid; grid-template-columns: 1.2fr 0.6fr 1.2fr 1.5fr 30px; gap: 10px; align-items: center;">
                                         <div class="form-group" style="margin: 0;">
-                                            <select class="fw-type"
-                                                style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;"
-                                                required>
-                                                <option value="Xô ngoại">Xô ngoại</option>
-                                                <option value="Xô nội">Xô nội</option>
-                                                <option value="Ecuador">Ecuador</option>
-                                                <option value="Pháp">Pháp</option>
-                                                <option value="Trắng ù">Trắng ù</option>
-                                                <option value="Ô Hồng">Ô Hồng</option>
-                                                <option value="Ô Trắng">Ô Trắng</option>
-                                                <option value="Simmo">Simmo</option>
-                                                <option value="Cam Cháy">Cam Cháy</option>
-                                                <option value="Vitto">Vitto</option>
-                                                <option value="Lạc Thần">Lạc Thần</option>
-                                                <option value="Hỷ Trứng">Hỷ Trứng</option>
-                                                <option value="Khác">Khác</option>
-                                            </select>
+                                            <input type="text" class="fw-type" list="flower-types" placeholder="Tên hoa..."
+                                                style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;" required>
                                         </div>
                                         <div class="form-group" style="margin: 0;"><input type="number" placeholder="SL"
                                                 class="fw-qty" min="0" required></div>
@@ -859,6 +844,21 @@
     <script src="config.js"></script>
     <script src="data.js"></script>
     <script src="app.js"></script>
+    <!-- GLOBAL DATA LISTS FOR AUTOCOMPLETE -->
+    <datalist id="flower-types">
+        <option value="Xô ngoại"></option>
+        <option value="Xô nội"></option>
+        <option value="Ecuador"></option>
+        <option value="Pháp"></option>
+        <option value="Trắng ù"></option>
+        <option value="Ô Hồng"></option>
+        <option value="Ô Trắng"></option>
+        <option value="Simmo"></option>
+        <option value="Cam Cháy"></option>
+        <option value="Vitto"></option>
+        <option value="Lạc Thần"></option>
+        <option value="Hỷ Trứng"></option>
+    </datalist>
 </body>
 
 </html>
