@@ -11,6 +11,8 @@
 </head>
 
 <body>
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
     <!-- Simple Login Overlay -->
     <div id="login-overlay" class="login-overlay">
         <div class="login-card glassmorphism">
@@ -18,13 +20,34 @@
                 <i class="fa-solid fa-leaf"></i>
                 <span>FarmDash Admin</span>
             </div>
-            <p style="text-align: center; margin-bottom: 1.5rem; color: var(--text-light);">Vui lòng nhập mật khẩu truy cập nội bộ</p>
+            <p style="text-align: center; margin-bottom: 1rem; color: var(--text-light);">Vui lòng nhập mật khẩu truy
+                cập nội bộ</p>
+            
+            <!-- Login Info Hint -->
+            <div class="login-info-hint">
+                <div class="hint-item">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span>Admin</span>
+                </div>
+                <div class="hint-item">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span>Nhân viên</span>
+                </div>
+                <div class="hint-item">
+                    <i class="fa-solid fa-user-tag"></i>
+                    <span>Khách hàng</span>
+                </div>
+            </div>
+
             <form id="login-form">
                 <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <input type="password" id="admin-password" placeholder="Mật khẩu" required style="text-align: center; font-size: 1.2rem;">
+                    <input type="password" id="admin-password" placeholder="Mật khẩu" required
+                        style="text-align: center; font-size: 1.2rem;">
                 </div>
                 <button type="submit" class="btn-primary" style="width: 100%;">Truy Cập Hệ Thống</button>
-                <p id="login-error" style="color: var(--danger); font-size: 0.85rem; text-align: center; margin-top: 1rem; display: none;">Mật khẩu không đúng!</p>
+                <p id="login-error"
+                    style="color: var(--danger); font-size: 0.85rem; text-align: center; margin-top: 1rem; display: none;">
+                    Mật khẩu không đúng!</p>
             </form>
         </div>
     </div>
@@ -48,19 +71,27 @@
         <!-- Main Content Area -->
         <main class="main-content">
             <header>
-                <div>
+                <div class="header-spacer"></div>
+                <div class="header-title">
                     <h1>the Harvest Farm</h1>
                     <p class="subtitle">Báo cáo & Phân tích tài chính</p>
                 </div>
                 <div class="user-profile">
-                    <button id="sync-gsheet-btn" class="btn-primary"
-                        style="margin-right: 15px; background-color: var(--secondary-color);">
+                    <div class="user-menu-container">
+                        <div id="user-avatar-trigger" class="user-info-trigger">
+                            <span id="user-display-name" style="font-weight: 600; color: var(--text-dark);"></span>
+                            <img id="user-avatar" src="https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff" alt="User Avatar">
+                        </div>
+                        <div id="user-dropdown" class="user-dropdown" style="top: 100%;">
+                            <button id="logout-btn" class="btn-logout">
+                                <i class="fa-solid fa-right-from-bracket"></i> Đăng Xuất
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button id="sync-gsheet-btn" class="btn-primary">
                         <i class="fa-solid fa-cloud-arrow-down"></i> Tải Từ Google Sheets
                     </button>
-                    <button id="logout-btn" class="btn-primary" style="margin-right: 15px; background-color: var(--danger); border: none;">
-                        <i class="fa-solid fa-right-from-bracket"></i> Đăng Xuất
-                    </button>
-                    <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" alt="User Avatar">
                 </div>
             </header>
 
@@ -91,7 +122,7 @@
                                 <div class="form-group span-half row-align">
                                     <label for="status-input">Trạng thái</label>
                                     <select id="status-input">
-                                        <option value="" selected></option>
+                                        <option value="Chưa Xong" selected>Chưa Thu Tiền</option>
                                         <option value="Xong">Đã Thu Tiền</option>
                                     </select>
                                 </div>
@@ -153,65 +184,49 @@
                                 <div class="span-full" style="border-top: 1px dashed #ccc; margin: 10px 0;"></div>
 
                                 <!-- VỰA FIELDS -->
+                                <!-- VỰA FIELDS (Đối soát Vựa) -->
                                 <div id="vua-fields" class="form-grid span-full"
-                                    style="display: none; padding: 1.5rem; background: rgba(0,0,0,0.03); border-radius: 8px; border: 1px solid rgba(0,0,0,0.05); gap: var(--spacing-md);">
+                                    style="display: none; padding: 1rem; background: #f1f5f9; border-radius: 12px; border: 1px solid #e2e8f0; margin-top: 1rem;">
 
-                                    <div class="span-full"
-                                        style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                                        <div class="form-group" style="margin:0;">
-                                            <label>Phí Vận Chuyển (VNĐ)</label>
-                                            <input type="text" id="vua-shipping-cost" class="money-input"
-                                                value="150.000">
-                                        </div>
-                                        <div class="form-group" style="margin:0;">
-                                            <label>Chi Phí Vật Tư (VNĐ)</label>
-                                            <input type="text" id="vua-vattu-cost" class="money-input" value="150.000">
-                                        </div>
-                                        <div class="form-group" style="margin:0;">
-                                            <label style="color: var(--primary-color); font-weight: bold;">Phí Đóng Gói
-                                                (VNĐ)</label>
-                                            <input type="text" id="vua-packing-cost" class="money-input" value="500.000"
-                                                style="font-weight: bold; font-size: 1.1rem; color: var(--primary-color); background-color: rgba(14, 165, 233, 0.05);">
-                                            <div id="packing-suggest-box"
-                                                style="margin-top: 4px; font-size: 0.8rem; display: none;">
-                                                <button type="button" id="btn-apply-suggest"
-                                                    style="background: none; border: none; padding: 0; color: var(--success); cursor: pointer; text-decoration: underline; font-weight: bold; text-align: left; width: 100%;">
-                                                    Gợi ý: 0đ (Giá bó: 0đ)
-                                                </button>
-                                            </div>
-                                        </div>
+                                    <div class="form-group span-half">
+                                        <label>🚚 Phí Vận Chuyển</label>
+                                        <input type="text" id="vua-shipping-cost" class="money-input" value="150.000">
                                     </div>
 
-                                    <div class="form-group span-third" style="margin-top: 10px;">
-                                        <label style="color: var(--text-light)">Tổng Giá Vốn (Tạm tính)</label>
-                                        <input type="text" id="vua-total-cost" readonly class="readonly-input" value="0"
-                                            style="font-weight: bold;">
-                                    </div>
-                                    <div class="form-group span-third" style="margin-top: 10px;">
-                                        <label style="color: var(--primary-color)">Tiền Phải Thu Khách (VNĐ)</label>
-                                        <input type="text" id="vua-total-collect" class="money-input"
-                                            style="font-weight: bold; font-size: 1.1rem; color: var(--primary-color); background-color: rgba(14, 165, 233, 0.05);">
-                                    </div>
-                                    <div class="form-group span-third" style="margin-top: 10px;">
-                                        <label style="color: #ec4899; font-weight: bold;">💎 Doanh Thu (VNĐ)</label>
-                                        <input type="text" id="vua-expected-revenue" readonly class="readonly-input"
-                                            value="0"
-                                            style="font-weight: bold; font-size: 1.2rem; color: #fff; background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; box-shadow: 0 4px 6px rgba(236,72,153,0.3); text-shadow: 1px 1px 2px rgba(0,0,0,0.2); ">
+                                    <div class="form-group span-half">
+                                        <label>📦 Chi Phí Vật Tư</label>
+                                        <input type="text" id="vua-vattu-cost" class="money-input" value="150.000"
+                                            readonly>
                                     </div>
 
-                                    <!-- THÔNG SỐ ĐIỀU CHỈNH GIÁ BÓ -->
-                                    <div class="span-full"
-                                        style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 5px; background-color: rgba(245, 158, 11, 0.05); padding: 10px; border-radius: 6px; border: 1px dashed rgba(245, 158, 11, 0.3);">
-                                        <div class="form-group" style="margin: 0;">
-                                            <label style="color: #d97706;">Tổng Số Bó (Tự tính: SL / 50)</label>
-                                            <input type="text" id="vua-total-bundles" readonly class="readonly-input"
-                                                value="0" style="font-weight: bold; color: #d97706;">
+                                    <div class="form-group span-half">
+                                        <label id="label-vua-total-cost">💰 Giá vốn</label>
+                                        <input type="text" id="vua-total-cost" readonly value="0">
+                                    </div>
+
+                                    <div class="form-group span-full">
+                                        <label>🏦 Tiền Phải Thu Khách (VNĐ)</label>
+                                        <input type="text" id="vua-total-collect" class="money-input">
+                                    </div>
+
+                                    <div class="form-group span-full">
+                                        <label>📈 Lợi nhuận</label>
+                                        <input type="text" id="vua-packing-cost" class="money-input"
+                                            placeholder="Nhập lợi nhuận">
+                                        <div id="packing-suggest-box" style="margin-top: 4px; display: none;">
+                                            <button type="button" id="btn-apply-suggest"
+                                                style="background: none; border: none; padding: 0; color: #fff; cursor: pointer; text-decoration: underline; font-weight: bold; font-size: 0.85rem; opacity: 0.9;"></button>
                                         </div>
-                                        <div class="form-group" style="margin: 0;">
-                                            <label style="color: #d97706;">Giá Hiện Tại Mỗi Bó (Gợi ý)</label>
-                                            <input type="text" id="vua-price-per-bundle" readonly class="readonly-input"
-                                                value="0 ₫" style="font-weight: bold; color: #d97706;">
-                                        </div>
+                                    </div>
+
+                                    <div class="form-group span-half">
+                                        <label>🧺 Tổng Số Bó (Bông / 50)</label>
+                                        <input type="text" id="vua-total-bundles" readonly value="0">
+                                    </div>
+
+                                    <div class="form-group span-half">
+                                        <label>🏷️ Giá Hiện Tại / Bó</label>
+                                        <input type="text" id="vua-price-per-bundle" readonly value="0">
                                     </div>
                                 </div>
 
@@ -282,11 +297,14 @@
                                     <select id="filter-status">
                                         <option value="all">Tất cả trạng thái</option>
                                         <option value="Xong">Xong</option>
-                                        <option value="">Trống</option>
+                                        <option value="Chưa Xong">Chưa Xong</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Filter Count Badges -->
+                        <div class="filter-count-row" id="filter-count-row"></div>
 
                         <!-- Table Tabs -->
                         <div style="display: flex; gap: 10px; margin-bottom: 1rem;">
@@ -304,12 +322,14 @@
                                 Dịch Chi Phí</button>
                         </div>
 
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; flex-direction: column; gap: 4px;">
                             <button id="bulk-delete-btn"
                                 style="display: none; background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">
                                 <i class="fa-solid fa-trash-can"></i> Xoá Các Dòng Đã Chọn (<span
                                     id="bulk-delete-count">0</span>)
                             </button>
+                            <p class="bulk-hint" id="bulk-hint">💡 Tick ô vuông để chọn và xóa nhiều dòng cùng lúc</p>
                         </div>
 
                         <div class="table-responsive">
@@ -334,6 +354,8 @@
                                 </tbody>
                             </table>
                         </div>
+                        <!-- Load More Button -->
+                        <button id="load-more-btn" style="display:none;">⬇ Xem thêm</button>
                     </section>
                 </div> <!-- End of VIEW-DATA -->
 
@@ -346,23 +368,27 @@
                             <select id="report-range">
                                 <option value="month" selected>Báo Cáo Tháng</option>
                                 <option value="year">Báo Cáo Năm</option>
+                                <option value="q1">Quý 1</option>
+                                <option value="q2">Quý 2</option>
+                                <option value="q3">Quý 3</option>
+                                <option value="q4">Quý 4</option>
                             </select>
                         </div>
                         <div class="form-group row-align" id="month-select-container" style="display: block;">
                             <label for="report-month">Tháng</label>
                             <select id="report-month">
-                                <option value="1">Tháng 1</option>
-                                <option value="2">Tháng 2</option>
-                                <option value="3">Tháng 3</option>
-                                <option value="4">Tháng 4</option>
-                                <option value="5">Tháng 5</option>
-                                <option value="6">Tháng 6</option>
-                                <option value="7">Tháng 7</option>
-                                <option value="8">Tháng 8</option>
-                                <option value="9">Tháng 9</option>
-                                <option value="10">Tháng 10</option>
-                                <option value="11">Tháng 11</option>
-                                <option value="12">Tháng 12</option>
+                                <option value="1">T1</option>
+                                <option value="2">T2</option>
+                                <option value="3">T3</option>
+                                <option value="4">T4</option>
+                                <option value="5">T5</option>
+                                <option value="6">T6</option>
+                                <option value="7">T7</option>
+                                <option value="8">T8</option>
+                                <option value="9">T9</option>
+                                <option value="10">T10</option>
+                                <option value="11">T11</option>
+                                <option value="12">T12</option>
                             </select>
                         </div>
                         <div class="form-group row-align">
@@ -372,20 +398,54 @@
                             </select>
                         </div>
                         <div class="form-group row-align">
-                            <label for="report-filter">Loại Báo Cáo</label>
+                            <label for="report-filter">Đối tượng</label>
                             <select id="report-filter">
-                                <option value="Chung">Báo Cáo Chung</option>
-                                <option value="Farm">Báo Cáo Farm</option>
-                                <option value="Vựa">Báo Cáo Vựa</option>
-                                <option value="Company">Báo Cáo Company</option>
+                                <option value="Chung">Tất cả</option>
+                                <option value="Farm">Farm</option>
+                                <option value="Vựa">Vựa</option>
+                                <option value="Company">Công Ty</option>
                             </select>
+                        </div>
+
+                        <!-- Baseline controls for comparison (unified) -->
+                        <div id="unified-cmp-controls" class="form-group row-align" style="display: none; border-left: 2px solid var(--border-color); padding-left: 1rem; margin-left: 0.5rem;">
+                             <label style="color: #6366f1; font-weight: bold;">So sánh với:</label>
+                             <select id="report-year-prev" style="color: #6366f1; border-color: #6366f1;"></select>
+                              <select id="report-month-prev" style="color: #6366f1; border-color: #6366f1;">
+                                 <option value="1">T1</option>
+                                 <option value="2">T2</option>
+                                 <option value="3">T3</option>
+                                 <option value="4">T4</option>
+                                 <option value="5">T5</option>
+                                 <option value="6">T6</option>
+                                 <option value="7">T7</option>
+                                 <option value="8">T8</option>
+                                 <option value="9">T9</option>
+                                 <option value="10">T10</option>
+                                 <option value="11">T11</option>
+                                 <option value="12">T12</option>
+                              </select>
+                              <select id="report-quarter-prev" style="color: #6366f1; border-color: #6366f1; display: none;">
+                                 <option value="q1">Quý 1</option>
+                                 <option value="q2">Quý 2</option>
+                                 <option value="q3">Quý 3</option>
+                                 <option value="q4">Quý 4</option>
+                              </select>
+                        </div>
+
+                        <div class="form-group row-align" style="margin-left: auto;">
+                            <button id="toggle-comparison-btn" class="btn-primary"
+                                style="background-color: #f1f5f9; color: #475569; border: 1.5px solid #cbd5e1; font-size: 0.82rem; padding: 0.5rem 1rem; display: flex; align-items: center; gap: 8px; box-shadow: none;">
+                                <i class="fa-solid fa-calendar-days"></i> <span>So sánh khác</span>
+                            </button>
                         </div>
                     </div>
 
                     <!-- KPI Cards Section -->
                     <section class="kpi-cards" style="margin-bottom: 2rem;">
                         <div class="card glassmorphism" style="margin-bottom: 0;">
-                            <h3 style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem;">Sản Lượng T.Tháng</h3>
+                            <h3 style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem;">Sản Lượng
+                                T.Tháng</h3>
                             <div style="display: flex; align-items: baseline; gap: 8px;">
                                 <p id="kpi-qty" style="font-size: 1.4rem; font-weight: 700; color: #f59e0b; margin:0;">0
                                 </p>
@@ -393,7 +453,8 @@
                             </div>
                         </div>
                         <div class="card glassmorphism" style="margin-bottom: 0;">
-                            <h3 style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem;">Doanh Thu T.Tháng</h3>
+                            <h3 style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem;">Doanh Thu
+                                T.Tháng</h3>
                             <div style="display: flex; align-items: baseline; gap: 8px;">
                                 <p id="kpi-revenue"
                                     style="font-size: 1.4rem; font-weight: 700; color: var(--primary-color); margin:0;">
@@ -402,7 +463,8 @@
                             </div>
                         </div>
                         <div class="card glassmorphism" style="margin-bottom: 0;">
-                            <h3 style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem;">Chi Phí T.Tháng</h3>
+                            <h3 style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem;">Chi Phí
+                                T.Tháng</h3>
                             <div style="display: flex; align-items: baseline; gap: 8px;">
                                 <p id="kpi-expense"
                                     style="font-size: 1.4rem; font-weight: 700; color: var(--danger); margin:0;">0 ₫</p>
@@ -410,7 +472,8 @@
                             </div>
                         </div>
                         <div class="card glassmorphism" style="margin-bottom: 0;">
-                            <h3 style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem;">Lợi Nhuận T.Tháng</h3>
+                            <h3 style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem;">Lợi Nhuận
+                                T.Tháng</h3>
                             <div style="display: flex; align-items: baseline; gap: 8px;">
                                 <p id="kpi-profit"
                                     style="font-size: 1.4rem; font-weight: 700; color: var(--secondary-color); margin:0;">
@@ -453,101 +516,6 @@
                             <h2><i class="fa-solid fa-chart-line"></i> <span>Báo Cáo Chi Tiết Tháng</span></h2>
                             <div class="chart-container">
                                 <canvas id="monthlyCombinedChart"></canvas>
-                            </div>
-                        </div>
-                    </section>
-                    <!-- Comparison Module -->
-                    <section class="comparison-section glassmorphism" style="margin-bottom: 2rem;">
-                        <div
-                            style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 1rem; margin-bottom: 1rem;">
-                            <h2 style="margin: 0; flex: 1; min-width: 200px;"><i class="fa-solid fa-scale-balanced"></i>
-                                So Sánh Tăng Trưởng (YoY/MoM)</h2>
-                            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                                <div class="form-group" style="display: flex; align-items: center; gap: 5px;">
-                                    <span style="font-size: 0.8rem; color: var(--text-light);">Từ:</span>
-                                    <select id="cmp-month1"
-                                        style="padding: 4px; font-size: 0.85rem; border-radius: 4px; display: none;">
-                                        <option value="0">T1</option>
-                                        <option value="1">T2</option>
-                                        <option value="2">T3</option>
-                                        <option value="3">T4</option>
-                                        <option value="4">T5</option>
-                                        <option value="5">T6</option>
-                                        <option value="6">T7</option>
-                                        <option value="7">T8</option>
-                                        <option value="8">T9</option>
-                                        <option value="9">T10</option>
-                                        <option value="10">T11</option>
-                                        <option value="11">T12</option>
-                                    </select>
-                                    <select id="cmp-year1"
-                                        style="padding: 4px; font-size: 0.85rem; border-radius: 4px; font-weight: bold;"></select>
-                                </div>
-                                <div class="form-group" style="display: flex; align-items: center; gap: 5px;">
-                                    <span style="font-size: 0.8rem; color: var(--text-light);">Đến:</span>
-                                    <select id="cmp-month2"
-                                        style="padding: 4px; font-size: 0.85rem; border-radius: 4px; display: none;">
-                                        <option value="0">T1</option>
-                                        <option value="1">T2</option>
-                                        <option value="2">T3</option>
-                                        <option value="3">T4</option>
-                                        <option value="4">T5</option>
-                                        <option value="5">T6</option>
-                                        <option value="6">T7</option>
-                                        <option value="7">T8</option>
-                                        <option value="8">T9</option>
-                                        <option value="9">T10</option>
-                                        <option value="10">T11</option>
-                                        <option value="11">T12</option>
-                                    </select>
-                                    <select id="cmp-year2"
-                                        style="padding: 4px; font-size: 0.85rem; border-radius: 4px; font-weight: bold;"></select>
-                                </div>
-                                <select id="cmp-period" style="padding: 4px; font-size: 0.85rem; border-radius: 4px;">
-                                    <option value="year">Cả Năm</option>
-                                    <option value="month">Từng Tháng</option>
-                                    <option value="q1">Quý 1</option>
-                                    <option value="q2">Quý 2</option>
-                                    <option value="q3">Quý 3</option>
-                                    <option value="q4">Quý 4</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Comparison KPIs -->
-                        <div class="kpi-cards" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;">
-                            <div class="card" style="box-shadow: none; border: 1px solid rgba(0,0,0,0.05);">
-                                <h3 style="font-size: 0.8rem; color: var(--text-light);">Sản Lượng</h3>
-                                <p style="font-size: 1rem; margin-top: 5px;"><span id="cmp-qty-y1">0</span> <i
-                                        class="fa-solid fa-arrow-right-long"
-                                        style="font-size: 0.8em; margin: 0 5px; color: #ccc;"></i> <span
-                                        id="cmp-qty-y2">0</span></p>
-                                <p id="cmp-qty-pct" style="font-size: 1.1rem; font-weight: bold; margin-top: 5px;">-</p>
-                            </div>
-                            <div class="card" style="box-shadow: none; border: 1px solid rgba(0,0,0,0.05);">
-                                <h3 style="font-size: 0.8rem; color: var(--text-light);">Doanh Thu</h3>
-                                <p style="font-size: 1rem; margin-top: 5px;"><span id="cmp-rev-y1">0 ₫</span> <i
-                                        class="fa-solid fa-arrow-right-long"
-                                        style="font-size: 0.8em; margin: 0 5px; color: #ccc;"></i> <span
-                                        id="cmp-rev-y2">0 ₫</span></p>
-                                <p id="cmp-rev-pct" style="font-size: 1.1rem; font-weight: bold; margin-top: 5px;">-</p>
-                            </div>
-                            <div class="card" style="box-shadow: none; border: 1px solid rgba(0,0,0,0.05);">
-                                <h3 style="font-size: 0.8rem; color: var(--text-light);">Chi Phí</h3>
-                                <p style="font-size: 1rem; margin-top: 5px;"><span id="cmp-exp-y1">0 ₫</span> <i
-                                        class="fa-solid fa-arrow-right-long"
-                                        style="font-size: 0.8em; margin: 0 5px; color: #ccc;"></i> <span
-                                        id="cmp-exp-y2">0 ₫</span></p>
-                                <p id="cmp-exp-pct" style="font-size: 1.1rem; font-weight: bold; margin-top: 5px;">-</p>
-                            </div>
-                            <div class="card" style="box-shadow: none; border: 1px solid rgba(0,0,0,0.05);">
-                                <h3 style="font-size: 0.8rem; color: var(--text-light);">Lợi Nhuận</h3>
-                                <p style="font-size: 1rem; margin-top: 5px;"><span id="cmp-profit-y1">0 ₫</span> <i
-                                        class="fa-solid fa-arrow-right-long"
-                                        style="font-size: 0.8em; margin: 0 5px; color: #ccc;"></i> <span
-                                        id="cmp-profit-y2">0 ₫</span></p>
-                                <p id="cmp-profit-pct" style="font-size: 1.1rem; font-weight: bold; margin-top: 5px;">-
-                                </p>
                             </div>
                         </div>
                     </section>
@@ -665,9 +633,10 @@
                             <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: var(--text-light);">Cập nhật nợ chưa
                                 thanh toán từ Farm và Vựa</p>
                         </div>
-                        <div class="form-group" style="margin: 0; min-width: 200px; text-align: right;">
-                            <h3 style="margin: 0; font-size: 1rem; color: var(--text-dark);">Tổng: <span
-                                    id="master-total-debt" style="color: var(--danger);">0đ</span></h3>
+                        <div class="form-group" style="margin: 0; min-width: 220px; text-align: right;">
+                            <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-dark); display: flex; align-items: center; justify-content: flex-end; gap: 8px;"> 
+                                Tổng nợ: <span id="master-total-debt" style="color: var(--danger); font-size: 1.7rem; font-weight: 900; background: rgba(239, 68, 68, 0.1); padding: 5px 15px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.2);">0₫</span>
+                            </h3>
                         </div>
                     </div>
 
@@ -752,7 +721,8 @@
                             </div>
                         </div>
 
-                        <div class="invoice-footer-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="invoice-footer-actions"
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <button id="btn-pay-selected" class="btn-primary"
                                 style="background-color: var(--primary-color); grid-column: span 2; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;">
                                 <i class="fa-solid fa-list-check"></i> Thanh toán Đơn đã chọn
@@ -771,12 +741,33 @@
 
             </div>
         </main>
+
+        <!-- MOBILE BOTTOM NAVIGATION -->
+        <nav class="mobile-nav">
+            <a href="#" class="mobile-nav-item active" data-view="data">
+                <i class="fa-solid fa-table"></i>
+                <span>Dữ Liệu</span>
+            </a>
+            <a href="#" class="mobile-nav-item" data-view="report">
+                <i class="fa-solid fa-chart-pie"></i>
+                <span>Báo Cáo</span>
+            </a>
+            <a href="#" class="mobile-nav-item" data-view="cashflow">
+                <i class="fa-solid fa-money-bill-transfer"></i>
+                <span>Dòng Tiền</span>
+            </a>
+            <a href="#" class="mobile-nav-item" data-view="debt">
+                <i class="fa-solid fa-book-journal-whills"></i>
+                <span>Sổ Nợ</span>
+            </a>
+        </nav>
     </div>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="config.js"></script>
     <script src="data.js"></script>
     <script src="app.js"></script>
 </body>

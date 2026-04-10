@@ -1,36 +1,123 @@
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxS7z1duOFpG90jZF0FgoVOVgQsoiSKBF4NVm-3wMyfUA1TXvgi_5PDk9Ty4D6z3nUFUg/exec";
+// Configuration is loaded from config.js
 
 document.addEventListener("DOMContentLoaded", () => {
-    // 0. Internal Access Control
-    const ADMIN_PASSWORD = "REDACTED_USER1";
+    // 0. Internal Access Control (Server-side validation)
     const loginOverlay = document.getElementById("login-overlay");
     const loginForm = document.getElementById("login-form");
     const appContainer = document.querySelector(".app-container");
     const passwordInput = document.getElementById("admin-password");
     const loginError = document.getElementById("login-error");
 
+    const getRole = () => sessionStorage.getItem("user-role");
+    const getUserName = () => sessionStorage.getItem("user-name");
+    const getToken = () => sessionStorage.getItem("user-token");
+
+    const updateUserProfile = () => {
+        const name = getUserName() || "Người dùng";
+        const displayNameEl = document.getElementById("user-display-name");
+        const avatarEl = document.getElementById("user-avatar");
+        if (displayNameEl) displayNameEl.innerText = name;
+        if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0D8ABC&color=fff`;
+    };
+
+    // User Profile Dropdown Logic
+    const userTrigger = document.getElementById("user-avatar-trigger");
+    const userDropdown = document.getElementById("user-dropdown");
+    if (userTrigger && userDropdown) {
+        userTrigger.addEventListener("click", (e) => {
+            e.stopPropagation();
+            userDropdown.classList.toggle("active");
+        });
+
+        document.addEventListener("click", () => {
+            userDropdown.classList.remove("active");
+        });
+    }
+
     const checkAuth = () => {
-        if (sessionStorage.getItem("admin_auth") === "true") {
+        const role = getRole();
+        if (role) {
             loginOverlay.style.display = "none";
             appContainer.style.display = "flex";
+            applyRolePermissions(role);
+            updateUserProfile();
             return true;
         }
         return false;
     };
 
+    function applyRolePermissions(role) {
+        // Elements to hide for specific roles
+        const syncBtn = document.getElementById('sync-gsheet-btn');
+        const entryCard = document.querySelector('.card:has(#dataEntryForm)');
+        const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+        const debtActionBox = document.querySelector('.invoice-footer-actions');
+
+        // CUSTOMER: Readonly, hide sensitive/entry tools
+        if (role === 'CUSTOMER') {
+            if (syncBtn) syncBtn.style.display = 'none';
+            if (entryCard) entryCard.style.display = 'none';
+            if (bulkDeleteBtn) bulkDeleteBtn.style.display = 'none';
+            if (debtActionBox) debtActionBox.style.display = 'none';
+        }
+    }
+
+    // Protection Guards for Mutating Functions
+    const canMutate = () => {
+        const r = getRole();
+        return r === 'ADMIN' || r === 'EMPLOYEE';
+    };
+
+    const isAuthorizedForSync = () => canMutate();
+    const isAuthorizedForEntry = () => canMutate();
+    const isAuthorizedForDebt = () => canMutate();
+
     if (!checkAuth()) {
-        loginForm.addEventListener("submit", (e) => {
+        loginForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            if (passwordInput.value === ADMIN_PASSWORD) {
-                sessionStorage.setItem("admin_auth", "true");
-                loginOverlay.style.display = "none";
-                appContainer.style.display = "flex";
-                // Trigger any initial data loading if needed
-                if (typeof initDashboard === "function") initDashboard();
-            } else {
-                loginError.style.display = "block";
-                passwordInput.value = "";
-                passwordInput.focus();
+            const pw = passwordInput.value;
+            if (!pw) return;
+
+            const submitBtn = loginForm.querySelector('button');
+            const originalText = submitBtn.innerText;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xác thực...';
+            submitBtn.disabled = true;
+
+            try {
+                // Gửi mật khẩu lên Apps Script để kiểm tra
+                const response = await fetch(CONFIG.WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: "login", password: pw }),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                });
+                const result = await response.json();
+
+                if (result.status === "success") {
+                    sessionStorage.setItem("user-role", result.role);
+                    sessionStorage.setItem("user-name", result.userName || "Người dùng");
+                    sessionStorage.setItem("user-token", pw); // Dùng password làm token xác thực
+
+                    loginOverlay.style.display = "none";
+                    appContainer.style.display = "flex";
+                    applyRolePermissions(result.role);
+                    updateUserProfile();
+                    
+                    if (typeof initDashboard === "function") initDashboard();
+
+                    // Thông báo thành công mượt mà
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    loginError.style.display = "block";
+                    loginError.innerText = result.message || "Mật khẩu không đúng!";
+                    passwordInput.value = "";
+                    passwordInput.focus();
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Lỗi kết nối Server! Vui lòng kiểm tra lại Google Apps Script.");
+            } finally {
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
             }
         });
     }
@@ -38,7 +125,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const logoutBtn = document.getElementById("logout-btn");
     if (logoutBtn) {
         logoutBtn.addEventListener("click", () => {
-            sessionStorage.removeItem("admin_auth");
+            sessionStorage.removeItem("user-role");
+            sessionStorage.removeItem("user-name");
             location.reload();
         });
     }
@@ -47,6 +135,13 @@ document.addEventListener("DOMContentLoaded", () => {
     let farmData = window.farmData || [];
     let sortState = { column: 'Ngày', direction: 'desc' };
     let currentTableTab = 'all';
+    let currentLimit = 20;
+    let dataToRenderRef = []; // module-level ref for deleteRowByIndex
+    let annualQtyChartInstance = null;
+    let annualRevProfitChartInstance = null;
+    let annualExpenseChartInstance = null;
+    let monthlyCombinedChartInstance = null;
+    let currentEditRowData = null; // Track row being edited
 
     // Convert Excel Serial Date to JS Date Object
     function excelToJsDate(serial) {
@@ -84,7 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return {
             ...item,
             parsedDate: excelToJsDate(item["Ngày"]),
-            "Status": (item["Status"] || "").trim()
+            "Status": (item["Status"] && item["Status"].trim() !== "") ? item["Status"].trim() : "Chưa Xong"
         };
     });
 
@@ -111,7 +206,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const vuaPackCostInput = document.getElementById('vua-packing-cost');
     const vuaTotalCostInput = document.getElementById('vua-total-cost');
     const vuaTotalCollectInput = document.getElementById('vua-total-collect');
-    const vuaExpectedRevenueInput = document.getElementById('vua-expected-revenue');
 
     const expenseFields = document.getElementById('expense-fields');
     const addExpenseBtn = document.getElementById('add-expense-btn');
@@ -220,18 +314,32 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
         });
-        entryTypeSelect.dispatchEvent(new Event("change"));
     }
 
     function calculateVuaTotals() {
         let totalCost = 0;
+        let totalSL = 0;
+        let flowerNames = [];
+
         if (flowerItemsContainer) {
             flowerItemsContainer.querySelectorAll('.flower-item').forEach(item => {
                 const q = parseFloat(item.querySelector('.fw-qty').value) || 0;
                 const p = parseMoney(item.querySelector('.fw-price').value);
+                const type = item.querySelector('.fw-type').value;
+
                 totalCost += (q * p);
+                totalSL += q;
+                if (q > 0 && !flowerNames.includes(type)) flowerNames.push(type);
             });
         }
+
+        // Update Dynamic Label for Giá vốn
+        const labelTotalCost = document.getElementById('label-vua-total-cost');
+        if (labelTotalCost) {
+            const nameDisplay = flowerNames.length > 0 ? flowerNames.join(', ') : 'Bông';
+            labelTotalCost.textContent = `💰 Giá vốn (${totalSL.toLocaleString('vi-VN')} ${nameDisplay})`;
+        }
+
         if (vuaTotalCostInput) vuaTotalCostInput.value = formatCurrency(totalCost);
 
         const shipping = parseMoney(vuaShipCostInput ? vuaShipCostInput.value : "0");
@@ -240,23 +348,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let totalCollect = totalCost + shipping + vattu + packing;
 
-        // Automatically update the advised total collect ONLY if user hasn't explicitly typed something else
-        // Wait, for simplicity, we just forcefully update it, or let user edit it but if costs change we re-advise?
-        // Let's forcefully update it because it's a sum.
         if (vuaTotalCollectInput) {
             vuaTotalCollectInput.value = formatMoneyStr(totalCollect);
-        }
-
-        // Expected Revenue = Total Collect - Total Cost (Wait, the user said Doanh Thu Dự Kiến = Số Tiền Phải Thu Khách - Tổng Giá Vốn).
-        // Actually Doanh thu dự kiến = (Tiền phải thu) - (Tổng Giá Vốn) - Phí (nếu có)?
-        // User explicitly said: Doanh Thu dự kiện = Số Tiền Phải Thu Khách (VNĐ) - Tổng Giá Vốn (Tạm tính)
-        if (vuaExpectedRevenueInput) {
-            const userCollect = parseMoney(vuaTotalCollectInput.value);
-            const expected = userCollect - totalCost;
-            vuaExpectedRevenueInput.value = formatCurrency(expected);
-        }
-
-        if (vuaTotalCollectInput) {
             calculateBundlesAndPrice(vuaTotalCollectInput.value);
         }
     }
@@ -288,11 +381,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const pricePerBundle = actualCollect / totalBundles;
             vuaPricePerBundleEl.value = formatCurrency(pricePerBundle);
 
-            // Suggest rounding to nearest 5000 (VND 5k)
+            // Suggest rounding to nearest 5000 (VND 5k) - e.g. 62->60, 63->65
             const roundedPrice = Math.round(pricePerBundle / 5000) * 5000;
 
             // Check if it's already perfectly rounded or diff is extremely small
-            if (Math.abs(roundedPrice - pricePerBundle) < 10) {
+            if (Math.abs(roundedPrice - pricePerBundle) < 100) {
                 if (suggestBox) suggestBox.style.display = 'none';
             } else {
                 const targetCollect = roundedPrice * totalBundles;
@@ -302,7 +395,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (suggestBox && suggestBtn && newPacking >= 0) {
                     suggestBox.style.display = 'block';
-                    suggestBtn.innerHTML = `🌟 Gợi ý Đóng Gói: ${formatCurrency(newPacking)} => Giá bó chẵn: ${formatCurrency(roundedPrice)}`;
+                    suggestBtn.innerHTML = `💡 Gợi ý Lợi nhuận: ${formatCurrency(newPacking)} => Giá bó chẵn: ${formatCurrency(roundedPrice)}`;
                     suggestBtn.onclick = () => {
                         if (vuaPackCostInput) {
                             vuaPackCostInput.value = formatMoneyStr(newPacking);
@@ -356,10 +449,10 @@ document.addEventListener("DOMContentLoaded", () => {
         addFlowerBtn.addEventListener('click', () => {
             const item = document.createElement('div');
             item.className = 'flower-item';
-            item.style = 'display: grid; grid-template-columns: 1.2fr 0.6fr 1.2fr 1.5fr 30px; gap: 10px; align-items: center;';
             item.innerHTML = `
                 <div class="form-group" style="margin: 0;">
-                    <select class="fw-type" style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;" required>
+                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Loại mặt hàng</label>
+                    <select class="fw-type" required>
                         <option value="Xô ngoại">Xô ngoại</option>
                         <option value="Xô nội">Xô nội</option>
                         <option value="Ecuador">Ecuador</option>
@@ -375,10 +468,19 @@ document.addEventListener("DOMContentLoaded", () => {
                         <option value="Khác">Khác</option>
                     </select>
                 </div>
-                <div class="form-group" style="margin: 0;"><input type="number" placeholder="SL" class="fw-qty" min="0" required></div>
-                <div class="form-group" style="margin: 0;"><input type="text" placeholder="Giá" class="fw-price money-input" required></div>
-                <div class="form-group" style="margin: 0;"><input type="text" placeholder="Thành tiền" class="fw-total" readonly style="background: #f9fafb; color: #374151; font-weight: bold; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px; width: 100%;"></div>
-                <button type="button" class="del-flower-btn" style="background: none; border: none; color: var(--danger); font-size: 1.2rem; cursor: pointer; padding: 0;" title="Xoá"><i class="fa-solid fa-circle-xmark"></i></button>
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
+                    <input type="number" placeholder="0" class="fw-qty" min="0" required>
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Đơn Giá</label>
+                    <input type="text" placeholder="0" class="fw-price money-input" required>
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Thành tiền</label>
+                    <input type="text" placeholder="0" class="fw-total" readonly style="background: #f1f5f9; color: #0f172a; font-weight: 800; border: 1.5px solid #cbd5e1 !important;">
+                </div>
+                <button type="button" class="del-flower-btn" title="Xoá"><i class="fa-solid fa-trash-can"></i></button>
             `;
             flowerItemsContainer.appendChild(item);
             attachFlowerRowEvents(item);
@@ -404,16 +506,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const newPacking = userCollect - (sumCost + shipping + vattu);
         if (vuaPackCostInput) vuaPackCostInput.value = formatMoneyStr(Math.max(0, newPacking));
 
-        // Auto update Expected Revenue when user edits the collect amount
-        const expected = userCollect - sumCost;
-        if (vuaExpectedRevenueInput) vuaExpectedRevenueInput.value = formatCurrency(expected);
-
         calculateBundlesAndPrice(vuaTotalCollectInput.value);
     });
 
 
     // 3. Table Rendering Logic
     function renderTable(dataToRender) {
+        dataToRenderRef = dataToRender; // expose to delete handler
         tableBody.innerHTML = '';
 
         // Cập nhật Header tiêu đề cột dựa trên Tab
@@ -484,68 +583,90 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const rowDateStr = formatDateInput(row.parsedDate);
             const isToday = rowDateStr === todayStr;
-            const rowJson = JSON.stringify(row).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+            const rowIndex = index; // use array index as stable reference
+            const rowJson = JSON.stringify(row).replace(/'/g, "&apos;").replace(/"/g, "&quot;"); // kept for checkbox value only
 
             if (currentTableTab === 'expense') {
                 const amount = parseFloat(String(row["Chi Phí"] || "0").replace(/,/g, ''));
                 tr.innerHTML = `
-                    <td style="text-align: center;">
-                        ${isToday ? `<input type="checkbox" class="row-checkbox" style="cursor:pointer;" value='${rowJson}'>` : `<input type="checkbox" disabled>`}
+                    <td data-label="Chọn" style="text-align: center;">
+                        ${(getRole() === 'ADMIN' || (getRole() === 'EMPLOYEE' && isToday)) ? `<input type="checkbox" class="row-checkbox" data-row-index="${rowIndex}" style="cursor:pointer;">` : `<input type="checkbox" disabled>`}
                     </td>
-                    <td>${formatDateVietnamese(row.parsedDate)}</td>
-                    <td style="font-weight:600;">${row["Loại CP"] || 'Chi phí'}</td>
-                    <td title="${row["Ghi Chú Chi Phí"] || row["Ghi Chú"] || ''}">${(row["Ghi Chú Chi Phí"] || row["Ghi Chú"] || '').substring(0, 30)}</td>
-                    <td style="color:#ef4444; font-weight:700;">${formatCurrency(amount)}</td>
-                    <td>
-                        ${isToday ? `
-                        <button class="action-btn" onclick="deleteRow('${rowJson}')" title="Xoá">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                        ` : `<span style="color:var(--text-light);font-size:12px">Khóa</span>`}
+                    <td data-label="Ngày">${formatDateVietnamese(row.parsedDate)}</td>
+                    <td data-label="Loại CP" style="font-weight:600;">${row["Loại CP"] || 'Chi phí'}</td>
+                    <td data-label="Ghi chú" title="${row["Ghi Chú Chi Phí"] || row["Ghi Chú"] || ''}">${(row["Ghi Chú Chi Phí"] || row["Ghi Chú"] || '').substring(0, 30)}</td>
+                    <td data-label="Số tiền" style="color:#ef4444; font-weight:700;">${formatCurrency(amount)}</td>
+                    <td data-label="Thao tác">
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            ${(getRole() === 'ADMIN' || (getRole() === 'EMPLOYEE' && isToday)) ? `
+                            <button class="action-btn" data-row-index="${rowIndex}" onclick="switchToInlineEdit(this)" title="Sửa" style="color:var(--primary-color);">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            ` : ''}
+                            ${(getRole() === 'ADMIN' || (getRole() === 'EMPLOYEE' && isToday)) ? `
+                            <button class="action-btn" data-row-index="${rowIndex}" onclick="deleteRowByIndex(this)" title="Xoá">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                            ` : (getRole() === 'CUSTOMER' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Khóa'}</span>`)}
+                        </div>
                     </td>
                 `;
             } else if (currentTableTab === 'vua') {
                 const pt = parseFloat(String(row["Tiền Phải Thu"] || "0").replace(/[^\d]/g, '')) || 0;
                 const dt = parseFloat(String(row["Doanh Thu Khác"] || "0").replace(/[^\d]/g, '')) || 0;
                 tr.innerHTML = `
-                    <td style="text-align: center;">
-                        ${isToday ? `<input type="checkbox" class="row-checkbox" style="cursor:pointer;" value='${rowJson}'>` : `<input type="checkbox" disabled>`}
+                    <td data-label="Chọn" style="text-align: center;">
+                        ${(getRole() === 'ADMIN' || (getRole() === 'EMPLOYEE' && isToday)) ? `<input type="checkbox" class="row-checkbox" data-row-index="${rowIndex}" style="cursor:pointer;">` : `<input type="checkbox" disabled>`}
                     </td>
-                    <td>${formatDateVietnamese(row.parsedDate)}</td>
-                    <td style="font-weight:600;">${row["Người Mua"] || ''}</td>
-                    <td>${row["Phân Loại Bông"] || ''}</td>
-                    <td>${row["Số lượng"] ? row["Số lượng"].toLocaleString('vi-VN') : 0}</td>
-                    <td style="color:var(--primary-color); font-weight:600;">${formatCurrency(pt)}</td>
-                    <td style="color:#ec4899; font-weight:700;">${formatCurrency(dt)}</td>
-                    <td>${row["Status"] ? `<span class="${statusClass}">${row["Status"]}</span>` : ''}</td>
-                    <td title="${row["Ghi Chú"] || ''}">${(row["Ghi Chú"] || '').substring(0, 15)}${(row["Ghi Chú"] || '').length > 15 ? '...' : ''}</td>
-                    <td>
-                        ${isToday ? `
-                        <button class="action-btn" onclick="deleteRow('${rowJson}')" title="Xoá">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                        ` : `<span style="color:var(--text-light);font-size:12px">Khóa</span>`}
+                    <td data-label="Ngày">${formatDateVietnamese(row.parsedDate)}</td>
+                    <td data-label="Tên Vựa" style="font-weight:600;">${row["Người Mua"] || ''}</td>
+                    <td data-label="Loại Bông">${row["Phân Loại Bông"] || ''}</td>
+                    <td data-label="SL">${row["Số lượng"] ? row["Số lượng"].toLocaleString('vi-VN') : 0}</td>
+                    <td data-label="Phải Thu" style="color:var(--primary-color); font-weight:600;">${formatCurrency(pt)}</td>
+                    <td data-label="Doanh Thu" style="color:#ec4899; font-weight:700;">${formatCurrency(dt)}</td>
+                    <td data-label="Status">${row["Status"] ? `<span class="${statusClass}">${row["Status"]}</span>` : ''}</td>
+                    <td data-label="Ghi chú" title="${row["Ghi Chú"] || ''}">${(row["Ghi Chú"] || '').substring(0, 15)}${(row["Ghi Chú"] || '').length > 15 ? '...' : ''}</td>
+                    <td data-label="Thao tác">
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            ${(getRole() === 'ADMIN' || (getRole() === 'EMPLOYEE' && isToday)) ? `
+                            <button class="action-btn" data-row-index="${rowIndex}" onclick="switchToInlineEdit(this)" title="Sửa" style="color:var(--primary-color);">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            ` : ''}
+                            ${(getRole() === 'ADMIN' || (getRole() === 'EMPLOYEE' && isToday)) ? `
+                            <button class="action-btn" data-row-index="${rowIndex}" onclick="deleteRowByIndex(this)" title="Xoá">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                            ` : (getRole() === 'CUSTOMER' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Khóa'}</span>`)}
+                        </div>
                     </td>
                 `;
             } else {
                 tr.innerHTML = `
-                    <td style="text-align: center;">
-                        ${isToday ? `<input type="checkbox" class="row-checkbox" style="cursor:pointer;" value='${rowJson}'>` : `<input type="checkbox" disabled>`}
+                    <td data-label="Chọn" style="text-align: center;">
+                        ${(getRole() === 'ADMIN' || (getRole() === 'EMPLOYEE' && isToday)) ? `<input type="checkbox" class="row-checkbox" data-row-index="${rowIndex}" style="cursor:pointer;">` : `<input type="checkbox" disabled>`}
                     </td>
-                    <td>${formatDateVietnamese(row.parsedDate)}</td>
-                    <td style="font-weight:600;">${row["Người Mua"] || ''}</td>
-                    <td>${row["Phân Loại Bông"] || ''}</td>
-                    <td>${row["Số lượng"] ? row["Số lượng"].toLocaleString('vi-VN') : 0}</td>
-                    <td>${formatCurrency(row["Giá"])}</td>
-                    <td style="color:var(--secondary-color); font-weight:600;">${formatCurrency(row["Doanh Thu Bông"])}</td>
-                    <td>${row["Status"] ? `<span class="status-badge ${statusClass}">${row["Status"]}</span>` : ''}</td>
-                    <td title="${row["Ghi Chú"] || ''}">${(row["Ghi Chú"] || '').substring(0, 20)}${row["Ghi Chú"] && row["Ghi Chú"].length > 20 ? '...' : ''}</td>
-                    <td>
-                        ${isToday ? `
-                        <button class="action-btn" onclick="deleteRow('${rowJson}')" title="Xoá">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                        ` : `<span style="color:var(--text-light);font-size:12px">Khóa</span>`}
+                    <td data-label="Ngày">${formatDateVietnamese(row.parsedDate)}</td>
+                    <td data-label="Người Mua" style="font-weight:600;">${row["Người Mua"] || ''}</td>
+                    <td data-label="Loại Bông">${row["Phân Loại Bông"] || ''}</td>
+                    <td data-label="Số Lượng">${row["Số lượng"] ? row["Số lượng"].toLocaleString('vi-VN') : 0}</td>
+                    <td data-label="Giá">${formatCurrency(row["Giá"])}</td>
+                    <td data-label="Doanh Thu" style="color:var(--secondary-color); font-weight:600;">${formatCurrency(row["Doanh Thu Bông"])}</td>
+                    <td data-label="Status">${row["Status"] ? `<span class="status-badge ${statusClass}">${row["Status"]}</span>` : ''}</td>
+                    <td data-label="Ghi chú" title="${row["Ghi Chú"] || ''}">${(row["Ghi Chú"] || '').substring(0, 20)}${row["Ghi Chú"] && row["Ghi Chú"].length > 20 ? '...' : ''}</td>
+                    <td data-label="Thao tác">
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            ${(getRole() === 'ADMIN' || (getRole() === 'EMPLOYEE' && isToday)) ? `
+                            <button class="action-btn" data-row-index="${rowIndex}" onclick="switchToInlineEdit(this)" title="Sửa" style="color:var(--primary-color);">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            ` : ''}
+                            ${(getRole() === 'ADMIN' || (getRole() === 'EMPLOYEE' && isToday)) ? `
+                            <button class="action-btn" data-row-index="${rowIndex}" onclick="deleteRowByIndex(this)" title="Xoá">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                            ` : (getRole() === 'CUSTOMER' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Khóa'}</span>`)}
+                        </div>
                     </td>
                 `;
             }
@@ -555,57 +676,246 @@ document.addEventListener("DOMContentLoaded", () => {
         if (typeof updateBulkDeleteUI === 'function') updateBulkDeleteUI();
     }
 
-    // Expose delete to global scope for row buttons
-    window.deleteRow = async function (rowJsonStr) {
-        if (!confirm("Bạn có chắc chắn muốn xóa bản ghi này trên Google Sheets?")) return;
+    // Strip client-side fields before sending to Apps Script for deletion
+    // Apps Script uses getDisplayValues() so "Ngày" must be "DD/MM/YYYY" format
+    function cleanRowForDelete(row) {
+        const cleaned = { ...row };
+
+        // Convert "Ngày" to DD/MM/YYYY — Apps Script reads display values from Sheet
+        if (cleaned.parsedDate && !isNaN(cleaned.parsedDate.getTime())) {
+            const d = cleaned.parsedDate;
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yyyy = d.getFullYear();
+            cleaned["Ngày"] = `${dd}/${mm}/${yyyy}`;
+        }
+
+        delete cleaned.parsedDate; // remove JS Date object — not in Sheet
+
+        // Convert numeric fields back to String (Sheet stores as strings)
+        const numFields = ["Số lượng", "Giá", "Doanh Thu Bông", "Chi Phí", "Tiền Phải Thu", "Doanh Thu Khác", "Đã Thu"];
+        numFields.forEach(f => {
+            if (cleaned[f] !== undefined && cleaned[f] !== "") {
+                cleaned[f] = String(cleaned[f]);
+            }
+        });
+        return cleaned;
+    }
+
+    // deleteRowByIndex: look up real object from dataToRender by index
+
+    window.deleteRowByIndex = async function (btn) {
+        if (!canMutate()) {
+            alert("Bạn không có quyền xóa dữ liệu!");
+            return;
+        }
+        const idx = parseInt(btn.getAttribute('data-row-index'));
+        const rowData = dataToRenderRef[idx];
+        if (!rowData) {
+            alert("Không tìm thấy dữ liệu để xóa!");
+            return;
+        }
+        const sheetRow = rowData._sheetRowNumber;
+        if (!sheetRow) {
+            alert("Dòng này chưa có số thứ tự Sheet — hãy đồng bộ lại dữ liệu từ Google Sheets.");
+            return;
+        }
+        if (!confirm(`Xóa dòng ${sheetRow} trên Google Sheets?`)) return;
 
         try {
-            const rowData = JSON.parse(rowJsonStr);
             if (WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
-                alert("Vui lòng cấu hình WEB_APP_URL trong app.js trước khi xoá dữ liệu.");
-                // Fallback delete locally
-                const indexToRemove = farmData.findIndex(r =>
-                    r["Ngày"] === rowData["Ngày"] &&
-                    r["Người Mua"] === rowData["Người Mua"] &&
-                    r["Số lượng"] == rowData["Số lượng"]
-                );
-                if (indexToRemove >= 0) farmData.splice(indexToRemove, 1);
+                farmData.splice(farmData.indexOf(rowData), 1);
                 applyFiltersAndRender();
                 return;
             }
-
-            // Gắn loading
             document.body.style.cursor = 'wait';
-
-            const response = await fetch(WEB_APP_URL, {
+            const response = await fetch(CONFIG.WEB_APP_URL, {
                 method: "POST",
-                body: JSON.stringify({
-                    action: "delete",
-                    data: rowData
-                }),
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8" // bypass CORS preflight
-                }
+                body: JSON.stringify({ action: "deleteByRow", rowNumber: sheetRow, token: getToken() }),
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
             });
             const result = await response.json();
             if (result.status === "success") {
-                alert("Xóa thành công khỏi Google Sheets!");
-                // Optionally reload data via existing sync logic, or remote local
-                const indexToRemove = farmData.findIndex(r =>
-                    r["Ngày"] === rowData["Ngày"] &&
-                    r["Người Mua"] === rowData["Người Mua"] &&
-                    r["Số lượng"] == rowData["Số lượng"]
-                );
-                if (indexToRemove >= 0) farmData.splice(indexToRemove, 1);
-                applyFiltersAndRender();
+                showToast("Xóa thành công!", "success");
+                const syncBtn = document.getElementById('sync-gsheet-btn');
+                if (syncBtn) syncBtn.click();
             } else {
                 alert("Lỗi khi xóa: " + result.message);
             }
-        } catch (error) {
-            console.error(error);
+        } catch (e) {
+            console.error(e);
             alert("Lỗi kết nối khi xóa.");
         } finally {
             document.body.style.cursor = 'default';
+        }
+    };
+
+    window.deleteRow = async function () {
+        alert("Phiên bản xóa cũ không còn được hỗ trợ. Vui lòng tải lại trang.");
+    };
+
+    window.switchToInlineEdit = function (btn) {
+        const idx = parseInt(btn.getAttribute('data-row-index'));
+        const rowData = dataToRenderRef[idx];
+        const tr = btn.closest('tr');
+        if (!rowData || !tr) return;
+
+        // Save original HTML for cancel
+        tr.dataset.originalHtml = tr.innerHTML;
+        tr.classList.add('editing-row');
+
+        if (currentTableTab === 'expense') {
+            const amount = parseFloat(String(rowData["Chi Phí"] || "0").replace(/[^\d]/g, ''));
+            tr.innerHTML = `
+                <td></td>
+                <td>${formatDateVietnamese(rowData.parsedDate)}</td>
+                <td>
+                    <select class="inline-edit-input" id="edit-exp-type">
+                        <option value="${rowData["Loại CP"]}">${rowData["Loại CP"]}</option>
+                        <option value="Chi Phí Khác">Chi Phí Khác</option>
+                        <option value="Thuốc">Thuốc</option>
+                        <option value="Phân">Phân</option>
+                        <option value="Lãi">Lãi</option>
+                        <option value="Công">Công</option>
+                        <option value="Mua Bông">Mua Bông</option>
+                        <option value="Vật Tư KD">Vật Tư KD</option>
+                        <option value="Vận Chuyển">Vận Chuyển</option>
+                    </select>
+                </td>
+                <td><input type="text" class="inline-edit-input" id="edit-exp-note" value="${rowData["Ghi Chú Chi Phí"] || ""}"></td>
+                <td><input type="text" class="inline-edit-input money-input" id="edit-exp-amount" value="${formatMoneyStr(amount)}"></td>
+                <td>
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="saveInlineEdit(${idx}, this)" class="btn-primary" style="padding:4px 8px; font-size:12px; background:var(--success); color:white; border:none; cursor:pointer;"><i class="fa-solid fa-check"></i></button>
+                        <button onclick="cancelInlineEdit(this)" class="btn-primary" style="padding:4px 8px; font-size:12px; background:var(--danger); color:white; border:none; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </td>
+            `;
+        } else if (currentTableTab === 'vua') {
+             tr.innerHTML = `
+                <td></td>
+                <td>${formatDateVietnamese(rowData.parsedDate)}</td>
+                <td><input type="text" class="inline-edit-input" id="edit-buyer" value="${rowData["Người Mua"] || ""}"></td>
+                <td><input type="text" class="inline-edit-input" id="edit-flower-type" value="${rowData["Phân Loại Bông"] || ""}"></td>
+                <td><input type="number" class="inline-edit-input" id="edit-qty" value="${rowData["Số lượng"] || 0}"></td>
+                <td>-</td>
+                <td>-</td>
+                <td>
+                    <select class="inline-edit-input" id="edit-status">
+                        <option value="Chưa Xong" ${rowData["Status"] === "Chưa Xong" ? "selected" : ""}>Chưa Xong</option>
+                        <option value="Xong" ${rowData["Status"] === "Xong" ? "selected" : ""}>Xong</option>
+                    </select>
+                </td>
+                <td><input type="text" class="inline-edit-input" id="edit-note" value="${rowData["Ghi Chú"] || ""}"></td>
+                <td>
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="saveInlineEdit(${idx}, this)" class="btn-primary" style="padding:5px; background:var(--success); color:white; border:none; cursor:pointer;"><i class="fa-solid fa-check"></i></button>
+                        <button onclick="cancelInlineEdit(this)" class="btn-primary" style="padding:5px; background:var(--danger); color:white; border:none; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </td>
+            `;
+        } else {
+            // Farm Mode
+            tr.innerHTML = `
+                <td></td>
+                <td>${formatDateVietnamese(rowData.parsedDate)}</td>
+                <td><input type="text" class="inline-edit-input" id="edit-buyer" value="${rowData["Người Mua"] || ""}"></td>
+                <td><input type="text" class="inline-edit-input" id="edit-flower-type" value="${rowData["Phân Loại Bông"] || ""}"></td>
+                <td><input type="number" class="inline-edit-input" id="edit-qty" value="${rowData["Số lượng"] || 0}"></td>
+                <td><input type="text" class="inline-edit-input money-input" id="edit-price" value="${formatMoneyStr(rowData["Giá"] || 0)}"></td>
+                <td>-</td>
+                <td>
+                    <select class="inline-edit-input" id="edit-status">
+                        <option value="Chưa Xong" ${rowData["Status"] === "Chưa Xong" ? "selected" : ""}>Chưa Xong</option>
+                        <option value="Xong" ${rowData["Status"] === "Xong" ? "selected" : ""}>Xong</option>
+                    </select>
+                </td>
+                <td><input type="text" class="inline-edit-input" id="edit-note" value="${rowData["Ghi Chú"] || ""}"></td>
+                <td>
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="saveInlineEdit(${idx}, this)" class="btn-primary" style="padding:5px; background:var(--success); color:white; border:none; cursor:pointer;"><i class="fa-solid fa-check"></i></button>
+                        <button onclick="cancelInlineEdit(this)" class="btn-primary" style="padding:5px; background:var(--danger); color:white; border:none; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </td>
+            `;
+        }
+    };
+
+    window.cancelInlineEdit = function (btn) {
+        const tr = btn.closest('tr');
+        if (tr && tr.dataset.originalHtml) {
+            tr.innerHTML = tr.dataset.originalHtml;
+            tr.classList.remove('editing-row');
+        }
+    };
+
+    window.saveInlineEdit = async function (idx, btn) {
+        const tr = btn.closest('tr');
+        const originalData = dataToRenderRef[idx];
+        if (!originalData || !tr) return;
+
+        if (!confirm("Xác nhận cập nhật dòng dữ liệu này?")) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+        try {
+            // 1. Collect Data
+            let newRow = { ...originalData };
+            const dateStr = formatDateVietnamese(originalData.parsedDate);
+            
+            if (currentTableTab === 'expense') {
+                newRow["Loại CP"] = document.getElementById('edit-exp-type').value;
+                newRow["Ghi Chú Chi Phí"] = document.getElementById('edit-exp-note').value;
+                newRow["Chi Phí"] = parseMoney(document.getElementById('edit-exp-amount').value).toString();
+                newRow["Status"] = "Xong";
+            } else {
+                newRow["Người Mua"] = document.getElementById('edit-buyer').value;
+                newRow["Phân Loại Bông"] = document.getElementById('edit-flower-type').value;
+                newRow["Số lượng"] = document.getElementById('edit-qty').value;
+                newRow["Status"] = document.getElementById('edit-status').value;
+                newRow["Ghi Chú"] = document.getElementById('edit-note').value;
+                
+                if (currentTableTab === 'farm') {
+                    const price = parseMoney(document.getElementById('edit-price').value);
+                    newRow["Giá"] = price.toString();
+                    newRow["Doanh Thu Bông"] = (parseFloat(newRow["Số lượng"]) * price).toString();
+                }
+            }
+
+            // Clean for sending
+            const payloadData = { ...newRow };
+            delete payloadData.parsedDate;
+            delete payloadData._sheetRowNumber;
+            payloadData["Ngày"] = dateStr;
+
+            // 2. Delete old
+            const oldSheetRow = originalData._sheetRowNumber;
+            const delResp = await fetch(CONFIG.WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "deleteByRow", rowNumber: oldSheetRow, token: getToken() }),
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
+            });
+            const delRes = await delResp.json();
+            if (delRes.status !== "success") throw new Error("Lỗi khi xóa dòng cũ: " + delRes.message);
+
+            // 3. Add new
+            const addAction = (currentTableTab === 'expense') ? 'add_expense' : 'add';
+            const addResp = await fetch(CONFIG.WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: addAction, data: payloadData, token: getToken() }),
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
+            });
+            const addRes = await addResp.json();
+            if (addRes.status !== "success") throw new Error("Lỗi khi lưu dòng mới: " + addRes.message);
+
+            showToast("Cập nhật thành công!", "success");
+            const syncBtn = document.getElementById('sync-gsheet-btn');
+            if (syncBtn) syncBtn.click();
+        } catch (e) {
+            alert(e.message);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i>';
         }
     };
 
@@ -614,6 +924,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const menuReport = document.getElementById('menu-report');
     const menuDebt = document.getElementById('menu-debt');
     const menuCashFlow = document.getElementById('menu-cashflow'); // NEW
+    const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
 
     const viewData = document.getElementById('view-data');
     const viewReport = document.getElementById('view-report');
@@ -626,51 +937,87 @@ document.addEventListener("DOMContentLoaded", () => {
         if (menuDebt) menuDebt.classList.remove('active');
         if (menuCashFlow) menuCashFlow.classList.remove('active');
 
+        mobileNavItems.forEach(i => i.classList.remove('active'));
+
         if (viewData) viewData.style.display = 'none';
         if (viewReport) viewReport.style.display = 'none';
         if (viewDebt) viewDebt.style.display = 'none';
         if (viewCashFlow) viewCashFlow.style.display = 'none';
     }
 
+    function syncMobileNav(viewId) {
+        mobileNavItems.forEach(item => {
+            if (item.dataset.view === viewId) {
+                item.classList.add('active');
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+
+    function switchView(viewId) {
+        hideAllViews();
+        localStorage.setItem("active_app_view", viewId);
+
+        if (viewId === 'data') {
+            if (menuData) menuData.classList.add('active');
+            syncMobileNav('data');
+            if (viewData) viewData.style.display = 'block';
+            applyFiltersAndRender();
+        } else if (viewId === 'report') {
+            if (menuReport) menuReport.classList.add('active');
+            syncMobileNav('report');
+            if (viewReport) viewReport.style.display = 'block';
+            updateDashboard();
+        } else if (viewId === 'debt') {
+            if (menuDebt) menuDebt.classList.add('active');
+            syncMobileNav('debt');
+            if (viewDebt) viewDebt.style.display = 'block';
+            renderDebtTable();
+        } else if (viewId === 'cashflow') {
+            if (menuCashFlow) menuCashFlow.classList.add('active');
+            syncMobileNav('cashflow');
+            if (viewCashFlow) viewCashFlow.style.display = 'block';
+            updateCashFlowReport();
+        }
+    }
+
     if (menuData) {
         menuData.addEventListener('click', (e) => {
             e.preventDefault();
-            hideAllViews();
-            menuData.classList.add('active');
-            viewData.style.display = 'block';
-            applyFiltersAndRender();
+            switchView('data');
         });
     }
 
     if (menuReport) {
         menuReport.addEventListener('click', (e) => {
             e.preventDefault();
-            hideAllViews();
-            menuReport.classList.add('active');
-            viewReport.style.display = 'block';
-            updateDashboard();
+            switchView('report');
         });
     }
 
     if (menuDebt) {
         menuDebt.addEventListener('click', (e) => {
             e.preventDefault();
-            hideAllViews();
-            menuDebt.classList.add('active');
-            viewDebt.style.display = 'block';
-            renderDebtTable();
+            switchView('debt');
         });
     }
 
     if (menuCashFlow) {
         menuCashFlow.addEventListener('click', (e) => {
             e.preventDefault();
-            hideAllViews();
-            menuCashFlow.classList.add('active');
-            viewCashFlow.style.display = 'block';
-            updateCashFlowReport();
+            switchView('cashflow');
         });
     }
+
+    // Mobile Nav Click Listener
+    mobileNavItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const view = item.dataset.view;
+            switchView(view);
+        });
+    });
 
     // Debt Filter Listener
     const debtFilter = document.getElementById('debt-filter');
@@ -952,6 +1299,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Process payment calls
     async function processPayment(isFull) {
+        if (!isAuthorizedForDebt()) {
+            alert("Bạn không có quyền thực hiện thanh toán!");
+            return;
+        }
         if (!currentSelectedBuyer) return;
         const totalDebt = currentSelectedBuyer.totalDebt;
         let amountToPay = totalDebt;
@@ -1030,9 +1381,9 @@ document.addEventListener("DOMContentLoaded", () => {
             // Send sequentially 
             for (let i = 0; i < updatesList.length; i++) {
                 const req = updatesList[i];
-                const response = await fetch(WEB_APP_URL, {
+                const response = await fetch(CONFIG.WEB_APP_URL, {
                     method: "POST",
-                    body: JSON.stringify({ action: "update", targetRow: req.targetRow, updates: req.updates }),
+                    body: JSON.stringify({ action: "update", targetRow: req.targetRow, updates: req.updates, token: getToken() }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
                 const result = await response.json();
@@ -1040,7 +1391,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     successC++;
                 }
             }
-            alert(`Đã thanh toán thành công ${formatCurrency(amountToPay)}!`);
+            showToast(`Đã thanh toán thành công ${formatCurrency(amountToPay)}!`, "success");
             // Refresh data visibly right away without waiting for backend
             renderDebtTable();
 
@@ -1125,9 +1476,9 @@ document.addEventListener("DOMContentLoaded", () => {
             let successC = 0;
             for (let i = 0; i < updatesList.length; i++) {
                 const req = updatesList[i];
-                const response = await fetch(WEB_APP_URL, {
+                const response = await fetch(CONFIG.WEB_APP_URL, {
                     method: "POST",
-                    body: JSON.stringify({ action: "update", targetRow: req.targetRow, updates: req.updates }),
+                    body: JSON.stringify({ action: "update", targetRow: req.targetRow, updates: req.updates, token: getToken() }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
                 const result = await response.json();
@@ -1147,11 +1498,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    let annualQtyChartInstance = null;
-    let annualRevProfitChartInstance = null;
-    let annualExpenseChartInstance = null;
-    let monthlyCombinedChartInstance = null;
-
     // Report Setup
     const reportRangeSelect = document.getElementById('report-range');
     const reportMonthSelect = document.getElementById('report-month');
@@ -1163,24 +1509,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (reportRangeSelect) {
         reportRangeSelect.addEventListener('change', () => {
-            const isMonth = reportRangeSelect.value === 'month';
+            const val = reportRangeSelect.value;
+            const isMonth = val === 'month';
+            const isQuarter = val.startsWith('q');
+
             monthSelectContainer.style.display = isMonth ? 'block' : 'none';
-            document.getElementById('yearly-report-charts').style.display = isMonth ? 'none' : 'grid';
-            document.getElementById('monthly-report-charts').style.display = isMonth ? 'grid' : 'none';
+
+            // Adjust chart displays
+            document.getElementById('yearly-report-charts').style.display = (isMonth || isQuarter) ? 'none' : 'grid';
+            document.getElementById('monthly-report-charts').style.display = (isMonth || isQuarter) ? 'grid' : 'none';
 
             const kpiLabels = document.querySelectorAll('.kpi-cards h3');
             kpiLabels.forEach(label => {
-                if (label.innerText.includes('T.Năm')) {
-                    label.innerText = label.innerText.replace('T.Năm', isMonth ? 'T.Tháng' : 'T.Năm');
-                } else if (label.innerText.includes('T.Tháng')) {
-                    label.innerText = label.innerText.replace('T.Tháng', isMonth ? 'T.Tháng' : 'T.Năm');
-                }
+                let context = isMonth ? 'T.Tháng' : (isQuarter ? 'T.Quý' : 'T.Năm');
+                label.innerText = label.innerText.replace(/T\.(Tháng|Năm|Quý)/g, context);
             });
             updateDashboard();
+            syncMainToComparison();
         });
     }
 
-    if (reportMonthSelect) reportMonthSelect.addEventListener('change', updateDashboard);
+    if (reportMonthSelect) {
+        reportMonthSelect.addEventListener('change', () => {
+            updateDashboard();
+            syncMainToComparison();
+        });
+    }
 
     if (cmpPeriodSelect) {
         cmpPeriodSelect.addEventListener('change', () => {
@@ -1192,6 +1546,54 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (cmpMonth1Select) cmpMonth1Select.addEventListener('change', updateComparison);
     if (cmpMonth2Select) cmpMonth2Select.addEventListener('change', updateComparison);
+
+    // Toggle Comparison Button & Sync logic
+    const toggleCmpBtn = document.getElementById('toggle-comparison-btn');
+    if (toggleCmpBtn) {
+        toggleCmpBtn.addEventListener('click', () => {
+            const unifiedControls = document.getElementById('unified-cmp-controls');
+            const btnSpan = toggleCmpBtn.querySelector('span');
+            const icon = toggleCmpBtn.querySelector('i');
+
+            if (unifiedControls.style.display === 'none' || !unifiedControls.style.display) {
+                // OPEN MODE
+                unifiedControls.style.display = 'flex';
+                toggleCmpBtn.style.backgroundColor = 'var(--primary-color)';
+                toggleCmpBtn.style.color = 'white';
+                if (btnSpan) btnSpan.innerText = "Đóng so sánh";
+                if (icon) { icon.className = "fa-solid fa-xmark"; }
+
+                // Set default comparison year/month if not set
+                const mainYear = document.getElementById('report-year').value;
+                const mainMonth = document.getElementById('report-month').value;
+                const reportYearPrev = document.getElementById('report-year-prev');
+                const reportMonthPrev = document.getElementById('report-month-prev');
+
+                if (reportYearPrev && !reportYearPrev.value) reportYearPrev.value = parseInt(mainYear) - 1;
+                if (reportMonthPrev && !reportMonthPrev.value) reportMonthPrev.value = mainMonth;
+                const reportQuarterPrev = document.getElementById('report-quarter-prev');
+                if (reportQuarterPrev && !reportQuarterPrev.value) reportQuarterPrev.value = document.getElementById('report-range').value;
+
+                updateDashboard();
+            } else {
+                // CLOSE MODE
+                unifiedControls.style.display = 'none';
+                toggleCmpBtn.style.backgroundColor = '#f1f5f9';
+                toggleCmpBtn.style.color = '#475569';
+                if (btnSpan) btnSpan.innerText = "So sánh khác";
+                if (icon) { icon.className = "fa-solid fa-calendar-days"; }
+                updateDashboard();
+            }
+        });
+    }
+
+    // New unified baseline listeners
+    const reportYearPrev = document.getElementById('report-year-prev');
+    const reportMonthPrev = document.getElementById('report-month-prev');
+    const reportQuarterPrev = document.getElementById('report-quarter-prev');
+    if (reportYearPrev) reportYearPrev.addEventListener('change', updateDashboard);
+    if (reportMonthPrev) reportMonthPrev.addEventListener('change', updateDashboard);
+    if (reportQuarterPrev) reportQuarterPrev.addEventListener('change', updateDashboard);
     function populateYears() {
         const yearSelect = document.getElementById('report-year');
         const cmpY1Select = document.getElementById('cmp-year1');
@@ -1204,33 +1606,30 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const sortedYears = Array.from(years).sort((a, b) => b - a);
+        const prevYearSelect = document.getElementById('report-year-prev');
+        const cfYearSelect = document.getElementById('cashflow-year');
+        const cfYearSelect2 = document.getElementById('cashflow-year-2');
+
         yearSelect.innerHTML = '';
         if (cmpY1Select) cmpY1Select.innerHTML = '';
         if (cmpY2Select) cmpY2Select.innerHTML = '';
+        if (prevYearSelect) prevYearSelect.innerHTML = '';
+        if (cfYearSelect) cfYearSelect.innerHTML = '';
+        if (cfYearSelect2) cfYearSelect2.innerHTML = '';
 
         sortedYears.forEach(year => {
-            const option = document.createElement('option');
-            option.value = year; option.textContent = year;
-            yearSelect.appendChild(option);
+            const createOpt = (y) => {
+                const opt = document.createElement('option');
+                opt.value = y; opt.textContent = y;
+                return opt;
+            };
 
-            if (cmpY1Select) {
-                const opt1 = document.createElement('option'); opt1.value = year; opt1.textContent = year;
-                cmpY1Select.appendChild(opt1);
-            }
-            if (cmpY2Select) {
-                const opt2 = document.createElement('option'); opt2.value = year; opt2.textContent = year;
-                cmpY2Select.appendChild(opt2);
-            }
-            const cfYearSelect = document.getElementById('cashflow-year');
-            const cfYearSelect2 = document.getElementById('cashflow-year-2');
-            if (cfYearSelect) {
-                const opt3 = document.createElement('option'); opt3.value = year; opt3.textContent = year;
-                cfYearSelect.appendChild(opt3);
-            }
-            if (cfYearSelect2) {
-                const opt4 = document.createElement('option'); opt4.value = year; opt4.textContent = year;
-                cfYearSelect2.appendChild(opt4);
-            }
+            yearSelect.appendChild(createOpt(year));
+            if (cmpY1Select) cmpY1Select.appendChild(createOpt(year));
+            if (cmpY2Select) cmpY2Select.appendChild(createOpt(year));
+            if (prevYearSelect) prevYearSelect.appendChild(createOpt(year));
+            if (cfYearSelect) cfYearSelect.appendChild(createOpt(year));
+            if (cfYearSelect2) cfYearSelect2.appendChild(createOpt(year));
         });
 
         const currentYear = new Date().getFullYear();
@@ -1256,6 +1655,16 @@ document.addEventListener("DOMContentLoaded", () => {
             if (cmpY1Select) {
                 cmpY1Select.value = years.has(currentYear - 1) ? currentYear - 1 : currentYear;
             }
+
+            // Set Dashboard Baseline (Report Prev) defaults to same period last year
+            const reportYearPrev = document.getElementById('report-year-prev');
+            const reportMonthPrev = document.getElementById('report-month-prev');
+            if (reportYearPrev) {
+                reportYearPrev.value = years.has(currentYear - 1) ? currentYear - 1 : currentYear;
+            }
+            if (reportMonthPrev) {
+                reportMonthPrev.value = currentMonthNum;
+            }
         }
     }
 
@@ -1271,15 +1680,32 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedYear = parseInt(yearSelect.value) || new Date().getFullYear();
         const selectedMonth = parseInt(monthSelect.value) || (new Date().getMonth() + 1);
         const reportType = filterSelect ? filterSelect.value : "Chung";
-        const isMonthlyRange = rangeSelect ? rangeSelect.value === 'month' : false;
+        const rangeVal = rangeSelect ? rangeSelect.value : 'month';
+        const isMonthlyRange = rangeVal === 'month';
+        const isQuarterRange = rangeVal.startsWith('q');
+
+        // Baseline determination (default is same period last year)
+        let baselineYear = selectedYear - 1;
+        let baselineMonth = selectedMonth;
+        let baselineQuarter = isQuarterRange ? rangeVal : null;
+
+        const customCmpBox = document.getElementById('unified-cmp-controls');
+        if (customCmpBox && customCmpBox.style.display !== 'none') {
+            const yPrev = document.getElementById('report-year-prev');
+            const mPrev = document.getElementById('report-month-prev');
+            const qPrev = document.getElementById('report-quarter-prev');
+            if (yPrev) baselineYear = parseInt(yPrev.value);
+            if (mPrev && isMonthlyRange) baselineMonth = parseInt(mPrev.value);
+            if (qPrev && isQuarterRange) baselineQuarter = qPrev.value;
+        }
 
         let totalQty = 0, totalRevenue = 0, totalExpense = 0;
         let prevQty = 0, prevRevenue = 0, prevExpense = 0;
 
-        // Detailed statement stats
         const statement = {
             revFarm: 0, revCompany: 0, revVua: 0,
-            expensed: 0, phanBon: 0, thuoc: 0, luong: 0, lai: 0, vatTu: 0, muaBong: 0, vanHanh: 0
+            expensed: 0, phanBon: 0, thuoc: 0, luong: 0, lai: 0, vatTu: 0, muaBong: 0, vanHanh: 0,
+            totalRev: 0, totalExp: 0, netProfit: 0
         };
 
         const yearlyMonthlyData = Array.from({ length: 12 }, () => ({ qty: 0, revenue: 0, expense: 0 }));
@@ -1291,15 +1717,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const rowYear = d.getFullYear();
             const rowMonth = d.getMonth() + 1;
-            const isPrevYear = (rowYear === selectedYear - 1);
-            const isCurrYear = (rowYear === selectedYear);
 
-            if (isMonthlyRange && rowMonth !== selectedMonth) return;
-            if (!isCurrYear && !isPrevYear) return;
+            let isCurr = false;
+            let isPrev = false;
+
+            if (isQuarterRange) {
+                const qTarget = baselineQuarter || rangeVal;
+                let inCurrQ = false;
+                if (rangeVal === 'q1' && rowMonth >= 1 && rowMonth <= 3) inCurrQ = true;
+                if (rangeVal === 'q2' && rowMonth >= 4 && rowMonth <= 6) inCurrQ = true;
+                if (rangeVal === 'q3' && rowMonth >= 7 && rowMonth <= 9) inCurrQ = true;
+                if (rangeVal === 'q4' && rowMonth >= 10 && rowMonth <= 12) inCurrQ = true;
+
+                let inPrevQ = false;
+                if (qTarget === 'q1' && rowMonth >= 1 && rowMonth <= 3) inPrevQ = true;
+                if (qTarget === 'q2' && rowMonth >= 4 && rowMonth <= 6) inPrevQ = true;
+                if (qTarget === 'q3' && rowMonth >= 7 && rowMonth <= 9) inPrevQ = true;
+                if (qTarget === 'q4' && rowMonth >= 10 && rowMonth <= 12) inPrevQ = true;
+
+                if (inCurrQ && rowYear === selectedYear) isCurr = true;
+                if (inPrevQ && rowYear === baselineYear) isPrev = true;
+            } else if (isMonthlyRange) {
+                if (rowYear === selectedYear && rowMonth === selectedMonth) isCurr = true;
+                if (rowYear === baselineYear && rowMonth === baselineMonth) isPrev = true;
+            } else { // Yearly
+                if (rowYear === selectedYear) isCurr = true;
+                if (rowYear === baselineYear) isPrev = true;
+            }
+
+            if (!isCurr && !isPrev) return;
 
             const typeDT = (row["Loại DT"] || "").trim();
             const isCompany = typeDT === "Company";
-            const isVua = typeDT === "Vựa" || typeDT === "vựa";
+            const isVua = typeDT.toLowerCase().includes("vựa") || typeDT.toLowerCase().includes("vua");
             const isFarm = typeDT === "Farm" || typeDT === "";
             const loaiCP = (row["Loại CP"] || "").trim();
 
@@ -1320,24 +1770,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (isVua) rev = dtKhac;
                 if (isExpenseVua) exp = chiPhi;
             } else if (reportType === "Farm") {
-                rev = dtBong + (isFarm ? dtKhac : 0); // All dtBong is Farm production rev
+                rev = dtBong + (isFarm ? dtKhac : 0);
                 q = rawQty;
                 if (isExpenseFarm) exp = chiPhi;
-            } else { // "Chung"
+            } else {
                 q = rawQty; rev = dtBong + dtKhac; exp = chiPhi;
             }
 
-            if (isCurrYear) {
-                totalQty += q;
-                totalRevenue += rev;
-                totalExpense += exp;
+            if (isCurr) {
+                totalQty += q; totalRevenue += rev; totalExpense += exp;
 
-                // Detail aggregation for current year
                 statement.revFarm += dtBong + (isFarm ? dtKhac : 0);
                 statement.revCompany += dtBong + (isCompany ? dtKhac : 0);
                 if (isVua) statement.revVua += dtKhac;
 
-                // Match exact backend categories provided by user
                 if (loaiCP === "Expensed") statement.expensed += chiPhi;
                 else if (loaiCP === "Phân") statement.phanBon += chiPhi;
                 else if (loaiCP === "Thuốc") statement.thuoc += chiPhi;
@@ -1348,11 +1794,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 else if (loaiCP === "Vận Chuyển" || loaiCP === "Chi Phí Khác") statement.vanHanh += chiPhi;
                 else if (chiPhi > 0) statement.vanHanh += chiPhi;
 
-                if (!isMonthlyRange) {
+                if (!isMonthlyRange && !isQuarterRange) {
                     yearlyMonthlyData[d.getMonth()].qty += q;
                     yearlyMonthlyData[d.getMonth()].revenue += rev;
                     yearlyMonthlyData[d.getMonth()].expense += exp;
-                } else {
+                } else if (isMonthlyRange) {
                     const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
                     if (dailyData.length === 0) {
                         for (let i = 0; i < daysInMonth; i++) dailyData.push({ qty: 0, revFarm: 0, revVua: 0, expense: 0 });
@@ -1365,10 +1811,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         dailyData[dayIdx].expense += exp;
                     }
                 }
-            } else if (isPrevYear) {
-                prevQty += q;
-                prevRevenue += rev;
-                prevExpense += exp;
+            } else if (isPrev) {
+                prevQty += q; prevRevenue += rev; prevExpense += exp;
             }
         });
 
@@ -1389,68 +1833,49 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
             const diffPct = ((curr - prev) / prev) * 100;
-            const diffVal = curr - prev;
             const isPositive = diffPct >= 0;
             const colorClass = inverse ? (isPositive ? 'negative' : 'positive') : (isPositive ? 'positive' : 'negative');
             const icon = isPositive ? 'fa-arrow-up' : 'fa-arrow-down';
 
-            // Format absolute difference
-            let diffFormatted = '';
+            // Format comparison value
+            let prevFormatted = '';
             if (unit === '₫') {
-                const absDiff = Math.abs(diffVal);
-                if (absDiff >= 1000000) {
-                    diffFormatted = (diffVal / 1000000).toFixed(1) + 'tr';
-                } else if (absDiff >= 1000) {
-                    diffFormatted = (diffVal / 1000).toFixed(0) + 'k';
+                const absPrev = Math.abs(prev);
+                if (absPrev >= 1000000) {
+                    prevFormatted = (prev / 1000000).toFixed(1) + 'tr';
+                } else if (absPrev >= 1000) {
+                    prevFormatted = (prev / 1000).toFixed(0) + 'k';
                 } else {
-                    diffFormatted = diffVal.toString();
+                    prevFormatted = prev.toString();
                 }
-                if (diffVal > 0) diffFormatted = '+' + diffFormatted;
             } else {
-                diffFormatted = (diffVal > 0 ? '+' : '') + diffVal.toLocaleString('vi-VN');
+                prevFormatted = prev.toLocaleString('vi-VN');
             }
 
             el.className = `growth-badge ${colorClass}`;
-            el.innerHTML = `
-                <i class="fa-solid ${icon}"></i> 
-                ${Math.abs(diffPct).toFixed(1)}%
-                <span style="font-size: 0.85em; font-weight: 500; margin-left: 4px; opacity: 0.9;">
-                    (${diffFormatted} vs ${compYear})
-                </span>
-            `;
+            el.innerHTML = `<i class="fa-solid ${icon}"></i> ${Math.abs(diffPct).toFixed(1)}% <span style="font-size: 0.85em; margin-left: 4px; opacity: 0.9;">(${prevFormatted} vs ${compTitle})</span>`;
         }
 
-        const compYear = selectedYear - 1;
-        updateGrowth('growth-qty', totalQty, prevQty, compYear, '');
-        updateGrowth('growth-revenue', totalRevenue, prevRevenue, compYear, '₫');
-        updateGrowth('growth-expense', totalExpense, prevExpense, compYear, '₫', true);
-        updateGrowth('growth-profit', totalProfit, prevProfit, compYear, '₫');
+        const compTitle = isMonthlyRange ? `T${baselineMonth}/${baselineYear}` : (isQuarterRange ? `Quý ${(baselineQuarter || rangeVal).substring(1).toUpperCase()} ${baselineYear}` : `Năm ${baselineYear}`);
+        updateGrowth('growth-qty', totalQty, prevQty, compTitle, '');
+        updateGrowth('growth-revenue', totalRevenue, prevRevenue, compTitle, '₫');
+        updateGrowth('growth-expense', totalExpense, prevExpense, compTitle, '₫', true);
+        updateGrowth('growth-profit', totalProfit, prevProfit, compTitle, '₫');
 
-        // Render Detailed Statement (Update logic: only render here if we are technically in dashboard report mode, 
-        // but now we've moved it to its own tab, so we might want to consolidate or handle both).
         renderDetailedStatement(statement, totalRevenue, totalExpense, totalProfit);
 
-        if (!isMonthlyRange) {
+        if (!isMonthlyRange && !isQuarterRange) {
             const labels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
             renderYearlyCharts(labels, yearlyMonthlyData, selectedYear);
-        } else {
-            // Filter out days with no data
+        } else if (isMonthlyRange) {
             const filteredDays = [];
             dailyData.forEach((d, i) => {
                 if (d.qty > 0 || d.revFarm > 0 || d.revVua > 0 || d.expense > 0) {
-                    filteredDays.push({
-                        label: `${i + 1}`,
-                        data: d
-                    });
+                    filteredDays.push({ label: `${i + 1}`, data: d });
                 }
             });
-
-            const labels = filteredDays.map(fd => fd.label);
-            const filteredData = filteredDays.map(fd => fd.data);
-
-            renderMonthlyCombinedChart(labels, filteredData, selectedMonth, selectedYear);
+            renderMonthlyCombinedChart(filteredDays.map(fd => fd.label), filteredDays.map(fd => fd.data), selectedMonth, selectedYear);
         }
-        updateComparison();
     }
 
     // Cashflow Filter listeners
@@ -1526,9 +1951,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const rowRevenue = (chiPhi > 0 && dtKhac === chiPhi) ? 0 : dtKhac;
 
-                if (isFarm) statement.revFarm += (dtBong + rowRevenue);
-                else if (isCompany) statement.revCompany += rowRevenue;
+                // Doanh thu Farm chuẩn theo yêu cầu: Tổng cột F (Doanh Thu Bông)
+                statement.revFarm += dtBong;
+
+                if (isCompany) statement.revCompany += rowRevenue;
                 else if (isVua) statement.revVua += rowRevenue;
+                else if (isFarm && rowRevenue > 0) {
+                    statement.revCompany += rowRevenue;
+                }
 
                 statement.totalRev += (dtBong + rowRevenue);
                 statement.totalExp += chiPhi;
@@ -1540,8 +1970,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 else if (loaiCP === "lãi" || loaiCP === "lai") statement.lai += chiPhi;
                 else if (loaiCP === "vật tư" || loaiCP === "vat tu" || loaiCP === "vật tư kd") statement.vatTu += chiPhi;
                 else if (loaiCP === "mua bông") statement.muaBong += chiPhi;
-                else if (loaiCP === "vận chuyển" || loaiCP === "chi phí khác" || loaiCP === "van chuyen" || loaiCP === "chi phi khac") statement.vanHanh += chiPhi;
-                else if (chiPhi > 0) statement.vanHanh += chiPhi;
+                else {
+                    statement.vanHanh += chiPhi;
+                }
             });
 
             statement.netProfit = statement.totalRev - statement.totalExp;
@@ -1570,13 +2001,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const pct = v2 !== 0 ? ((diff / Math.abs(v2)) * 100).toFixed(1) : (v1 !== 0 ? 100 : 0);
             const cls = diff > 0 ? 'diff-up' : (diff < 0 ? 'diff-down' : '');
             const sign = diff > 0 ? '+' : '';
-            return `<div class="comparison-col ${cls}"><span class="diff-tag">${sign}${formatCurrency(diff)} (${sign}${pct}%)</span></div>`;
+            return `<div class="comparison-col ${cls}"><span class="diff-tag">(${sign}${pct}%)</span></div>`;
         }
 
         function renderRow(label, v1, v2, type = "normal") {
             let rowClass = "statement-row";
             if (type === "title") rowClass += " main-title";
             if (type === "indented") rowClass += " indented";
+            if (type === "sub-indented") rowClass += " sub-indented";
             if (type === "total") rowClass += " total-line";
             if (type === "net") rowClass += " net-profit";
 
@@ -1584,24 +2016,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="${rowClass}">
                     <span class="statement-label">${label}</span>
                     <div class="comparison-col statement-value">${formatVal(v1)}</div>
-                    ${isCmp ? `<div class="comparison-col statement-value" style="color: var(--text-light);">${formatVal(v2)}</div>` : ''}
+                    ${isCmp ? `<div class="comparison-col statement-value" style="color: var(--text-light); text-transform:none;">${formatVal(v2)}</div>` : ''}
                     ${getDiffHtml(v1, v2)}
                 </div>
             `;
         }
 
-        let html = '';
-
-        if (isCmp) {
-            html += `
-                <div class="statement-row comparison-header">
-                    <span class="statement-label">Hạng mục</span>
-                    <div class="comparison-col">${s1.period}</div>
-                    <div class="comparison-col">${s2.period}</div>
-                    <div class="comparison-col">Tăng/Giảm</div>
-                </div>
-            `;
-        }
+        let html = `
+            <div class="statement-title-main">Báo Cáo Dòng Tiền Chi Tiết</div>
+            <div class="statement-header-row">
+                <span class="statement-label">Diễn giải hạng mục</span>
+                <div class="comparison-col" style="text-align: right;">${s1.period}</div>
+                ${isCmp ? `<div class="comparison-col" style="text-align: right; color: var(--text-light); text-transform:none;">${s2.period}</div>` : ''}
+                ${isCmp ? `<div class="comparison-col" style="text-align: right;">% +/-</div>` : ''}
+            </div>
+        `;
 
         html += renderRow("Doanh thu Farm", s1.revFarm, isCmp ? s2.revFarm : 0, "title");
         html += renderRow("Doanh thu khác", s1.revCompany + s1.revVua, isCmp ? (s2.revCompany + s2.revVua) : 0, "title");
@@ -1612,13 +2041,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
         html += renderRow("Khấu trừ:", 0, 0, "title");
         html += renderRow("Expensed", s1.expensed, isCmp ? s2.expensed : 0, "indented");
-        html += renderRow("Phân bón", s1.phanBon, isCmp ? s2.phanBon : 0, "indented");
-        html += renderRow("Thuốc", s1.thuoc, isCmp ? s2.thuoc : 0, "indented");
-        html += renderRow("Lương", s1.luong, isCmp ? s2.luong : 0, "indented");
-        html += renderRow("Lãi", s1.lai, isCmp ? s2.lai : 0, "indented");
-        html += renderRow("Vật Tư", s1.vatTu, isCmp ? s2.vatTu : 0, "indented");
-        html += renderRow("Mua Bông", s1.muaBong, isCmp ? s2.muaBong : 0, "indented");
-        html += renderRow("Chi Phí Vận Hành", s1.vanHanh, isCmp ? s2.vanHanh : 0, "indented");
+
+        // Group 1: Chi Phí Vựa
+        const totalVua1 = s1.vatTu + s1.muaBong;
+        const totalVua2 = isCmp ? (s2.vatTu + s2.muaBong) : 0;
+        html += renderRow("Chi Phí Vựa", totalVua1, totalVua2, "indented");
+        html += renderRow("Vật Tư", s1.vatTu, isCmp ? s2.vatTu : 0, "sub-indented");
+        html += renderRow("Mua Bông", s1.muaBong, isCmp ? s2.muaBong : 0, "sub-indented");
+
+        // Group 2: Chi Phí Vận Hành
+        const totalOps1 = s1.vanHanh + s1.phanBon + s1.thuoc + s1.luong + s1.lai;
+        const totalOps2 = isCmp ? (s2.vanHanh + s2.phanBon + s2.thuoc + s2.luong + s2.lai) : 0;
+
+        html += renderRow("Chi Phí Vận Hành", totalOps1, totalOps2, "indented");
+        html += renderRow("Phân bón", s1.phanBon, isCmp ? s2.phanBon : 0, "sub-indented");
+        html += renderRow("Thuốc", s1.thuoc, isCmp ? s2.thuoc : 0, "sub-indented");
+        html += renderRow("Lương", s1.luong, isCmp ? s2.luong : 0, "sub-indented");
+        html += renderRow("Lãi", s1.lai, isCmp ? s2.lai : 0, "sub-indented");
+        html += renderRow("Chi phí khác", s1.vanHanh, isCmp ? s2.vanHanh : 0, "sub-indented");
 
         html += renderRow("Tổng Chi Phí", s1.totalExp, isCmp ? s2.totalExp : 0, "total");
         html += renderRow("Lợi nhuận ròng", s1.netProfit, isCmp ? s2.netProfit : 0, "net");
@@ -1750,7 +2190,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     legend: { position: 'top', labels: { usePointStyle: true, font: { weight: 'bold' } } },
                     title: { display: true, text: `BIỂU ĐỒ DOANH THU & SẢN LƯỢNG - THÁNG ${month}/${year}`, font: { size: 16, weight: 'bold' }, padding: 20 },
                     datalabels: {
-                        display: (context) => context.dataset.data[context.dataIndex] > 0,
+                        display: (context) => (window.innerWidth > 400 && context.dataset.data[context.dataIndex] > 0),
                         formatter: (val, context) => {
                             if (context.dataset.type === 'line') return val.toLocaleString('vi-VN');
                             return val.toLocaleString('vi-VN') + ' ₫';
@@ -1776,9 +2216,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function getRichTooltipData(label, tooltipItems = []) {
         const year = document.getElementById('report-year').value;
         const reportMonth = document.getElementById('report-month').value;
-        const range = document.getElementById('report-range').value; 
+        const range = document.getElementById('report-range').value;
         const filter = document.getElementById('report-filter').value;
-        
+
         let filtered = [];
 
         if (range === 'year' || label.startsWith('T')) {
@@ -1791,9 +2231,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const day = parseInt(label);
             if (!isNaN(day)) {
                 const month = parseInt(reportMonth);
-                filtered = farmData.filter(dObj => 
-                    dObj.parsedDate.getDate() === day && 
-                    dObj.parsedDate.getMonth() + 1 === month && 
+                filtered = farmData.filter(dObj =>
+                    dObj.parsedDate.getDate() === day &&
+                    dObj.parsedDate.getMonth() + 1 === month &&
                     dObj.parsedDate.getFullYear() == year
                 );
             }
@@ -1814,7 +2254,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Check which dataset is being hovered to show specific details
         // In 'nearest' mode with intersect: true, tooltipItems should typically contain the one specific item.
         const hoveredLabels = tooltipItems.map(ti => ti.dataset.label);
-        
+
         // 1. If hovering over Expenses, show breakdown
         if (hoveredLabels.some(l => l && l.includes("Chi Phí"))) {
             const expenseDetails = filtered.filter(r => (r["Chi Phí"] || 0) > 0);
@@ -1868,9 +2308,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 4. Default: General Summary (for total or point)
         const farmRev = filtered.filter(r => (r["Loại DT"] || "").trim() === "" || (r["Loại DT"] || "").toLowerCase() === "farm")
-                               .reduce((sum, r) => sum + (r["Doanh Thu Bông"] || 0), 0);
+            .reduce((sum, r) => sum + (r["Doanh Thu Bông"] || 0), 0);
         const vuaRev = filtered.filter(r => (r["Loại DT"] || "").toLowerCase().trim() === "vựa" || (r["Loại DT"] || "").toLowerCase().trim() === "vua")
-                              .reduce((sum, r) => sum + (r["Doanh Thu Khác"] || 0), 0);
+            .reduce((sum, r) => sum + (r["Doanh Thu Khác"] || 0), 0);
         const expTotal = filtered.reduce((sum, r) => sum + (r["Chi Phí"] || 0), 0);
 
         let sumLines = [];
@@ -1882,7 +2322,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (buyers.length > 0) {
             sumLines.push(`👤 Khách: ${buyers.slice(0, 3).join(', ')}${buyers.length > 3 ? '...' : ''}`);
         }
-        
+
         return sumLines;
     }
 
@@ -1921,6 +2361,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 },
                 datalabels: {
+                    display: () => window.innerWidth > 400,
                     anchor: 'end', align: 'top',
                     formatter: val => (val === 0 ? '' : new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(val)),
                     font: { size: 9, weight: 'bold' }
@@ -2064,6 +2505,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.getElementById('report-filter')) {
         document.getElementById('report-filter').addEventListener('change', updateDashboard);
     }
+    if (document.getElementById('report-month')) {
+        document.getElementById('report-month').addEventListener('change', updateDashboard);
+    }
+    if (document.getElementById('report-range')) {
+        document.getElementById('report-range').addEventListener('change', () => {
+            const range = document.getElementById('report-range').value;
+            const cmpMonth = document.getElementById('report-month-prev');
+            const cmpQuarter = document.getElementById('report-quarter-prev');
+
+            if (cmpMonth) cmpMonth.style.display = (range === 'month') ? 'inline-block' : 'none';
+            if (cmpQuarter) cmpQuarter.style.display = (range.startsWith('q')) ? 'inline-block' : 'none';
+            updateDashboard();
+        });
+    }
     if (document.getElementById('cmp-period')) {
         document.getElementById('cmp-period').addEventListener('change', updateComparison);
         document.getElementById('cmp-year1').addEventListener('change', updateComparison);
@@ -2078,8 +2533,12 @@ document.addEventListener("DOMContentLoaded", () => {
     function applyFiltersAndRender() {
         let filtered = [...farmData];
 
-        // Luôn sắp xếp theo Ngày giảm dần (đơn mới nhất lên đầu) làm mặc định
-        filtered.sort((a, b) => (b.parsedDate?.getTime() || 0) - (a.parsedDate?.getTime() || 0));
+        // Luôn sắp xếp theo Ngày giảm dần, cùng ngày thì đơn mới nhất (số dòng lớn hơn) lên đầu
+        filtered.sort((a, b) => {
+            const dateDiff = (b.parsedDate?.getTime() || 0) - (a.parsedDate?.getTime() || 0);
+            if (dateDiff !== 0) return dateDiff;
+            return (b._sheetRowNumber || 0) - (a._sheetRowNumber || 0); // tie-breaker: đơn mới nhất trên cùng
+        });
 
         // Tab Filter
         let sliceLimit = 20; // Giới hạn 20 hàng gần nhất cho tab "Tất Cả" theo yêu cầu
@@ -2137,17 +2596,53 @@ document.addEventListener("DOMContentLoaded", () => {
                 let valA = a[sortState.column];
                 let valB = b[sortState.column];
                 if (sortState.column === 'Ngày') {
-                    valA = a.parsedDate.getTime();
-                    valB = b.parsedDate.getTime();
+                    valA = a.parsedDate?.getTime() || 0;
+                    valB = b.parsedDate?.getTime() || 0;
                 }
                 if (valA < valB) return sortState.direction === 'asc' ? -1 : 1;
                 if (valA > valB) return sortState.direction === 'asc' ? 1 : -1;
-                return 0;
+                // Tie-breaker: cùng giá trị thì đơn mới nhất (số dòng lớn hơn) lên trên
+                return (b._sheetRowNumber || 0) - (a._sheetRowNumber || 0);
             });
         }
 
-        const paginatedData = filtered.slice(0, sliceLimit);
+        const baseLimits = { all: 20, farm: 15, vua: 15, expense: 15 };
+        const baseLimit = baseLimits[currentTableTab] || 20;
+        const limit = Math.max(currentLimit, baseLimit);
+
+        // Update filter count badges
+        const countRow = document.getElementById('filter-count-row');
+        if (countRow) {
+            const total = filtered.length;
+            const done = filtered.filter(r => r["Status"] === "Xong").length;
+            const pending = total - done;
+            const currentStatus = document.getElementById('filter-status')?.value ?? 'all';
+            countRow.innerHTML = [
+                { label: `Tất cả (${total})`, val: 'all', cls: '' },
+                { label: `✅ Xong (${done})`, val: 'Xong', cls: 'badge-done' },
+                { label: `⏳ Chưa thu (${pending})`, val: 'Chưa Xong', cls: 'badge-pending' }
+            ].map(b => `<span class="filter-count-badge ${b.cls} ${currentStatus === b.val ? 'active' : ''}" data-status="${b.val}">${b.label}</span>`).join('');
+            countRow.querySelectorAll('.filter-count-badge').forEach(badge => {
+                badge.addEventListener('click', () => {
+                    const fs = document.getElementById('filter-status');
+                    if (fs) { fs.value = badge.dataset.status; fs.dispatchEvent(new Event('change')); }
+                });
+            });
+        }
+
+        const paginatedData = filtered.slice(0, limit);
         renderTable(paginatedData);
+
+        // Load More button
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        if (loadMoreBtn) {
+            if (filtered.length > limit) {
+                loadMoreBtn.style.display = 'block';
+                loadMoreBtn.textContent = `⬇ Xem thêm (còn ${filtered.length - limit} dòng)`;
+            } else {
+                loadMoreBtn.style.display = 'none';
+            }
+        }
     }
 
     // --- SKELETON LOADING HELPERS ---
@@ -2198,8 +2693,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const CACHE_KEY = 'farm_management_data';
 
     function processRawSheetData(rawData) {
-        return rawData.map(item => {
-            let rowDate = new Date(); // Default if invalid
+        return rawData.map((item, idx) => {
+            let rowDate = new Date();
             if (item["Ngày"]) {
                 if (!isNaN(item["Ngày"])) {
                     rowDate = excelToJsDate(parseFloat(item["Ngày"]));
@@ -2223,6 +2718,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return {
                 ...item,
                 parsedDate: rowDate,
+                // Preserve _sheetRowNumber if already set (from gviz), else compute from idx
+                _sheetRowNumber: item._sheetRowNumber || (idx + 2),
                 "Status": (item["Status"] || "").trim(),
                 "Số lượng": parseSheetNum(item["Số lượng"]),
                 "Giá": parseSheetNum(item["Giá"]),
@@ -2283,7 +2780,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const cols = data.table.cols.map(c => c ? c.label : '');
-            const parsedData = data.table.rows.map(row => {
+            const parsedData = data.table.rows.map((row, rowIdx) => {
                 const item = {};
                 cols.forEach((col, index) => {
                     if (!col) return;
@@ -2294,6 +2791,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                     item[col] = String(val);
                 });
+                item._sheetRowNumber = rowIdx + 2; // row 1 = header, data starts at row 2
                 return item;
             });
 
@@ -2331,10 +2829,10 @@ document.addEventListener("DOMContentLoaded", () => {
         addExpenseBtn.addEventListener('click', () => {
             const row = document.createElement('div');
             row.className = 'expense-item';
-            row.style.cssText = 'display: grid; grid-template-columns: 1.5fr 1.5fr 2fr 35px; gap: 10px; align-items: center;';
             row.innerHTML = `
                 <div class="form-group" style="margin: 0;">
-                    <select class="exp-type" style="width: 100%; border: 1px solid #f87171;">
+                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Hạng mục</label>
+                    <select class="exp-type" style="border-color: #f87171;">
                         <option value="Chi Phí Khác">Chi Phí Khác</option>
                         <option value="Thuốc">Thuốc</option>
                         <option value="Phân">Phân</option>
@@ -2346,9 +2844,15 @@ document.addEventListener("DOMContentLoaded", () => {
                         <option value="Expensed">Expensed</option>
                     </select>
                 </div>
-                <div class="form-group" style="margin: 0;"><input type="text" placeholder="Số tiền" class="exp-amount money-input" style="border: 1px solid #f87171; color: #b91c1c; font-weight: bold;"></div>
-                <div class="form-group" style="margin: 0;"><input type="text" placeholder="Ghi chú chi phí" class="exp-note" style="border: 1px solid #f87171;"></div>
-                <button type="button" class="del-expense-btn" style="background: none; border: none; color: #ef4444; font-size: 1.2rem; cursor: pointer; padding: 0;" title="Xoá"><i class="fa-solid fa-circle-xmark"></i></button>
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Số tiền</label>
+                    <input type="text" placeholder="0" class="exp-amount money-input" style="border-color: #f87171; color: #b91c1c; font-weight: bold;">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Ghi chú chi tiết</label>
+                    <input type="text" placeholder="Nhập ghi chú..." class="exp-note" style="border-color: #f87171;">
+                </div>
+                <button type="button" class="del-expense-btn" title="Xoá"><i class="fa-solid fa-trash-can"></i></button>
             `;
             expenseItemsContainer.appendChild(row);
             attachExpenseRowEvents(row);
@@ -2445,39 +2949,40 @@ document.addEventListener("DOMContentLoaded", () => {
             bulkDeleteBtn.disabled = true;
 
             let successCount = 0;
-            const rowsToDelete = Array.from(checkedBoxes).map(cb => JSON.parse(cb.value));
+            const rowsToDelete = Array.from(checkedBoxes).map(cb => {
+                const idx = parseInt(cb.getAttribute('data-row-index'));
+                return dataToRenderRef[idx];
+            }).filter(Boolean);
 
             try {
-                // Sắp xếp ngược để tránh vấn đề index nếu có (nhưng ở đây mình dùng findIndex nên ko sao)
+                // Sắp xếp giảm dần theo row number — xóa từ dưới lên để tránh dịch chuyển index
+                rowsToDelete.sort((a, b) => (b._sheetRowNumber || 0) - (a._sheetRowNumber || 0));
+
                 for (let i = 0; i < rowsToDelete.length; i++) {
                     const rowData = rowsToDelete[i];
+                    const sheetRow = rowData._sheetRowNumber;
+                    if (!sheetRow) continue;
+
                     bulkDeleteBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang Xoá (${i + 1}/${rowsToDelete.length})...`;
 
-                    const response = await fetch(WEB_APP_URL, {
+                    const response = await fetch(CONFIG.WEB_APP_URL, {
                         method: "POST",
-                        body: JSON.stringify({ action: "delete", data: rowData }),
+                        body: JSON.stringify({ action: "deleteByRow", rowNumber: sheetRow, token: getToken() }),
                         headers: { "Content-Type": "text/plain;charset=utf-8" }
                     });
                     const result = await response.json();
                     if (result.status === "success") {
                         successCount++;
-                        // Tìm và xóa khỏi bộ nhớ đệm local
-                        const idx = farmData.findIndex(r => {
-                            const matchNgay = r["Ngày"] === rowData["Ngày"];
-                            const matchNguoiMua = (r["Người Mua"] || "") === (rowData["Người Mua"] || "");
-                            const matchSL = String(r["Số lượng"] || "0") === String(rowData["Số lượng"] || "0");
-                            const matchLoai = (r["Phân Loại Bông"] || "") === (rowData["Phân Loại Bông"] || "");
-                            const matchCP = String(r["Chi Phí"] || "0") === String(rowData["Chi Phí"] || "0");
-                            const matchLoaiCP = (r["Loại CP"] || "") === (rowData["Loại CP"] || "");
-
-                            return matchNgay && matchNguoiMua && matchSL && matchLoai && matchCP && matchLoaiCP;
-                        });
-                        if (idx >= 0) farmData.splice(idx, 1);
+                        // Adjust _sheetRowNumber for rows below this one
+                        farmData.forEach(r => { if (r._sheetRowNumber > sheetRow) r._sheetRowNumber--; });
+                        const fidx = farmData.indexOf(rowData);
+                        if (fidx >= 0) farmData.splice(fidx, 1);
                     }
-                    // Đợi 200ms giữa các yêu cầu để đảm bảo tính ổn định của Apps Script
-                    await new Promise(resolve => setTimeout(resolve, 200));
+                    await new Promise(resolve => setTimeout(resolve, 150));
                 }
-                alert(`Đã xoá thành công ${successCount}/${rowsToDelete.length} đơn dữ liệu.`);
+                showToast(`Đã xoá thành công ${successCount}/${rowsToDelete.length} đơn dữ liệu.`, "success");
+                const syncBtn = document.getElementById('sync-gsheet-btn');
+                if (syncBtn) syncBtn.click();
             } catch (err) {
                 console.error(err);
                 alert("Lỗi kết nối khi xoá hàng loạt.");
@@ -2522,6 +3027,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (!isAuthorizedForEntry()) {
+            alert("Bạn không có quyền nhập liệu!");
+            return;
+        }
 
         if (!confirm("Bạn có chắc chắn muốn lưu các dòng dữ liệu này?")) {
             return;
@@ -2576,6 +3085,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Vựa Mode
             const shipCost = parseMoney(vuaShipCostInput.value);
             const vattuCost = parseMoney(vuaVattuCostInput.value);
+            const packingCost = parseMoney(document.getElementById('vua-packing-cost') ? document.getElementById('vua-packing-cost').value : "0");
             const totalCollect = parseMoney(vuaTotalCollectInput.value);
             const items = flowerItemsContainer.querySelectorAll('.flower-item');
 
@@ -2585,7 +3095,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const p = parseMoney(item.querySelector('.fw-price').value);
                 sumCost += (q * p);
             });
-            const expectedRevenue = totalCollect - sumCost;
+            const expectedRevenue = packingCost; // User wants Profit recorded as Revenue
 
             items.forEach((item, index) => {
                 const typeStr = item.querySelector('.fw-type').value || "Bông";
@@ -2662,15 +3172,39 @@ document.addEventListener("DOMContentLoaded", () => {
         submitBtn.disabled = true;
 
         try {
+            // IF EDIT MODE: Delete old row first
+            if (currentEditRowData) {
+                const sheetRow = currentEditRowData._sheetRowNumber;
+                if (sheetRow) {
+                    const delResp = await fetch(CONFIG.WEB_APP_URL, {
+                        method: "POST",
+                        body: JSON.stringify({ action: "deleteByRow", rowNumber: sheetRow, token: getToken() }),
+                        headers: { "Content-Type": "text/plain;charset=utf-8" }
+                    });
+                    const delRes = await delResp.json();
+                    if (delRes.status !== "success") {
+                        throw new Error("Lỗi khi xóa dòng cũ: " + delRes.message);
+                    }
+                }
+            }
+
             for (let i = 0; i < payloadRowsStr.length; i++) {
-                const response = await fetch(WEB_APP_URL, {
+                const response = await fetch(CONFIG.WEB_APP_URL, {
                     method: "POST",
-                    body: JSON.stringify(payloadRowsStr[i]),
+                    body: JSON.stringify({ ...payloadRowsStr[i], token: getToken() }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
                 const result = await response.json();
                 if (result.status !== "success") throw new Error(result.message || "Lỗi cập nhật G-Sheet.");
             }
+
+            showToast("Lưu dữ liệu thành công!", "success");
+            currentEditRowData = null; // Clear edit mode
+            const cancelBtn = document.getElementById('cancel-edit-btn');
+            if (cancelBtn) cancelBtn.remove();
+            
+            submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu Dữ Liệu';
+            submitBtn.style.backgroundColor = '';
 
             // Re-fetch everything to ensure proper sync if possible
             const syncBtn = document.getElementById('sync-gsheet-btn');
@@ -2695,9 +3229,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // Khôi phục lại một dòng chuẩn cho Bông
             if (flowerItemsContainer) {
                 flowerItemsContainer.innerHTML = `
-                    <div class="flower-item" style="display: grid; grid-template-columns: 1.2fr 0.6fr 1.2fr 1.5fr 30px; gap: 10px; align-items: center;">
+                    <div class="flower-item">
                         <div class="form-group" style="margin: 0;">
-                            <select class="fw-type" style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;" required>
+                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Loại mặt hàng</label>
+                            <select class="fw-type" required>
                                 <option value="Xô ngoại">Xô ngoại</option>
                                 <option value="Xô nội">Xô nội</option>
                                 <option value="Ecuador">Ecuador</option>
@@ -2713,10 +3248,19 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <option value="Khác">Khác</option>
                             </select>
                         </div>
-                        <div class="form-group" style="margin: 0;"><input type="number" placeholder="SL" class="fw-qty" min="0" required></div>
-                        <div class="form-group" style="margin: 0;"><input type="text" placeholder="Giá" class="fw-price money-input" required></div>
-                        <div class="form-group" style="margin: 0;"><input type="text" placeholder="Thành tiền" class="fw-total" readonly style="background: #f9fafb; color: #374151; font-weight: bold; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px; width: 100%;"></div>
-                        <button type="button" class="del-flower-btn" style="background: none; border: none; color: var(--danger); font-size: 1.2rem; cursor: pointer; padding: 0;" title="Xoá"><i class="fa-solid fa-circle-xmark"></i></button>
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
+                            <input type="number" placeholder="0" class="fw-qty" min="0" required>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Đơn Giá</label>
+                            <input type="text" placeholder="0" class="fw-price money-input" required>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Thành tiền</label>
+                            <input type="text" placeholder="0" class="fw-total" readonly style="background: #f1f5f9; color: #0f172a; font-weight: 800; border: 1.5px solid #cbd5e1 !important;">
+                        </div>
+                        <button type="button" class="del-flower-btn" title="Xoá"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                 `;
                 attachFlowerRowEvents(flowerItemsContainer.querySelector('.flower-item'));
@@ -2727,9 +3271,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // Khôi phục lại một dòng chuẩn cho Chi phí
             if (expenseItemsContainer) {
                 expenseItemsContainer.innerHTML = `
-                    <div class="expense-item" style="display: grid; grid-template-columns: 1.5fr 1.5fr 2fr 35px; gap: 10px; align-items: center;">
+                    <div class="expense-item">
                         <div class="form-group" style="margin: 0;">
-                            <select class="exp-type" style="width: 100%; border: 1px solid #f87171;">
+                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Hạng mục</label>
+                            <select class="exp-type" style="border-color: #f87171;">
                                 <option value="Chi Phí Khác">Chi Phí Khác</option>
                                 <option value="Thuốc">Thuốc</option>
                                 <option value="Phân">Phân</option>
@@ -2741,15 +3286,21 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <option value="Expensed">Expensed</option>
                             </select>
                         </div>
-                        <div class="form-group" style="margin: 0;"><input type="text" placeholder="Số tiền" class="exp-amount money-input" style="border: 1px solid #f87171; color: #b91c1c; font-weight: bold;"></div>
-                        <div class="form-group" style="margin: 0;"><input type="text" placeholder="Ghi chú chi phí" class="exp-note" style="border: 1px solid #f87171;"></div>
-                        <button type="button" class="del-expense-btn" style="background: none; border: none; color: #ef4444; font-size: 1.2rem; cursor: pointer; padding: 0;" title="Xoá"><i class="fa-solid fa-circle-xmark"></i></button>
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Số tiền</label>
+                            <input type="text" placeholder="0" class="exp-amount money-input" style="border-color: #f87171; color: #b91c1c; font-weight: bold;">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Ghi chú chi tiết</label>
+                            <input type="text" placeholder="Nhập ghi chú..." class="exp-note" style="border-color: #f87171;">
+                        </div>
+                        <button type="button" class="del-expense-btn" title="Xoá"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                 `;
                 attachExpenseRowEvents(expenseItemsContainer.querySelector('.expense-item'));
             }
 
-            alert("Đã lưu thành công " + payloadRowsStr.length + " dòng dữ liệu!");
+            showToast(`✅ Đã lưu thành công ${payloadRowsStr.length} dòng dữ liệu!`, 'success');
 
         } catch (error) {
             console.error(error);
@@ -2760,11 +3311,106 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Initial render attempt: first from cache, then sync in background
-    loadFromCache();
-    applyFiltersAndRender();
+    // Load More
+    const loadMoreBtnEl = document.getElementById('load-more-btn');
+    if (loadMoreBtnEl) {
+        loadMoreBtnEl.addEventListener('click', () => {
+            currentLimit += 20;
+            applyFiltersAndRender();
+        });
+    }
+    document.querySelectorAll('.table-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentLimit = 20;
+        });
+    });
 
-    // Auto-sync data from Google Sheets on page load
+    // Toast System
+    window.showToast = function (message, type, duration) {
+        type = type || 'info';
+        duration = duration || 3000;
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+        toast.className = 'toast toast-' + type;
+        toast.innerHTML = (icons[type] || 'ℹ️') + ' ' + message;
+        container.appendChild(toast);
+        requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('show')));
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 350);
+        }, duration);
+    };
+
+    // Swipe-to-Delete
+    (function () {
+        const tb = document.getElementById('table-body');
+        if (!tb) return;
+        let sx = 0, sy = 0;
+        const THRESH = 80;
+        tb.addEventListener('touchstart', function (e) {
+            const row = e.target.closest('tr');
+            if (!row) return;
+            sx = e.touches[0].clientX;
+            sy = e.touches[0].clientY;
+            row._sx = sx;
+        }, { passive: true });
+        tb.addEventListener('touchmove', function (e) {
+            const row = e.target.closest('tr');
+            if (!row || !row._sx) return;
+            const dx = e.touches[0].clientX - row._sx;
+            const dy = e.touches[0].clientY - sy;
+            if (Math.abs(dy) > Math.abs(dx)) return;
+            if (dx < -10) {
+                const p = Math.min(Math.abs(dx) / THRESH, 1);
+                row.style.opacity = String(1 - p * 0.4);
+                row.style.transform = 'translateX(' + dx + 'px)';
+            }
+        }, { passive: true });
+        tb.addEventListener('touchend', function (e) {
+            const row = e.target.closest('tr');
+            if (!row || !row._sx) return;
+            const dx = e.changedTouches[0].clientX - row._sx;
+            row._sx = 0;
+            if (dx < -THRESH) {
+                const btn = row.querySelector('.action-btn[data-row-index]');
+                if (btn) {
+                    row.style.transition = 'transform 0.25s, opacity 0.25s';
+                    row.style.transform = 'translateX(-100%)';
+                    row.style.opacity = '0';
+                    setTimeout(() => btn.click(), 200);
+                    setTimeout(() => { row.style.transition = ''; row.style.transform = ''; row.style.opacity = ''; }, 500);
+                    return;
+                }
+            }
+            row.style.transition = 'transform 0.2s, opacity 0.2s';
+            row.style.transform = '';
+            row.style.opacity = '';
+            setTimeout(() => { row.style.transition = ''; }, 220);
+        }, { passive: true });
+    })();
+
+    // --- FINAL INITIALIZATION ---
+    loadFromCache();
+    currentLimit = 20;
+
+    // Restore saved view on load (Centralized initialization)
+    const savedView = localStorage.getItem("active_app_view") || 'data';
+    switchView(savedView);
+
+    if (entryTypeSelect) {
+        entryTypeSelect.dispatchEvent(new Event("change"));
+    }
+
     const syncBtn = document.getElementById('sync-gsheet-btn');
-    if (syncBtn) syncBtn.click();
+    if (syncBtn) {
+        syncBtn.addEventListener('click', () => {
+            if (!isAuthorizedForSync()) {
+                console.log("Sync skipped: Read-only access");
+                return;
+            }
+            syncData();
+        });
+    }
 });
