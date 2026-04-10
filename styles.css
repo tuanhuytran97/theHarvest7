@@ -67,6 +67,29 @@
   animation: fadeInDown 0.5s ease-out;
 }
 
+/* Responsive Mobile Optimization (iPhone 14 Pro Max and below) */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 2rem 1.5rem !important;
+    width: 90% !important;
+    max-width: none !important;
+  }
+  
+  .login-card .logo {
+    margin-bottom: 1.5rem !important;
+  }
+  
+  .login-card p {
+    font-size: 0.9rem !important;
+    line-height: 1.4 !important;
+  }
+  
+  .password-input-wrapper input {
+    font-size: 1rem !important;
+    height: 55px !important;
+  }
+}
+
 .password-input-wrapper {
   position: relative;
   display: flex;
@@ -83,34 +106,41 @@
 
 .toggle-password-btn {
   position: absolute;
-  right: 12px;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
   color: var(--text-light);
   cursor: pointer;
-  padding: 8px;
-  font-size: 1.1rem;
+  padding: 10px;
+  font-size: 1.2rem;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  z-index: 10;
+  z-index: 20;
+  opacity: 0.4; /* Mặc định mờ */
+}
+
+.toggle-password-btn.active {
+  opacity: 1; /* Hiện rõ khi kích hoạt */
+  color: var(--primary-color);
 }
 
 .toggle-password-btn:hover {
-  color: var(--primary-color);
+  opacity: 0.8;
   background: rgba(14, 165, 233, 0.1);
 }
 
 .login-card .btn-primary {
-  margin-top: 1rem;
-  height: 50px;
+  margin-top: 1.5rem;
+  height: 55px;
   border-radius: 0.75rem;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.3);
 }
 
 /* Login hints removed */
@@ -1770,4 +1800,57 @@ tr.swiping td:first-child::before {
 
 .filter-count-badge.badge-pending.active {
   background: #f59e0b;
+}
+
+/* Reporting & Dashboard Optimization (iPad Pro and below) */
+@media (max-width: 1024px) {
+  /* Mỗi ô nằm trên 1 hàng riêng biệt */
+  .summary-grid, 
+  .kpi-cards, 
+  .dashboard-metrics,
+  .metric-grid,
+  [class*="summary-grid"], 
+  [class*="kpi-cards"] {
+    display: flex !important;
+    flex-direction: column !important; /* Xếp chồng theo chiều dọc */
+    gap: 15px !important;
+    padding: 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  .metric-card, .summary-item {
+    width: 100% !important;
+    min-height: 100px !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    display: block !important;
+  }
+  
+  .metric-card h3, .summary-label {
+    font-size: 1rem !important; /* Chữ to hơn cho iPad/iPhone */
+    margin-bottom: 8px !important;
+  }
+  
+  .metric-card .value, .summary-value {
+    font-size: 1.4rem !important; /* Giá trị hiện rõ ràng */
+    white-space: normal !important;
+  }
+
+  /* Khung báo cáo và biểu đồ */
+  .report-card, .view-section, #view-report {
+    margin: 10px 0 !important;
+    padding: 15px !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  .chart-container {
+    height: 400px !important; /* Tăng chiều cao biểu đồ trên màn hình lớn của iPad */
+    width: 100% !important;
+  }
 }

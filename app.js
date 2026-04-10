@@ -7,6 +7,32 @@ document.addEventListener("DOMContentLoaded", () => {
     const appContainer = document.querySelector(".app-container");
     const passwordInput = document.getElementById("admin-password");
     const loginError = document.getElementById("login-error");
+    const togglePasswordBtn = document.getElementById("toggle-password-btn");
+
+    // Toggle password visibility
+    if (togglePasswordBtn && passwordInput) {
+        togglePasswordBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const isPassword = passwordInput.type === "password";
+            passwordInput.type = isPassword ? "text" : "password";
+            
+            // Switch icon and state
+            const icon = togglePasswordBtn.querySelector("i");
+            if (isPassword) {
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+                togglePasswordBtn.classList.add("active");
+                togglePasswordBtn.title = "Ẩn mật khẩu";
+            } else {
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+                togglePasswordBtn.classList.remove("active");
+                togglePasswordBtn.title = "Hiện mật khẩu";
+            }
+        });
+    }
 
     // Safety check for CONFIG
     if (typeof CONFIG === 'undefined') {
@@ -103,7 +129,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const pw = passwordInput.value;
             if (!pw) return;
 
-            const submitBtn = loginForm.querySelector('button');
+            const submitBtn = loginForm.querySelector('button[type="submit"]');
+            if (!submitBtn) return;
             const originalText = submitBtn.innerText;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xác thực...';
             submitBtn.disabled = true;
@@ -136,12 +163,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     // Thông báo thành công mượt mà
                     setTimeout(() => location.reload(), 500);
                 } else {
+                    submitBtn.innerText = originalText;
+                    submitBtn.disabled = false;
                     loginError.style.display = "block";
                     loginError.innerText = result.message || "Mật khẩu không đúng!";
                     passwordInput.value = "";
                     passwordInput.focus();
                 }
             } catch (err) {
+                submitBtn.innerText = originalText;
+                submitBtn.disabled = false;
                 console.error(err);
                 alert("Lỗi kết nối Server! Vui lòng kiểm tra lại Google Apps Script.");
             } finally {
@@ -163,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1. Data Initialization & Utility Functions
     let farmData = window.farmData || [];
     let sortState = { column: 'Ngày', direction: 'desc' };
-    let currentTableTab = 'all';
+    let currentTableTab = 'today';
     let currentLimit = 20;
     let dataToRenderRef = []; // module-level ref for deleteRowByIndex
     let annualQtyChartInstance = null;
@@ -325,23 +356,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 toggleExpenseReq(true);
             }
 
-            // --- AUTO-SWITCH TABLE TAB ---
-            let targetTab = 'all';
-            if (type === "farm") targetTab = 'farm';
-            else if (type === "vua") targetTab = 'vua';
-            else if (type === "expense") targetTab = 'expense';
-
-            const tabBtns = document.querySelectorAll('.table-tab-btn');
-            tabBtns.forEach(btn => {
-                if (btn.dataset.tab === targetTab) {
-                    // Cập nhật class active
-                    tabBtns.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    // Cập nhật state và render lại
-                    currentTableTab = targetTab;
-                    applyFiltersAndRender();
-                }
-            });
+            // Auto-switch disabled to respect user's "Today" default tab
         });
     }
 
@@ -2219,7 +2234,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     legend: { position: 'top', labels: { usePointStyle: true, font: { weight: 'bold' } } },
                     title: { display: true, text: `BIỂU ĐỒ DOANH THU & SẢN LƯỢNG - THÁNG ${month}/${year}`, font: { size: 16, weight: 'bold' }, padding: 20 },
                     datalabels: {
-                        display: (context) => (window.innerWidth > 400 && context.dataset.data[context.dataIndex] > 0),
+                        display: (context) => (window.innerWidth > 768 && context.dataset.data[context.dataIndex] > 0),
                         formatter: (val, context) => {
                             if (context.dataset.type === 'line') return val.toLocaleString('vi-VN');
                             return val.toLocaleString('vi-VN') + ' ₫';
@@ -2390,7 +2405,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 },
                 datalabels: {
-                    display: () => window.innerWidth > 400,
+                    display: () => window.innerWidth > 768,
                     anchor: 'end', align: 'top',
                     formatter: val => (val === 0 ? '' : new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(val)),
                     font: { size: 9, weight: 'bold' }
@@ -2571,7 +2586,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Tab Filter
         let sliceLimit = 20; // Giới hạn 20 hàng gần nhất cho tab "Tất Cả" theo yêu cầu
-        if (currentTableTab === 'farm') {
+        if (currentTableTab === 'today') {
+            const todayStr = formatDateInput(new Date());
+            filtered = filtered.filter(item => {
+                const dateStr = formatDateInput(item.parsedDate);
+                const type = (item["Loại DT"] || "").trim().toLowerCase();
+                const isFarmOrVua = type === "farm" || type === "" || type === "vựa" || type === "vua";
+                return dateStr === todayStr && isFarmOrVua;
+            });
+            sliceLimit = 500; // Hiển thị hết đơn hôm nay
+        } else if (currentTableTab === 'farm') {
             filtered = filtered.filter(item => {
                 const type = (item["Loại DT"] || "").trim().toLowerCase();
                 const isVua = type.includes("vựa") || type.includes("vua");
@@ -2922,9 +2946,9 @@ document.addEventListener("DOMContentLoaded", () => {
     tabBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
             tabBtns.forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
+            btn.classList.add('active');
             // update tab state
-            currentTableTab = e.currentTarget.dataset.tab;
+            currentTableTab = btn.dataset.tab;
 
             // clear search and checkbox implicitly via render
             document.getElementById('select-all-checkbox').checked = false;
