@@ -248,28 +248,36 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function updateBuyerSuggestions(data) {
-        if (!data || !Array.isArray(data)) return;
+        if (!data || !Array.isArray(data) || data.length === 0) return;
         
-        // Lấy danh sách tên khách hàng, ưu tiên các giao dịch có số lượng (là bán bông)
+        // Tìm tên cột chứa khách hàng (linh hoạt với nhiều kiểu đặt tên)
+        const possibleKeys = ["Khách Hàng", "Khách hàng", "Người mua", "Khách"];
+        let buyerKey = "";
+        
+        // Kiểm tra xem dữ liệu thực tế dùng cột nào
+        if (data.length > 0) {
+            const firstRow = data[0];
+            buyerKey = possibleKeys.find(k => firstRow.hasOwnProperty(k)) || "Khách Hàng";
+        }
+
+        // Lấy danh sách tên khách hàng thật sự
         const buyers = data
-            .filter(row => row["Khách Hàng"] && row["Khách Hàng"] !== "Nông Trại" && row["Khách Hàng"].trim() !== "")
+            .filter(row => {
+                const name = row[buyerKey];
+                return name && typeof name === 'string' && name.trim() !== "" && name !== "Nông Trại";
+            })
             .sort((a, b) => {
                 const dateA = a.parsedDate ? new Date(a.parsedDate).getTime() : 0;
                 const dateB = b.parsedDate ? new Date(b.parsedDate).getTime() : 0;
                 return dateB - dateA;
             })
-            .map(row => row["Khách Hàng"]);
+            .map(row => row[buyerKey].trim());
 
         // Lấy 5 tên khách hàng duy nhất và mới nhất
-        let uniqueRecentBuyers = [...new Set(buyers)].slice(0, 5);
-        
-        // Nếu dữ liệu trống, thêm một vài cái tên mẫu để bạn dễ hình dung
-        if (uniqueRecentBuyers.length === 0) {
-            uniqueRecentBuyers = ["Quân", "Đoan CR", "Vựa Lan", "Chị Năm", "Anh Bảy"];
-        }
+        const uniqueRecentBuyers = [...new Set(buyers)].slice(0, 5);
         
         const datalist = document.getElementById('buyer-suggestions');
-        if (datalist) {
+        if (datalist && uniqueRecentBuyers.length > 0) {
             datalist.innerHTML = uniqueRecentBuyers
                 .map(name => `<option value="${name}">${name}</option>`)
                 .join('');
