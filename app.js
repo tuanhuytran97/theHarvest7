@@ -3431,7 +3431,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Toast System
+    // Export utilities to window for Chatbot access
+    window.utils = {
+        getToken,
+        parseMoney,
+        formatDateInput,
+        formatCurrency,
+        formatMoneyStr,
+        excelToJsDate,
+        formatDateVietnamese
+    };
+
     window.showToast = function (message, type, duration) {
         type = type || 'info';
         duration = duration || 3000;

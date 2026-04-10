@@ -867,6 +867,42 @@
         <option value="Lạc Thần"></option>
         <option value="Hỷ Trứng"></option>
     </datalist>
+
+    <!-- HARVEST ASSISTANT CHATBOT -->
+    <div id="chatbot-container" class="chatbot-container">
+        <div id="chatbot-window" class="chatbot-window glassmorphism">
+            <div class="chatbot-header">
+                <i class="fa-solid fa-leaf text-primary"></i>
+                <span class="chat-title">Trợ lý Harvest</span>
+                <button id="close-chatbot" class="btn-close-chat" title="Đóng"><i class="fa-solid fa-chevron-down"></i></button>
+            </div>
+            <div id="chatbot-messages" class="chatbot-messages">
+                <div class="message ai-message">
+                    <p>Xin chào! Tôi là <strong>Trợ lý Harvest</strong>. Hãy gõ nội dung bạn muốn nhập nhé!</p>
+                    <div class="chat-suggestions">
+                        <span class="suggestion-tag">"Bán 100 cúc Anh Nam 5k"</span>
+                        <span class="suggestion-tag">"Chi 500k thuốc sâu"</span>
+                        <span class="suggestion-tag">"Vựa: 50 cúc 10k, 20 ly 30k. Đoan"</span>
+                    </div>
+                </div>
+            </div>
+            <div class="chatbot-input-area">
+                <input type="text" id="chatbot-input" placeholder="Nhập tin nhắn..." autocomplete="off">
+                <button id="send-chatbot-btn" class="btn-send-chat"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+        <button id="chatbot-toggle" class="chatbot-toggle-btn" title="Trợ lý ảo">
+            <div class="robot-icon">
+               <i class="fa-solid fa-robot"></i>
+               <span class="notification-dot"></span>
+            </div>
+        </button>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+    <script src="chatbot.js"></script>
 </body>
 
 </html>
