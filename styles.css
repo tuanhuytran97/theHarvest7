@@ -1285,8 +1285,33 @@ tbody tr:hover {
 
 @media (max-width: 768px) {
   .ledger-summary-row {
-    max-width: 100%;
-    margin: 0 10px 10px 10px;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important; /* Chia 2 cột để rộng rãi hơn */
+    max-width: 100% !important;
+    margin: 0 10px 10px 10px !important;
+    padding: 12px 20px !important;
+    gap: 12px !important;
+    border-top: 2px solid #1e293b !important;
+    border-radius: 8px !important;
+    background: #f8fafc !important;
+  }
+  .summary-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important; /* Cân đối lề trái */
+    min-height: 0 !important;
+  }
+  .summary-label {
+    font-size: 0.65rem !important; /* Tăng 1.5 lần (từ 10px lên ~13px) */
+    margin-bottom: 2px !important;
+    color: #64748b !important;
+    white-space: nowrap !important;
+    opacity: 1 !important;
+  }
+  .summary-value {
+    font-size: 1.1rem !important; /* Tăng 1.5 lần (từ 12px lên ~18px) */
+    font-weight: 800 !important;
+    white-space: nowrap !important;
   }
 }
 
@@ -1819,7 +1844,7 @@ tr.swiping td:first-child::before {
     box-sizing: border-box !important;
   }
   
-  .metric-card, .summary-item {
+  .metric-card {
     width: 100% !important;
     min-height: 100px !important;
     margin: 0 !important;
@@ -1829,13 +1854,13 @@ tr.swiping td:first-child::before {
     display: block !important;
   }
   
-  .metric-card h3, .summary-label {
-    font-size: 1rem !important; /* Chữ to hơn cho iPad/iPhone */
+  .metric-card h3 {
+    font-size: 1rem !important; 
     margin-bottom: 8px !important;
   }
   
-  .metric-card .value, .summary-value {
-    font-size: 1.4rem !important; /* Giá trị hiện rõ ràng */
+  .metric-card .value {
+    font-size: 1.4rem !important; 
     white-space: normal !important;
   }
 
@@ -1850,7 +1875,214 @@ tr.swiping td:first-child::before {
   }
 
   .chart-container {
-    height: 400px !important; /* Tăng chiều cao biểu đồ trên màn hình lớn của iPad */
+    height: 400px !important; 
     width: 100% !important;
   }
+}
+
+/* PREMIUM DIGITAL RECEIPT STYLES */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.receipt-container {
+    width: 100%;
+    max-width: 450px;
+    margin: auto;
+    animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.receipt-actions-top {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+}
+
+.btn-close-receipt {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.receipt-paper {
+    background: #fff;
+    padding: 30px;
+    border-radius: 4px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    color: #334155;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Vân chìm Leaf trang trí */
+.receipt-paper::before {
+    content: '\f06c';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    font-size: 15rem;
+    color: rgba(16, 185, 129, 0.03);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-15deg);
+    pointer-events: none;
+}
+
+.receipt-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+    border-bottom: 2px double #e2e8f0;
+    padding-bottom: 20px;
+}
+
+.farm-logo {
+    background: var(--secondary-color);
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.farm-info h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    letter-spacing: 1px;
+    color: #1e293b;
+}
+
+.farm-info p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.receipt-title {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.receipt-title h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #1e293b;
+    letter-spacing: 2px;
+}
+
+#receipt-id {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-top: 5px;
+}
+
+.receipt-info-grid {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+}
+
+.info-group label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 3px;
+}
+
+.info-group p {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1rem;
+    color: #334155;
+}
+
+.receipt-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+}
+
+.receipt-table th {
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: #94a3b8;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.receipt-table td {
+    padding: 12px 0;
+    font-size: 0.85rem;
+    border-bottom: 1px dashed #f1f5f9;
+}
+
+.receipt-summary {
+    border-top: 2px solid #1e293b;
+    padding-top: 20px;
+    margin-bottom: 30px;
+}
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.summary-line.grand-total {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 1.25rem;
+    color: #ef4444;
+}
+
+.receipt-footer {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin-top: 40px;
+}
+
+.footer-decoration {
+    margin-top: 20px;
+    letter-spacing: 5px;
+}
+
+.receipt-actions-bottom {
+    margin-top: 20px;
+    text-align: center;
+}
+
+@media print {
+    .modal-overlay { background: white; padding: 0; position: absolute; }
+    .receipt-actions-top, .receipt-actions-bottom, .mobile-nav, .app-header { display: none !important; }
+    .receipt-container { max-width: 100%; margin: 0; box-shadow: none; }
+    .receipt-paper { box-shadow: none; border: none; }
 }

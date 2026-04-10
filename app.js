@@ -3464,4 +3464,46 @@ document.addEventListener("DOMContentLoaded", () => {
             syncData(); 
         }, 800);
     }
+    // --- RECEIPT EXPORT LOGIC ---
+    window.showReceipt = function() {
+        if (!currentSelectedBuyer) return;
+        
+        const modal = document.getElementById('receipt-modal');
+        const itemsBody = document.getElementById('receipt-items-body');
+        
+        // Cập nhật thông tin chung
+        document.getElementById('receipt-customer-name').innerText = currentSelectedBuyer.name;
+        document.getElementById('receipt-date').innerText = formatDateInput(new Date());
+        document.getElementById('receipt-id').innerText = "Số: INV-" + Date.now().toString().slice(-6);
+        
+        // Đổ dữ liệu mặt hàng (Lấy từ các đơn nợ hiện tại)
+        itemsBody.innerHTML = '';
+        currentSelectedBuyer.transactions.forEach(t => {
+            const row = document.createElement('tr');
+            const summary = t.lines.map(l => `${l.qty} ${l.flowerType}`).join(', ');
+            row.innerHTML = `
+                <td style="color: #64748b; width: 60px;">${t.dateStr.slice(0,5)}</td>
+                <td>${summary}</td>
+                <td style="text-align: right; font-weight: 700;">${formatCurrency(t.totalExpected)}</td>
+            `;
+            itemsBody.appendChild(row);
+        });
+        
+        // Cập nhật tổng kết
+        document.getElementById('receipt-summary-qty').innerText = formatNumber(currentSelectedBuyer.totalQty) + " bông";
+        document.getElementById('receipt-summary-total').innerText = formatCurrency(currentSelectedBuyer.totalAmount);
+        document.getElementById('receipt-summary-paid').innerText = formatCurrency(currentSelectedBuyer.totalPaid);
+        document.getElementById('receipt-summary-debt').innerText = formatCurrency(currentSelectedBuyer.totalDebt);
+        
+        modal.style.display = 'flex';
+    };
+
+    window.closeReceipt = function() {
+        document.getElementById('receipt-modal').style.display = 'none';
+    };
+
+    const btnExportReceipt = document.getElementById('btn-export-receipt');
+    if (btnExportReceipt) {
+        btnExportReceipt.addEventListener('click', showReceipt);
+    }
 });
