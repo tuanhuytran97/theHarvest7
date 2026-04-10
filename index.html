@@ -27,9 +27,14 @@
             <!-- Privacy: Login hints removed -->
 
             <form id="login-form">
-                <div class="form-group" style="margin-bottom: 1.5rem;">
-                    <input type="password" id="admin-password" placeholder="Mật khẩu" required
-                        style="text-align: center; font-size: 1.2rem;">
+                <div class="form-group" style="margin-bottom: 0.5rem;">
+                    <div class="password-input-wrapper">
+                        <input type="password" id="admin-password" placeholder="Mật khẩu" required
+                            style="text-align: center; font-size: 1.2rem;">
+                        <button type="button" id="toggle-password-btn" class="toggle-password-btn" title="Hiện mật khẩu">
+                            <i class="fa-solid fa-eye-slash"></i>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit" class="btn-primary" style="width: 100%;">Truy Cập Hệ Thống</button>
                 <p id="login-error"

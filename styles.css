@@ -67,6 +67,52 @@
   animation: fadeInDown 0.5s ease-out;
 }
 
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+#admin-password {
+  width: 100% !important;
+  margin: 0 !important;
+  height: 50px;
+  border-radius: 0.75rem;
+}
+
+.toggle-password-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 8px;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  z-index: 10;
+}
+
+.toggle-password-btn:hover {
+  color: var(--primary-color);
+  background: rgba(14, 165, 233, 0.1);
+}
+
+.login-card .btn-primary {
+  margin-top: 1rem;
+  height: 50px;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
 /* Login hints removed */
 
 @keyframes fadeInDown {

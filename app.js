@@ -121,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     // Lấy thông tin từ danh sách ẩn trong config.js nếu có
                     const userConfig = (typeof CONFIG !== 'undefined' && CONFIG.USERS) ? CONFIG.USERS[pw] : null;
                     const userName = userConfig ? userConfig.name : (result.userName || "Người dùng");
-                    
+
                     sessionStorage.setItem("user-role", result.role);
                     sessionStorage.setItem("user-name", userName);
                     sessionStorage.setItem("user-token", pw); // Dùng password làm token xác thực
@@ -130,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     appContainer.style.display = "flex";
                     applyRolePermissions(result.role);
                     updateUserProfile();
-                    
+
                     if (typeof initDashboard === "function") initDashboard();
 
                     // Thông báo thành công mượt mà
@@ -821,7 +821,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </td>
             `;
         } else if (currentTableTab === 'vua') {
-             tr.innerHTML = `
+            tr.innerHTML = `
                 <td></td>
                 <td>${formatDateVietnamese(rowData.parsedDate)}</td>
                 <td><input type="text" class="inline-edit-input" id="edit-buyer" value="${rowData["Người Mua"] || ""}"></td>
@@ -892,7 +892,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // 1. Collect Data
             let newRow = { ...originalData };
             const dateStr = formatDateVietnamese(originalData.parsedDate);
-            
+
             if (currentTableTab === 'expense') {
                 newRow["Loại CP"] = document.getElementById('edit-exp-type').value;
                 newRow["Ghi Chú Chi Phí"] = document.getElementById('edit-exp-note').value;
@@ -904,7 +904,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 newRow["Số lượng"] = document.getElementById('edit-qty').value;
                 newRow["Status"] = document.getElementById('edit-status').value;
                 newRow["Ghi Chú"] = document.getElementById('edit-note').value;
-                
+
                 if (currentTableTab === 'farm') {
                     const price = parseMoney(document.getElementById('edit-price').value);
                     newRow["Giá"] = price.toString();
@@ -3241,7 +3241,7 @@ document.addEventListener("DOMContentLoaded", () => {
             currentEditRowData = null; // Clear edit mode
             const cancelBtn = document.getElementById('cancel-edit-btn');
             if (cancelBtn) cancelBtn.remove();
-            
+
             submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu Dữ Liệu';
             submitBtn.style.backgroundColor = '';
 
