@@ -250,30 +250,29 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateBuyerSuggestions(data) {
         if (!data || !Array.isArray(data) || data.length === 0) return;
         
-        // Cố gắng tìm tên khách hàng từ các cột phổ biến nhất
+        // Cố gắng tìm tên khách hàng từ tất cả các biến thể tên cột có thể có
         const buyers = data
             .map(row => {
-                // Ưu tiên cột "Khách Hàng", nếu không có thì tìm các cột chứa chữ "Khách" hoặc "Người"
-                const name = row["Khách Hàng"] || row["Khách hàng"] || row["Người mua"] || row["Khách"];
+                // Kiểm tra tất cả các kiểu đặt tên phổ biến (bao gồm cả Người Mua viết hoa)
+                const name = row["Người Mua"] || row["Người mua"] || row["Khách Hàng"] || row["Khách hàng"] || row["Khách"];
                 return name ? String(name).trim() : null;
             })
             .filter(name => name && name !== "" && name !== "Nông Trại" && name !== "undefined" && name !== "null")
-            .reverse(); // Đảo ngược để lấy các giao dịch mới nhất trước
+            .reverse();
 
-        // Lấy 5 tên khách hàng duy nhất và mới nhất
+        // Lấy 10 tên khách hàng duy nhất (tăng lên 10 để bạn có nhiều lựa chọn hơn)
         const uniqueRecentBuyers = [];
         for (const name of buyers) {
             if (!uniqueRecentBuyers.includes(name)) {
                 uniqueRecentBuyers.push(name);
             }
-            if (uniqueRecentBuyers.length >= 5) break;
+            if (uniqueRecentBuyers.length >= 10) break;
         }
         
         const datalist = document.getElementById('buyer-suggestions');
         if (datalist) {
-            // Luôn xóa trắng trước khi đổ mới
             datalist.innerHTML = uniqueRecentBuyers
-                .map(name => `<option value="${name}">${name}</option>`)
+                .map(name => `<option value="${name}"></option>`)
                 .join('');
         }
     }
