@@ -1245,68 +1245,46 @@ document.addEventListener("DOMContentLoaded", () => {
             const shortDate = (parts.length >= 2) ? `${parts[0]}.${parts[1]}` : t.dateStr;
 
             const invoiceItem = document.createElement('div');
-            invoiceItem.className = 'invoice-item';
-            invoiceItem.style.display = 'flex';
-            invoiceItem.style.alignItems = 'flex-start';
-            invoiceItem.style.gap = '12px';
-            invoiceItem.style.padding = '15px';
+            invoiceItem.className = 'invoice-item-compact';
+            invoiceItem.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;';
 
-            let itemHtml = `
-                <div class="invoice-header-row">
-                    <span class="invoice-date-tag"><i class="fa-regular fa-calendar-days"></i> ${shortDate}</span>
-                    <span class="invoice-amount">${formatCurrency(t.totalExpected)}</span>
-                </div>
-            `;
+            let detailsHtml = '';
 
             if (t.lines.length > 0 && t.lines[0].isVua) {
-                // Vựa Rendering
+                // Vựa Rendering - Siêu gọn
                 const combinedFlowers = t.lines.map(l => `${l.qty} ${l.flowerType}`).join(', ');
-                let phiVC = 150000;
-                let giaBong = t.totalExpected - phiVC;
-                if (giaBong < 0) { giaBong = t.totalExpected; phiVC = 0; }
-
-                itemHtml += `
-                    <div class="invoice-details-row">
-                        <span class="invoice-desc">${combinedFlowers}</span>
-                    </div>
-                    <div class="invoice-sub-row">
-                        <span class="invoice-badge-fee"><i class="fa-solid fa-truck-fast"></i> Vận chuyển: ${formatCurrency(phiVC)}</span>
-                        ${t.paid > 0 ? `<span class="invoice-badge-paid"><i class="fa-solid fa-circle-check"></i> Đã thu: ${formatCurrency(t.paid)}</span>` : ''}
+                detailsHtml = `
+                    <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="font-weight: 700; color: #1e293b;">📅 ${shortDate} | <span style="font-weight: 500;">${combinedFlowers}</span></span>
+                            ${t.paid > 0 ? `<span style="font-size: 0.75rem; color: #059669;">✅ Đã thu: ${formatCurrency(t.paid)}</span>` : ''}
+                        </div>
+                        <span style="font-weight: 800; color: var(--primary-color);">${formatCurrency(t.totalExpected)}</span>
                     </div>
                 `;
             } else {
-                // Farm Rendering
-                t.lines.forEach(l => {
-                    const priceK = (l.price / 1000).toFixed(1) + 'k';
-                    itemHtml += `
-                        <div class="invoice-details-row">
-                            <span class="invoice-desc">${l.qty} ${l.flowerType} x ${priceK}</span>
-                            <span style="color: #64748b;">${formatCurrency(l.dtBong)}</span>
+                // Farm Rendering - Gọn nhưng đầy đủ
+                const linesSummary = t.lines.map(l => {
+                    const pK = (l.price / 1000).toFixed(1) + 'k';
+                    return `${l.qty} ${l.flowerType} x ${pK}`;
+                }).join(' | ');
+
+                detailsHtml = `
+                    <div style="flex: 1; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                        <div style="display: flex; flex-direction: column; flex: 1;">
+                            <span style="font-weight: 700; color: #1e293b; line-height: 1.4;">
+                                📅 ${shortDate} | <span style="font-weight: 500; color: #475569;">${linesSummary}</span>
+                            </span>
+                            ${t.paid > 0 ? `<span style="font-size: 0.75rem; color: #059669; margin-top: 2px;">✅ Đã thu: ${formatCurrency(t.paid)}</span>` : ''}
                         </div>
-                    `;
-                });
-
-                const sumDtBong = t.lines.reduce((acc, cur) => acc + cur.dtBong, 0);
-                const diff = t.totalExpected - sumDtBong;
-
-                itemHtml += `<div class="invoice-sub-row">`;
-                if (diff > 0) {
-                    itemHtml += `<span class="invoice-badge-fee"><i class="fa-solid fa-box"></i> Phí khác: ${formatCurrency(diff)}</span>`;
-                } else {
-                    itemHtml += `<span></span>`;
-                }
-
-                if (t.paid > 0) {
-                    itemHtml += `<span class="invoice-badge-paid"><i class="fa-solid fa-circle-check"></i> Đã thu: ${formatCurrency(t.paid)}</span>`;
-                }
-                itemHtml += `</div>`;
+                        <span style="font-weight: 800; color: var(--secondary-color); white-space: nowrap; margin-top: 2px;">${formatCurrency(t.totalExpected)}</span>
+                    </div>
+                `;
             }
 
             invoiceItem.innerHTML = `
-                <input type="checkbox" class="tx-checkbox" data-txkey="${t.key}" style="width: 20px; height: 20px; margin-top: 5px; cursor: pointer; flex-shrink: 0;">
-                <div style="flex: 1;">
-                    ${itemHtml}
-                </div>
+                <input type="checkbox" class="tx-checkbox" data-txkey="${t.key}" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0;">
+                ${detailsHtml}
             `;
             txList.appendChild(invoiceItem);
         });
