@@ -226,7 +226,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const dd = String(dateObj.getDate()).padStart(2, '0');
         const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
         const yyyy = dateObj.getFullYear();
-        return `${yyyy}-${mm}-${dd}`;
+        return `${dd}/${mm}/${yyyy}`; // Chỉnh lại định dạng VN cho hóa đơn
+    }
+
+    function formatNumber(num) {
+        if (!num) return "0";
+        return new Intl.NumberFormat('vi-VN').format(num);
     }
 
     function formatCurrency(number) {
