@@ -2274,7 +2274,9 @@ tr.swiping td:first-child::before {
    ========================================= */
 .chatbot-container {
     position: fixed;
-    bottom: 30px;
+    bottom: 75px;
+
+
     right: 30px;
     z-index: 9999;
     display: none; /* Hidden by default - only show after login */
@@ -2544,7 +2546,9 @@ tr.swiping td:first-child::before {
 
 @media (max-width: 480px) {
     .chatbot-container {
-        bottom: 20px;
+        bottom: 80px;
+
+
         right: 20px;
     }
     .chatbot-window {
