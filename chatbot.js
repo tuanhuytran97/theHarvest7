@@ -34,11 +34,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const addMessage = (text, sender) => {
         const msgDiv = document.createElement('div');
         msgDiv.className = `message ${sender === 'ai' ? 'ai-message' : 'user-message'}`;
-        msgDiv.innerHTML = text;
+        // Preserve line breaks for multi-line inputs
+        msgDiv.innerHTML = text.replace(/\n/g, '<br>');
         chatMessages.appendChild(msgDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
         return msgDiv;
     };
+
+    // Auto-grow textarea
+    chatInput.addEventListener('input', () => {
+        chatInput.style.height = 'auto';
+        chatInput.style.height = (chatInput.scrollHeight) + 'px';
+    });
 
     const handleSend = () => {
         const text = chatInput.value.trim();
@@ -46,6 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         addMessage(text, 'user');
         chatInput.value = '';
+        chatInput.style.height = 'auto'; // Reset height
 
         // Processing
         setTimeout(() => {
@@ -54,9 +62,13 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     sendBtn.addEventListener('click', handleSend);
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleSend();
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); // Prevent new line on Enter (unless Shift is pressed)
+            handleSend();
+        }
     });
+
 
     // Handle Suggestions
     document.addEventListener('click', (e) => {
@@ -71,10 +83,23 @@ document.addEventListener("DOMContentLoaded", () => {
     function processInput(text) {
         const lowerText = text.toLowerCase();
         
-        // 1. Detect Entry Type
+        // Check for multi-line or comma-separated batch input
+        const isBatch = (text.includes('\n') && text.trim().split('\n').length > 1) || 
+                        (text.includes(',') && text.split(',').length > 1);
+
+        if (isBatch && !lowerText.startsWith('chi') && !lowerText.startsWith('trả')) {
+            parseMultiLineFarmEntry(text);
+            return;
+        }
+
+        // 1. Detect Single Entry Type
+
         if (lowerText.startsWith('bán') || lowerText.startsWith('ban')) {
             parseFarmEntry(text);
-        } else if (lowerText.startsWith('chi') || lowerText.startsWith('trả') || lowerText.startsWith('tra')) {
+        } else if (lowerText.startsWith('chi') || lowerText.startsWith('trả') || lowerText.startsWith('tra') || 
+                   lowerText.startsWith('exp') ||
+                   lowerText.includes('phân') || lowerText.includes('thuốc') || lowerText.includes('lãi') || 
+                   lowerText.includes('công') || lowerText.includes('lương')) {
             parseExpenseEntry(text);
         } else if (lowerText.startsWith('vựa') || lowerText.includes('đối soát')) {
             parseVuaEntry(text);
@@ -86,26 +111,106 @@ document.addEventListener("DOMContentLoaded", () => {
     // UTILS for Parsing
     function extractMoney(val) {
         if (!val) return 0;
-        let clean = val.toLowerCase().replace(/,/g, '').replace(/\./g, '');
+        let clean = val.toLowerCase().trim();
+        let multiplier = 1;
+        
         if (clean.endsWith('k')) {
-            return parseFloat(clean) * 1000;
+            multiplier = 1000;
+            clean = clean.slice(0, -1);
+        } else if (clean.endsWith('tr')) {
+            multiplier = 1000000;
+            clean = clean.slice(0, -1);
         }
-        if (clean.endsWith('tr')) {
-            return parseFloat(clean) * 1000000;
-        }
-        return parseFloat(clean) || 0;
+        
+        // Handle Vietnamese decimal comma (e.g., 4,5 -> 4.5)
+        // BUT if it's 10.000 (dot as thousands separator), we should remove it
+        // A simple rule: if there's a comma, it's likely a decimal in this context (4,5k)
+        clean = clean.replace(',', '.');
+        
+        // Remove any other non-numeric chars except dot
+        clean = clean.replace(/[^0-9.]/g, '');
+        
+        return parseFloat(clean) * multiplier;
     }
 
     function capitalizeFirstLetter(string) {
-        return string.charAt(0).toUpperCase() + string.slice(1);
+        if (!string) return "";
+        return string.charAt(0).toUpperCase() + string.slice(1).trim();
     }
+
+    // MULTI-LINE & BATCH FARM ENTRY PARSER
+    function parseMultiLineFarmEntry(text) {
+        // Detect delimiter: newline or comma
+        const delimiter = text.includes('\n') ? /\n/ : /,/;
+        const parts = text.split(delimiter).map(p => p.trim()).filter(p => p !== "");
+        
+        if (parts.length === 0) return;
+
+        let buyer = "";
+        const items = [];
+        
+        // Item Regex: (Optional Name?) (Qty) (Flower) (Sep) (Price)
+        // Group 1: Possible Buyer Name, Group 2: Qty, Group 3: Flower, Group 4: Price
+        const itemRegex = /^(.*?)\s*(\d+)\s+([a-zà-ỹ\s]+?)\s*(?:x|\s)\s*(\d+(?:[.,]\d+)?[ktr]*)$/i;
+
+        parts.forEach((part, index) => {
+            const match = part.match(itemRegex);
+            if (match) {
+                const possibleBuyer = match[1].trim();
+                const qty = parseInt(match[2]);
+                const flower = capitalizeFirstLetter(match[3]);
+                const price = extractMoney(match[4]);
+                
+                if (index === 0 && possibleBuyer) {
+                    buyer = capitalizeFirstLetter(possibleBuyer);
+                }
+                
+                if (qty > 0 && flower && price > 0) {
+                    items.push({
+                        "Ngày": window.utils.formatDateVietnamese(new Date()),
+                        "Người Mua": "", // Will fill later
+                        "Phân Loại Bông": flower,
+                        "Số lượng": qty,
+                        "Giá": price,
+                        "Doanh Thu Bông": qty * price,
+                        "Status": "Chưa Xong",
+                        "Loại DT": "Farm"
+                    });
+                }
+            } else if (index === 0) {
+                // If first part didn't match an item, it's the Buyer name (e.g., "Thơm \n ...")
+                buyer = capitalizeFirstLetter(part);
+            }
+        });
+
+        if (items.length === 0) {
+            addMessage("Cú pháp chưa đúng. Thử: <i>'Thơm 200 ecu x 5k, 300 pháp 4500'</i>", "ai");
+            return;
+        }
+
+        // Apply buyer to all items
+        items.forEach(it => it["Người Mua"] = buyer || "Khách vãng lai");
+
+        pendingData = {
+            type: 'farm_batch',
+            data: items,
+            buyer: buyer || "Khách vãng lai"
+        };
+
+        let summaryHtml = `Nhập cho <b>${pendingData.buyer}</b> (${items.length} đơn):<br>`;
+        items.forEach(it => {
+            summaryHtml += `• ${it["Số lượng"]} ${it["Phân Loại Bông"]} x ${window.utils.formatMoneyStr(it["Giá"])}đ<br>`;
+        });
+        
+        showConfirmationCard(summaryHtml);
+    }
+
 
     // FARM ENTRY PARSER
     // Pattern: "Bán [SL] [Hoa] [Khách] [Giá]"
     function parseFarmEntry(text) {
-        // Regex to match "Ban 100 bong cuc cho Anh Nam gia 5k"
-        // Groups: 1: SL, 2: Flower, 3: Buyer, 4: Price
-        const regex = /(?:bán|ban)\s+(\d+)\s+([a-zà-ỹ\s]+?)\s+(?:cho\s+)?([a-zà-ỹ\s]+?)\s+(?:giá\s+)?(\d+k?|[\d.]+)/i;
+        const regex = /(?:bán|ban)\s+(\d+)\s+([a-zà-ỹ\s]+?)\s+(?:cho\s+)?([a-zà-ỹ\s]+?)\s+(?:giá\s+)?(\d+(?:[.,]\d+)?[ktr]*)/i;
+
         const match = text.match(regex);
 
         if (match) {
@@ -118,13 +223,14 @@ document.addEventListener("DOMContentLoaded", () => {
             pendingData = {
                 type: 'farm',
                 data: {
-                    "Ngày": window.utils.formatDateInput(new Date()),
+                    "Ngày": window.utils.formatDateVietnamese(new Date()),
                     "Người Mua": buyer,
                     "Phân Loại Bông": flower,
                     "Số lượng": qty,
                     "Giá": price,
                     "Doanh Thu Bông": revenue,
-                    "Status": "Chưa Xong"
+                    "Status": "Chưa Xong",
+                    "Loại DT": "Farm"
                 }
             };
 
@@ -137,24 +243,52 @@ document.addEventListener("DOMContentLoaded", () => {
     // EXPENSE ENTRY PARSER
     // Pattern: "Chi [Số tiền] [Ghi chú]"
     function parseExpenseEntry(text) {
-        const regex = /(?:chi|trả|tra)\s+(\d+k?|[\d.]+)\s+(?:tiền\s+)?(.+)/i;
-        const match = text.match(regex);
+        const lowerText = text.toLowerCase();
+        // Match: (Optional Chi/Trả/Exp) [Amount] (Optional Tiền) [Note]
+        // OR: [Note] [Amount] (e.g., "Phân 500k")
+        const regexWithPrefix = /(?:chi|trả|tra|exp)\s+(\d+(?:[.,]\d+)?[ktr]*)\s+(?:tiền\s+)?(.+)/i;
+        const regexSimple = /^([a-zà-ỹ\s]+?)\s+(\d+(?:[.,]\d+)?[ktr]*)$/i; // e.g. "Phân 500k"
 
+        
+        let amount, note;
+        let match = text.match(regexWithPrefix);
+        
         if (match) {
-            const amount = extractMoney(match[1]);
-            const note = capitalizeFirstLetter(match[2].trim());
+            amount = extractMoney(match[1]);
+            note = capitalizeFirstLetter(match[2].trim());
+        } else {
+            match = text.match(regexSimple);
+            if (match) {
+                note = capitalizeFirstLetter(match[1].trim());
+                amount = extractMoney(match[2]);
+            }
+        }
+
+        if (amount && note) {
             
-            // Map common keywords to categories
             let category = "Chi Phí Khác";
-            if (note.includes("thuốc")) category = "Thuốc";
-            if (note.includes("phân")) category = "Phân";
-            if (note.includes("công")) category = "Công";
-            if (note.includes("vận chuyển") || note.includes("ship")) category = "Vận Chuyển";
+            const noteLower = note.toLowerCase();
+
+            // 1. High Priority Keywords (Overrides prefixes)
+            if (noteLower.includes("phân")) category = "Phân";
+            else if (noteLower.includes("thuốc")) category = "Thuốc";
+            else if (noteLower.includes("lãi")) category = "Lãi";
+            else if (noteLower.includes("công") || noteLower.includes("lương")) category = "Công";
+            else if (noteLower.includes("vận chuyển") || noteLower.includes("ship")) category = "Vận Chuyển";
+            // 2. Prefix-based Priority (If no high-priority keywords match)
+            else if (lowerText.startsWith("exp")) category = "Expensed";
+            else if (lowerText.startsWith("chi") || lowerText.startsWith("trả") || lowerText.startsWith("tra")) category = "Chi Phí Khác";
+            
+            // 3. Automated Personal Keywords (Fallback)
+            const personalKeywords = ["kem", "chống nắng", "bàn phím", "chuột", "phím", "tai nghe", "màn hình", "ốp lưng", "cá nhân"];
+            if (category === "Chi Phí Khác" && personalKeywords.some(kw => noteLower.includes(kw))) {
+                category = "Expensed";
+            }
 
             pendingData = {
                 type: 'expense',
                 data: {
-                    "Ngày": window.utils.formatDateInput(new Date()),
+                    "Ngày": window.utils.formatDateVietnamese(new Date()),
                     "Loại CP": category,
                     "Chi Phí": amount,
                     "Ghi Chú Chi Phí": note,
@@ -170,7 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // VỰA ENTRY PARSER (Experimental)
     function parseVuaEntry(text) {
-         addMessage("Tính năng nhập Vựa qua chat đang được tối ưu. Vui lòng dùng Form nhập liệu truyền thống để đảm bảo độ chính xác của các cột đối soát phức tạp.", 'ai');
+         addMessage("Vựa hiện tại phải nhập thủ công vì có nhiều chi phí đối soát phức tạp.", 'ai');
     }
 
     function showConfirmationCard(html) {
@@ -199,33 +333,45 @@ document.addEventListener("DOMContentLoaded", () => {
         cardDiv.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Đang lưu lên Cloud...";
 
         try {
-            const action = pendingData.type === 'expense' ? 'add_expense' : 'add';
-            const response = await fetch(CONFIG.WEB_APP_URL, {
-                method: "POST",
-                body: JSON.stringify({ 
-                    action: action, 
-                    data: pendingData.data, 
-                    token: window.utils.getToken() 
-                }),
-                headers: { "Content-Type": "text/plain;charset=utf-8" }
-            });
-            const result = await response.json();
-
-            if (result.status === "success") {
-                cardDiv.innerHTML = "Đã lưu thành công! 🚀";
-                window.showToast("Dữ liệu đã được lưu qua Trợ lý Harvest!", "success");
+            const token = window.utils.getToken();
+            
+            if (pendingData.type === 'farm_batch') {
+                const results = [];
+                for (let i = 0; i < pendingData.data.length; i++) {
+                    cardDiv.innerText = `Đang lưu item ${i+1}/${pendingData.data.length}...`;
+                    const resp = await fetch(CONFIG.WEB_APP_URL, {
+                        method: "POST",
+                        body: JSON.stringify({ action: 'add', data: pendingData.data[i], token: token }),
+                        headers: { "Content-Type": "text/plain;charset=utf-8" }
+                    });
+                    results.push(await resp.json());
+                }
                 
-                // Refresh data
-                const syncBtn = document.getElementById('sync-gsheet-btn');
-                if (syncBtn) syncBtn.click();
+                const fail = results.find(r => r.status !== 'success');
+                if (fail) throw new Error(fail.message);
                 
-                pendingData = null;
+                cardDiv.innerHTML = `Đã lưu thành công ${results.length} đơn cho ${pendingData.buyer}! 🚀`;
             } else {
-                throw new Error(result.message);
+                const action = pendingData.type === 'expense' ? 'add_expense' : 'add';
+                const response = await fetch(CONFIG.WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: action, data: pendingData.data, token: token }),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                });
+                const result = await response.json();
+                if (result.status !== "success") throw new Error(result.message);
+                cardDiv.innerHTML = "Đã lưu thành công! 🚀";
             }
+
+            window.showToast("Dữ liệu đã được lưu qua Trợ lý Harvest!", "success");
+            const syncBtn = document.getElementById('sync-gsheet-btn');
+            if (syncBtn) syncBtn.click();
+            pendingData = null;
+
         } catch (err) {
             cardDiv.innerHTML = `Lỗi: ${err.message}. Thử lại?`;
             console.error(err);
         }
     }
+
 });

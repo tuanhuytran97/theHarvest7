@@ -95,6 +95,86 @@
 
                 <!-- VIEW 1: DATA MANAGEMENT -->
                 <div id="view-data" class="app-view active-view">
+                    
+                    <!-- CASH STATUS BAR — Monthly Ledger -->
+                    <div class="cash-status-bar-container" style="margin-bottom: 1.5rem;">
+                        <div class="cash-card-premium">
+                            <!-- Left: Current Balance + Period Selector -->
+                            <div class="cash-info-group">
+                                <div class="cash-icon-wrapper">
+                                    <i class="fa-solid fa-wallet"></i>
+                                </div>
+                                <div class="cash-labels">
+                                    <span class="cash-label">TỒN QUỸ TIỀN MẶT</span>
+                                    <h2 id="kpi-cash-hand" class="cash-value">0 ₫</h2>
+                                    <!-- Month/Year Selector -->
+                                    <div style="display:flex; gap:6px; margin-top:6px;">
+                                        <select id="cash-month-select" class="cash-period-select">
+                                            <option value="1">T.1</option><option value="2">T.2</option>
+                                            <option value="3">T.3</option><option value="4">T.4</option>
+                                            <option value="5">T.5</option><option value="6">T.6</option>
+                                            <option value="7">T.7</option><option value="8">T.8</option>
+                                            <option value="9">T.9</option><option value="10">T.10</option>
+                                            <option value="11">T.11</option><option value="12">T.12</option>
+                                        </select>
+                                        <select id="cash-year-select" class="cash-period-select"></select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Middle: Breakdown -->
+                            <div class="cash-breakdown">
+                                <div class="cash-break-row">
+                                    <span class="cash-break-label">💰 Đầu tháng:</span>
+                                    <span id="cash-opening" class="cash-break-val" style="color:#94a3b8;">0 ₫</span>
+                                </div>
+                                <div class="cash-break-row">
+                                    <span class="cash-break-label">⬆ Đã thu:</span>
+                                    <span id="cash-in-total" class="cash-break-val" style="color:#10b981;">0 ₫</span>
+                                </div>
+                                <div class="cash-break-row">
+                                    <span class="cash-break-label">⬇ Đã chi:</span>
+                                    <span id="cash-out-total" class="cash-break-val" style="color:#ef4444;">0 ₫</span>
+                                </div>
+                                <div class="cash-break-row" id="cash-adj-row" style="display:none;">
+                                    <span class="cash-break-label">⚖ Thu/chi bất thường:</span>
+                                    <span id="cash-adj-total" class="cash-break-val" style="color:#f59e0b;">0 ₫</span>
+                                </div>
+                            </div>
+
+                            <!-- Right: Actions (ADMIN only) -->
+                            <div class="cash-actions" id="cash-admin-actions">
+                                <!-- Button removed per user request -->
+
+                                <button id="btn-adjust-cash" class="cash-action-btn cash-action-btn--warn" title="Ghi chú khoản thu/chi bất thường">
+                                    <i class="fa-solid fa-scale-balanced"></i> Khoản thu bất thường
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- MODAL: Khoản thu bất thường -->
+                    <div id="modal-adjust-cash" class="cash-modal-overlay" style="display:none;">
+                        <div class="cash-modal-box">
+                            <h3><i class="fa-solid fa-scale-balanced"></i> Khoản Thu/Chi Bất Thường</h3>
+                            <p style="color:#64748b; font-size:0.88rem; margin-bottom:1.2rem;">Nhập các khoản phát sinh ngoài mua bán (VD: biếu tặng, hỏng hóc). Nhập số dương (+) nếu thu vào, số âm (-) nếu chi ra.</p>
+                            <div class="cash-modal-field">
+                                <label>Số tiền (VNĐ)</label>
+                                <input type="text" id="input-adj-amount" placeholder="VD: +500000 hoặc -200000" autocomplete="off">
+                            </div>
+                            <div class="cash-modal-field">
+                                <label>Lý do (Lưu vào cột R)</label>
+                                <input type="text" id="input-adj-note" placeholder="VD: Tiền bia biếu" autocomplete="off">
+                            </div>
+                            <div class="cash-modal-actions">
+                                <button id="btn-save-adj" class="btn-primary">Lưu bản ghi</button>
+                                <button id="btn-cancel-adj" class="btn-secondary">Hủy</button>
+                            </div>
+                        </div>
+                    </div>
+
+
                     <!-- Data Entry Section -->
                     <section class="card entry-card glassmorphism">
                         <div
@@ -704,15 +784,10 @@
                             </div>
                         </div>
 
-                        <div class="invoice-footer-actions"
-                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <button id="btn-pay-selected" class="btn-primary"
-                                style="background-color: var(--primary-color); grid-column: span 2; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;">
-                                <i class="fa-solid fa-list-check"></i> Thanh toán Đơn đã chọn
-                            </button>
+                        <div class="invoice-footer-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                             <button id="btn-export-receipt" class="btn-primary"
                                 style="background-color: #6366f1; grid-column: span 2; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;">
-                                <i class="fa-solid fa-camera"></i> 📷 Xuất Hóa Đơn (Gửi khách)
+                                <i class="fa-solid fa-camera"></i> 📸 Xuất Hóa Đơn (Gửi khách)
                             </button>
                             <button id="btn-pay-full" class="btn-primary"
                                 style="background-color: var(--secondary-color); display: flex; align-items: center; justify-content: center; gap: 5px;">
@@ -725,6 +800,7 @@
                         </div>
                     </section>
                 </div> <!-- End of VIEW-DEBT -->
+
 
             </div>
         </main>
@@ -743,7 +819,7 @@
                             <i class="fa-solid fa-seedling"></i>
                         </div>
                         <div class="farm-info">
-                            <h2>THE HARVEST 7</h2>
+                            <h2>THE HARVEST7</h2>
                             <p>Nông trại hoa cao cấp & Cung cấp vựa</p>
                         </div>
                     </div>
@@ -849,9 +925,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <script src="config.js"></script>
-    <script src="data.js"></script>
-    <script src="app.js"></script>
+
     <!-- GLOBAL DATA LISTS FOR AUTOCOMPLETE -->
     <datalist id="flower-types">
         <option value="Xô ngoại"></option>
@@ -880,14 +954,15 @@
                 <div class="message ai-message">
                     <p>Xin chào! Tôi là <strong>Trợ lý Harvest</strong>. Hãy gõ nội dung bạn muốn nhập nhé!</p>
                     <div class="chat-suggestions">
-                        <span class="suggestion-tag">"Bán 100 cúc Anh Nam 5k"</span>
-                        <span class="suggestion-tag">"Chi 500k thuốc sâu"</span>
-                        <span class="suggestion-tag">"Vựa: 50 cúc 10k, 20 ly 30k. Đoan"</span>
+                        <span class="suggestion-tag" title="Nhập đơn cho Farm">"Bán 100 cúc Anh Nam 5k"</span>
+                        <span class="suggestion-tag" title="Nhập hàng loạt bằng dấu phẩy">"Thơm 200 ecu 5k, 300 pháp 4k"</span>
+                        <span class="suggestion-tag" title="Ghi nhận chi phí">"Chi 500k tiền điện"</span>
+                        <span class="suggestion-tag" title="Ghi nhận chi phí cá nhân">"Exp 500k thiết bị loa"</span>
                     </div>
                 </div>
             </div>
             <div class="chatbot-input-area">
-                <input type="text" id="chatbot-input" placeholder="Nhập tin nhắn..." autocomplete="off">
+                <textarea id="chatbot-input" placeholder="Nhập tin nhắn..." rows="1"></textarea>
                 <button id="send-chatbot-btn" class="btn-send-chat"><i class="fa-solid fa-paper-plane"></i></button>
             </div>
         </div>

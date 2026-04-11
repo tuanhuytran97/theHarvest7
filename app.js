@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const passwordInput = document.getElementById("admin-password");
     const loginError = document.getElementById("login-error");
     const togglePasswordBtn = document.getElementById("toggle-password-btn");
+    const chatbotContainer = document.getElementById("chatbot-container");
 
     // Toggle password visibility
     if (togglePasswordBtn && passwordInput) {
@@ -90,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (role) {
             loginOverlay.style.display = "none";
             appContainer.style.display = "flex";
+            if (chatbotContainer) chatbotContainer.style.display = "flex";
             applyRolePermissions(role);
             updateUserProfile();
             return true;
@@ -110,6 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (entryCard) entryCard.style.display = 'none';
             if (bulkDeleteBtn) bulkDeleteBtn.style.display = 'none';
             if (debtActionBox) debtActionBox.style.display = 'none';
+            if (chatbotContainer) chatbotContainer.style.display = 'none';
         }
     }
 
@@ -155,6 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     loginOverlay.style.display = "none";
                     appContainer.style.display = "flex";
+                    if (chatbotContainer) chatbotContainer.style.display = "flex";
                     applyRolePermissions(result.role);
                     updateUserProfile();
 
@@ -727,9 +731,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td data-label="Loại Bông">${row["Phân Loại Bông"] || ''}</td>
                     <td data-label="Số Lượng">${row["Số lượng"] ? row["Số lượng"].toLocaleString('vi-VN') : 0}</td>
                     <td data-label="Giá">${formatCurrency(row["Giá"])}</td>
-                    <td data-label="Doanh Thu" style="color:var(--secondary-color); font-weight:600;">${formatCurrency(row["Doanh Thu Bông"])}</td>
+                    <td data-label="Doanh Thu" style="color:var(--secondary-color); font-weight:600;">
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+                            ${(row["Doanh Thu Bông"] && row["Doanh Thu Bông"] != 0) ? `<span>${formatCurrency(row["Doanh Thu Bông"])}</span>` : ''}
+                            ${(row["Khoản Thu Chi Bất Thường"] && row["Khoản Thu Chi Bất Thường"] != 0) ? `<span style="color:#f59e0b; font-size: 0.85rem;" title="Thu Chi Bất Thường">⚖ ${formatCurrency(row["Khoản Thu Chi Bất Thường"])}</span>` : ''}
+                            ${(!row["Doanh Thu Bông"] && !row["Khoản Thu Chi Bất Thường"]) ? '0 ₫' : ''}
+                        </div>
+                    </td>
+
                     <td data-label="Status">${row["Status"] ? `<span class="status-badge ${statusClass}">${row["Status"]}</span>` : ''}</td>
-                    <td data-label="Ghi chú" title="${row["Ghi Chú"] || ''}">${(row["Ghi Chú"] || '').substring(0, 20)}${row["Ghi Chú"] && row["Ghi Chú"].length > 20 ? '...' : ''}</td>
+                    <td data-label="Ghi chú" title="${row["Ghi Chú"] || row["Ghi Chú Thu Chi Bất Thường"] || ''}">${(row["Ghi Chú"] || row["Ghi Chú Thu Chi Bất Thường"] || '').substring(0, 20)}${(row["Ghi Chú"] || row["Ghi Chú Thu Chi Bất Thường"] || '').length > 20 ? '...' : ''}</td>
+
                     <td data-label="Thao tác">
                         <div style="display: flex; gap: 8px; justify-content: center;">
                             ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
@@ -884,6 +896,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <option value="Mua Bông">Mua Bông</option>
                         <option value="Vật Tư KD">Vật Tư KD</option>
                         <option value="Vận Chuyển">Vận Chuyển</option>
+                        <option value="Expensed">Expensed</option>
                     </select>
                 </td>
                 <td><input type="text" class="inline-edit-input" id="edit-exp-note" value="${rowData["Ghi Chú Chi Phí"] || ""}"></td>
@@ -1163,8 +1176,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     totalExpected: 0,
                     vuaExpectedAdded: false,
                     paid: 0,
-                    totalQty: 0
+                    totalQty: 0,
+                    isVua: isVua
                 };
+
             }
 
             const t = transactions[key];
@@ -1285,7 +1300,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('debt-master-view').style.display = 'none';
         document.getElementById('debt-detail-view').style.display = 'block';
 
-        document.getElementById('detail-buyer-name').innerHTML = `👤 ${buyerObj.name}`;
+        document.getElementById('detail-buyer-name').innerHTML = `<i class="fa-solid fa-user-circle"></i> ${buyerObj.name}`;
 
         const txList = document.getElementById('detail-transaction-list');
         txList.innerHTML = '';
@@ -1294,14 +1309,16 @@ document.addEventListener("DOMContentLoaded", () => {
         let sumExpected = 0;
         let sumPaid = 0;
 
-        // Sắp xếp từ ngày XA NHẤT đến ngày GẦN NHẤT (Oldest first)
+        // Sắp xếp ngày từ cũ đến mới (Oldest first)
         const sortedTx = [...buyerObj.transactions].sort((a, b) => a.rawDate - b.rawDate);
 
+        // sortedTx.forEach loop continues...
         sortedTx.forEach((t, idx) => {
             sumQty += (t.totalQty || 0);
             sumExpected += (t.totalExpected || 0);
             sumPaid += (t.paid || 0);
 
+            const remaining = t.totalExpected - t.paid;
             const parts = t.dateStr.split('/');
             let shortDate = t.dateStr;
             if (parts.length === 3) {
@@ -1309,62 +1326,67 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const invoiceItem = document.createElement('div');
-            invoiceItem.className = 'invoice-item-compact';
-            invoiceItem.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;';
+            invoiceItem.className = 'invoice-item';
 
-            let detailsHtml = '';
-
-            if (t.lines.length > 0 && t.lines[0].isVua) {
-                // Vựa Rendering - Siêu gọn
-                const combinedFlowers = t.lines.map(l => `${l.qty} ${l.flowerType}`).join(', ');
-                detailsHtml = `
-                    <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
-                        <div style="display: flex; flex-direction: column;">
-                            <span style="font-weight: 700; color: #1e293b;">📅 ${shortDate} | <span style="font-weight: 500;">${combinedFlowers}</span></span>
-                            ${t.paid > 0 ? `<span style="font-size: 0.75rem; color: #059669;">✅ Đã thu: ${formatCurrency(t.paid)}</span>` : ''}
-                        </div>
-                        <span style="font-weight: 800; color: var(--primary-color);">${formatCurrency(t.totalExpected)}</span>
-                    </div>
-                `;
-            } else {
-                // Farm Rendering - Gọn nhưng đầy đủ
-                const linesSummary = t.lines.map(l => {
-                    const pK = (l.price / 1000).toFixed(1) + 'k';
-                    return `${l.qty} ${l.flowerType} x ${pK}`;
-                }).join(' | ');
-
-                detailsHtml = `
-                    <div style="flex: 1; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
-                        <div style="display: flex; flex-direction: column; flex: 1;">
-                            <span style="font-weight: 700; color: #1e293b; line-height: 1.4;">
-                                📅 ${shortDate} | <span style="font-weight: 500; color: #475569;">${linesSummary}</span>
-                            </span>
-                            ${t.paid > 0 ? `<span style="font-size: 0.75rem; color: #059669; margin-top: 2px;">✅ Đã thu: ${formatCurrency(t.paid)}</span>` : ''}
-                        </div>
-                        <span style="font-weight: 800; color: var(--secondary-color); white-space: nowrap; margin-top: 2px;">${formatCurrency(t.totalExpected)}</span>
-                    </div>
-                `;
-            }
+            // Chi tiết sản phẩm trong đơn
+            const linesHtml = t.lines.map(l => `
+                <div class="line-item-row">
+                    <span style="color: #475569;">${l.qty} ${l.flowerType}</span>
+                    <span style="font-weight: 600; color: #1e293b;">${formatCurrency(l.isVua ? l.rawRow["Tiền Phải Thu"] : l.dtBong)}</span>
+                </div>
+            `).join('');
 
             invoiceItem.innerHTML = `
-                <input type="checkbox" class="tx-checkbox" data-txkey="${t.key}" style="width: 18px; height: 18px; cursor: pointer; flex-shrink: 0;">
-                ${detailsHtml}
+                <div class="invoice-item-main" style="align-items: center;">
+                    <div class="invoice-item-info">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <span style="font-weight: 700; color: #1e293b; font-size: 0.95rem;">
+                                📅 ${shortDate}
+                            </span>
+                            <span style="font-weight: 800; color: ${t.isVua ? 'var(--primary-color)' : 'var(--secondary-color)'}; font-size: 1rem;">
+                                ${formatCurrency(t.totalExpected)}
+                            </span>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                            <button class="toggle-details-btn" data-txkey="${t.key}">
+                                <i class="fa-solid fa-chevron-down"></i> Xem chi tiết (${t.lines.length} mục)
+                            </button>
+                            ${t.paid > 0 ? `<span class="invoice-badge-paid"><i class="fa-solid fa-circle-check"></i> Đã thu: ${formatCurrency(t.paid)}</span>` : ''}
+                        </div>
+                        
+                        <div class="invoice-item-details" id="details-${idx}">
+                            ${linesHtml}
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 110px;">
+                        <button class="btn-pay-row ${t.isVua ? 'vua' : ''}" data-txkey="${t.key}">
+                            <i class="fa-solid fa-money-bill-transfer"></i> Thu tiền
+                        </button>
+                        ${remaining > 0 ? `<div style="font-size: 0.7rem; color: var(--danger); font-weight: 700;">Còn nợ: ${formatCurrency(remaining)}</div>` : ''}
+                    </div>
+                </div>
             `;
+
             txList.appendChild(invoiceItem);
-        });
 
-        // Add Select All functionality
-        const selectAllContainer = document.createElement('div');
-        selectAllContainer.style.cssText = 'padding: 10px 15px; border-bottom: 2px solid #e2e8f0; background: #fff; display: flex; align-items: center; gap: 12px; font-weight: 700;';
-        selectAllContainer.innerHTML = `<input type="checkbox" id="detail-select-all" style="width: 20px; height: 20px; cursor: pointer;"> <label for="detail-select-all" style="cursor: pointer;">CHỌN TẤT CẢ ĐƠN</label>`;
-        txList.prepend(selectAllContainer);
+            // Gắn sự kiện toggle chi tiết
+            const toggleBtn = invoiceItem.querySelector('.toggle-details-btn');
+            const detailsDiv = invoiceItem.querySelector('.invoice-item-details');
+            toggleBtn.addEventListener('click', () => {
+                const isActive = detailsDiv.classList.toggle('active');
+                toggleBtn.classList.toggle('active');
+                toggleBtn.innerHTML = isActive ? 
+                    `<i class="fa-solid fa-chevron-up"></i> Thu gọn` : 
+                    `<i class="fa-solid fa-chevron-down"></i> Xem chi tiết (${t.lines.length} mục)`;
+            });
 
-        const selectAllCb = selectAllContainer.querySelector('#detail-select-all');
-        const txCheckboxes = txList.querySelectorAll('.tx-checkbox');
-
-        selectAllCb.addEventListener('change', (e) => {
-            const isChecked = e.target.checked;
-            txCheckboxes.forEach(cb => cb.checked = isChecked);
+            // Gắn sự kiện Thanh toán đơn lẻ
+            const payRowBtn = invoiceItem.querySelector('.btn-pay-row');
+            payRowBtn.addEventListener('click', () => {
+                paySingleTransaction(t);
+            });
         });
 
         document.getElementById('detail-total-qty').innerText = sumQty.toLocaleString('vi-VN') + ' bông';
@@ -1372,6 +1394,9 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('detail-paid-amount').innerText = formatCurrency(sumPaid);
         document.getElementById('detail-debt-amount').innerText = formatCurrency(sumExpected - sumPaid);
     }
+
+
+
 
     // Back button listener
     const btnBack = document.getElementById('btn-back-to-master');
@@ -1418,99 +1443,194 @@ document.addEventListener("DOMContentLoaded", () => {
         const updatesList = [];
 
         for (let i = 0; i < sortedTxAsc.length; i++) {
-            if (remainingPayment <= 0) break;
+            if (remainingPayment <= 0 && !isFull) break;
 
             const t = sortedTxAsc[i];
             const currentDebt = t.totalExpected - t.paid;
-            if (currentDebt <= 0) continue;
+            // Nếu là Pay All (isFull), chúng ta vẫn xử lý t nếu nó chưa Xong hoàn toàn
+            if (!isFull && currentDebt <= 0) continue;
 
-            const amountForThisTx = Math.min(currentDebt, remainingPayment);
-            const newPaid = t.paid + amountForThisTx;
-            remainingPayment -= amountForThisTx;
+            const amountForThisTx = isFull ? currentDebt : Math.min(currentDebt, remainingPayment);
+            if (!isFull) remainingPayment -= amountForThisTx;
 
-            // Chuẩn bị payload lấy giao dịch dòng đầu tiên (để gán Đã Thu)
-            if (t.lines.length > 0) {
-                const firstRow = t.lines[0].rawRow;
-                // Cập nhật Cột trạng thái
-                let newStatus = firstRow["Status"]; // ""
-                if (newPaid >= t.totalExpected) {
-                    newStatus = "Xong";
+            let remainingForThisTx = amountForThisTx;
+            const now = new Date();
+            const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+            t.lines.forEach(line => {
+                const row = line.rawRow;
+                const statusStr = (row["Status"] || "").toLowerCase();
+                const isAlreadyDone = statusStr === "xong";
+
+                // Lấy giá trị mong đợi và hiện tại
+                const lineExpected = line.isVua ? (parseFloat(String(row["Tiền Phải Thu"] || "0").replace(/[^\d]/g, '')) || 0)
+                                              : (parseFloat(String(row["Doanh Thu Bông"] || "0").replace(/[^\d]/g, '')) || 0);
+                const linePaid = parseFloat(String(row["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0;
+                const lineDebt = lineExpected - linePaid;
+
+                let payForThisLine = 0;
+                let markAsDone = false;
+
+                if (isFull) {
+                    // Chế độ Thanh toán Hết: Luôn đánh dấu Xong cho các dòng chưa Xong
+                    if (isAlreadyDone) return;
+                    payForThisLine = Math.max(0, lineDebt);
+                    markAsDone = true;
+                } else {
+                    // Chế độ Một phần: Chỉ xử lý nếu còn tiền và dòng chưa xong
+                    if (isAlreadyDone || remainingForThisTx <= 0) return;
+                    payForThisLine = Math.min(lineDebt, remainingForThisTx);
+                    remainingForThisTx -= payForThisLine;
+                    markAsDone = (linePaid + payForThisLine) >= lineExpected;
                 }
 
-                // Cập nhật Ghi chú
-                const now = new Date();
-                const dateTimeStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-                let newGhiChu = `Thanh toán ${isFull ? 'hết' : 'một phần'} ngày ${dateTimeStr}`;
-                const existingNote = firstRow["Ghi Chú"] || "";
-                if (existingNote.trim() !== '') {
-                    newGhiChu = existingNote + " | " + newGhiChu;
-                }
-
-                updatesList.push({
-                    targetRow: firstRow,
-                    updates: {
-                        "Đã Thu": newPaid,
-                        "Status": newStatus,
-                        "Ghi Chú": newGhiChu
+                // Luôn cập nhật nếu phả trả thêm tiền hoặc nếu cần chuyển trạng thái sang Xong
+                if (payForThisLine > 0 || markAsDone) {
+                    const newPaidTotal = linePaid + payForThisLine;
+                    const existingNote = row["Ghi Chú"] || "";
+                    const now = new Date();
+                    const fullDateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+                    const fullTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+                    const noteType = isFull ? "hết" : "một phần";
+                    let finalNote = `Thanh toán ${noteType} ngày ${fullDateStr} ${fullTimeStr}`;
+                    
+                    if (existingNote.trim() !== '') {
+                        finalNote = existingNote + " | " + finalNote;
                     }
-                });
 
-                // Update in memory immediately for snappy UI
-                firstRow["Đã Thu"] = newPaid;
-                firstRow["Status"] = newStatus;
-                firstRow["Ghi Chú"] = newGhiChu;
-            }
+
+                    updatesList.push({
+                        targetRow: row,
+                        updates: {
+                            "Đã Thu": newPaidTotal,
+                            "Status": markAsDone ? "Xong" : "Chưa Xong",
+                            "Ghi Chú": finalNote
+                        }
+                    });
+                }
+            });
+
         }
 
         try {
-            let successC = 0;
-            // Send sequentially 
-            for (let i = 0; i < updatesList.length; i++) {
-                const req = updatesList[i];
+            const now = new Date();
+            const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            
+            if (isFull) {
+                showToast(`Đang thanh toán HẾT cho ${currentSelectedBuyer.name}...`, "info");
                 const response = await fetch(CONFIG.WEB_APP_URL, {
                     method: "POST",
-                    body: JSON.stringify({ action: "update", targetRow: req.targetRow, updates: req.updates, token: getToken() }),
+                    body: JSON.stringify({ 
+                        action: "bulkPay", 
+                        buyerName: currentSelectedBuyer.name, 
+                        isAllDates: true,
+                        token: getToken() 
+                    }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
                 const result = await response.json();
                 if (result.status === "success") {
-                    successC++;
+                    showToast(`Thành công! Đã xử lý ${result.count} đơn hàng.`, "success");
+                } else {
+                    throw new Error(result.message);
                 }
-            }
-            showToast(`Đã thanh toán thành công ${formatCurrency(amountToPay)}!`, "success");
-            // Refresh data visibly right away without waiting for backend
-            renderDebtTable();
+            } else {
+                // LOGIC TRẢ MỘT PHẦN THEO YÊU CẦU: Track theo ngày và tạo dòng nếu cần
+                showToast(`Đang ghi nhận số tiền ${formatCurrency(amountToPay)}...`, "info");
+                
+                // 1. Kiểm tra xem hôm nay khách có đơn nào không (DD/MM/YYYY)
+                const todayTx = currentSelectedBuyer.transactions.find(t => t.dateStr === dateStr);
+                const noteContent = `Thanh toán một phần ngày ${dateStr} ${timeStr}`;
+                
+                if (todayTx && todayTx.lines.length > 0) {
+                    // CÓ đơn hôm nay -> Ghi vào dòng đầu tiên của ngày hôm nay
+                    const targetRow = todayTx.lines[0].rawRow;
+                    const currentPaid = parseFloat(String(targetRow["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0;
+                    const newPaidTotal = currentPaid + amountToPay;
+                    const oldNote = targetRow["Ghi Chú"] || "";
+                    const finalNote = (oldNote ? oldNote + " | " : "") + noteContent;
 
-            // Sync background to ensure google sheet state is downloaded clean
-            const syncBtn = document.getElementById('sync-gsheet-btn');
-            if (syncBtn) {
-                syncBtn.click();
+                    const response = await fetch(CONFIG.WEB_APP_URL, {
+                        method: "POST",
+                        body: JSON.stringify({ 
+                            action: "update", 
+                            rowNumber: targetRow._sheetRowNumber,
+                            updates: {
+                                "Đã Thu": newPaidTotal,
+                                "Status": "Chưa Xong", // Không gạch đơn
+                                "Ghi Chú": finalNote
+                            }, 
+                            token: getToken() 
+                        }),
+                        headers: { "Content-Type": "text/plain;charset=utf-8" }
+                    });
+                    const result = await response.json();
+                    if (result.status !== "success") throw new Error(result.message);
+                } else {
+                    // KHÔNG có đơn hôm nay -> Tạo đơn hàng mới (chỉ ghi số tiền và ghi chú)
+                    const response = await fetch(CONFIG.WEB_APP_URL, {
+                        method: "POST",
+                        body: JSON.stringify({ 
+                            action: "add", 
+                            data: {
+                                "Ngày": dateStr,
+                                "Người Mua": currentSelectedBuyer.name,
+                                "Status": "Chưa Xong",
+                                "Đã Thu": amountToPay,
+                                "Ghi Chú": noteContent,
+                                "Loại DT": currentSelectedBuyer.isVua ? "Vựa" : "Farm"
+                            }, 
+                            token: getToken() 
+                        }),
+                        headers: { "Content-Type": "text/plain;charset=utf-8" }
+                    });
+                    const result = await response.json();
+                    if (result.status !== "success") throw new Error(result.message);
+                }
+                
+                showToast(`Đã ghi nhận thanh toán một phần thành công!`, "success");
             }
+
+
+            renderDebtTable();
+            const syncBtnGlobal = document.getElementById('sync-gsheet-btn');
+            if (syncBtnGlobal) syncBtnGlobal.click();
         } catch (err) {
             console.error(err);
-            alert("Lỗi kết nối khi thanh toán.");
+            alert("Lỗi khi xử lý thanh toán: " + err.message);
         } finally {
             document.body.style.cursor = 'default';
         }
     }
 
-    const btnPayFull = document.getElementById('btn-pay-full');
-    const btnPayPartial = document.getElementById('btn-pay-partial');
-    const btnPaySelected = document.getElementById('btn-pay-selected');
 
+    const btnPayFull = document.getElementById('btn-pay-full');
+
+    const btnPayPartial = document.getElementById('btn-pay-partial');
     if (btnPayFull) btnPayFull.addEventListener('click', () => processPayment(true));
     if (btnPayPartial) btnPayPartial.addEventListener('click', () => processPayment(false));
-    if (btnPaySelected) btnPaySelected.addEventListener('click', paySelectedOrders);
 
-    async function paySelectedOrders() {
-        if (!currentSelectedBuyer) return;
-        const checkedBoxes = document.querySelectorAll('.tx-checkbox:checked');
-        if (checkedBoxes.length === 0) {
-            alert("Vui lòng chọn ít nhất một đơn hàng để thanh toán.");
+    async function paySingleTransaction(t) {
+        if (!isAuthorizedForDebt()) {
+            alert("Bạn không có quyền thực hiện thanh toán!");
             return;
         }
 
-        if (!confirm(`Xác nhận thanh toán ${checkedBoxes.length} đơn hàng đã chọn cho ${currentSelectedBuyer.name}?`)) return;
+        const remaining = t.totalExpected - t.paid;
+        const rawInput = prompt(`Thanh toán cho ngày ${t.dateStr}\nSố nợ còn lại: ${formatCurrency(remaining)}\n\nNhập số tiền muốn trả (Mặc định: trả hết):`, formatMoneyStr(remaining));
+        
+        if (rawInput === null) return; // Cancel
+        
+        const amountToPay = parseMoney(rawInput);
+        if (amountToPay <= 0) {
+            alert("Số tiền không hợp lệ.");
+            return;
+        }
+        if (amountToPay > remaining) {
+            if (!confirm(`Số tiền ${formatCurrency(amountToPay)} lớn hơn số nợ ${formatCurrency(remaining)}. Bạn vẫn muốn tiếp tục?`)) return;
+        }
 
         if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
             alert("Vui lòng cấu hình WEB_APP_URL!");
@@ -1518,71 +1638,134 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         document.body.style.cursor = 'wait';
-        const payBtn = document.getElementById('btn-pay-selected');
-        const originalHtml = payBtn.innerHTML;
-        payBtn.disabled = true;
-        payBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
-
-        const selectedKeys = Array.from(checkedBoxes).map(cb => cb.dataset.txkey);
-        const transactionsToPay = currentSelectedBuyer.transactions.filter(t => selectedKeys.includes(t.key));
-
-        const updatesList = [];
         const now = new Date();
         const dateTimeStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
-        transactionsToPay.forEach(t => {
-            // Xác định tổng tiền của toàn bộ transaction này để gán vào dòng đầu tiên (hoặc phân bổ)
-            // Tuy nhiên đơn giản nhất là mark "Xong" cho mọi dòng trong transaction này.
-            t.lines.forEach((line, index) => {
-                const row = line.rawRow;
-                const existingNote = row["Ghi Chú"] || "";
-                const newNote = existingNote ? `${existingNote} | Thanh toán đơn lẻ ${dateTimeStr}` : `Thanh toán đơn lẻ ${dateTimeStr}`;
+        const updatesList = [];
+        let remainingForDay = amountToPay;
 
-                // Tính toán giá trị thanh toán cho dòng này
-                const valToPay = t.isVua ? (parseFloat(String(row["Tiền Phải Thu"] || "0").replace(/[^\d]/g, '')) || 0)
-                    : (parseFloat(String(row["Doanh Thu Bông"] || "0").replace(/[^\d]/g, '')) || 0);
+        t.lines.forEach(line => {
+            const row = line.rawRow;
+            const lineExpected = line.isVua ? (parseFloat(String(row["Tiền Phải Thu"] || "0").replace(/[^\d]/g, '')) || 0)
+                                        : (parseFloat(String(row["Doanh Thu Bông"] || "0").replace(/[^\d]/g, '')) || 0);
 
-                updatesList.push({
-                    targetRow: row,
-                    updates: {
-                        "Status": "Xong",
-                        "Ghi Chú": newNote,
-                        "Đã Thu": valToPay > 0 ? valToPay : (parseFloat(String(row["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0)
-                    }
-                });
+            const linePaid = parseFloat(String(row["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0;
+            const lineDebt = lineExpected - linePaid;
 
-                // Update local memory
-                row["Status"] = "Xong";
-                row["Ghi Chú"] = newNote;
-                if (valToPay > 0) row["Đã Thu"] = valToPay;
+            if (lineDebt <= 0 || remainingForDay <= 0) return;
+
+            const payForThisLine = Math.min(lineDebt, remainingForDay);
+            const newPaid = linePaid + payForThisLine;
+            remainingForDay -= payForThisLine;
+
+            const isLineDone = newPaid >= lineExpected;
+            const now = new Date();
+            const fullDateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+            const fullTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            const noteType = isLineDone ? "hết" : "một phần";
+            
+            const existingNote = row["Ghi Chú"] || "";
+            const newNote = `Thanh toán ${noteType} ngày ${fullDateStr} ${fullTimeStr}`;
+            const finalNote = existingNote ? `${existingNote} | ${newNote}` : newNote;
+
+
+            updatesList.push({
+                targetRow: row,
+                updates: {
+                    "Status": isLineDone ? "Xong" : "Chưa Xong",
+                    "Ghi Chú": finalNote,
+                    "Đã Thu": newPaid
+                }
             });
+
+            // Local update
+            row["Status"] = isLineDone ? "Xong" : "Chưa Xong";
+            row["Ghi Chú"] = finalNote;
+            row["Đã Thu"] = newPaid;
+
         });
 
+        // Nếu còn dư tiền sau khi trả hết nợ của ngày này, cộng vào dòng đầu tiên (hoặc có thể xử lý khác)
+        if (remainingForDay > 0 && t.lines.length > 0) {
+            const firstRow = t.lines[0].rawRow;
+            firstRow["Đã Thu"] = (parseFloat(String(firstRow["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0) + remainingForDay;
+            // update existing entry in updatesList if exists
+            const existing = updatesList.find(u => u.targetRow === firstRow);
+            if (existing) {
+                existing.updates["Đã Thu"] = firstRow["Đã Thu"];
+            } else {
+                updatesList.push({
+                    targetRow: firstRow,
+                    updates: { "Đã Thu": firstRow["Đã Thu"] }
+                });
+            }
+        }
+
         try {
-            let successC = 0;
-            for (let i = 0; i < updatesList.length; i++) {
-                const req = updatesList[i];
+            if (amountToPay >= remaining) {
+                // Thanh toán HẾT cho ngày này -> Dùng bulkPay cho an toàn
+                showToast(`Đang thanh toán HẾT ngày ${t.dateStr}...`, "info");
                 const response = await fetch(CONFIG.WEB_APP_URL, {
                     method: "POST",
-                    body: JSON.stringify({ action: "update", targetRow: req.targetRow, updates: req.updates, token: getToken() }),
+                    body: JSON.stringify({ 
+                        action: "bulkPay", 
+                        buyerName: currentSelectedBuyer.name, 
+                        dateStr: t.dateStr,
+                        token: getToken() 
+                    }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
                 const result = await response.json();
-                if (result.status === "success") successC++;
+                if (result.status !== "success") throw new Error(result.message);
+                showToast(`Thành công! Đã xử lý ${result.count} đơn.`, "success");
+            } else {
+                // Thanh toán MỘT PHẦN -> Dùng updatesList tuần tự
+                if (updatesList.length === 0) return;
+                
+                showToast(`Đang thu một phần: ${updatesList.length} dòng...`, "info");
+
+                for (let i = 0; i < updatesList.length; i++) {
+                    const req = updatesList[i];
+                    const realRow = req.targetRow._sheetRowNumber;
+                    
+                    showToast(`Đang thu (${i+1}/${updatesList.length}): Dòng #${realRow}...`, "info", 1000);
+
+                    const response = await fetch(CONFIG.WEB_APP_URL, {
+                        method: "POST",
+                        body: JSON.stringify({ 
+                            action: "update", 
+                            targetRow: req.targetRow, 
+                            rowNumber: realRow,
+                            updates: req.updates, 
+                            token: getToken() 
+                        }),
+                        headers: { "Content-Type": "text/plain;charset=utf-8" }
+                    });
+                    
+                    const result = await response.json();
+                    if (result.status !== "success") throw new Error(result.message);
+
+                    if (updatesList.length > 1) await new Promise(r => setTimeout(r, 300));
+                }
+                showToast(`Thu tiền một phần thành công!`, "success");
             }
-            alert(`Đã thanh toán thành công ${checkedBoxes.length} đơn hàng!`);
+ 
             renderDebtTable();
             const syncBtn = document.getElementById('sync-gsheet-btn');
             if (syncBtn) syncBtn.click();
         } catch (err) {
             console.error(err);
-            alert("Lỗi kết nối khi thanh toán.");
+            alert("Lỗi khi xử lý thanh toán: " + err.message);
         } finally {
             document.body.style.cursor = 'default';
-            payBtn.disabled = false;
-            payBtn.innerHTML = originalHtml;
         }
     }
+
+
+
+
+
+
 
     // Report Setup
     const reportRangeSelect = document.getElementById('report-range');
@@ -2633,7 +2816,7 @@ document.addEventListener("DOMContentLoaded", () => {
             filtered = filtered.filter(item => {
                 const dateStr = formatDateInput(item.parsedDate);
                 const type = (item["Loại DT"] || "").trim().toLowerCase();
-                const isFarmOrVua = type === "farm" || type === "" || type === "vựa" || type === "vua";
+                const isFarmOrVua = type === "farm" || type === "vựa" || type === "vua";
                 return dateStr === todayStr && isFarmOrVua;
             });
             sliceLimit = 500; // Hiển thị hết đơn hôm nay
@@ -2643,8 +2826,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const isVua = type.includes("vựa") || type.includes("vua");
                 const isCmp = type.includes("company") || type.includes("hđkd");
 
-                // Nếu là Vựa hoặc Company thì ẩn khỏi tab Farm
-                if (isVua || isCmp) return false;
+                // Nếu là Vựa hoặc Company hoặc Chi phí (Rỗng) thì ẩn khỏi tab Farm
+                if (isVua || isCmp || type === "") return false;
 
                 // Nếu ròng chi phí (không có doanh thu bông và không có người mua) thì ẩn
                 const dtBong = parseFloat(String(item["Doanh Thu Bông"] || "0").replace(/[^\d]/g, '')) || 0;
@@ -2822,10 +3005,182 @@ document.addEventListener("DOMContentLoaded", () => {
                 "Chi Phí": parseSheetNum(item["Chi Phí"]),
                 "Tiền Phải Thu": parseSheetNum(item["Tiền Phải Thu"]),
                 "Doanh Thu Khác": parseSheetNum(item["Doanh Thu Khác"]),
-                "Đã Thu": parseSheetNum(item["Đã Thu"])
+                "Đã Thu": parseSheetNum(item["Đã Thu"]),
+                "Khoản Thu Chi Bất Thường": parseSheetNum(item["Khoản Thu Chi Bất Thường"]),
+                "Cash": parseSheetNum(item["Cash"])
             };
+
+
         });
     }
+
+    // ─── CASH IN HAND — Monthly Ledger ───────────────────────────────────────
+
+    let cachedOpeningBalance = null; // Config fallback for first month only
+
+    // Opening balance logic removed per user request. Ledger starts from 0 or previous row's Cash.
+
+
+    // Populate year selector and default to current month/year
+    function initCashSelectors() {
+        const yearSel  = document.getElementById('cash-year-select');
+        const monthSel = document.getElementById('cash-month-select');
+        if (!yearSel || !farmData) return;
+
+        const years = new Set();
+        const now = new Date();
+        years.add(now.getFullYear());
+        farmData.forEach(r => { if (r.parsedDate) years.add(r.parsedDate.getFullYear()); });
+
+        yearSel.innerHTML = '';
+        Array.from(years).sort((a, b) => b - a).forEach(y => {
+            const o = document.createElement('option'); o.value = y; o.textContent = y; yearSel.appendChild(o);
+        });
+
+        yearSel.value  = now.getFullYear();
+        monthSel.value = now.getMonth() + 1;
+
+        yearSel.addEventListener('change',  () => updateCashInHand());
+        monthSel.addEventListener('change', () => updateCashInHand());
+    }
+
+    async function updateCashInHand() {
+        if (!farmData || farmData.length === 0) return;
+
+        const monthSel = document.getElementById('cash-month-select');
+        const yearSel  = document.getElementById('cash-year-select');
+        const selMonth = parseInt(monthSel?.value) || (new Date().getMonth() + 1);
+        const selYear  = parseInt(yearSel?.value)  || new Date().getFullYear();
+
+        // 1. Find opening balance = Cash (Q) from the last row BEFORE selected month
+        let openingBalance = null;
+        let lastPrevDate   = null;
+
+        farmData.forEach(row => {
+            if (!row.parsedDate) return;
+            const ry = row.parsedDate.getFullYear(), rm = row.parsedDate.getMonth() + 1;
+            const isBefore = ry < selYear || (ry === selYear && rm < selMonth);
+            if (isBefore && (!lastPrevDate || row.parsedDate >= lastPrevDate)) {
+                lastPrevDate   = row.parsedDate;
+                const cashVal  = parseFloat(row["Cash"]);
+                if (!isNaN(cashVal)) openingBalance = cashVal;
+            }
+
+        });
+
+        // No previous month → fall back to Config initial balance
+        if (openingBalance === null) openingBalance = 0;
+
+
+        // 2. Aggregate current month transactions
+        let cashIn   = 0;
+        let cashOut  = 0;
+        let adjTotal = 0;
+
+        farmData.forEach(row => {
+            if (!row.parsedDate) return;
+            if (row.parsedDate.getFullYear() !== selYear || row.parsedDate.getMonth() + 1 !== selMonth) return;
+
+            const loaiDT = (row["Loại DT"] || "").trim();
+            const valI   = parseFloat(row["Đã Thu"]) || 0;
+            const valExp = parseFloat(row["Chi Phí"]) || 0;
+            // Lấy giá trị từ cột R (Khoản Thu Chi Bất Thường)
+            const valR   = parseFloat(row["Khoản Thu Chi Bất Thường"]) || 0;
+
+
+
+            if (loaiDT === "ADJ") {
+                adjTotal += valR;
+            } else {
+                cashIn   += valI;
+                if (loaiDT === "Company") {
+                    cashIn += (parseFloat(row["Doanh Thu Khác"]) || 0);
+                }
+
+                cashOut  += valExp;
+                adjTotal += valR; // Cộng dồn nếu dòng thường có ghi nhận bất thường
+            }
+
+        });
+
+        const currentCash = openingBalance + cashIn - cashOut + adjTotal;
+
+        // 3. Update UI
+        const cashEl  = document.getElementById('kpi-cash-hand');
+        const openEl  = document.getElementById('cash-opening');
+        const inEl    = document.getElementById('cash-in-total');
+        const outEl   = document.getElementById('cash-out-total');
+        const adjEl   = document.getElementById('cash-adj-total');
+        const adjRow  = document.getElementById('cash-adj-row');
+
+        if (cashEl) {
+            cashEl.innerText    = formatCurrency(currentCash);
+            cashEl.style.color  = currentCash >= 0 ? '#10b981' : '#ef4444';
+        }
+        if (openEl) openEl.innerText = formatCurrency(openingBalance);
+        if (inEl)   inEl.innerText   = formatCurrency(cashIn);
+        if (outEl)  outEl.innerText  = formatCurrency(cashOut);
+        if (adjEl && adjRow) {
+            if (adjTotal !== 0) {
+                adjEl.innerText      = (adjTotal > 0 ? '+' : '') + formatCurrency(adjTotal);
+                adjRow.style.display = '';
+            } else { adjRow.style.display = 'none'; }
+        }
+
+        // Show/hide admin buttons
+        const adminActions = document.getElementById('cash-admin-actions');
+        if (adminActions) adminActions.style.display = getRole() === 'ADMIN' ? 'flex' : 'none';
+    }
+
+    // Modal Opening Balance removed per user request.
+
+
+    // ─── MODAL: Điều Chỉnh Quỹ ───────────────────────────────────────────────
+    const modalAdj       = document.getElementById('modal-adjust-cash');
+    const btnAdjust      = document.getElementById('btn-adjust-cash');
+    const btnSaveAdj     = document.getElementById('btn-save-adj');
+    const btnCancelAdj   = document.getElementById('btn-cancel-adj');
+    const inputAdjAmount = document.getElementById('input-adj-amount');
+    const inputAdjNote   = document.getElementById('input-adj-note');
+
+    if (btnAdjust) btnAdjust.addEventListener('click', () => {
+        if (inputAdjAmount) inputAdjAmount.value = '';
+        if (inputAdjNote)   inputAdjNote.value   = '';
+        if (modalAdj) modalAdj.style.display = 'flex';
+        if (inputAdjAmount) inputAdjAmount.focus();
+    });
+    if (btnCancelAdj) btnCancelAdj.addEventListener('click', () => { if (modalAdj) modalAdj.style.display = 'none'; });
+    if (btnSaveAdj) btnSaveAdj.addEventListener('click', async () => {
+        const amount = parseFloat((inputAdjAmount?.value || '').replace(/,/g, '').trim());
+        if (isNaN(amount) || amount === 0) { showToast("Số tiền không hợp lệ!", "error"); return; }
+        const note = inputAdjNote?.value?.trim() || 'Khoản thu bất thường';
+        btnSaveAdj.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; btnSaveAdj.disabled = true;
+        try {
+            const res = await (await fetch(CONFIG.WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "save_adjustment", token: getToken(),
+                    data: { "Ngày": formatDateVietnamese(new Date()), "Ghi Chú": note, "amount": amount }
+                }),
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
+            })).json();
+            if (res.status === "success") {
+                if (modalAdj) modalAdj.style.display = 'none';
+                showToast(`Đã ghi khoản bất thường ${amount > 0 ? '+' : ''}${formatCurrency(amount)} — ${note}`, "success");
+                document.getElementById('sync-gsheet-btn')?.click();
+            } else throw new Error(res.message);
+        } catch(e) { showToast("Lỗi: " + e.message, "error"); }
+        btnSaveAdj.innerHTML = 'Lưu bản ghi'; btnSaveAdj.disabled = false;
+    });
+
+    // Close modals by clicking outside (Modal Opening Balance removed)
+    [modalAdj].forEach(m => {
+        if (m) m.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; });
+    });
+
+
+
+
 
     function saveToCache(rawData) {
         try {
@@ -2898,12 +3253,17 @@ document.addEventListener("DOMContentLoaded", () => {
             applyFiltersAndRender();
             updateBuyerSuggestions(farmData);
             populateYears();
+            initCashSelectors();
+            updateCashInHand();
             if (document.getElementById('view-report').style.display === 'block') {
                 updateDashboard();
             }
             if (document.getElementById('view-cashflow').style.display === 'block') {
                 updateCashFlowReport();
             }
+            // Luôn cập nhật lại bảng nợ (Debt Section) khi sync xong
+            renderDebtTable();
+
             if (syncBtn) syncBtn.innerHTML = '<i class="fa-solid fa-sync"></i> Đồng bộ dữ liệu mới';
         };
 
