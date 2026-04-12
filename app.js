@@ -1041,18 +1041,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const menuReport = document.getElementById('menu-report');
     const menuDebt = document.getElementById('menu-debt');
     const menuCashFlow = document.getElementById('menu-cashflow'); // NEW
+    const menuFinancial = document.getElementById('menu-financial');
     const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
 
     const viewData = document.getElementById('view-data');
     const viewReport = document.getElementById('view-report');
     const viewDebt = document.getElementById('view-debt');
     const viewCashFlow = document.getElementById('view-cashflow'); // NEW
+    const viewFinancial = document.getElementById('view-financial');
 
     function hideAllViews() {
         if (menuData) menuData.classList.remove('active');
         if (menuReport) menuReport.classList.remove('active');
         if (menuDebt) menuDebt.classList.remove('active');
         if (menuCashFlow) menuCashFlow.classList.remove('active');
+        if (menuFinancial) menuFinancial.classList.remove('active');
 
         mobileNavItems.forEach(i => i.classList.remove('active'));
 
@@ -1060,6 +1063,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (viewReport) viewReport.style.display = 'none';
         if (viewDebt) viewDebt.style.display = 'none';
         if (viewCashFlow) viewCashFlow.style.display = 'none';
+        if (viewFinancial) viewFinancial.style.display = 'none';
     }
 
     function syncMobileNav(viewId) {
@@ -1096,6 +1100,11 @@ document.addEventListener("DOMContentLoaded", () => {
             syncMobileNav('cashflow');
             if (viewCashFlow) viewCashFlow.style.display = 'block';
             updateCashFlowReport();
+        } else if (viewId === 'financial') {
+            if (menuFinancial) menuFinancial.classList.add('active');
+            syncMobileNav('financial');
+            if (viewFinancial) viewFinancial.style.display = 'block';
+            fetchFinancialReport();
         }
     }
 
@@ -1124,6 +1133,13 @@ document.addEventListener("DOMContentLoaded", () => {
         menuCashFlow.addEventListener('click', (e) => {
             e.preventDefault();
             switchView('cashflow');
+        });
+    }
+
+    if (menuFinancial) {
+        menuFinancial.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchView('financial');
         });
     }
 
@@ -2085,6 +2101,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
+        // --- NEW: Update Financial Ratios Summary ---
+        updateDashboardFinancialRatios(selectedYear);
+
         const totalProfit = totalRevenue - totalExpense;
         const prevProfit = prevRevenue - prevExpense;
 
@@ -2144,6 +2163,85 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
             renderMonthlyCombinedChart(filteredDays.map(fd => fd.label), filteredDays.map(fd => fd.data), selectedMonth, selectedYear);
+        }
+    }
+
+    function updateDashboardFinancialRatios(year) {
+        const container = document.getElementById('dashboard-financial-ratios');
+        if (!container) return;
+
+        const cacheJson = localStorage.getItem('cached_financial_report');
+        if (!cacheJson) {
+            container.innerHTML = '<p style="font-size: 0.8rem; color: var(--text-light); text-align: center; width: 100%;">Tải <a href="#" onclick="switchView(\'financial\'); return false;" style="color: var(--primary-color);">Báo cáo tài chính</a> để xem chỉ số phân tích.</p>';
+            return;
+        }
+
+        try {
+            const result = JSON.parse(cacheJson);
+            const values = result.data || [];
+            if (values.length < 1) return;
+
+            const headerRow = values[0];
+            const yearIdx = headerRow.findIndex(cell => String(cell).includes(year));
+
+            if (yearIdx === -1) {
+                container.innerHTML = `<p style="font-size: 0.8rem; color: var(--text-light); text-align: center; width: 100%;">Không có dữ liệu phân tích cho năm ${year}.</p>`;
+                return;
+            }
+
+            // Find specific rows
+            const findVal = (label) => {
+                const row = values.find(r => String(r[0] || "").toUpperCase() === label.toUpperCase());
+                return row ? row[yearIdx] : null;
+            };
+
+            const roe = findVal("ROE");
+            const roa = findVal("ROA");
+            const debt = findVal("NỢ / VCSH") || findVal("NỢ/VCSH");
+            const payback = findVal("PAYBACK TIME");
+
+            const formatPct = (val) => {
+                if (typeof val !== 'number') return "N/A";
+                let pct = (Math.abs(val) < 2) ? val * 100 : val;
+                return pct.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+            };
+
+            const formatPayback = (val) => {
+                if (typeof val !== 'number' || isNaN(val)) return "N/A";
+                // Chuyển đổi về tổng số tháng để tránh lỗi "12 Tháng"
+                let totalMonths = Math.round(val * 12);
+                const years = Math.floor(totalMonths / 12);
+                const months = totalMonths % 12;
+
+                let res = "";
+                if (years > 0) res += years + (years > 1 ? " Years" : " Year");
+                if (months > 0) {
+                    if (res) res += " ";
+                    res += months + (months > 1 ? " Months" : " Month");
+                }
+                return res || "0 Months";
+            };
+
+            container.innerHTML = `
+                <div class="ratio-summary-card">
+                    <span class="ratio-label"><i class="fa-solid fa-chart-line"></i> ROE</span>
+                    <span class="ratio-value">${formatPct(roe)}</span>
+                </div>
+                <div class="ratio-summary-card">
+                    <span class="ratio-label"><i class="fa-solid fa-chart-pie"></i> ROA</span>
+                    <span class="ratio-value">${formatPct(roa)}</span>
+                </div>
+                <div class="ratio-summary-card">
+                    <span class="ratio-label"><i class="fa-solid fa-scale-balanced"></i> Nợ / VCSH</span>
+                    <span class="ratio-value">${formatPct(debt)}</span>
+                </div>
+                <div class="ratio-summary-card highlight-warning">
+                    <span class="ratio-label"><i class="fa-solid fa-hourglass-half"></i> Hoàn Vốn</span>
+                    <span class="ratio-value">${formatPayback(payback)}</span>
+                </div>
+            `;
+        } catch (e) {
+            console.error(e);
         }
     }
 
@@ -2333,6 +2431,161 @@ document.addEventListener("DOMContentLoaded", () => {
         html += renderRow("Lợi nhuận ròng", s1.netProfit, isCmp ? s2.netProfit : 0, "net");
 
         container.innerHTML = isCmp ? `<div class="comparison-table-wrapper">${html}</div>` : html;
+    }
+
+    // --- FINANCIAL REPORT LOGIC ---
+
+    async function fetchFinancialReport(forced = false) {
+        const loadingEl = document.getElementById('financial-loading');
+        const tableContainer = document.querySelector('.financial-table-container-card');
+        
+        // Caching logic
+        const cacheKey = 'cached_financial_report';
+        const cachedData = localStorage.getItem(cacheKey);
+
+        // Nếu không phải bắt buộc load mới và có cache, hiển thị ngay từ cache
+        if (!forced && cachedData) {
+            try {
+                const result = JSON.parse(cachedData);
+                renderFinancialTable(result);
+                // Vẫn hiện loading mờ để báo hiệu đang kiểm tra bản mới nhất trong background
+                if (tableContainer) tableContainer.style.opacity = '0.7';
+            } catch (e) {
+                console.error("Cache error", e);
+            }
+        } else {
+            if (loadingEl) loadingEl.style.display = 'block';
+            if (tableContainer) tableContainer.style.opacity = '0.5';
+        }
+
+        try {
+            const response = await fetch(CONFIG.WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "get_financial_report", token: getToken() }),
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
+            });
+            const result = await response.json();
+
+            if (result.status === "success") {
+                localStorage.setItem(cacheKey, JSON.stringify(result));
+                renderFinancialTable(result);
+            } else {
+                showToast("Lỗi tải báo cáo: " + result.message, "error");
+            }
+        } catch (err) {
+            console.error(err);
+            // Nếu có cache rồi thì không hiện lỗi kết nối quá gắt gao
+            if (!cachedData) showToast("Lỗi kết nối Server!", "error");
+        } finally {
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (tableContainer) tableContainer.style.opacity = '1';
+        }
+    }
+
+    function renderFinancialTable(result) {
+        const values = result.data || [];
+        const notes = result.notes || [];
+        const thead = document.getElementById('financial-thead');
+        const tbody = document.getElementById('financial-tbody');
+        if (!thead || !tbody) return;
+
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+
+        if (!values || values.length < 1) {
+            tbody.innerHTML = '<tr><td colspan="100%" style="text-align:center; padding: 2rem;">Chưa có dữ liệu báo cáo.</td></tr>';
+            return;
+        }
+
+        const headerRow = values[0];
+        const isAdmin = getRole() === 'ADMIN';
+
+        // 1. Render Headers
+        const thr = document.createElement('tr');
+        headerRow.forEach((cell, cIdx) => {
+            const th = document.createElement('th');
+            if (cIdx === 0) {
+                th.innerText = "CHỈ TIÊU / NĂM";
+            } else {
+                const year = cell;
+                const isLocked = notes[cIdx] === "LOCKED";
+                
+                // Chỉ hiển thị icon khóa nếu năm đó bị khóa bên Sheet, không cho phép bấm
+                let lockIndicator = '';
+                if (isLocked) {
+                    lockIndicator = `<i class="fa-solid fa-lock" style="font-size: 0.7rem; color: var(--danger); opacity: 0.6;" title="Dữ liệu đã khóa"></i>`;
+                }
+
+                th.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                        <span>${year}</span>
+                        ${lockIndicator}
+                    </div>
+                `;
+            }
+            thr.appendChild(th);
+        });
+        thead.appendChild(thr);
+
+        // 2. Render Data Rows (Dữ liệu bắt đầu từ dòng index 1 trở đi)
+        for (let rIdx = 1; rIdx < values.length; rIdx++) {
+            const rowData = values[rIdx];
+            // Bỏ qua dòng chỉ chứa text cũ 'LOCKED' nếu còn sót lại (đề phòng)
+            if (rIdx === 1 && String(rowData[1]).toUpperCase() === "LOCKED") continue; 
+            
+            const tr = document.createElement('tr');
+            
+            // ... (row styling)
+            const rowLabel = String(rowData[0] || "").trim();
+            const upperLabel = rowLabel.toUpperCase();
+            const isSectionHeader = rowLabel && rowLabel === rowLabel.toUpperCase() && !rowLabel.includes("TỔNG");
+            const isTotalRow = upperLabel.includes("TỔNG");
+            
+            const isPercentageRatio = ["ROE", "ROA", "NỢ/VCSH", "NỢ / VCSH"].some(r => upperLabel === r);
+            const isOtherRatio = ["PAYBACK TIME"].includes(upperLabel);
+
+            if (isSectionHeader) tr.className = "financial-row-header";
+            if (isTotalRow) tr.className = "financial-row-total";
+            if (upperLabel.includes("VỐN CHỦ")) tr.classList.add("financial-row-equity");
+            if (upperLabel.includes("LỢI NHUẬN")) tr.classList.add("financial-row-profit");
+
+            rowData.forEach((cell, cIdx) => {
+                const td = document.createElement('td');
+                const isLocked = notes[cIdx] === "LOCKED";
+                
+                if (cIdx === 0) {
+                    td.innerText = cell;
+                } else {
+                    if (isLocked) td.className = "financial-col-locked";
+                    
+                    const val = cell === "" ? 0 : cell;
+                    let displayVal = "";
+
+                    if (isPercentageRatio && typeof val === 'number') {
+                        let pctVal = val;
+                        if (Math.abs(val) < 2) pctVal = val * 100;
+                        displayVal = pctVal.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+                        td.style.fontWeight = "700";
+                        td.style.color = "var(--primary-color)";
+                    } else if ((isPercentageRatio || isOtherRatio || Math.abs(val) < 1000)) {
+                        displayVal = (typeof val === 'number' ? val.toLocaleString('vi-VN', {minimumFractionDigits: (typeof val === 'number' && val % 1 !== 0) ? 2 : 0}) : val);
+                    } else {
+                        displayVal = formatNumber(val);
+                    }
+                    
+                    td.innerText = displayVal;
+                    // Bỏ tính năng chỉnh sửa và Click để sửa theo yêu cầu
+                }
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        }
+    }
+
+    // Attach sync button listener
+    const syncFinancialBtn = document.getElementById('sync-financial-btn');
+    if (syncFinancialBtn) {
+        syncFinancialBtn.addEventListener('click', () => fetchFinancialReport(true));
     }
 
     function renderYearlyCharts(labels, data, year) {

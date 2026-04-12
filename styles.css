@@ -2586,23 +2586,60 @@ tr.swiping td:first-child::before {
     align-items: center;
     justify-content: center;
     color: #10b981;
+/* DASHBOARD FINANCIAL RATIOS SUMMARY */
+.financial-ratios-summary-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    animation: slideUp 0.6s ease-out;
 }
 
-.cash-icon-wrapper i {
-    font-size: 1.4rem;
-}
-
-.cash-labels {
+.ratio-summary-card {
+    background: rgba(13, 138, 188, 0.04);
+    border: 1px solid rgba(13, 138, 188, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
+    transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
+    justify-content: center;
 }
 
-.cash-label {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-    opacity: 0.6;
-    margin-bottom: 4px;
+.ratio-summary-card:hover {
+    transform: translateY(-3px);
+    background: rgba(13, 138, 188, 0.08);
+    border-color: var(--primary-color);
+}
+
+.ratio-summary-card .ratio-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.ratio-summary-card .ratio-value {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--primary-color);
+    letter-spacing: -0.02em;
+}
+
+.ratio-summary-card.highlight-profit .ratio-value { color: var(--secondary-color); }
+.ratio-summary-card.highlight-warning .ratio-value { color: #f59e0b; }
+
+@media (max-width: 992px) {
+    .financial-ratios-summary-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .ratio-summary-card .ratio-value {
+        font-size: 1.15rem;
+    }
 }
 
 .cash-value {
@@ -2769,4 +2806,121 @@ tr.swiping td:first-child::before {
 }
 .cash-period-select option { background: #1e293b; color: white; }
 .cash-period-select:focus  { border-color: rgba(16,185,129,0.6); }
+
+/* FINANCIAL REPORT TABLE STYLES */
+.financial-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+}
+
+.financial-table th, 
+.financial-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    white-space: nowrap;
+    text-align: right;
+}
+
+.financial-table th:first-child, 
+.financial-table td:first-child {
+    text-align: left;
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background-color: #f8fafc;
+    font-weight: 500;
+    border-right: 2px solid #e2e8f0;
+    min-width: 250px;
+}
+
+.financial-table thead th {
+    background-color: #f1f5f9;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #cbd5e1;
+}
+
+/* Category Headers (Section Header) */
+.financial-row-header {
+    background-color: #f1f5f9 !important;
+    font-weight: 800 !important;
+    color: #475569 !important;
+    font-size: 1.05rem;
+}
+
+.financial-row-header td {
+    border-bottom: 2px solid #cbd5e1 !important;
+}
+
+/* Bold rows for Totals */
+.financial-row-total {
+    background-color: #f8fafc;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.financial-row-total td {
+    border-top: 2px solid #e2e8f0;
+}
+
+/* Specific highlighting for Equity/Profit */
+.financial-row-equity { background-color: rgba(254, 243, 199, 0.4); }
+.financial-row-profit { background-color: rgba(220, 252, 231, 0.4); }
+
+/* Edit Inputs */
+.financial-edit-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1.8px solid var(--primary-color);
+    border-radius: 6px;
+    text-align: right;
+    font-size: 0.95rem;
+    font-weight: 700;
+    background: white;
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(13, 138, 188, 0.1);
+    color: var(--primary-color);
+}
+
+/* Locked status */
+.financial-col-locked {
+    background-color: rgba(241, 245, 249, 0.6) !important;
+}
+
+.financial-year-lock-btn {
+    background: white;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.financial-year-lock-btn:hover {
+    background-color: #f1f5f9;
+}
+
+.financial-year-lock-btn.locked {
+    color: var(--danger);
+    border-color: #fee2e2;
+    background: #fef2f2;
+}
+
+.financial-year-lock-btn.unlocked {
+    color: var(--success);
+    border-color: #dcfce7;
+    background: #f0fdf4;
+}
+
 

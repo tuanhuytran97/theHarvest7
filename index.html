@@ -57,6 +57,7 @@
                 <a href="#" id="menu-cashflow"><i class="fa-solid fa-money-bill-transfer"></i> <span>Dòng
                         Tiền</span></a>
                 <a href="#" id="menu-debt"><i class="fa-solid fa-book-journal-whills"></i> <span>Sổ Nợ</span></a>
+                <a href="#" id="menu-financial"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Báo Cáo Tài Chính</span></a>
             </nav>
         </aside>
 
@@ -496,13 +497,17 @@
                               </select>
                         </div>
 
-                        <div class="form-group row-align" style="margin-left: auto;">
-                            <button id="toggle-comparison-btn" class="btn-primary"
-                                style="background-color: #f1f5f9; color: #475569; border: 1.5px solid #cbd5e1; font-size: 0.82rem; padding: 0.5rem 1rem; display: flex; align-items: center; gap: 8px; box-shadow: none;">
-                                <i class="fa-solid fa-calendar-days"></i> <span>So sánh khác</span>
-                            </button>
-                        </div>
                     </div>
+
+                    <!-- Financial Ratios Summary (Wrapped in a frame) -->
+                    <section class="card glassmorphism" style="margin-bottom: 2rem; padding: 1.25rem;">
+                        <h2 style="margin: 0 0 1rem 0; font-size: 1rem; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-heart-pulse" style="color: var(--danger);"></i> Sức Khỏe Tài Chính (Năm)
+                        </h2>
+                        <div id="dashboard-financial-ratios" class="financial-ratios-summary-container" style="margin-bottom: 0;">
+                            <!-- Will be populated by JS -->
+                        </div>
+                    </section>
 
                     <!-- KPI Cards Section -->
                     <section class="kpi-cards" style="margin-bottom: 2rem;">
@@ -684,6 +689,38 @@
                             </div>
                         </div>
                     </section>
+                </div>
+
+                <!-- VIEW 5: ANNUAL FINANCIAL REPORT (BALANCE SHEET) -->
+                <div id="view-financial" class="app-view" style="display: none;">
+                    <div class="report-controls glassmorphism" style="padding: 1.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <h2 style="margin: 0; font-size: 1.5rem; color: var(--text-dark);"><i class="fa-solid fa-file-invoice-dollar"></i> Báo Cáo Tài Chính</h2>
+                            <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: var(--text-light);">Bảng cân đối kế toán & Chỉ số tài chính qua các năm</p>
+                        </div>
+                        <div style="display: flex; gap: 1rem;">
+                            <button id="sync-financial-btn" class="btn-primary" style="background-color: #6366f1;">
+                                <i class="fa-solid fa-arrows-rotate"></i> Làm mới dữ liệu
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card glassmorphism financial-table-container-card" style="padding: 0; overflow: hidden; border-radius: 12px;">
+                        <div class="financial-table-responsive" style="overflow-x: auto; max-width: 100%;">
+                            <table id="financial-report-table" class="financial-table">
+                                <thead id="financial-thead">
+                                    <!-- Populated by JS -->
+                                </thead>
+                                <tbody id="financial-tbody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="financial-loading" style="padding: 3rem; text-align: center; color: var(--text-light);">
+                            <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
+                            <p style="margin-top: 1rem;">Đang tải báo cáo tài chính...</p>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- VIEW 3: DEBT TRACKING (SỔ NỢ) -->
