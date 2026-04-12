@@ -851,11 +851,12 @@ tbody tr:hover {
     align-items: center;
     color: var(--text-light);
     text-decoration: none;
-    font-size: 0.65rem;
+    font-size: 0.6rem; /* Slightly smaller to fit 5 items */
     font-weight: 600;
-    gap: 4px;
+    gap: 3px;
     transition: all 0.2s;
     flex: 1;
+    padding: 5px 2px; /* Tighten horizontal padding */
   }
 
   .mobile-nav-item i {
