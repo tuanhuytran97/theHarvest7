@@ -125,9 +125,12 @@ document.addEventListener("DOMContentLoaded", () => {
         return parseFloat(clean) || 0;
     }
 
-    function capitalizeFirstLetter(string) {
-        if (!string) return "";
-        return string.charAt(0).toUpperCase() + string.slice(1).trim();
+    function toTitleCase(str) {
+        if (!str) return "";
+        return str.trim()
+            .split(/\s+/)
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
     }
 
     // MULTI-LINE & BATCH FARM ENTRY PARSER
@@ -150,11 +153,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (match) {
                 const possibleBuyer = match[1].trim();
                 const qty = parseInt(match[2]);
-                const flower = capitalizeFirstLetter(match[3]);
+                const flower = toTitleCase(match[3]);
                 const price = extractMoney(match[4]);
                 
                 if (index === 0 && possibleBuyer) {
-                    buyer = capitalizeFirstLetter(possibleBuyer);
+                    buyer = toTitleCase(possibleBuyer);
                 }
                 
                 if (qty > 0 && flower && price > 0) {
@@ -171,7 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             } else if (index === 0) {
                 // If first part didn't match an item, it's the Buyer name (e.g., "Thơm \n ...")
-                buyer = capitalizeFirstLetter(part);
+                buyer = toTitleCase(part);
             }
         });
 
@@ -216,17 +219,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (match = t.match(reg1)) {
             qty = parseInt(match[1]);
-            flower = capitalizeFirstLetter(match[2]);
-            buyer = capitalizeFirstLetter(match[3]);
+            flower = toTitleCase(match[2]);
+            buyer = toTitleCase(match[3]);
             price = extractMoney(match[4]);
         } else if (match = t.match(reg2)) {
-            buyer = capitalizeFirstLetter(match[1]);
+            buyer = toTitleCase(match[1]);
             qty = parseInt(match[2]);
-            flower = capitalizeFirstLetter(match[3]);
+            flower = toTitleCase(match[3]);
             price = extractMoney(match[4]);
         } else if (match = t.match(reg3)) {
             qty = parseInt(match[1]);
-            flower = capitalizeFirstLetter(match[2]);
+            flower = toTitleCase(match[2]);
             buyer = "Khách vãng lai";
             price = extractMoney(match[3]);
         }
@@ -269,11 +272,11 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (match) {
             amount = extractMoney(match[1]);
-            note = capitalizeFirstLetter(match[2].trim());
+            note = toTitleCase(match[2].trim());
         } else {
             match = text.match(regexSimple);
             if (match) {
-                note = capitalizeFirstLetter(match[1].trim());
+                note = toTitleCase(match[1].trim());
                 amount = extractMoney(match[2]);
             }
         }
