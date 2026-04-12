@@ -230,6 +230,123 @@
             from { transform: translateY(40px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
+
+        /* MOBILE OPTIMIZATION FOR BCTC */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 12px !important;
+            }
+            .financial-table-responsive {
+                width: 100% !important;
+                overflow-x: auto !important;
+                display: block !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            .financial-table {
+                font-size: 0.825rem !important; /* Tăng lại cho dễ đọc */
+                width: auto !important; /* Để bảng tự do mở rộng sang phải */
+                min-width: 100% !important;
+            }
+            .financial-table th, .financial-table td {
+                padding: 10px 8px !important;
+                white-space: normal !important;
+            }
+            .financial-table th:first-child, .financial-table td:first-child {
+                min-width: 115px !important; /* Cột tiêu đề rộng hơn xíu: 115px */
+                max-width: 115px !important;
+                width: 115px !important;
+                font-size: 0.75rem !important;
+                line-height: 1.2 !important;
+                word-break: break-word !important;
+                position: sticky !important;
+                left: 0 !important;
+                background-color: #f8fafc !important;
+                z-index: 11 !important;
+            }
+            .financial-table th:not(:first-child), .financial-table td:not(:first-child) {
+                min-width: 95px !important; /* Cột năm rộng 95px, 3 cột = 285px */
+                max-width: 100px !important;
+                text-align: center !important;
+                white-space: nowrap !important;
+            }
+            thead th.financial-col-current {
+                font-size: 0.95rem !important;
+                border-top-width: 3px !important;
+            }
+            .financial-row-header {
+                font-size: 0.85rem !important;
+            }
+        }
+
+        /* Highlight Important Financial Rows (Global) */
+        .financial-row-important td, 
+        tr.financial-row-important td {
+            font-weight: 800 !important;
+            text-decoration: underline !important;
+            text-underline-offset: 4px !important;
+        }
+
+        /* Financial Ratios Banner Styles (Global) */
+        .financial-ratios-summary-container {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 12px !important;
+            margin-top: 1rem !important;
+            width: 100% !important;
+        }
+
+        .ratio-summary-card {
+            flex: 1 1 180px !important;
+            padding: 1.25rem 1.5rem !important;
+            border-radius: 12px !important;
+            color: white !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            position: relative !important;
+            overflow: hidden !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+            border: none !important;
+        }
+
+        .ratio-summary-card .ratio-label {
+            font-size: 0.72rem !important;
+            font-weight: 800 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+            opacity: 0.9 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            color: white !important;
+            margin-bottom: 4px !important;
+        }
+
+        .ratio-summary-card .ratio-value {
+            font-size: 1.6rem !important;
+            font-weight: 900 !important;
+            color: white !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        /* Banner Color Schemes */
+        .ratio-summary-card:nth-child(1) { background: linear-gradient(135deg, #0ea5e9, #0284c7) !important; }
+        .ratio-summary-card:nth-child(2) { background: linear-gradient(135deg, #10b981, #059669) !important; }
+        .ratio-summary-card:nth-child(3) { background: linear-gradient(135deg, #6366f1, #4f46e5) !important; }
+        .ratio-summary-card.highlight-target { background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important; }
+        .ratio-summary-card.highlight-warning { background: linear-gradient(135deg, #f59e0b, #d97706) !important; }
+
+        /* Financial Growth Chart Height */
+        .financial-growth-chart-wrapper {
+            height: 700px !important;
+        }
+
+        @media (max-width: 768px) {
+            .financial-growth-chart-wrapper {
+                height: 320px !important;
+            }
+        }
     </style>
 </head>
 
@@ -925,11 +1042,18 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div id="financial-loading" style="padding: 3rem; text-align: center; color: var(--text-light);">
-                            <i class="fa-solid fa-circle-notch fa-spin fa-2x"></i>
-                            <p style="margin-top: 1rem;">Đang tải báo cáo tài chính...</p>
-                        </div>
                     </div>
+
+                    <!-- Financial Growth Chart Section -->
+                    <section class="card glassmorphism" style="margin-top: 1.5rem; padding: 1.5rem; animation: slideUp 0.8s ease-out;">
+                        <h3 style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--text-dark); display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-chart-column" style="color: #6366f1;"></i> 
+                            Biểu Đồ Tăng Trưởng VCSH so với Mục Tiêu
+                        </h3>
+                        <div class="financial-growth-chart-wrapper" style="width: 100%; position: relative;">
+                            <canvas id="financial-growth-chart"></canvas>
+                        </div>
+                    </section>
                 </div>
 
                 <!-- VIEW 3: DEBT TRACKING (SỔ NỢ) -->

@@ -2589,57 +2589,88 @@ tr.swiping td:first-child::before {
     color: #10b981;
 /* DASHBOARD FINANCIAL RATIOS SUMMARY */
 .financial-ratios-summary-container {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
     animation: slideUp 0.6s ease-out;
 }
 
 .ratio-summary-card {
-    background: rgba(13, 138, 188, 0.04);
-    border: 1px solid rgba(13, 138, 188, 0.1);
-    border-radius: 12px;
-    padding: 1rem;
-    transition: all 0.3s ease;
+    flex: 1;
+    min-width: 220px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+    border: none;
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     justify-content: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.3);
+}
+
+.ratio-summary-card::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    pointer-events: none;
 }
 
 .ratio-summary-card:hover {
-    transform: translateY(-3px);
-    background: rgba(13, 138, 188, 0.08);
-    border-color: var(--primary-color);
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 30px -10px rgba(14, 165, 233, 0.5);
 }
 
 .ratio-summary-card .ratio-label {
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--text-light);
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.9);
     margin-bottom: 0.5rem;
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    z-index: 1;
+}
+
+.ratio-summary-card .ratio-label i {
+    font-size: 1.2rem;
+    color: white;
 }
 
 .ratio-summary-card .ratio-value {
-    font-size: 1.35rem;
-    font-weight: 800;
-    color: var(--primary-color);
-    letter-spacing: -0.02em;
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: white;
+    line-height: 1.2;
+    z-index: 1;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.ratio-summary-card.highlight-profit .ratio-value { color: var(--secondary-color); }
-.ratio-summary-card.highlight-warning .ratio-value { color: #f59e0b; }
+/* Individual Banner Colors */
+.ratio-summary-card:nth-child(1) { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); } /* Blue */
+.ratio-summary-card:nth-child(2) { background: linear-gradient(135deg, #10b981 0%, #059669 100%); } /* Green */
+.ratio-summary-card:nth-child(3) { background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); } /* Indigo */
+.ratio-summary-card.highlight-target { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); } /* Purple */
+.ratio-summary-card.highlight-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); } /* Orange */
 
-@media (max-width: 992px) {
-    .financial-ratios-summary-container {
-        grid-template-columns: repeat(2, 1fr);
+@media (max-width: 768px) {
+    .ratio-summary-card {
+        flex: 1 1 100%; /* Full width banners on small mobile */
+        padding: 1.25rem;
     }
-}
-
-@media (max-width: 480px) {
     .ratio-summary-card .ratio-value {
-        font-size: 1.15rem;
+        font-size: 1.5rem;
     }
 }
 
@@ -2775,6 +2806,13 @@ tr.swiping td:first-child::before {
 .cash-period-select:focus  { border-color: rgba(16,185,129,0.6); }
 
 /* FINANCIAL REPORT TABLE STYLES */
+.financial-table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+}
+
 .financial-table {
     width: 100%;
     border-collapse: separate;
@@ -2856,41 +2894,58 @@ tr.swiping td:first-child::before {
 
 /* RESPONSIVE TUNING FOR MOBILE (iPhone 14 Pro Max & others) */
 @media (max-width: 768px) {
+    .main-content {
+        padding: 0.75rem !important; /* Giảm padding lề để thêm chỗ cho bảng */
+    }
+
     .financial-table {
-        font-size: 0.8rem !important; /* Hạ font size xuống ~12.8px */
+        font-size: 0.725rem !important;
     }
 
     .financial-table th, 
     .financial-table td {
-        padding: 8px 10px !important; /* Thu hẹp padding */
-        white-space: normal !important; /* Cho phép xuống dòng */
+        padding: 5px 3px !important; /* Rút gọn padding ngang tối đa */
+        white-space: normal !important; 
     }
 
     .financial-table th:first-child, 
     .financial-table td:first-child {
-        min-width: 135px !important; /* Thu hẹp cột tiêu đề */
-        max-width: 135px !important;
-        font-size: 0.75rem !important;
-        line-height: 1.2;
+        min-width: 80px !important; /* Gọn nhất có thể */
+        max-width: 80px !important;
+        font-size: 0.625rem !important;
+        line-height: 1.05;
+        word-break: break-word !important;
     }
 
     /* Các cột dữ liệu (năm) */
     .financial-table th:not(:first-child),
     .financial-table td:not(:first-child) {
-        min-width: 85px !important;
-        max-width: 95px !important;
+        min-width: 70px !important; 
+        max-width: 80px !important;
         text-align: center !important;
-        white-space: nowrap !important; /* Giữ con số trên 1 dòng */
+        white-space: nowrap !important;
+    }
+
+    /* Đè font size cực to của cột hiện tại trên mobile */
+    thead th.financial-col-current {
+        font-size: 0.85rem !important;
     }
 
     .financial-row-header {
-        font-size: 0.9rem !important;
+        font-size: 0.8rem !important;
     }
 }
 
 /* Specific highlighting for Equity/Profit */
 .financial-row-equity { background-color: rgba(254, 243, 199, 0.4); }
 .financial-row-profit { background-color: rgba(220, 252, 231, 0.4); }
+
+/* Highlight Important Financial Rows */
+.financial-row-important td {
+    font-weight: 800 !important;
+    text-decoration: underline !important;
+    text-underline-offset: 4px;
+}
 
 /* Edit Inputs */
 .financial-edit-input {

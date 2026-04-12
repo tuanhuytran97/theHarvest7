@@ -205,6 +205,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let annualRevProfitChartInstance = null;
     let annualExpenseChartInstance = null;
     let monthlyCombinedChartInstance = null;
+    let financialGrowthChartInstance = null;
     let currentEditRowData = null; // Track row being edited
 
     // Convert Excel Serial Date to JS Date Object
@@ -2214,18 +2215,28 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Find specific rows
-            const findVal = (label) => {
+            const findValAtCol = (label, colIdx) => {
                 const row = values.find(r => String(r[0] || "").toUpperCase() === label.toUpperCase());
-                return row ? row[yearIdx] : null;
+                return row ? row[colIdx] : null;
             };
+
+            const findVal = (label) => findValAtCol(label, yearIdx);
 
             const roe = findVal("ROE");
             const roa = findVal("ROA");
             const debt = findVal("NỢ / VCSH") || findVal("NỢ/VCSH");
             const payback = findVal("PAYBACK TIME");
-            const equity = findVal("VỐN CHỦ SỞ HỮU");
-            const goal = findVal("MỤC TIÊU");
+            const equityCurr = findVal("VỐN CHỦ SỞ HỮU") || 0;
+            const equityPrev = (yearIdx > 1) ? (findValAtCol("VỐN CHỦ SỞ HỮU", yearIdx - 1) || 0) : 0;
+            const netProfit = findVal("LỢI NHUẬN SAU THUẾ") || findVal("LỢI NHUẬN") || 0;
+
+            let goalRatio = 0;
+            if (equityCurr !== 0 && netProfit !== 0) {
+                const diff = equityCurr - equityPrev;
+                if (diff !== 0) {
+                    goalRatio = netProfit / diff;
+                }
+            }
 
             const formatPct = (val) => {
                 if (typeof val !== 'number') return "N/A";
@@ -2235,11 +2246,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const formatPayback = (val) => {
                 if (typeof val !== 'number' || isNaN(val)) return "N/A";
-                // Chuyển đổi về tổng số tháng để tránh lỗi "12 Tháng"
                 let totalMonths = Math.round(val * 12);
                 const years = Math.floor(totalMonths / 12);
                 const months = totalMonths % 12;
-
                 let res = "";
                 if (years > 0) res += years + (years > 1 ? " Years" : " Year");
                 if (months > 0) {
@@ -2248,6 +2257,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 return res || "0 Months";
             };
+
+            const goalVal = findVal("MỤC TIÊU") || 0;
+            const remainingGoal = goalVal - equityCurr;
 
             container.innerHTML = `
                 <div class="ratio-summary-card">
@@ -2262,9 +2274,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span class="ratio-label"><i class="fa-solid fa-scale-balanced"></i> Nợ / VCSH</span>
                     <span class="ratio-value">${formatPct(debt)}</span>
                 </div>
-                <div class="ratio-summary-card">
-                    <span class="ratio-label"><i class="fa-solid fa-bullseye"></i> Mục Tiêu</span>
-                    <span class="ratio-value">${formatPct((goal && goal !== 0) ? (equity / goal) : 0)}</span>
+                <div class="ratio-summary-card highlight-target">
+                    <span class="ratio-label"><i class="fa-solid fa-bullseye"></i> Mục Tiêu Cần Đạt</span>
+                    <span class="ratio-value">${remainingGoal > 0 ? formatNumber(remainingGoal) : "✔ Hoàn thành"}</span>
                 </div>
                 <div class="ratio-summary-card highlight-warning">
                     <span class="ratio-label"><i class="fa-solid fa-hourglass-half"></i> Hoàn Vốn</span>
@@ -2580,13 +2592,22 @@ document.addEventListener("DOMContentLoaded", () => {
             const isSectionHeader = rowLabel && rowLabel === rowLabel.toUpperCase() && !rowLabel.includes("TỔNG");
             const isTotalRow = upperLabel.includes("TỔNG");
             
-            const isPercentageRatio = ["ROE", "ROA", "NỢ/VCSH", "NỢ / VCSH", "(%)", "%"].some(r => upperLabel.includes(r));
+            const isPercentageRatio = ["ROE", "ROA", "NỢ/VCSH", "NỢ / VCSH", "TĂNG TRƯỞNG VCSH", "HOÀN THÀNH MỤC TIÊU", "(%)", "%"].some(r => upperLabel.includes(r));
             const isOtherRatio = ["PAYBACK TIME"].includes(upperLabel);
 
             if (isSectionHeader) tr.className = "financial-row-header";
             if (isTotalRow) tr.className = "financial-row-total";
             if (upperLabel.includes("VỐN CHỦ")) tr.classList.add("financial-row-equity");
             if (upperLabel.includes("LỢI NHUẬN")) tr.classList.add("financial-row-profit");
+
+            // Apply important formatting to specific user-requested rows
+            const importantKeywords = [
+                "TÀI SẢN NGẮN HẠN", "TÀI SẢN DÀI HẠN", "TỔNG CỘNG TÀI SẢN", 
+                "TỔNG NỢ PHẢI TRẢ", "VỐN CHỦ SỞ HỮU", "TỔNG CỘNG NGUỒN VỐN", 
+                "LỢI NHUẬN", "PAYBACK TIME", "NỢ/VCSH", "ROA", "ROE"
+            ];
+            const isImportantRow = importantKeywords.some(key => upperLabel.includes(key));
+            if (isImportantRow) tr.classList.add("financial-row-important");
 
             rowData.forEach((cell, cIdx) => {
                 const td = document.createElement('td');
@@ -2604,12 +2625,24 @@ document.addEventListener("DOMContentLoaded", () => {
                     const val = cell === "" ? 0 : cell;
                     let displayVal = "";
 
-                    if (isPercentageRatio && typeof val === 'number') {
+                    if (rowLabel === "") {
+                        displayVal = ""; // Hide zeros in spacer rows
+                    } else if (isPercentageRatio && typeof val === 'number') {
                         let pctVal = val;
                         if (Math.abs(val) < 2) pctVal = val * 100;
                         displayVal = pctVal.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
                         td.style.fontWeight = "700";
                         td.style.color = "var(--primary-color)";
+
+                        // Dynamic coloring for Target Completion
+                        if (upperLabel.includes("HOÀN THÀNH MỤC TIÊU")) {
+                            td.style.color = pctVal >= 100 ? "#10b981" : "#ef4444";
+                        }
+                        
+                        // Dynamic coloring for Growth Ratio (> 5% is green, else red)
+                        if (upperLabel.includes("TĂNG TRƯỞNG VCSH")) {
+                            td.style.color = pctVal > 5 ? "#10b981" : "#ef4444";
+                        }
                     } else if (isOtherRatio) {
                         // Giữ lại số lẻ cho các tỷ số đặc biệt nếu cần (vd: Payback time)
                         displayVal = (typeof val === 'number' ? val.toLocaleString('vi-VN', {minimumFractionDigits: 1, maximumFractionDigits: 1}) : val);
@@ -2619,12 +2652,137 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                     
                     td.innerText = displayVal;
-                    // Bỏ tính năng chỉnh sửa và Click để sửa theo yêu cầu
+                    
                 }
+
+                if (isImportantRow) {
+                    td.style.fontWeight = "800";
+                    td.style.textDecoration = "underline";
+                    td.style.textUnderlineOffset = "4px";
+                }
+
                 tr.appendChild(td);
             });
             tbody.appendChild(tr);
         }
+
+        // Tự động cuộn đến cột năm hiện tại (nằm ở bên phải cùng vùng nhìn thấy)
+        setTimeout(() => {
+            const currentYearCol = thead.querySelector('.financial-col-current');
+            const container = document.querySelector('.financial-table-responsive');
+            if (currentYearCol && container) {
+                // Cuộn sao cho mép phải của cột hiện tại sát mép phải màn hình
+                const scrollPos = currentYearCol.offsetLeft + currentYearCol.clientWidth - container.clientWidth + 5; 
+                container.scrollTo({
+                    left: scrollPos,
+                    behavior: 'smooth'
+                });
+            }
+        }, 300);
+
+        // 3. Extract and Render Financial Growth Chart
+        try {
+            const headerRow = values[0] || [];
+            const years = headerRow.slice(1);
+            
+            // Tìm hàng VCSH và Mục Tiêu
+            const equityRow = values.find(row => {
+                const label = String(row[0] || "").toUpperCase();
+                return label.includes("VỐN CHỦ SỞ HỮU") && !label.includes("TỶ LỆ");
+            });
+            const goalRow = values.find(row => {
+                const label = String(row[0] || "").toUpperCase();
+                return label.includes("MỤC TIÊU") && !label.includes("TỶ LỆ");
+            });
+
+            if (equityRow && goalRow && years.length > 0) {
+                const equityData = equityRow.slice(1).map(v => Number(v) || 0);
+                const goalData = goalRow.slice(1).map(v => Number(v) || 0);
+                updateFinancialGrowthChart(years, equityData, goalData);
+            }
+        } catch (err) {
+            console.error("Chart Error:", err);
+        }
+    }
+
+    function updateFinancialGrowthChart(years, equityData, goalData) {
+        const canvas = document.getElementById('financial-growth-chart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (financialGrowthChartInstance) financialGrowthChartInstance.destroy();
+
+        financialGrowthChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: years,
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'Vốn Chủ Sở Hữu',
+                        data: equityData,
+                        backgroundColor: 'rgba(14, 165, 233, 0.7)',
+                        borderColor: '#0ea5e9',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        order: 2,
+                        datalabels: {
+                            anchor: 'center',
+                            align: 'center',
+                            font: { weight: '900', size: 10 },
+                            color: '#ffffff',
+                            formatter: (val) => val > 0 ? formatNumber(val) : ''
+                        }
+                    },
+                    {
+                        type: 'line',
+                        label: 'Mục Tiêu',
+                        data: goalData,
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#8b5cf6',
+                        pointRadius: 5,
+                        fill: false,
+                        tension: 0.3,
+                        order: 1,
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'top',
+                            offset: 8, // Nhích lên để không bị che
+                            font: { weight: '900', size: 11 },
+                            color: '#6d28d9',
+                            formatter: (val) => val > 0 ? formatNumber(val) : ''
+                        }
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 25 // Chừa chỗ cho label nhích lên
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top', labels: { boxWidth: 12, usePointStyle: true } },
+                    ChartDataLabels: {
+                        // Global override handled in datasets
+                        display: true
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
     }
 
     // Attach sync button listener
