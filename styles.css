@@ -755,76 +755,200 @@ tbody tr:hover {
     grid-column: span 12;
   }
 
-  /* TABLE TO CARDS CONVERSION */
+  /* Fix mobile filter truncation */
+  .table-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .filters {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .filter-group input,
+  .filter-group select {
+    width: 100%;
+    min-width: unset !important;
+  }
+
+  /* MODERN TABLE-TO-CARD CONVERSION (RESPONSIVE) */
   #farm-data-table {
-    border: none;
+    border: none !important;
+    background: transparent !important;
   }
 
   #farm-data-table thead {
-    display: none;
-    /* Hide headers on mobile */
+    display: none !important;
   }
 
   #farm-data-table,
   #farm-data-table tbody,
   #farm-data-table tr,
   #farm-data-table td {
-    display: block;
-    width: 100%;
+    display: block !important;
+    width: 100% !important;
   }
 
   #farm-data-table tr {
-    background: white;
-    margin-bottom: 1rem;
-    border-radius: 12px;
-    padding: 1rem;
-    box-shadow: var(--shadow-md);
-    border: 1px solid var(--border-color);
-    position: relative;
+    background: white !important;
+    margin-bottom: 1.25rem !important;
+    border-radius: 16px !important;
+    padding: 1rem 1.25rem !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important;
+    border: 1px solid #f1f5f9 !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+
+  /* Specific Row Highlights based on common app values */
+  #farm-data-table tr:has(.status-done) {
+    border-left: 4px solid var(--success) !important;
+  }
+
+  #farm-data-table tr:has(.status-pending) {
+    border-left: 4px solid var(--warning) !important;
   }
 
   #farm-data-table td {
-    border: none;
-    padding: 6px 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    text-align: right;
-    font-size: 0.9rem;
+    border: none !important;
+    padding: 4px 0 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    text-align: left !important;
+    font-size: 0.95rem !important;
   }
 
-  /* Add labels for mobile data */
-  #farm-data-table td::before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: var(--text-light);
-    text-align: left;
-    margin-right: 1rem;
+  /* --- HIERARCHICAL LAYOUT OVERRIDES --- */
+
+  /* Checkbox - Absolute Positioned */
+  #farm-data-table td:nth-child(1) {
+    position: absolute !important;
+    top: 45px !important; /* Below status line */
+    right: 15px !important;
+    width: auto !important;
+    z-index: 5 !important;
+  }
+  #farm-data-table td:nth-child(1)::before { display: none !important; }
+
+  /* Date & Status - Header Line */
+  #farm-data-table td[data-label="Ngày"] {
+    font-size: 0.75rem !important;
+    color: var(--text-light) !important;
+    font-weight: 700 !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    padding-bottom: 10px !important;
+    margin-bottom: 10px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
   }
 
-  /* Hide Checkbox and empty columns on small items if needed */
-  #farm-data-table td:first-child {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: auto;
-    padding: 0;
+  #farm-data-table td[data-label="Status"],
+  #farm-data-table td[data-label="Trạng Thái"] {
+    position: absolute !important;
+    top: 1rem !important;
+    right: 1.25rem !important;
+    width: auto !important;
+  }
+  #farm-data-table td[data-label="Status"]::before,
+  #farm-data-table td[data-label="Trạng Thái"]::before { display: none !important; }
+
+  /* Buyer Name - Highlighted Subject */
+  #farm-data-table td[data-label="Người Mua"],
+  #farm-data-table td[data-label="Tên Vựa"],
+  #farm-data-table td[data-label="Loại CP"] {
+    font-size: 1.15rem !important;
+    font-weight: 800 !important;
+    color: var(--text-dark) !important;
+    margin-bottom: 8px !important;
+    display: block !important;
+  }
+  #farm-data-table td[data-label="Người Mua"]::before,
+  #farm-data-table td[data-label="Tên Vựa"]::before,
+  #farm-data-table td[data-label="Loại CP"]::before { display: none !important; }
+
+  /* Details - Grouped Rows */
+  #farm-data-table td[data-label="Loại Bông"],
+  #farm-data-table td[data-label="Số Lượng"],
+  #farm-data-table td[data-label="SL"],
+  #farm-data-table td[data-label="Giá"] {
+    font-size: 0.85rem !important;
+    color: var(--text-light) !important;
   }
 
-  #farm-data-table td:first-child::before {
-    display: none;
+  #farm-data-table td[data-label]::before {
+    content: attr(data-label) ": " !important;
+    font-weight: 600 !important;
+    color: #94a3b8 !important;
+    font-size: 0.8rem !important;
   }
 
-  /* Action button column */
+  /* Revenue/Amount - Main Highlight */
+  #farm-data-table td[data-label="Doanh Thu"],
+  #farm-data-table td[data-label="Doanh Thu Bông"],
+  #farm-data-table td[data-label="Số tiền"] {
+    background: #f8fafc !important;
+    margin: 10px -1.25rem -1rem -1.25rem !important;
+    padding: 12px 1.25rem !important;
+    border-top: 1px dashed #e2e8f0 !important;
+    font-size: 1.1rem !important;
+    font-weight: 800 !important;
+    justify-content: flex-end !important;
+  }
+  
+  #farm-data-table td[data-label="Doanh Thu"]::before,
+  #farm-data-table td[data-label="Doanh Thu Bông"]::before,
+  #farm-data-table td[data-label="Số tiền"]::before {
+    content: "Tổng: " !important;
+    margin-right: auto !important;
+    color: var(--text-light) !important;
+  }
+
+  /* Hide labels for Action/Check columns */
+  #farm-data-table td[data-label="Thao tác"] {
+    border-top: none !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    position: absolute !important;
+    top: 50% !important;
+    right: 10px !important;
+    transform: translateY(-50%) !important;
+    width: auto !important;
+    display: none !important; /* Hide standard action row on mobile if needed, or better position it */
+  }
+
+  /* Better Action Buttons position */
   #farm-data-table td:last-child {
-    border-top: 1px solid var(--border-color);
-    margin-top: 8px;
-    padding-top: 10px;
-    justify-content: center;
+    border-top: none !important;
+    padding: 10px 0 0 0 !important;
+    margin-top: 0 !important;
+    justify-content: flex-start !important;
+    gap: 15px !important;
+  }
+  #farm-data-table td:last-child::before { display: none !important; }
+  
+  #farm-data-table .action-btn {
+    background: #f1f5f9 !important;
+    padding: 8px 15px !important;
+    border-radius: 8px !important;
+    font-size: 0.9rem !important;
   }
 
-  #farm-data-table td:last-child::before {
-    display: none;
+  #farm-data-table .action-btn i {
+    font-size: 1.1rem !important;
+  }
+
+  /* Ghi chú - subtle line */
+  #farm-data-table td[data-label="Ghi chú"] {
+    font-style: italic !important;
+    opacity: 0.8 !important;
+    font-size: 0.8rem !important;
   }
 
   /* Bottom Nav Styles */
