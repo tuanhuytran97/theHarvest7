@@ -8,6 +8,186 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* FORCE MODAL POPUP FIX & PREMIUM BUTTONS */
+        .cash-action-btn {
+            background: rgba(245, 158, 11, 0.15) !important;
+            backdrop-filter: blur(4px) !important;
+            -webkit-backdrop-filter: blur(4px) !important;
+            color: #fbbf24 !important;
+            border: 1.5px solid rgba(245, 158, 11, 0.4) !important;
+            padding: 10px 20px !important;
+            border-radius: 14px !important;
+            font-weight: 800 !important;
+            font-size: 0.9rem !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15) !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+        }
+
+        .cash-action-btn:hover {
+            background: rgba(245, 158, 11, 0.25) !important;
+            transform: translateY(-3px) scale(1.02) !important;
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3) !important;
+            border-color: rgba(245, 158, 11, 0.7) !important;
+            color: #fff !important;
+        }
+
+        .cash-action-btn i {
+            font-size: 1.1rem !important;
+            filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.5));
+        }
+
+        #modal-adjust-cash.cash-modal-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background: rgba(15, 23, 42, 0.8) !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            z-index: 100000 !important;
+            display: none; /* Controlled by JS */
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        #modal-adjust-cash .cash-modal-box {
+            background: white !important;
+            border-radius: 24px !important;
+            width: 100% !important;
+            max-width: 420px !important;
+            box-shadow: 0 40px 80px -12px rgba(0, 0, 0, 0.6) !important;
+            border: 1px solid rgba(255, 255, 255, 0.5) !important;
+            overflow: hidden !important;
+            animation: slideInUpPremium 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #modal-adjust-cash .modal-header-premium {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+            padding: 1.5rem 2rem !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 1.25rem !important;
+            color: white !important;
+            border: none !important;
+        }
+
+        #modal-adjust-cash .modal-icon-adjust {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.3) !important;
+            border-radius: 12px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 1.5rem !important;
+        }
+
+        #modal-adjust-cash .modal-title-group h3 {
+            margin: 0 !important;
+            font-size: 1.25rem !important;
+            font-weight: 800 !important;
+            color: white !important;
+            letter-spacing: -0.01em !important;
+            line-height: 1.2 !important;
+        }
+
+        #modal-adjust-cash .modal-title-group p {
+            margin: 2px 0 0 0 !important;
+            font-size: 0.85rem !important;
+            color: rgba(255,255,255,0.9) !important;
+            font-weight: 500 !important;
+        }
+
+        #modal-adjust-cash .cash-modal-body {
+            padding: 2rem !important;
+            background: white !important;
+        }
+
+        #modal-adjust-cash .cash-modal-field {
+            margin-bottom: 1.5rem !important;
+        }
+
+        #modal-adjust-cash .cash-modal-field label {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            font-size: 0.85rem !important;
+            font-weight: 800 !important;
+            color: #334155 !important;
+            margin-bottom: 8px !important;
+        }
+
+        #modal-adjust-cash .cash-modal-field input {
+            width: 100% !important;
+            padding: 14px 16px !important;
+            background: #f8fafc !important;
+            border: 2px solid #e2e8f0 !important;
+            border-radius: 12px !important;
+            font-size: 1rem !important;
+            font-weight: 600 !important;
+            color: #0f172a !important;
+            transition: all 0.2s !important;
+            outline: none !important;
+            box-sizing: border-box !important;
+        }
+
+        #modal-adjust-cash .cash-modal-field input:focus {
+            background: white !important;
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15) !important;
+        }
+
+        #modal-adjust-cash .cash-modal-actions {
+            padding: 0 2rem 2rem 2rem !important;
+            display: flex !important;
+            gap: 12px !important;
+            background: white !important;
+        }
+
+        #modal-adjust-cash .btn-save-premium {
+            flex: 2 !important;
+            background: #0f172a !important;
+            color: white !important;
+            border: none !important;
+            padding: 16px !important;
+            border-radius: 14px !important;
+            font-weight: 800 !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 10px !important;
+            font-size: 1rem !important;
+        }
+
+        #modal-adjust-cash .btn-cancel-premium {
+            flex: 1 !important;
+            background: #f1f5f9 !important;
+            color: #475569 !important;
+            border: none !important;
+            padding: 16px !important;
+            border-radius: 14px !important;
+            font-weight: 700 !important;
+            cursor: pointer !important;
+            font-size: 0.95rem !important;
+        }
+
+        @keyframes slideInUpPremium {
+            from { transform: translateY(40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
 </head>
 
 <body>
@@ -155,25 +335,6 @@
                     </div>
 
 
-                    <!-- MODAL: Khoản thu bất thường -->
-                    <div id="modal-adjust-cash" class="cash-modal-overlay" style="display:none;">
-                        <div class="cash-modal-box">
-                            <h3><i class="fa-solid fa-scale-balanced"></i> Khoản Thu/Chi Bất Thường</h3>
-                            <p style="color:#64748b; font-size:0.88rem; margin-bottom:1.2rem;">Nhập các khoản phát sinh ngoài mua bán (VD: biếu tặng, hỏng hóc). Nhập số dương (+) nếu thu vào, số âm (-) nếu chi ra.</p>
-                            <div class="cash-modal-field">
-                                <label>Số tiền (VNĐ)</label>
-                                <input type="text" id="input-adj-amount" placeholder="VD: +500000 hoặc -200000" autocomplete="off">
-                            </div>
-                            <div class="cash-modal-field">
-                                <label>Lý do (Lưu vào cột R)</label>
-                                <input type="text" id="input-adj-note" placeholder="VD: Tiền bia biếu" autocomplete="off">
-                            </div>
-                            <div class="cash-modal-actions">
-                                <button id="btn-save-adj" class="btn-primary">Lưu bản ghi</button>
-                                <button id="btn-cancel-adj" class="btn-secondary">Hủy</button>
-                            </div>
-                        </div>
-                    </div>
 
 
                     <!-- Data Entry Section -->
@@ -1018,6 +1179,41 @@
                <span class="notification-dot"></span>
             </div>
         </button>
+    </div>
+
+    <!-- MODAL: Khoản thu bất thường -->
+    <div id="modal-adjust-cash" class="cash-modal-overlay" style="display:none;">
+        <div class="cash-modal-box glassmorphism">
+            <div class="modal-header-premium">
+                <div class="modal-icon-adjust">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+                <div class="modal-title-group">
+                    <h3>Khoản Thu/Chi Bất Thường</h3>
+                    <p>Ghi nhận các khoản phát sinh ngoài mua bán</p>
+                </div>
+            </div>
+
+            <div class="cash-modal-body">
+                <div class="cash-modal-field">
+                    <label><i class="fa-solid fa-money-bill-wave"></i> Số tiền (VNĐ)</label>
+                    <input type="text" id="input-adj-amount" placeholder="VD: +500.000 (Thu) hoặc -200.000 (Chi)" autocomplete="off">
+                </div>
+                <div class="cash-modal-field">
+                    <label><i class="fa-solid fa-comment-dots"></i> Lý do (Ghi chú)</label>
+                    <input type="text" id="input-adj-note" placeholder="Nhập lý do cụ thể..." autocomplete="off">
+                </div>
+            </div>
+
+            <div class="cash-modal-actions">
+                <button id="btn-save-adj" class="btn-save-premium">
+                    <i class="fa-solid fa-check"></i> Lưu bản ghi
+                </button>
+                <button id="btn-cancel-adj" class="btn-cancel-premium">
+                    Hủy bỏ
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- SCRIPTS -->
