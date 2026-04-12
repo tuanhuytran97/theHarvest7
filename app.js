@@ -2224,6 +2224,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const roa = findVal("ROA");
             const debt = findVal("NỢ / VCSH") || findVal("NỢ/VCSH");
             const payback = findVal("PAYBACK TIME");
+            const equity = findVal("VỐN CHỦ SỞ HỮU");
+            const goal = findVal("MỤC TIÊU");
 
             const formatPct = (val) => {
                 if (typeof val !== 'number') return "N/A";
@@ -2259,6 +2261,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="ratio-summary-card">
                     <span class="ratio-label"><i class="fa-solid fa-scale-balanced"></i> Nợ / VCSH</span>
                     <span class="ratio-value">${formatPct(debt)}</span>
+                </div>
+                <div class="ratio-summary-card">
+                    <span class="ratio-label"><i class="fa-solid fa-bullseye"></i> Mục Tiêu</span>
+                    <span class="ratio-value">${formatPct((goal && goal !== 0) ? (equity / goal) : 0)}</span>
                 </div>
                 <div class="ratio-summary-card highlight-warning">
                     <span class="ratio-label"><i class="fa-solid fa-hourglass-half"></i> Hoàn Vốn</span>
