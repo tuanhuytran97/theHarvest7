@@ -501,8 +501,13 @@
 
                     <!-- Financial Ratios Summary (Wrapped in a frame) -->
                     <section class="card glassmorphism" style="margin-bottom: 2rem; padding: 1.25rem;">
-                        <h2 style="margin: 0 0 1rem 0; font-size: 1rem; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-heart-pulse" style="color: var(--danger);"></i> Sức Khỏe Tài Chính (Năm)
+                        <h2 id="financial-health-title" style="margin: 0 0 1rem 0; font-size: 1rem; color: var(--text-dark); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                            <span style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-heart-pulse" style="color: var(--danger);"></i> Sức Khỏe Tài Chính (Năm)
+                            </span>
+                            <span id="financial-year-status" style="font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: rgba(0,0,0,0.05); color: var(--text-light);">
+                                <!-- Status Badge (Audited or Goal) -->
+                            </span>
                         </h2>
                         <div id="dashboard-financial-ratios" class="financial-ratios-summary-container" style="margin-bottom: 0;">
                             <!-- Will be populated by JS -->

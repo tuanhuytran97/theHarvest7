@@ -2181,6 +2181,30 @@ document.addEventListener("DOMContentLoaded", () => {
             const values = result.data || [];
             if (values.length < 1) return;
 
+            // Updated Status Logic
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth() + 1;
+            const yearNum = parseInt(year);
+            const statusEl = document.getElementById('financial-year-status');
+
+            if (statusEl) {
+                if (yearNum < currentYear) {
+                    statusEl.innerHTML = '<i class="fa-solid fa-clipboard-check"></i> Đã kiểm toán';
+                    statusEl.style.background = 'rgba(16, 185, 129, 0.1)';
+                    statusEl.style.color = '#059669';
+                } else if (yearNum === currentYear) {
+                    const remains = 12 - currentMonth;
+                    statusEl.innerHTML = `<i class="fa-solid fa-bullseye"></i> Dự kiến (Còn ${remains} tháng)`;
+                    statusEl.style.background = 'rgba(245, 158, 11, 0.1)';
+                    statusEl.style.color = '#d97706';
+                } else {
+                    statusEl.innerHTML = '<i class="fa-solid fa-calendar-plus"></i> Kế hoạch';
+                    statusEl.style.background = 'rgba(99, 102, 241, 0.1)';
+                    statusEl.style.color = '#4f46e5';
+                }
+            }
+
             const headerRow = values[0];
             const yearIdx = headerRow.findIndex(cell => String(cell).includes(year));
 
