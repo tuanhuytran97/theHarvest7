@@ -81,7 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // PARSING LOGIC
     function processInput(text) {
-        const lowerText = text.toLowerCase();
+        const lowerText = text.toLowerCase().trim();
         
         // Check for multi-line or comma-separated batch input
         const isBatch = (text.includes('\n') && text.trim().split('\n').length > 1) || 
@@ -92,45 +92,37 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // 1. Detect Single Entry Type
-
-        if (lowerText.startsWith('bán') || lowerText.startsWith('ban')) {
-            parseFarmEntry(text);
-        } else if (lowerText.startsWith('chi') || lowerText.startsWith('trả') || lowerText.startsWith('tra') || 
-                   lowerText.startsWith('exp') ||
-                   lowerText.includes('phân') || lowerText.includes('thuốc') || lowerText.includes('lãi') || 
-                   lowerText.includes('công') || lowerText.includes('lương')) {
+        // 1. Detect Entry Type
+        if (lowerText.startsWith('chi') || lowerText.startsWith('trả') || lowerText.startsWith('tra') || 
+            lowerText.startsWith('exp') ||
+            lowerText.includes('phân') || lowerText.includes('thuốc') || lowerText.includes('lãi') || 
+            lowerText.includes('công') || lowerText.includes('lương')) {
             parseExpenseEntry(text);
         } else if (lowerText.startsWith('vựa') || lowerText.includes('đối soát')) {
             parseVuaEntry(text);
         } else {
-            addMessage("Xin lỗi, tôi chưa hiểu lệnh này. Thử gõ: <b>'Bán 100 cúc Anh Nam 5k'</b>", 'ai');
+            // Default: Attempt to parse as Farm Entry (Sale)
+            // This covers "Bán...", "100 hoa...", "Quân 100 hoa..."
+            parseFarmEntry(text);
         }
     }
 
     // UTILS for Parsing
     function extractMoney(val) {
         if (!val) return 0;
-        let clean = val.toLowerCase().trim();
-        let multiplier = 1;
+        let clean = val.toLowerCase().trim().replace(',', '.');
         
-        if (clean.endsWith('k')) {
-            multiplier = 1000;
-            clean = clean.slice(0, -1);
-        } else if (clean.endsWith('tr')) {
-            multiplier = 1000000;
-            clean = clean.slice(0, -1);
+        // Handle XkY pattern (e.g. 1k6 -> 1.6 * 1000)
+        if (clean.includes('k')) {
+            return parseFloat(clean.replace('k', '.')) * 1000;
+        }
+        // Handle XtrY pattern (e.g. 1tr2 -> 1.2 * 1000000)
+        if (clean.includes('tr')) {
+            return parseFloat(clean.replace('tr', '.')) * 1000000;
         }
         
-        // Handle Vietnamese decimal comma (e.g., 4,5 -> 4.5)
-        // BUT if it's 10.000 (dot as thousands separator), we should remove it
-        // A simple rule: if there's a comma, it's likely a decimal in this context (4,5k)
-        clean = clean.replace(',', '.');
-        
-        // Remove any other non-numeric chars except dot
         clean = clean.replace(/[^0-9.]/g, '');
-        
-        return parseFloat(clean) * multiplier;
+        return parseFloat(clean) || 0;
     }
 
     function capitalizeFirstLetter(string) {
@@ -209,15 +201,37 @@ document.addEventListener("DOMContentLoaded", () => {
     // FARM ENTRY PARSER
     // Pattern: "Bán [SL] [Hoa] [Khách] [Giá]"
     function parseFarmEntry(text) {
-        const regex = /(?:bán|ban)\s+(\d+)\s+([a-zà-ỹ\s]+?)\s+(?:cho\s+)?([a-zà-ỹ\s]+?)\s+(?:giá\s+)?(\d+(?:[.,]\d+)?[ktr]*)/i;
+        const t = text.trim();
+        
+        // Pattern 1: [Bán/Ban] [SL] [Hoa] [Khách] [Giá]
+        const reg1 = /^(?:bán|ban)\s+(\d+)\s+([a-zà-ỹ\s]+?)\s+(?:cho\s+)?([a-zà-ỹ\s]+?)\s+(?:giá|x|\s)\s*(\d+(?:[.,]\d+)?[ktr]*)$/i;
+        
+        // Pattern 2: [Khách] [SL] [Hoa] [Giá] (User's request)
+        const reg2 = /^([a-zà-ỹ\s]+?)\s+(\d+)\s+([a-zà-ỹ\s]+?)\s*(?:giá|x|\s)\s*(\d+(?:[.,]\d+)?[ktr]*)$/i;
+        
+        // Pattern 3: [SL] [Hoa] [Giá] (Implicit buyer)
+        const reg3 = /^(\d+)\s+([a-zà-ỹ\s]+?)\s*(?:giá|x|\s)\s*(\d+(?:[.,]\d+)?[ktr]*)$/i;
 
-        const match = text.match(regex);
+        let match, qty, flower, buyer, price;
 
-        if (match) {
-            const qty = parseInt(match[1]);
-            const flower = capitalizeFirstLetter(match[2].trim());
-            const buyer = capitalizeFirstLetter(match[3].trim());
-            const price = extractMoney(match[4]);
+        if (match = t.match(reg1)) {
+            qty = parseInt(match[1]);
+            flower = capitalizeFirstLetter(match[2]);
+            buyer = capitalizeFirstLetter(match[3]);
+            price = extractMoney(match[4]);
+        } else if (match = t.match(reg2)) {
+            buyer = capitalizeFirstLetter(match[1]);
+            qty = parseInt(match[2]);
+            flower = capitalizeFirstLetter(match[3]);
+            price = extractMoney(match[4]);
+        } else if (match = t.match(reg3)) {
+            qty = parseInt(match[1]);
+            flower = capitalizeFirstLetter(match[2]);
+            buyer = "Khách vãng lai";
+            price = extractMoney(match[3]);
+        }
+
+        if (qty > 0 && flower && price > 0) {
             const revenue = qty * price;
 
             pendingData = {
@@ -236,7 +250,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             showConfirmationCard(`Bán cho <b>${buyer}</b><br>📦 <b>${qty} ${flower}</b> x <b>${window.utils.formatMoneyStr(price)}đ</b><br>💰 Tổng: <b>${window.utils.formatCurrency(revenue)}</b>`);
         } else {
-            addMessage("Cấu trúc hơi lạ. Thử: <i>'Bán 50 hồng Chị Huệ 10k'</i>", 'ai');
+            addMessage("Cấu trúc chưa đúng. Thử: <i>'Quân 150 ô hồng x 1k6'</i> hoặc <i>'Bán 50 hồng 10k'</i>", 'ai');
         }
     }
 
