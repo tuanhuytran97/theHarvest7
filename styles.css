@@ -2870,6 +2870,40 @@ tr.swiping td:first-child::before {
     border-top: 2px solid #e2e8f0;
 }
 
+/* RESPONSIVE TUNING FOR MOBILE (iPhone 14 Pro Max & others) */
+@media (max-width: 768px) {
+    .financial-table {
+        font-size: 0.8rem !important; /* Hạ font size xuống ~12.8px */
+    }
+
+    .financial-table th, 
+    .financial-table td {
+        padding: 8px 10px !important; /* Thu hẹp padding */
+        white-space: normal !important; /* Cho phép xuống dòng */
+    }
+
+    .financial-table th:first-child, 
+    .financial-table td:first-child {
+        min-width: 135px !important; /* Thu hẹp cột tiêu đề */
+        max-width: 135px !important;
+        font-size: 0.75rem !important;
+        line-height: 1.2;
+    }
+
+    /* Các cột dữ liệu (năm) */
+    .financial-table th:not(:first-child),
+    .financial-table td:not(:first-child) {
+        min-width: 85px !important;
+        max-width: 95px !important;
+        text-align: center !important;
+        white-space: nowrap !important; /* Giữ con số trên 1 dòng */
+    }
+
+    .financial-row-header {
+        font-size: 0.9rem !important;
+    }
+}
+
 /* Specific highlighting for Equity/Profit */
 .financial-row-equity { background-color: rgba(254, 243, 199, 0.4); }
 .financial-row-profit { background-color: rgba(220, 252, 231, 0.4); }
