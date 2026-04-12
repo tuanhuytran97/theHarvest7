@@ -940,9 +940,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td>${formatDateVietnamese(rowData.parsedDate)}</td>
                 <td><input type="text" class="inline-edit-input" id="edit-buyer" value="${rowData["Người Mua"] || ""}"></td>
                 <td><input type="text" class="inline-edit-input" id="edit-flower-type" value="${rowData["Phân Loại Bông"] || ""}"></td>
-                <td><input type="number" class="inline-edit-input" id="edit-qty" value="${rowData["Số lượng"] || 0}"></td>
-                <td><input type="text" class="inline-edit-input money-input" id="edit-price" value="${formatMoneyStr(rowData["Giá"] || 0)}"></td>
-                <td>-</td>
+                <td><input type="number" class="inline-edit-input" id="edit-qty" oninput="updateInlineRevenue()" value="${rowData["Số lượng"] || 0}"></td>
+                <td><input type="text" class="inline-edit-input money-input" id="edit-price" oninput="updateInlineRevenue()" value="${formatMoneyStr(rowData["Giá"] || 0)}"></td>
+                <td id="edit-revenue-display">${formatCurrency(parseFloat(rowData["Số lượng"] || 0) * (parseFloat(rowData["Giá"]) || 0))}</td>
                 <td>
                     <select class="inline-edit-input" id="edit-status">
                         <option value="Chưa Xong" ${rowData["Status"] === "Chưa Xong" ? "selected" : ""}>Chưa Xong</option>
@@ -958,6 +958,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 </td>
             `;
         }
+        // Initialize revenue display if in Farm mode
+        if (currentTableTab === 'farm') {
+            window.updateInlineRevenue();
+        }
+    };
+
+    window.updateInlineRevenue = function () {
+        const qtyInput = document.getElementById('edit-qty');
+        const priceInput = document.getElementById('edit-price');
+        const display = document.getElementById('edit-revenue-display');
+        if (!qtyInput || !priceInput || !display) return;
+
+        const qty = parseFloat(qtyInput.value) || 0;
+        const price = parseMoney(priceInput.value);
+        const revenue = qty * price;
+        display.innerText = formatCurrency(revenue);
     };
 
     window.cancelInlineEdit = function (btn) {

@@ -797,10 +797,10 @@ tbody tr:hover {
 
   #farm-data-table tr {
     background: white !important;
-    margin-bottom: 1.25rem !important;
-    border-radius: 16px !important;
-    padding: 1rem 1.25rem !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.06) !important;
+    margin-bottom: 0.75rem !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 1rem !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05) !important;
     border: 1px solid #f1f5f9 !important;
     position: relative !important;
     overflow: hidden !important;
@@ -894,8 +894,8 @@ tbody tr:hover {
   #farm-data-table td[data-label="Doanh Thu Bông"],
   #farm-data-table td[data-label="Số tiền"] {
     background: #f8fafc !important;
-    margin: 10px -1.25rem -1rem -1.25rem !important;
-    padding: 12px 1.25rem !important;
+    margin: 8px -1rem -0.75rem -1rem !important;
+    padding: 10px 1rem !important;
     border-top: 1px dashed #e2e8f0 !important;
     font-size: 1.1rem !important;
     font-weight: 800 !important;
@@ -911,16 +911,18 @@ tbody tr:hover {
   }
 
   /* Hide labels for Action/Check columns */
+  /* Better Action Buttons position - Space Saving */
   #farm-data-table td[data-label="Thao tác"] {
     border-top: none !important;
     margin-top: 0 !important;
     padding-top: 0 !important;
     position: absolute !important;
-    top: 50% !important;
-    right: 10px !important;
-    transform: translateY(-50%) !important;
+    top: 42px !important; /* Y-aligned with checkbox */
+    right: 45px !important; /* Left of checkbox */
     width: auto !important;
-    display: none !important; /* Hide standard action row on mobile if needed, or better position it */
+    display: flex !important;
+    z-index: 10 !important;
+    background: transparent !important;
   }
 
   /* Better Action Buttons position */
@@ -934,10 +936,11 @@ tbody tr:hover {
   #farm-data-table td:last-child::before { display: none !important; }
   
   #farm-data-table .action-btn {
-    background: #f1f5f9 !important;
-    padding: 8px 15px !important;
-    border-radius: 8px !important;
-    font-size: 0.9rem !important;
+    background: #f8fafc !important;
+    padding: 6px 10px !important;
+    border-radius: 4px !important;
+    font-size: 0.85rem !important;
+    border: 1px solid #e2e8f0 !important;
   }
 
   #farm-data-table .action-btn i {
