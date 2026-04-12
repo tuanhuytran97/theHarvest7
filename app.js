@@ -2574,7 +2574,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const isSectionHeader = rowLabel && rowLabel === rowLabel.toUpperCase() && !rowLabel.includes("TỔNG");
             const isTotalRow = upperLabel.includes("TỔNG");
             
-            const isPercentageRatio = ["ROE", "ROA", "NỢ/VCSH", "NỢ / VCSH"].some(r => upperLabel === r);
+            const isPercentageRatio = ["ROE", "ROA", "NỢ/VCSH", "NỢ / VCSH", "(%)", "%"].some(r => upperLabel.includes(r));
             const isOtherRatio = ["PAYBACK TIME"].includes(upperLabel);
 
             if (isSectionHeader) tr.className = "financial-row-header";
