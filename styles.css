@@ -2788,7 +2788,12 @@ tr.swiping td:first-child::before {
     padding: 12px 16px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     white-space: nowrap;
-    text-align: right;
+}
+
+/* Ép t?t c? c?t (tr? c?t đ?u) ph?i canh gi?a */
+.financial-table th:not(:first-child),
+.financial-table td:not(:first-child) {
+    text-align: center !important;
 }
 
 .financial-table th:first-child, 
@@ -2834,6 +2839,19 @@ tr.swiping td:first-child::before {
 
 .financial-row-total td {
     border-top: 2px solid #e2e8f0;
+}
+
+/* Highlight cho c?t nam hi?n t?i */
+.financial-col-current {
+    background-color: rgba(14, 165, 233, 0.15) !important;
+    font-weight: 900 !important;
+    position: relative;
+    border-left: 2px solid #0ea5e9 !important;
+    border-right: 2px solid #0ea5e9 !important;
+}
+
+.financial-col-current::after {
+    display: none; /* Bo cách c s? d?ng ::after c? */
 }
 
 /* RESPONSIVE TUNING FOR MOBILE (iPhone 14 Pro Max & others) */

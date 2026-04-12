@@ -14,6 +14,45 @@
             background: rgba(245, 158, 11, 0.15) !important;
             backdrop-filter: blur(4px) !important;
             -webkit-backdrop-filter: blur(4px) !important;
+        color: #fbbf24 !important;
+        border: 1.5px solid rgba(245, 158, 11, 0.4) !important;
+        padding: 10px 20px !important;
+        border-radius: 14px !important;
+        font-weight: 800 !important;
+        font-size: 0.9rem !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15) !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    /* CRITICAL TABLE FIXES */
+    .financial-table th:not(:first-child),
+    .financial-table td:not(:first-child) {
+        text-align: center !important;
+    }
+
+    .financial-col-current {
+        background-color: rgba(14, 165, 233, 0.18) !important;
+        font-weight: 900 !important;
+        position: relative !important;
+        border-left: 2.5px solid #0ea5e9 !important;
+        border-right: 2.5px solid #0ea5e9 !important;
+    }
+
+    thead th.financial-col-current {
+        background-color: #0ea5e9 !important;
+        color: white !important;
+        border-top: 4px solid #0284c7 !important;
+    }
+
+    thead th.financial-col-current span {
+        color: white !important;
+    }
             color: #fbbf24 !important;
             border: 1.5px solid rgba(245, 158, 11, 0.4) !important;
             padding: 10px 20px !important;

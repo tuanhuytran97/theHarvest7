@@ -243,7 +243,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function formatNumber(num) {
         if (!num) return "0";
-        return new Intl.NumberFormat('vi-VN').format(num);
+        // Báo cáo tài chính yêu cầu làm tròn không có phần thập phân
+        return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(num);
     }
 
     function formatCurrency(number) {
@@ -2526,8 +2527,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 1. Render Headers
         const thr = document.createElement('tr');
+        const currentYearStr = String(new Date().getFullYear());
         headerRow.forEach((cell, cIdx) => {
             const th = document.createElement('th');
+            // Nh?n di?n siu c?p v linh ho?t
+            const cellStr = String(cell || "").trim();
+            const isCurrentYear = cellStr.includes(currentYearStr) || cellStr === "2026";
+            if (isCurrentYear) th.classList.add("financial-col-current");
+
             if (cIdx === 0) {
                 th.innerText = "CHỈ TIÊU / NĂM";
             } else {
@@ -2541,9 +2548,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 th.innerHTML = `
-                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-                        <span>${year}</span>
-                        ${lockIndicator}
+                    <div style="position: relative; width: 100%; display: inline-block;">
+                        <span style="display: block; width: 100%; text-align: center;">${year}</span>
+                        <span style="position: absolute; right: 0; top: 50%; transform: translateY(-50%);">
+                            ${lockIndicator}
+                        </span>
                     </div>
                 `;
             }
@@ -2581,6 +2590,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     td.innerText = cell;
                 } else {
                     if (isLocked) td.className = "financial-col-locked";
+                    // So snh t?ng th? v?i c? th? 2026
+                    const cellStr = String(headerRow[cIdx] || "").trim();
+                    const isCurrentYear = cellStr.includes(currentYearStr) || cellStr === "2026";
+                    if (isCurrentYear) td.classList.add("financial-col-current");
                     
                     const val = cell === "" ? 0 : cell;
                     let displayVal = "";
@@ -2591,9 +2604,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         displayVal = pctVal.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
                         td.style.fontWeight = "700";
                         td.style.color = "var(--primary-color)";
-                    } else if ((isPercentageRatio || isOtherRatio || Math.abs(val) < 1000)) {
-                        displayVal = (typeof val === 'number' ? val.toLocaleString('vi-VN', {minimumFractionDigits: (typeof val === 'number' && val % 1 !== 0) ? 2 : 0}) : val);
+                    } else if (isOtherRatio) {
+                        // Giữ lại số lẻ cho các tỷ số đặc biệt nếu cần (vd: Payback time)
+                        displayVal = (typeof val === 'number' ? val.toLocaleString('vi-VN', {minimumFractionDigits: 1, maximumFractionDigits: 1}) : val);
                     } else {
+                        // Tất cả các con số thông thường (Tiền, sản lượng) đều làm tròn nguyên
                         displayVal = formatNumber(val);
                     }
                     
