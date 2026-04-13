@@ -1011,10 +1011,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 newRow["Status"] = document.getElementById('edit-status').value;
                 newRow["Ghi Chú"] = document.getElementById('edit-note').value;
 
-                if (currentTableTab === 'farm') {
-                    const price = parseMoney(document.getElementById('edit-price').value);
+                // Auto-calculate revenue if Price field exists (Farm mode)
+                const priceInput = document.getElementById('edit-price');
+                if (priceInput) {
+                    const price = parseMoney(priceInput.value);
                     newRow["Giá"] = price.toString();
-                    newRow["Doanh Thu Bông"] = (parseFloat(newRow["Số lượng"]) * price).toString();
+                    newRow["Doanh Thu Bông"] = (parseFloat(newRow["Số lượng"] || 0) * price).toString();
                 }
             }
 
