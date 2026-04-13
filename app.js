@@ -1363,12 +1363,14 @@ document.addEventListener("DOMContentLoaded", () => {
             invoiceItem.className = 'invoice-item';
 
             // Chi tiết sản phẩm trong đơn
-            const linesHtml = t.lines.map(l => `
+            const linesHtml = t.lines.map(l => {
+                const unitPriceLabel = l.price ? ` x ${formatCurrency(l.price)}` : '';
+                return `
                 <div class="line-item-row">
-                    <span style="color: #475569;">${l.qty} ${l.flowerType}</span>
+                    <span style="color: #475569;">${l.qty} ${l.flowerType}${unitPriceLabel}</span>
                     <span style="font-weight: 600; color: #1e293b;">${formatCurrency(l.isVua ? l.rawRow["Tiền Phải Thu"] : l.dtBong)}</span>
                 </div>
-            `).join('');
+            `}).join('');
 
             invoiceItem.innerHTML = `
                 <div class="invoice-item-main" style="align-items: center;">
