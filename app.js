@@ -901,7 +901,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <option value="Expensed">Expensed</option>
                     </select>
                 </td>
-                <td><input type="text" class="inline-edit-input" id="edit-exp-note" value="${rowData["Ghi Chú Chi Phí"] || ""}"></td>
+                <td><input type="text" class="inline-edit-input" id="edit-exp-note" value="${rowData["Ghi Chú"] || rowData["Ghi Chú Chi Phí"] || ""}"></td>
                 <td><input type="text" class="inline-edit-input money-input" id="edit-exp-amount" value="${formatMoneyStr(amount)}"></td>
                 <td>
                     <div style="display:flex; gap:5px;">
@@ -996,57 +996,57 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             // 1. Collect Data
-            let newRow = { ...originalData };
-            const dateStr = formatDateVietnamese(originalData.parsedDate);
+            const updates = {};
+            
+            // Luôn đảm bảo Loại DT được giữ nguyên hoặc cập nhật đúng theo tab hiện tại nếu đang trống
+            updates["Loại DT"] = originalData["Loại DT"] || (currentTableTab === 'vua' ? 'Vựa' : 'Farm');
 
             if (currentTableTab === 'expense') {
-                newRow["Loại CP"] = document.getElementById('edit-exp-type').value;
-                newRow["Ghi Chú Chi Phí"] = document.getElementById('edit-exp-note').value;
-                newRow["Chi Phí"] = parseMoney(document.getElementById('edit-exp-amount').value).toString();
-                newRow["Status"] = "Xong";
+                updates["Loại CP"] = document.getElementById('edit-exp-type').value;
+                updates["Ghi Chú"] = document.getElementById('edit-exp-note').value;
+                updates["Chi Phí"] = parseMoney(document.getElementById('edit-exp-amount').value).toString();
             } else {
-                newRow["Người Mua"] = document.getElementById('edit-buyer').value;
-                newRow["Phân Loại Bông"] = document.getElementById('edit-flower-type').value;
-                newRow["Số lượng"] = document.getElementById('edit-qty').value;
-                newRow["Status"] = document.getElementById('edit-status').value;
-                newRow["Ghi Chú"] = document.getElementById('edit-note').value;
+                updates["Người Mua"] = document.getElementById('edit-buyer').value;
+                updates["Phân Loại Bông"] = document.getElementById('edit-flower-type').value;
+                updates["Số lượng"] = document.getElementById('edit-qty').value;
+                updates["Status"] = document.getElementById('edit-status').value;
+                updates["Ghi Chú"] = document.getElementById('edit-note').value;
 
-                // Auto-calculate revenue if Price field exists (Farm mode)
+                // Auto-calculate revenue if Price field exists
                 const priceInput = document.getElementById('edit-price');
                 if (priceInput) {
                     const price = parseMoney(priceInput.value);
-                    newRow["Giá"] = price.toString();
-                    newRow["Doanh Thu Bông"] = (parseFloat(newRow["Số lượng"] || 0) * price).toString();
+                    updates["Giá"] = price.toString();
+                    updates["Doanh Thu Bông"] = (parseFloat(updates["Số lượng"] || 0) * price).toString();
+                }
+                
+                // Đối với Vựa, có các trường khác cần tính toán lại nếu bạn cho phép sửa (hiện tại UI inline edit Vựa đang đơn giản)
+                if (currentTableTab === 'vua') {
+                    updates["Loại DT"] = "Vựa";
                 }
             }
 
-            // Clean for sending
-            const payloadData = { ...newRow };
-            delete payloadData.parsedDate;
-            delete payloadData._sheetRowNumber;
-            payloadData["Ngày"] = dateStr;
+            // 2. Send IN-PLACE Update
+            const sheetRow = originalData._sheetRowNumber;
+            if (!sheetRow) throw new Error("Không xác định được số dòng trên Google Sheets. Hãy tải lại dữ liệu.");
 
-            // 2. Delete old
-            const oldSheetRow = originalData._sheetRowNumber;
-            const delResp = await fetch(CONFIG.WEB_APP_URL, {
+            const response = await fetch(CONFIG.WEB_APP_URL, {
                 method: "POST",
-                body: JSON.stringify({ action: "deleteByRow", rowNumber: oldSheetRow, token: getToken() }),
+                body: JSON.stringify({ 
+                    action: "update", 
+                    rowNumber: sheetRow,
+                    updates: updates,
+                    token: getToken() 
+                }),
                 headers: { "Content-Type": "text/plain;charset=utf-8" }
             });
-            const delRes = await delResp.json();
-            if (delRes.status !== "success") throw new Error("Lỗi khi xóa dòng cũ: " + delRes.message);
-
-            // 3. Add new
-            const addAction = (currentTableTab === 'expense') ? 'add_expense' : 'add';
-            const addResp = await fetch(CONFIG.WEB_APP_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: addAction, data: payloadData, token: getToken() }),
-                headers: { "Content-Type": "text/plain;charset=utf-8" }
-            });
-            const addRes = await addResp.json();
-            if (addRes.status !== "success") throw new Error("Lỗi khi lưu dòng mới: " + addRes.message);
+            
+            const result = await response.json();
+            if (result.status !== "success") throw new Error("Lỗi cập nhật: " + result.message);
 
             showToast("Cập nhật thành công!", "success");
+            
+            // Reload data to show updated state
             const syncBtn = document.getElementById('sync-gsheet-btn');
             if (syncBtn) syncBtn.click();
         } catch (e) {
