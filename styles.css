@@ -1447,9 +1447,24 @@ tbody tr:hover {
   .line-item-row {
     display: grid;
     grid-template-columns: 1fr auto;
-    gap: 10px;
-    padding: 5px 0;
+    gap: 15px;
+    padding: 8px 0;
     border-bottom: 1px dashed #e2e8f0;
+    align-items: flex-start;
+  }
+
+  .line-item-row span:first-child {
+    word-break: break-word;
+    white-space: normal;
+    line-height: 1.4;
+    color: #475569;
+  }
+
+  .line-item-row span:last-child {
+    white-space: nowrap;
+    font-weight: 600;
+    color: #1e293b;
+    text-align: right;
   }
 
   .line-item-row:last-child {
@@ -1477,17 +1492,25 @@ tbody tr:hover {
 .invoice-details-row {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
   font-size: 0.95rem;
+  margin-bottom: 4px;
 }
 
 .invoice-desc {
   color: #1e293b;
   font-weight: 500;
+  flex: 1;
+  word-break: break-word;
+  line-height: 1.4;
 }
 
 .invoice-amount {
   font-weight: 700;
   color: var(--primary-color);
+  white-space: nowrap;
+  text-align: right;
 }
 
 .invoice-sub-row {
@@ -2308,7 +2331,12 @@ tr.swiping td:first-child::before {
 
 /* Cột Ngày */
 .receipt-table th:first-child, .receipt-table td:first-child {
-    width: 60px;
+    width: 65px;
+}
+
+/* Cột Chi tiết */
+.receipt-table th:nth-child(2), .receipt-table td:nth-child(2) {
+    width: auto;
 }
 
 /* Cột Thành tiền */
@@ -2316,7 +2344,7 @@ tr.swiping td:first-child::before {
 .receipt-table td:last-child {
     text-align: right;
     white-space: nowrap;
-    width: 85px;
+    width: 95px;
     font-weight: 700;
 }
 

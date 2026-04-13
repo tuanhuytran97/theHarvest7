@@ -4407,8 +4407,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             row.innerHTML = `
-                <td style="color: #64748b; width: 80px; font-size: 0.8rem;">${shortDateWithYear}</td>
-                <td>
+                <td style="color: #64748b; font-size: 0.8rem;">${shortDateWithYear}</td>
+                <td style="word-break: break-word; white-space: normal;">
                     <div>${summary}</div>
                     ${t.paid > 0 ? `<div style="font-size: 0.75rem; color: #059669; margin-top: 2px;">✅ Đã thu: ${formatCurrency(t.paid)}</div>` : ''}
                 </td>
