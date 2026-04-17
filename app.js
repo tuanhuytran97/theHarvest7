@@ -618,6 +618,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <th data-sort="Số lượng">SL <i class="fa-solid fa-sort"></i></th>
                     <th data-sort="Tiền Phải Thu">Phải Thu <i class="fa-solid fa-sort"></i></th>
                     <th data-sort="Doanh Thu Khác">Doanh Thu <i class="fa-solid fa-sort"></i></th>
+                    <th data-sort="Đã Thu">Đã Thu <i class="fa-solid fa-sort"></i></th>
                     <th>Status</th>
                     <th>Ghi Chú</th>
                     <th>Thao Tác</th>
@@ -631,6 +632,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <th data-sort="Số lượng">Số Lượng <i class="fa-solid fa-sort"></i></th>
                     <th data-sort="Giá">Giá <i class="fa-solid fa-sort"></i></th>
                     <th data-sort="Doanh Thu Bông">Doanh Thu Bông <i class="fa-solid fa-sort"></i></th>
+                    <th data-sort="Đã Thu">Đã Thu <i class="fa-solid fa-sort"></i></th>
                     <th>Trạng Thái</th>
                     <th>Ghi Chú</th>
                     <th>Thao Tác</th>
@@ -651,7 +653,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (dataToRender.length === 0) {
-            const colCount = currentTableTab === 'expense' ? 6 : 10;
+            const colCount = currentTableTab === 'expense' ? 6 : 11;
             tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;color:var(--text-light)">Không tìm thấy giao dịch nào.</td></tr>`;
             return;
         }
@@ -706,6 +708,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td data-label="SL">${row["Số lượng"] ? row["Số lượng"].toLocaleString('vi-VN') : 0}</td>
                     <td data-label="Phải Thu" style="color:var(--primary-color); font-weight:600;">${formatCurrency(pt)}</td>
                     <td data-label="Doanh Thu" style="color:#ec4899; font-weight:700;">${formatCurrency(dt)}</td>
+                    <td data-label="Đã Thu" style="color:#10b981; font-weight:700;">${formatCurrency(parseFloat(String(row["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0)}</td>
                     <td data-label="Status">${row["Status"] ? `<span class="${statusClass}">${row["Status"]}</span>` : ''}</td>
                     <td data-label="Ghi chú" title="${row["Ghi Chú"] || ''}">${(row["Ghi Chú"] || '').substring(0, 15)}${(row["Ghi Chú"] || '').length > 15 ? '...' : ''}</td>
                     <td data-label="Thao tác">
@@ -740,6 +743,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             ${(!row["Doanh Thu Bông"] && !row["Khoản Thu Chi Bất Thường"]) ? '0 ₫' : ''}
                         </div>
                     </td>
+                    <td data-label="Đã Thu" style="color:#10b981; font-weight:700;">${formatCurrency(parseFloat(String(row["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0)}</td>
 
                     <td data-label="Status">${row["Status"] ? `<span class="status-badge ${statusClass}">${row["Status"]}</span>` : ''}</td>
                     <td data-label="Ghi chú" title="${row["Ghi Chú"] || row["Ghi Chú Thu Chi Bất Thường"] || ''}">${(row["Ghi Chú"] || row["Ghi Chú Thu Chi Bất Thường"] || '').substring(0, 20)}${(row["Ghi Chú"] || row["Ghi Chú Thu Chi Bất Thường"] || '').length > 20 ? '...' : ''}</td>
@@ -765,24 +769,29 @@ document.addEventListener("DOMContentLoaded", () => {
         // THÊM DÒNG TỔNG DOANH THU (Chỉ hiện khi có dữ liệu)
         if (dataToRender.length > 0) {
             let totalRevenue = 0;
+            let totalPaid = 0;
             dataToRender.forEach(row => {
                 const dtBong = parseFloat(String(row["Doanh Thu Bông"] || "0").replace(/[^\d]/g, '')) || 0;
                 const dtKhac = parseFloat(String(row["Doanh Thu Khác"] || "0").replace(/[^\d]/g, '')) || 0;
+                const daThu = parseFloat(String(row["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0;
                 totalRevenue += (dtBong + dtKhac);
+                totalPaid += daThu;
             });
 
             const totalTr = document.createElement('tr');
             totalTr.className = 'total-row';
             totalTr.style.cssText = 'background: rgba(16, 185, 129, 0.05); border-top: 2px dashed var(--success); font-weight: 800;';
             
-            const colCount = currentTableTab === 'expense' ? 6 : 10;
+            const colCount = currentTableTab === 'expense' ? 6 : 11;
 
             let cellsHtml = '';
             for (let i = 0; i < colCount; i++) {
                 if (i === 4) { // Cột Phân Loại / Số Lượng
-                    cellsHtml += `<td style="text-align: right; color: var(--text-dark);">TỔNG DOANH THU:</td>`;
+                    cellsHtml += `<td style="text-align: right; color: var(--text-dark);">TỔNG CỘNG:</td>`;
                 } else if (i === 6) { // Cột Doanh Thu
-                    cellsHtml += `<td style="color: var(--success); font-size: 1.1rem;">${formatCurrency(totalRevenue)}</td>`;
+                    cellsHtml += `<td style="color: var(--secondary-color); font-size: 1.1rem;">${formatCurrency(totalRevenue)}</td>`;
+                } else if (i === 7) { // Cột Đã Thu
+                    cellsHtml += `<td style="color: var(--success); font-size: 1.1rem;">${formatCurrency(totalPaid)}</td>`;
                 } else {
                     cellsHtml += `<td></td>`;
                 }
