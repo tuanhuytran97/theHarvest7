@@ -1915,6 +1915,11 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('yearly-report-charts').style.display = (isMonth || isQuarter) ? 'none' : 'grid';
             document.getElementById('monthly-report-charts').style.display = (isMonth || isQuarter) ? 'grid' : 'none';
 
+            const chartTitleSpan = document.querySelector('#monthly-report-charts h2 span');
+            if (chartTitleSpan) {
+                chartTitleSpan.innerText = isMonth ? 'Báo Cáo Chi Tiết Tháng' : 'Báo Cáo Chi Tiết Quý';
+            }
+
             const kpiLabels = document.querySelectorAll('.kpi-cards h3');
             kpiLabels.forEach(label => {
                 let context = isMonth ? 'T.Tháng' : (isQuarter ? 'T.Quý' : 'T.Năm');
@@ -2094,6 +2099,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const yearlyMonthlyData = Array.from({ length: 12 }, () => ({ qty: 0, revenue: 0, expense: 0 }));
         const dailyData = [];
+        const quarterData = [
+            { qty: 0, revFarm: 0, revVua: 0, expense: 0 },
+            { qty: 0, revFarm: 0, revVua: 0, expense: 0 },
+            { qty: 0, revFarm: 0, revVua: 0, expense: 0 }
+        ];
 
         farmData.forEach(row => {
             const d = row.parsedDate;
@@ -2194,6 +2204,20 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (isVua) dailyData[dayIdx].revVua += dtKhac;
                         dailyData[dayIdx].expense += exp;
                     }
+                } else if (isQuarterRange) {
+                    let quarterStartMonthObj;
+                    if (rangeVal === 'q1') quarterStartMonthObj = 0;
+                    else if (rangeVal === 'q2') quarterStartMonthObj = 3;
+                    else if (rangeVal === 'q3') quarterStartMonthObj = 6;
+                    else if (rangeVal === 'q4') quarterStartMonthObj = 9;
+
+                    const monthIdxInQuarter = d.getMonth() - quarterStartMonthObj;
+                    if (monthIdxInQuarter >= 0 && monthIdxInQuarter < 3) {
+                        quarterData[monthIdxInQuarter].qty += q;
+                        quarterData[monthIdxInQuarter].revFarm += dtBong;
+                        if (isVua) quarterData[monthIdxInQuarter].revVua += dtKhac;
+                        quarterData[monthIdxInQuarter].expense += exp;
+                    }
                 }
             } else if (isPrev) {
                 prevQty += q; prevRevenue += rev; prevExpense += exp;
@@ -2260,6 +2284,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
             renderMonthlyCombinedChart(filteredDays.map(fd => fd.label), filteredDays.map(fd => fd.data), selectedMonth, selectedYear);
+        } else if (isQuarterRange) {
+            let quarterStartNum = (parseInt(rangeVal.substring(1)) - 1) * 3 + 1;
+            const labels = [
+                `Tháng ${quarterStartNum}`,
+                `Tháng ${quarterStartNum + 1}`,
+                `Tháng ${quarterStartNum + 2}`
+            ];
+            renderMonthlyCombinedChart(labels, quarterData, null, selectedYear);
         }
     }
 
