@@ -575,15 +575,16 @@ document.addEventListener("DOMContentLoaded", () => {
         addFlowerBtn.addEventListener('click', () => {
             const item = document.createElement('div');
             item.className = 'flower-item';
+            item.style.cssText = 'display: grid; grid-template-columns: 0.6fr 1.2fr 1.2fr 1.5fr 30px; gap: 10px; align-items: center;';
             item.innerHTML = `
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
+                    <input type="number" placeholder="0" class="fw-qty" min="0" required>
+                </div>
                 <div class="form-group" style="margin: 0;">
                     <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Loại mặt hàng</label>
                     <input type="text" class="fw-type" list="flower-types" placeholder="Tên hoa..." required
                         style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;">
-                </div>
-                <div class="form-group" style="margin: 0;">
-                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
-                    <input type="number" placeholder="0" class="fw-qty" min="0" required>
                 </div>
                 <div class="form-group" style="margin: 0;">
                     <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Đơn Giá</label>
