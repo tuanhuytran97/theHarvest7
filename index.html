@@ -86,7 +86,7 @@
             filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.5));
         }
 
-        #modal-adjust-cash.cash-modal-overlay {
+        .cash-modal-overlay {
             position: fixed !important;
             top: 0 !important;
             left: 0 !important;
@@ -102,7 +102,7 @@
             padding: 1rem;
         }
 
-        #modal-adjust-cash .cash-modal-box {
+        .cash-modal-overlay .cash-modal-box {
             background: white !important;
             border-radius: 24px !important;
             width: 100% !important;
@@ -115,7 +115,7 @@
             flex-direction: column;
         }
 
-        #modal-adjust-cash .modal-header-premium {
+        .cash-modal-overlay .modal-header-premium {
             background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
             padding: 1.5rem 2rem !important;
             display: flex !important;
@@ -125,7 +125,7 @@
             border: none !important;
         }
 
-        #modal-adjust-cash .modal-icon-adjust {
+        .cash-modal-overlay .modal-icon-adjust {
             width: 48px;
             height: 48px;
             background: rgba(255, 255, 255, 0.3) !important;
@@ -136,7 +136,7 @@
             font-size: 1.5rem !important;
         }
 
-        #modal-adjust-cash .modal-title-group h3 {
+        .cash-modal-overlay .modal-title-group h3 {
             margin: 0 !important;
             font-size: 1.25rem !important;
             font-weight: 800 !important;
@@ -145,23 +145,23 @@
             line-height: 1.2 !important;
         }
 
-        #modal-adjust-cash .modal-title-group p {
+        .cash-modal-overlay .modal-title-group p {
             margin: 2px 0 0 0 !important;
             font-size: 0.85rem !important;
             color: rgba(255,255,255,0.9) !important;
             font-weight: 500 !important;
         }
 
-        #modal-adjust-cash .cash-modal-body {
+        .cash-modal-overlay .cash-modal-body {
             padding: 2rem !important;
             background: white !important;
         }
 
-        #modal-adjust-cash .cash-modal-field {
+        .cash-modal-overlay .cash-modal-field {
             margin-bottom: 1.5rem !important;
         }
 
-        #modal-adjust-cash .cash-modal-field label {
+        .cash-modal-overlay .cash-modal-field label {
             display: flex !important;
             align-items: center !important;
             gap: 8px !important;
@@ -171,7 +171,7 @@
             margin-bottom: 8px !important;
         }
 
-        #modal-adjust-cash .cash-modal-field input {
+        .cash-modal-overlay .cash-modal-field input {
             width: 100% !important;
             padding: 14px 16px !important;
             background: #f8fafc !important;
@@ -185,20 +185,20 @@
             box-sizing: border-box !important;
         }
 
-        #modal-adjust-cash .cash-modal-field input:focus {
+        .cash-modal-overlay .cash-modal-field input:focus {
             background: white !important;
             border-color: #f59e0b !important;
             box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15) !important;
         }
 
-        #modal-adjust-cash .cash-modal-actions {
+        .cash-modal-overlay .cash-modal-actions {
             padding: 0 2rem 2rem 2rem !important;
             display: flex !important;
             gap: 12px !important;
             background: white !important;
         }
 
-        #modal-adjust-cash .btn-save-premium {
+        .cash-modal-overlay .btn-save-premium {
             flex: 2 !important;
             background: #0f172a !important;
             color: white !important;
@@ -214,7 +214,7 @@
             font-size: 1rem !important;
         }
 
-        #modal-adjust-cash .btn-cancel-premium {
+        .cash-modal-overlay .btn-cancel-premium {
             flex: 1 !important;
             background: #f1f5f9 !important;
             color: #475569 !important;
@@ -821,20 +821,6 @@
 
                     </div>
 
-                    <!-- Financial Ratios Summary (Wrapped in a frame) -->
-                    <section class="card glassmorphism" style="margin-bottom: 2rem; padding: 1.25rem;">
-                        <h2 id="financial-health-title" style="margin: 0 0 1rem 0; font-size: 1rem; color: var(--text-dark); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                            <span style="display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-heart-pulse" style="color: var(--danger);"></i> Sức Khỏe Tài Chính (Năm)
-                            </span>
-                            <span id="financial-year-status" style="font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: rgba(0,0,0,0.05); color: var(--text-light);">
-                                <!-- Status Badge (Audited or Goal) -->
-                            </span>
-                        </h2>
-                        <div id="dashboard-financial-ratios" class="financial-ratios-summary-container" style="margin-bottom: 0;">
-                            <!-- Will be populated by JS -->
-                        </div>
-                    </section>
 
                     <!-- KPI Cards Section -->
                     <section class="kpi-cards" style="margin-bottom: 2rem;">
@@ -1025,12 +1011,33 @@
                             <h2 style="margin: 0; font-size: 1.5rem; color: var(--text-dark);"><i class="fa-solid fa-file-invoice-dollar"></i> Báo Cáo Tài Chính</h2>
                             <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: var(--text-light);">Bảng cân đối kế toán & Chỉ số tài chính qua các năm</p>
                         </div>
-                        <div style="display: flex; gap: 1rem;">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <label for="financial-ratios-year" style="font-size: 0.85rem; color: var(--text-light); font-weight: 600;">Xem năm:</label>
+                                <select id="financial-ratios-year" style="padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); font-weight: 700; color: var(--primary-color); outline: none;">
+                                    <!-- Populated by JS -->
+                                </select>
+                            </div>
                             <button id="sync-financial-btn" class="btn-primary" style="background-color: #6366f1;">
                                 <i class="fa-solid fa-arrows-rotate"></i> Làm mới dữ liệu
                             </button>
                         </div>
                     </div>
+                    
+                    <!-- Annual Financial Health Summary -->
+                    <section class="card glassmorphism" style="margin-bottom: 2rem; padding: 1.25rem;">
+                        <h2 style="margin: 0 0 1rem 0; font-size: 1rem; color: var(--text-dark); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                            <span style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-heart-pulse" style="color: var(--danger);"></i> Sức Khỏe Tài Chính (<span id="annual-health-year-text">...</span>)
+                            </span>
+                            <span id="annual-year-status" style="font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: rgba(0,0,0,0.05); color: var(--text-light);">
+                                <!-- Status Badge -->
+                            </span>
+                        </h2>
+                        <div id="annual-financial-ratios" class="financial-ratios-summary-container" style="margin-bottom: 0;">
+                            <!-- Populated by JS -->
+                        </div>
+                    </section>
 
                     <div class="card glassmorphism financial-table-container-card" style="padding: 0; overflow: hidden; border-radius: 12px;">
                         <div class="financial-table-responsive" style="overflow-x: auto; max-width: 100%;">
@@ -1365,7 +1372,7 @@
             <div class="cash-modal-body">
                 <div class="cash-modal-field">
                     <label><i class="fa-solid fa-money-bill-wave"></i> Số tiền (VNĐ)</label>
-                    <input type="text" id="input-adj-amount" placeholder="VD: +500.000 (Thu) hoặc -200.000 (Chi)" autocomplete="off">
+                    <input type="text" id="input-adj-amount" class="money-input-signed" placeholder="VD: +500.000 (Thu) hoặc -200.000 (Chi)" autocomplete="off">
                 </div>
                 <div class="cash-modal-field">
                     <label><i class="fa-solid fa-comment-dots"></i> Lý do (Ghi chú)</label>
@@ -1378,6 +1385,37 @@
                     <i class="fa-solid fa-check"></i> Lưu bản ghi
                 </button>
                 <button id="btn-cancel-adj" class="btn-cancel-premium">
+                    Hủy bỏ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Thanh toán một phần / Thanh toán đơn lẻ -->
+    <div id="modal-partial-pay" class="cash-modal-overlay" style="display:none;">
+        <div class="cash-modal-box glassmorphism">
+            <div class="modal-header-premium">
+                <div class="modal-icon-adjust" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+                <div class="modal-title-group">
+                    <h3 id="modal-pay-title">Thanh toán nợ</h3>
+                    <p id="modal-pay-subtitle">Ghi nhận số tiền thanh toán</p>
+                </div>
+            </div>
+
+            <div class="cash-modal-body">
+                <div class="cash-modal-field">
+                    <label><i class="fa-solid fa-money-bill-wave"></i> Số tiền thanh toán (VNĐ)</label>
+                    <input type="text" id="input-pay-amount" class="money-input" placeholder="VD: 500.000" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="cash-modal-actions">
+                <button id="btn-confirm-pay" class="btn-save-premium">
+                    <i class="fa-solid fa-check"></i> Xác nhận
+                </button>
+                <button id="btn-cancel-pay" class="btn-cancel-premium">
                     Hủy bỏ
                 </button>
             </div>

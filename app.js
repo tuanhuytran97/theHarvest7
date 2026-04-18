@@ -329,16 +329,47 @@ document.addEventListener("DOMContentLoaded", () => {
         return parseFloat(String(val).replace(/[^\d]/g, '')) || 0;
     }
 
+    function parseSignedMoney(val) {
+        if (!val) return 0;
+        let sign = 1;
+        const s = String(val).trim();
+        if (s.startsWith('-')) sign = -1;
+        const num = parseFloat(s.replace(/[^\d]/g, '')) || 0;
+        return sign * num;
+    }
+
     function formatMoneyStr(num) {
         if (num === 0) return "0";
         if (!num) return "";
         return new Intl.NumberFormat('vi-VN').format(num);
     }
 
+    function formatSignedMoneyStr(num) {
+        if (num === 0) return "0đ";
+        const sign = num > 0 ? "+" : (num < 0 ? "-" : "");
+        const absVal = Math.abs(num);
+        return sign + new Intl.NumberFormat('vi-VN').format(absVal) + "đ";
+    }
+
     document.addEventListener('input', (e) => {
         if (e.target.classList.contains('money-input')) {
             const val = parseMoney(e.target.value);
             e.target.value = val === 0 ? "0" : formatMoneyStr(val);
+        }
+        if (e.target.classList.contains('money-input-signed')) {
+            let valStr = e.target.value;
+            let sign = "";
+            if (valStr.startsWith('+')) sign = "+";
+            else if (valStr.startsWith('-')) sign = "-";
+            
+            const num = parseFloat(valStr.replace(/[^\d]/g, '')) || 0;
+            if (num === 0 && sign === "") {
+                e.target.value = "";
+            } else if (num === 0 && sign !== "") {
+                e.target.value = sign;
+            } else {
+                e.target.value = sign + new Intl.NumberFormat('vi-VN').format(num) + "đ";
+            }
         }
     });
 
@@ -1455,6 +1486,46 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Custom Modal for Payment Input
+    function showPaymentModal(title, subtitle, defaultAmount) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('modal-partial-pay');
+            const titleEl = document.getElementById('modal-pay-title');
+            const subtitleEl = document.getElementById('modal-pay-subtitle');
+            const inputAmount = document.getElementById('input-pay-amount');
+            const btnConfirm = document.getElementById('btn-confirm-pay');
+            const btnCancel = document.getElementById('btn-cancel-pay');
+
+            titleEl.innerText = title;
+            subtitleEl.innerHTML = subtitle.replace(/\n/g, '<br>');
+            inputAmount.value = defaultAmount ? defaultAmount : '';
+            
+            modal.style.display = 'flex';
+            setTimeout(() => inputAmount.focus(), 100);
+
+            let cleanup;
+
+            const onConfirm = () => {
+                cleanup();
+                resolve(inputAmount.value);
+            };
+
+            const onCancel = () => {
+                cleanup();
+                resolve(null);
+            };
+
+            cleanup = () => {
+                modal.style.display = 'none';
+                btnConfirm.removeEventListener('click', onConfirm);
+                btnCancel.removeEventListener('click', onCancel);
+            };
+
+            btnConfirm.addEventListener('click', onConfirm);
+            btnCancel.addEventListener('click', onCancel);
+        });
+    }
+
     // Process payment calls
     async function processPayment(isFull) {
         if (!isAuthorizedForDebt()) {
@@ -1466,7 +1537,11 @@ document.addEventListener("DOMContentLoaded", () => {
         let amountToPay = totalDebt;
 
         if (!isFull) {
-            const rawInput = prompt(`Tổng nợ hiện tại là ${formatCurrency(totalDebt)}.\nNhập số tiền muốn thanh toán (VNĐ):`, "");
+            const rawInput = await showPaymentModal(
+                "Thanh toán nợ", 
+                `Tổng nợ hiện tại: <b>${formatCurrency(totalDebt)}</b>\nNhập số tiền muốn thanh toán (VNĐ):`, 
+                ""
+            );
             if (!rawInput) return;
             amountToPay = parseFloat(rawInput.replace(/[^\d]/g, ''));
             if (isNaN(amountToPay) || amountToPay <= 0 || amountToPay > totalDebt) {
@@ -1666,7 +1741,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const remaining = t.totalExpected - t.paid;
-        const rawInput = prompt(`Thanh toán cho ngày ${t.dateStr}\nSố nợ còn lại: ${formatCurrency(remaining)}\n\nNhập số tiền muốn trả (Mặc định: trả hết):`, formatMoneyStr(remaining));
+        const rawInput = await showPaymentModal(
+            `Thanh toán ngày ${t.dateStr}`, 
+            `Số nợ còn lại: <b>${formatCurrency(remaining)}</b>\n\nNhập số tiền muốn trả (Mặc định: trả hết):`, 
+            formatMoneyStr(remaining)
+        );
         
         if (rawInput === null) return; // Cancel
         
@@ -1914,6 +1993,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const yearSelect = document.getElementById('report-year');
         const cmpY1Select = document.getElementById('cmp-year1');
         const cmpY2Select = document.getElementById('cmp-year2');
+        const prevYearSelect = document.getElementById('report-year-prev');
+        const cfYearSelect = document.getElementById('cashflow-year');
+        const cfYearSelect2 = document.getElementById('cashflow-year-2');
+        const annualRatiosYearSelect = document.getElementById('financial-ratios-year');
+
         const years = new Set();
         farmData.forEach(row => {
             if (row.parsedDate && !isNaN(row.parsedDate.getTime())) {
@@ -1922,42 +2006,25 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const sortedYears = Array.from(years).sort((a, b) => b - a);
-        const prevYearSelect = document.getElementById('report-year-prev');
-        const cfYearSelect = document.getElementById('cashflow-year');
-        const cfYearSelect2 = document.getElementById('cashflow-year-2');
-
-        yearSelect.innerHTML = '';
-        if (cmpY1Select) cmpY1Select.innerHTML = '';
-        if (cmpY2Select) cmpY2Select.innerHTML = '';
-        if (prevYearSelect) prevYearSelect.innerHTML = '';
-        if (cfYearSelect) cfYearSelect.innerHTML = '';
-        if (cfYearSelect2) cfYearSelect2.innerHTML = '';
-
-        sortedYears.forEach(year => {
-            const createOpt = (y) => {
-                const opt = document.createElement('option');
-                opt.value = y; opt.textContent = y;
-                return opt;
-            };
-
-            yearSelect.appendChild(createOpt(year));
-            if (cmpY1Select) cmpY1Select.appendChild(createOpt(year));
-            if (cmpY2Select) cmpY2Select.appendChild(createOpt(year));
-            if (prevYearSelect) prevYearSelect.appendChild(createOpt(year));
-            if (cfYearSelect) cfYearSelect.appendChild(createOpt(year));
-            if (cfYearSelect2) cfYearSelect2.appendChild(createOpt(year));
+        const allYearSelectors = [yearSelect, cmpY1Select, cmpY2Select, prevYearSelect, cfYearSelect, cfYearSelect2, annualRatiosYearSelect];
+        
+        allYearSelectors.forEach(sel => {
+            if (!sel) return;
+            sel.innerHTML = sortedYears.map(y => `<option value="${y}">${y}</option>`).join('');
         });
 
         const currentYear = new Date().getFullYear();
         const currentMonthNum = new Date().getMonth() + 1;
+
         if (years.has(currentYear)) {
-            yearSelect.value = currentYear;
+            if (yearSelect) yearSelect.value = currentYear;
+            if (annualRatiosYearSelect) annualRatiosYearSelect.value = currentYear;
+            
             const monthSelect = document.getElementById('report-month');
             if (monthSelect) monthSelect.value = currentMonthNum;
 
             if (cmpY2Select) cmpY2Select.value = currentYear;
-            const cfYearSelect = document.getElementById('cashflow-year');
-            const cfYearSelect2 = document.getElementById('cashflow-year-2');
+            
             const cfMonthSelect = document.getElementById('cashflow-month');
             const cfMonthSelect2 = document.getElementById('cashflow-month-2');
 
@@ -2132,8 +2199,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // --- NEW: Update Financial Ratios Summary ---
-        updateDashboardFinancialRatios(selectedYear);
 
         const totalProfit = totalRevenue - totalExpense;
         const prevProfit = prevRevenue - prevExpense;
@@ -2197,8 +2262,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function updateDashboardFinancialRatios(year) {
-        const container = document.getElementById('dashboard-financial-ratios');
+    function updateDashboardFinancialRatios(year, targetConfig = null) {
+        const config = targetConfig || {
+            container: 'dashboard-financial-ratios',
+            status: 'financial-year-status',
+            yearText: null
+        };
+
+        const container = document.getElementById(config.container);
         if (!container) return;
 
         const cacheJson = localStorage.getItem('cached_financial_report');
@@ -2217,7 +2288,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const currentYear = now.getFullYear();
             const currentMonth = now.getMonth() + 1;
             const yearNum = parseInt(year);
-            const statusEl = document.getElementById('financial-year-status');
+            const statusEl = document.getElementById(config.status);
 
             if (statusEl) {
                 if (yearNum < currentYear) {
@@ -2235,6 +2306,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     statusEl.style.color = '#4f46e5';
                 }
             }
+
+            const yearTextEl = config.yearText ? document.getElementById(config.yearText) : null;
+            if (yearTextEl) yearTextEl.innerText = year;
 
             const headerRow = values[0];
             const yearIdx = headerRow.findIndex(cell => String(cell).includes(year));
@@ -2258,14 +2332,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const equityCurr = findVal("VỐN CHỦ SỞ HỮU") || 0;
             const equityPrev = (yearIdx > 1) ? (findValAtCol("VỐN CHỦ SỞ HỮU", yearIdx - 1) || 0) : 0;
             const netProfit = findVal("LỢI NHUẬN SAU THUẾ") || findVal("LỢI NHUẬN") || 0;
-
-            let goalRatio = 0;
-            if (equityCurr !== 0 && netProfit !== 0) {
-                const diff = equityCurr - equityPrev;
-                if (diff !== 0) {
-                    goalRatio = netProfit / diff;
-                }
-            }
 
             const formatPct = (val) => {
                 if (typeof val !== 'number') return "N/A";
@@ -2315,6 +2381,17 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (e) {
             console.error(e);
         }
+    }
+
+    const annualRatiosYearSelect = document.getElementById('financial-ratios-year');
+    if (annualRatiosYearSelect) {
+        annualRatiosYearSelect.addEventListener('change', () => {
+            updateDashboardFinancialRatios(annualRatiosYearSelect.value, {
+                container: 'annual-financial-ratios',
+                status: 'annual-year-status',
+                yearText: 'annual-health-year-text'
+            });
+        });
     }
 
     // Cashflow Filter listeners
@@ -2522,6 +2599,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 renderFinancialTable(result);
                 // Vẫn hiện loading mờ để báo hiệu đang kiểm tra bản mới nhất trong background
                 if (tableContainer) tableContainer.style.opacity = '0.7';
+                
+                // Update Annual Financial Ratios from cache
+                const annSel = document.getElementById('financial-ratios-year');
+                if (annSel && annSel.value) {
+                    updateDashboardFinancialRatios(annSel.value, {
+                        container: 'annual-financial-ratios',
+                        status: 'annual-year-status',
+                        yearText: 'annual-health-year-text'
+                    });
+                }
             } catch (e) {
                 console.error("Cache error", e);
             }
@@ -2541,6 +2628,16 @@ document.addEventListener("DOMContentLoaded", () => {
             if (result.status === "success") {
                 localStorage.setItem(cacheKey, JSON.stringify(result));
                 renderFinancialTable(result);
+                
+                // Update Annual Financial Ratios from new data
+                const annSel = document.getElementById('financial-ratios-year');
+                if (annSel && annSel.value) {
+                    updateDashboardFinancialRatios(annSel.value, {
+                        container: 'annual-financial-ratios',
+                        status: 'annual-year-status',
+                        yearText: 'annual-health-year-text'
+                    });
+                }
             } else {
                 showToast("Lỗi tải báo cáo: " + result.message, "error");
             }
@@ -3636,7 +3733,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     if (btnCancelAdj) btnCancelAdj.addEventListener('click', () => { if (modalAdj) modalAdj.style.display = 'none'; });
     if (btnSaveAdj) btnSaveAdj.addEventListener('click', async () => {
-        const amount = parseFloat((inputAdjAmount?.value || '').replace(/,/g, '').trim());
+        const amount = parseSignedMoney(inputAdjAmount?.value || '');
         if (isNaN(amount) || amount === 0) { showToast("Số tiền không hợp lệ!", "error"); return; }
         const note = inputAdjNote?.value?.trim() || 'Khoản thu bất thường';
         btnSaveAdj.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; btnSaveAdj.disabled = true;
@@ -3651,18 +3748,26 @@ document.addEventListener("DOMContentLoaded", () => {
             })).json();
             if (res.status === "success") {
                 if (modalAdj) modalAdj.style.display = 'none';
-                showToast(`Đã ghi khoản bất thường ${amount > 0 ? '+' : ''}${formatCurrency(amount)} — ${note}`, "success");
+                showToast(`Đã ghi khoản bất thường ${formatSignedMoneyStr(amount)} — ${note}`, "success");
                 document.getElementById('sync-gsheet-btn')?.click();
             } else throw new Error(res.message);
         } catch(e) { showToast("Lỗi: " + e.message, "error"); }
         btnSaveAdj.innerHTML = 'Lưu bản ghi'; btnSaveAdj.disabled = false;
     });
 
-    // Close modals by clicking outside (Modal Opening Balance removed)
-    [modalAdj].forEach(m => {
-        if (m) m.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; });
+    // Close modals by clicking outside
+    [modalAdj, document.getElementById('modal-partial-pay')].forEach(m => {
+        if (m) m.addEventListener('click', e => { 
+            if (e.target === m) {
+                m.style.display = 'none'; 
+                // Since this modal resolves a promise, clicking outside won't immediately resolve it unless we capture it. 
+                // Currently, clicking outside just hides it (leaving the promise hanging).
+                // Actually, wait, let's trigger the cancel button instead to resolve the promise.
+                const cancelBtn = m.querySelector('.btn-cancel-premium');
+                if (cancelBtn) cancelBtn.click();
+            }
+        });
     });
-
 
 
 
