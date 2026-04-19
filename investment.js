@@ -360,13 +360,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     tr.title = `Luận điểm Mua: ${item["Luận Điểm Đầu Tư"]}`;
                     tr.innerHTML = `
                         <td style="font-weight: 700; color: #0f172a;">${item["Mã/Tên"]} <br> <span style="font-size: 0.75rem; color: #64748b; font-weight: normal;">${item["Phân Loại"]}</span></td>
-                        <td>${timeStr}</td>
                         <td style="font-weight: 700; color: #3b82f6;">${new Intl.NumberFormat('vi-VN').format(totalQty)}</td>
-                        <td style="font-weight: 600;">${window.formatCurrency ? window.formatCurrency(item.capital) : item.capital}</td>
-                        <td>${window.formatCurrency ? window.formatCurrency(item["Định Giá Lý Thuyết"]) : item["Định Giá Lý Thuyết"]}</td>
                         <td style="color: #eab308; font-weight: 700;">${displayUnitPrice}</td>
+                        <td style="font-weight: 600;">${window.formatCurrency ? window.formatCurrency(item.capital) : item.capital}</td>
                         <td style="color: #0f172a; font-weight: 700;">${window.formatCurrency ? window.formatCurrency(currentVal) : currentVal}</td>
                         <td style="font-weight: bold;"><span style="color: ${profitVal >= 0 ? '#10b981' : '#ef4444'}">${profitStr}</span></td>
+                        <td>${timeStr}</td>
+                        <td>${window.formatCurrency ? window.formatCurrency(item["Định Giá Lý Thuyết"]) : item["Định Giá Lý Thuyết"]}</td>
                         <td><span class="status-badge status-pending" style="background:#f1f5f9; color:#475569;">Đang nắm giữ</span></td>
                         <td style="display: flex; gap: 8px;">
                             <button class="action-btn" title="Giao Dịch" onclick="window.openInvTxModal('${item["Mã/Tên"]}')" style="background: #10b981; color: white;"><i class="fa-solid fa-money-bill-transfer"></i></button>
