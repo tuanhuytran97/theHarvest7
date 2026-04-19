@@ -2,8 +2,128 @@
  * INVESTMENT MODULE (BUFFETT STYLE)
  * Tách biệt logic quản lý danh mục đầu tư
  */
+
+// --- GLOBAL STATE ---
+let invPortfolioData = []; // To be loaded from GS
+let invCashFlowData = [];  // To be loaded from GS
+
+// --- RENDER LOGIC (Hoisted) ---
+function renderInvestmentPortfolio() {
+    const tbody = document.getElementById('inv-portfolio-body');
+    let totalCapital = 0, totalCurrent = 0, totalDivs = 0, totalIntrinsic = 0;
+
+    if (tbody) {
+        tbody.innerHTML = '';
+        if (invPortfolioData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem;">Chưa có danh mục đầu tư nào.</td></tr>`;
+        } else {
+            invPortfolioData.forEach(item => {
+                const unitPrice = parseFloat(item["Giá Hiện Tại"]) || 0;
+                const totalQty = item.totalQty || 1; 
+                const currentVal = unitPrice * totalQty;
+                
+                const unitIntrinsic = parseFloat(item["Định Giá Lý Thuyết"]) || 0;
+                const intrinsicVal = unitIntrinsic * totalQty; 
+
+                totalCapital += item.capital || 0;
+                totalCurrent += currentVal;
+                totalDivs += parseFloat(item["Dòng Tiền Đã Nhận"]) || item.divs || 0;
+                totalIntrinsic += intrinsicVal;
+
+                // Fix Date parsing (handle JS Date or Excel serial)
+                let startDate = new Date();
+                const rawDate = item["Ngày Bắt Đầu"];
+                if (rawDate) {
+                    const dateStr = String(rawDate);
+                    if (!isNaN(rawDate) && rawDate > 20000) { // Excel Serial
+                         startDate = window.utils && window.utils.excelToJsDate ? 
+                                     window.utils.excelToJsDate(parseFloat(rawDate)) : 
+                                     new Date(new Date(1899, 11, 30).getTime() + parseFloat(rawDate) * 86400000);
+                    } else if (dateStr.includes("T")) { // standard date string
+                         startDate = new Date(dateStr);
+                    } else { // DD/MM/YYYY
+                         const parts = dateStr.split("/");
+                         if (parts.length === 3) startDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                         else startDate = new Date(dateStr);
+                    }
+                }
+
+                const diffDays = Math.floor(Math.abs(new Date() - startDate) / (1000 * 60 * 60 * 24));
+                const months = Math.floor(diffDays / 30);
+                const timeStr = months > 11 ? `${Math.floor(months / 12)} năm ${months % 12} tháng` : `${months} tháng`;
+
+                const profitVal = (currentVal + (item.divs || 0)) - (item.capital || 0);
+                const profitStr = window.formatShorthandCurrency ? window.formatShorthandCurrency(profitVal, true) : profitVal;
+
+                const typeStr = String(item["Phân Loại"] || "").trim().toLowerCase();
+                let displayUnitPrice = "-";
+                if (typeStr === "cổ phiếu" || typeStr === "etf") {
+                    displayUnitPrice = window.formatCurrency ? window.formatCurrency(unitPrice) : unitPrice;
+                }
+
+                const tr = document.createElement('tr');
+                tr.style.cursor = 'pointer';
+                tr.title = `Luận điểm Mua: ${item["Luận Điểm Đầu Tư"]}`;
+                tr.innerHTML = `
+                    <td style="font-weight: 700; color: #0f172a;">${item["Mã/Tên"]} <br> <span style="font-size: 0.75rem; color: #64748b; font-weight: normal;">${item["Phân Loại"]}</span></td>
+                    <td style="font-weight: 700; color: #3b82f6;">${new Intl.NumberFormat('vi-VN').format(totalQty)}</td>
+                    <td style="color: #eab308; font-weight: 700;">${displayUnitPrice}</td>
+                    <td style="font-weight: 600;">${window.formatShorthandCurrency ? window.formatShorthandCurrency(item.capital) : item.capital}</td>
+                    <td style="color: #0f172a; font-weight: 700;">${window.formatShorthandCurrency ? window.formatShorthandCurrency(currentVal) : currentVal}</td>
+                    <td style="font-weight: bold;"><span style="color: ${profitVal >= 0 ? '#10b981' : '#ef4444'}">${profitStr}</span></td>
+                    <td>${timeStr}</td>
+                    <td>${window.formatShorthandCurrency ? window.formatShorthandCurrency(item["Định Giá Lý Thuyết"]) : item["Định Giá Lý Thuyết"]}</td>
+                    <td><span class="status-badge status-pending" style="background:#f1f5f9; color:#475569;">Đang nắm giữ</span></td>
+                    <td style="display: flex; gap: 8px;">
+                        <button class="action-btn" title="Giao Dịch" onclick="window.openInvTxModal('${item["Mã/Tên"]}')" style="background: #10b981; color: white;"><i class="fa-solid fa-money-bill-transfer"></i></button>
+                        <button class="action-btn" title="Chỉnh sửa"><i class="fa-solid fa-pen-to-square"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    }
+
+    // UPDATE KPIs
+    const kpiNav = document.getElementById('inv-kpi-nav');
+    const kpiCagr = document.getElementById('inv-kpi-cagr');
+    const kpiMos = document.getElementById('inv-kpi-mos');
+    const kpiDivs = document.getElementById('inv-kpi-dividends');
+
+    if (kpiNav && window.formatCurrency) kpiNav.innerText = window.formatCurrency(totalCurrent);
+    if (kpiDivs && window.formatCurrency) kpiDivs.innerText = window.formatCurrency(totalDivs);
+
+    if (kpiMos && totalIntrinsic > 0) {
+        const mos = ((totalIntrinsic - totalCurrent) / totalIntrinsic) * 100;
+        kpiMos.innerText = mos > 0 ? `${mos.toFixed(1)}%` : "0%";
+    }
+    if (kpiCagr && totalCapital > 0) {
+        const returnPct = ((totalCurrent + totalDivs - totalCapital) / totalCapital) * 100;
+        kpiCagr.innerText = returnPct >= 0 ? `+${returnPct.toFixed(1)}%` : `${returnPct.toFixed(1)}%`;
+    }
+}
+window.renderInvestmentPortfolio = renderInvestmentPortfolio;
+
+// --- CACHE LOGIC ---
+function loadInvCache() {
+    const cachedPortfolio = localStorage.getItem('cached_inv_portfolio');
+    const cachedCashFlow = localStorage.getItem('cached_inv_cashflow');
+    if (cachedPortfolio && cachedCashFlow) {
+        try {
+            invPortfolioData = JSON.parse(cachedPortfolio);
+            invCashFlowData = JSON.parse(cachedCashFlow);
+            console.log("Loaded Investment Cache:", invPortfolioData.length);
+            // Render immediately if script is placed after DOM
+            renderInvestmentPortfolio();
+        } catch (e) {
+            console.error("Cache Parse Error:", e);
+        }
+    }
+}
+loadInvCache();
+
 document.addEventListener("DOMContentLoaded", () => {
-    // 1. DOM Elements
+    // 1. DOM Elements (Inside listener to ensure they are available)
     const modalInvest = document.getElementById('modal-invest-checklist');
     const btnAddInv = document.getElementById('btn-add-investment');
     const btnCancelInv = document.getElementById('btn-cancel-inv');
@@ -15,60 +135,28 @@ document.addEventListener("DOMContentLoaded", () => {
     const invInputQty = document.getElementById('inv-input-qty');
     const invInputIntrinsic = document.getElementById('inv-input-intrinsic');
     const invInputNote = document.getElementById('inv-input-note');
-    const btnSyncPrices = document.getElementById('btn-sync-prices'); // Nút cập nhật giá thị trường
+    const btnSyncPrices = document.getElementById('btn-sync-prices');
 
-    let invPortfolioData = []; // To be loaded from GS
-    let invCashFlowData = [];  // To be loaded from GS
-
-    // 0. Load Cache from LocalStorage for instant view
-    function loadInvCache() {
-        const cachedPortfolio = localStorage.getItem('cached_inv_portfolio');
-        const cachedCashFlow = localStorage.getItem('cached_inv_cashflow');
-        if (cachedPortfolio && cachedCashFlow) {
-            try {
-                invPortfolioData = JSON.parse(cachedPortfolio);
-                invCashFlowData = JSON.parse(cachedCashFlow);
-                console.log("Loaded Investment Cache:", invPortfolioData.length);
-                if (typeof renderInvestmentPortfolio === "function") renderInvestmentPortfolio();
-            } catch (e) {
-                console.error("Cache Parse Error:", e);
-            }
-        }
-    }
-    
-    loadInvCache();
+    // Double check render
+    renderInvestmentPortfolio();
 
     // 2. Data Sync Logic
     window.fetchInvestmentData = async function () {
         const savedView = localStorage.getItem("active_app_view");
-        // Chỉ fetch nếu đang ở tab đầu tư để tiết kiệm tài nguyên
         if (savedView !== 'investment') return;
 
         try {
-            // Sử dụng các hàm Global từ app.js
             const token = window.getToken ? window.getToken() : null;
             if (!token) return;
 
             const response = await fetch(CONFIG.WEB_APP_URL, {
                 method: "POST",
-                body: JSON.stringify({
-                    action: "get_investment_data",
-                    token: token
-                }),
+                body: JSON.stringify({ action: "get_investment_data", token: token }),
                 headers: { "Content-Type": "text/plain;charset=utf-8" }
             });
             const res = await response.json();
 
-            if (res.status === "init_required") {
-                if (window.showToast) window.showToast("Cần khởi tạo Sheet Đầu Tư. Hãy chạy hàm init trong Apps Script!", "warning");
-                return;
-            }
-
             if (res.status === "success") {
-                invPortfolioData = []; // Clear old data
-                invCashFlowData = [];  // Clear old data
-
-                // Parse Portfolio
                 const rowsDM = res.portfolio || [];
                 if (rowsDM.length > 1) {
                     const headers = rowsDM[0];
@@ -80,7 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                 }
 
-                // Parse Cash Flow
                 const rowsDT = res.cashflow || [];
                 if (rowsDT.length > 1) {
                     const headers = rowsDT[0];
@@ -91,7 +178,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                 }
 
-                // Aggregation
                 invPortfolioData.forEach(p => {
                     const related = invCashFlowData.filter(cf => cf["Mã/Tên"] === p["Mã/Tên"]);
                     let qty = 0;
@@ -100,20 +186,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         const type = String(cf["Loại Giao Dịch"] || "");
                         const amt = parseFloat(cf["Số Tiền"]) || 0;
                         const sl = parseFloat(cf["Số Lượng"]) || 0;
-                        
-                        if (type === "Mua") {
-                            qty += sl;
-                            return sum + amt;
-                        } else if (type === "Bán") {
-                            qty -= sl;
-                            return sum - amt;
-                        } else if (type.includes("Cổ Tức")) {
-                            if (type.includes("Cổ Phiếu") || type.includes("Tiền & CP") || type === "Cổ Tức" || type === "Cổ Tức (Cổ Phiếu)") {
-                                qty += sl;
-                            }
-                            if (type.includes("Tiền") || type === "Cổ Tức" || type === "Cổ Tức (Tiền)") {
-                                totalDivCash += amt;
-                            }
+                        if (type === "Mua") { qty += sl; return sum + amt; }
+                        else if (type === "Bán") { qty -= sl; return sum - amt; }
+                        else if (type.includes("Cổ Tức")) {
+                            if (type.includes("Cổ Phiếu") || type.includes("Tiền & CP") || type === "Cổ Tức") qty += sl;
+                            if (type.includes("Tiền") || type === "Cổ Tức") totalDivCash += amt;
                         }
                         return sum;
                     }, 0);
@@ -121,24 +198,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     p.divs = totalDivCash;
                 });
 
-                // Save to Cache for next time
                 localStorage.setItem('cached_inv_portfolio', JSON.stringify(invPortfolioData));
                 localStorage.setItem('cached_inv_cashflow', JSON.stringify(invCashFlowData));
-
-                console.log("Investment Data Loaded:", invPortfolioData);
                 renderInvestmentPortfolio();
-                
-                if (invPortfolioData.length === 0) {
-                    console.warn("Dữ liệu nhận được từ Google Sheets trống.");
-                }
-            } else {
-                alert("Lỗi từ Server: " + (res.message || "Không xác định"));
             }
         } catch (e) {
-            console.error("Investment Fetch Error:", e);
-            alert("Lỗi kết nối hoặc xử lý dữ liệu: " + e.message);
+            console.error("Fetch Error:", e);
         }
     };
+
+    // Auto-fetch if active
+    const currentView = localStorage.getItem("active_app_view");
+    if (currentView === 'investment') {
+        window.fetchInvestmentData();
+    }
+
+    // Modal UI ...
+    // (Additional logic for Save, Modal Open, etc should follow here or stay as is)
 
     // 3. UI Logic (Modal & Checklist)
     function showInvModal() {
@@ -326,108 +402,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 4. Render Logic
-    window.renderInvestmentPortfolio = function () {
-        const tbody = document.getElementById('inv-portfolio-body');
-        let totalCapital = 0, totalCurrent = 0, totalDivs = 0, totalIntrinsic = 0;
-
-        if (tbody) {
-            tbody.innerHTML = '';
-            if (invPortfolioData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem;">Chưa có danh mục đầu tư nào.</td></tr>`;
-            } else {
-                invPortfolioData.forEach(item => {
-                    const unitPrice = parseFloat(item["Giá Hiện Tại"]) || 0;
-                    const totalQty = item.totalQty || 1; // Default to 1 if missing for backwards compat
-                    const currentVal = unitPrice * totalQty;
-                    
-                    const unitIntrinsic = parseFloat(item["Định Giá Lý Thuyết"]) || 0;
-                    const intrinsicVal = unitIntrinsic * totalQty; // Giả định Định Giá Nhập vào là mức giá cho 1 đơn vị
-
-                    totalCapital += item.capital || 0;
-                    totalCurrent += currentVal;
-                    totalDivs += parseFloat(item["Dòng Tiền Đã Nhận"]) || item.divs || 0;
-                    totalIntrinsic += intrinsicVal;
-
-                    // Fix Date parsing (handle JS Date or Excel serial)
-                    let startDate = new Date();
-                    const rawDate = item["Ngày Bắt Đầu"];
-                    if (rawDate) {
-                        const dateStr = String(rawDate);
-                        if (!isNaN(rawDate) && rawDate > 20000) { // Excel Serial
-                             startDate = window.utils && window.utils.excelToJsDate ? 
-                                         window.utils.excelToJsDate(parseFloat(rawDate)) : 
-                                         new Date(new Date(1899, 11, 30).getTime() + parseFloat(rawDate) * 86400000);
-                        } else if (dateStr.includes("T")) { // standard date string
-                             startDate = new Date(dateStr);
-                        } else { // DD/MM/YYYY
-                             const parts = dateStr.split("/");
-                             if (parts.length === 3) startDate = new Date(parts[2], parts[1] - 1, parts[0]);
-                             else startDate = new Date(dateStr);
-                        }
-                    }
-
-                    const diffDays = Math.floor(Math.abs(new Date() - startDate) / (1000 * 60 * 60 * 24));
-                    const months = Math.floor(diffDays / 30);
-                    const timeStr = months > 11 ? `${Math.floor(months / 12)} năm ${months % 12} tháng` : `${months} tháng`;
-
-                    // Lãi ròng = (Giá Trị Hiện Tại + Tổng Cổ Tức Bằng Tiền) - Vốn Sở Hữu
-                    const profitVal = (currentVal + (item.divs || 0)) - (item.capital || 0);
-                    const profitStr = window.formatShorthandCurrency ? window.formatShorthandCurrency(profitVal, true) : profitVal;
-
-                    const typeStr = String(item["Phân Loại"] || "").trim().toLowerCase();
-                    let displayUnitPrice = "-";
-                    if (typeStr === "cổ phiếu" || typeStr === "etf") {
-                        displayUnitPrice = window.formatCurrency ? window.formatCurrency(unitPrice) : unitPrice;
-                    }
-
-                    const tr = document.createElement('tr');
-                    tr.style.cursor = 'pointer';
-                    tr.title = `Luận điểm Mua: ${item["Luận Điểm Đầu Tư"]}`;
-                    tr.innerHTML = `
-                        <td style="font-weight: 700; color: #0f172a;">${item["Mã/Tên"]} <br> <span style="font-size: 0.75rem; color: #64748b; font-weight: normal;">${item["Phân Loại"]}</span></td>
-                        <td style="font-weight: 700; color: #3b82f6;">${new Intl.NumberFormat('vi-VN').format(totalQty)}</td>
-                        <td style="color: #eab308; font-weight: 700;">${displayUnitPrice}</td>
-                        <td style="font-weight: 600;">${window.formatShorthandCurrency ? window.formatShorthandCurrency(item.capital) : item.capital}</td>
-                        <td style="color: #0f172a; font-weight: 700;">${window.formatShorthandCurrency ? window.formatShorthandCurrency(currentVal) : currentVal}</td>
-                        <td style="font-weight: bold;"><span style="color: ${profitVal >= 0 ? '#10b981' : '#ef4444'}">${profitStr}</span></td>
-                        <td>${timeStr}</td>
-                        <td>${window.formatShorthandCurrency ? window.formatShorthandCurrency(item["Định Giá Lý Thuyết"]) : item["Định Giá Lý Thuyết"]}</td>
-                        <td><span class="status-badge status-pending" style="background:#f1f5f9; color:#475569;">Đang nắm giữ</span></td>
-                        <td style="display: flex; gap: 8px;">
-                            <button class="action-btn" title="Giao Dịch" onclick="window.openInvTxModal('${item["Mã/Tên"]}')" style="background: #10b981; color: white;"><i class="fa-solid fa-money-bill-transfer"></i></button>
-                            <button class="action-btn" title="Chỉnh sửa"><i class="fa-solid fa-pen-to-square"></i></button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
-        }
-
-        // UPDATE KPIs
-        const kpiNav = document.getElementById('inv-kpi-nav');
-        const kpiCagr = document.getElementById('inv-kpi-cagr');
-        const kpiMos = document.getElementById('inv-kpi-mos');
-        const kpiDivs = document.getElementById('inv-kpi-dividends');
-
-        if (kpiNav && window.formatCurrency) kpiNav.innerText = window.formatCurrency(totalCurrent);
-        if (kpiDivs && window.formatCurrency) kpiDivs.innerText = window.formatCurrency(totalDivs);
-
-        if (kpiMos && totalIntrinsic > 0) {
-            const mos = ((totalIntrinsic - totalCurrent) / totalIntrinsic) * 100;
-            kpiMos.innerText = mos > 0 ? `${mos.toFixed(1)}%` : "0%";
-        }
-        if (kpiCagr && totalCapital > 0) {
-            const returnPct = ((totalCurrent + totalDivs - totalCapital) / totalCapital) * 100;
-            kpiCagr.innerText = returnPct >= 0 ? `+${returnPct.toFixed(1)}%` : `${returnPct.toFixed(1)}%`;
-        }
-    };
-
     // Tự động tải dữ liệu nếu đang ở view đầu tư
     const currentView = localStorage.getItem("active_app_view");
     if (currentView === 'investment') {
         window.fetchInvestmentData();
     }
+});
 
     // 5. Giao Dịch Logic
     window.openInvTxModal = function(symbol) {
