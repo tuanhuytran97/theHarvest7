@@ -968,10 +968,24 @@ tbody tr:hover {
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid var(--border-color);
-    justify-content: space-around;
+    justify-content: flex-start;
     align-items: center;
     z-index: 2000;
     padding-bottom: env(safe-area-inset-bottom);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .mobile-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .mobile-nav {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
   }
 
   .mobile-nav-item {
@@ -984,8 +998,9 @@ tbody tr:hover {
     font-weight: 600;
     gap: 3px;
     transition: all 0.2s;
-    flex: 1;
-    padding: 5px 2px; /* Tighten horizontal padding */
+    flex: 0 0 75px; /* Fixed width for scrolling consistency */
+    padding: 5px 0;
+    scroll-snap-align: center;
   }
 
   .mobile-nav-item i {

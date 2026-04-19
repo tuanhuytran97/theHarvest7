@@ -1,4 +1,51 @@
-// Configuration is loaded from config.js
+// CONFIGURATION UTILITIES
+const getRole = () => sessionStorage.getItem("user-role");
+const getUserName = () => sessionStorage.getItem("user-name");
+const getToken = () => sessionStorage.getItem("user-token");
+
+function getTodayStr() {
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+}
+
+function formatNumber(num) {
+    if (!num) return "0";
+    return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(num);
+}
+
+function formatCurrency(number) {
+    if (!number) return "0 ₫";
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(number);
+}
+
+function parseMoney(val) {
+    if (!val) return 0;
+    return parseFloat(String(val).replace(/[^\d]/g, '')) || 0;
+}
+
+function formatMoneyStr(num) {
+    if (num === 0) return "0";
+    if (!num) return "";
+    return new Intl.NumberFormat('vi-VN').format(num);
+}
+
+function formatSignedMoneyStr(num) {
+    if (num === 0) return "0 ₫";
+    const sign = num > 0 ? "+" : "";
+    return sign + new Intl.NumberFormat('vi-VN').format(num) + " ₫";
+}
+
+// Global expose
+window.getRole = getRole;
+window.getToken = getToken;
+window.getTodayStr = getTodayStr;
+window.formatCurrency = formatCurrency;
+window.formatNumber = formatNumber;
+window.parseMoney = parseMoney;
+window.formatSignedMoneyStr = formatSignedMoneyStr;
 
 document.addEventListener("DOMContentLoaded", () => {
     // 0. Internal Access Control (Server-side validation)
@@ -15,10 +62,10 @@ document.addEventListener("DOMContentLoaded", () => {
         togglePasswordBtn.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            
+
             const isPassword = passwordInput.type === "password";
             passwordInput.type = isPassword ? "text" : "password";
-            
+
             // Switch icon and state
             const icon = togglePasswordBtn.querySelector("i");
             if (isPassword) {
@@ -41,10 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.CONFIG = { WEB_APP_URL: "NOT_CONFIGURED", USERS: {} };
     }
 
-    const getRole = () => sessionStorage.getItem("user-role");
-    const getUserName = () => sessionStorage.getItem("user-name");
-    const getToken = () => sessionStorage.getItem("user-token");
-
+    // Utilities moved to global scope above
     const updateUserProfile = () => {
         const name = getUserName() || "Người dùng";
         const role = getRole();
@@ -123,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const isAuthorizedForSync = () => !!getRole(); // Mọi user đăng nhập đều được sync (đọc) dữ liệu 
-    const isAuthorizedForEntry = () => canMutate(); 
+    const isAuthorizedForEntry = () => canMutate();
     const isAuthorizedForDebt = () => canMutate();
 
     if (!checkAuth()) {
@@ -242,20 +286,14 @@ document.addEventListener("DOMContentLoaded", () => {
         return `${dd}/${mm}/${yyyy}`;
     }
 
-    function formatNumber(num) {
-        if (!num) return "0";
-        // Báo cáo tài chính yêu cầu làm tròn không có phần thập phân
-        return new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(num);
+    function getTodayStr() {
+        return formatDateVN(new Date());
     }
 
-    function formatCurrency(number) {
-        if (!number) return "0 ₫";
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(number);
-    }
-
+    // Utilities moved to global scope above
     function updateBuyerSuggestions(data) {
         if (!data || !Array.isArray(data) || data.length === 0) return;
-        
+
         // Cố gắng tìm tên khách hàng từ tất cả các biến thể tên cột có thể có
         const buyers = data
             .map(row => {
@@ -274,7 +312,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (uniqueRecentBuyers.length >= 10) break;
         }
-        
+
         const datalist = document.getElementById('buyer-suggestions');
         if (datalist) {
             datalist.innerHTML = uniqueRecentBuyers
@@ -324,33 +362,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // --- UTILS FOR MONEY INPUTS ---
-    function parseMoney(val) {
-        if (!val) return 0;
-        return parseFloat(String(val).replace(/[^\d]/g, '')) || 0;
-    }
-
-    function parseSignedMoney(val) {
-        if (!val) return 0;
-        let sign = 1;
-        const s = String(val).trim();
-        if (s.startsWith('-')) sign = -1;
-        const num = parseFloat(s.replace(/[^\d]/g, '')) || 0;
-        return sign * num;
-    }
-
-    function formatMoneyStr(num) {
-        if (num === 0) return "0";
-        if (!num) return "";
-        return new Intl.NumberFormat('vi-VN').format(num);
-    }
-
-    function formatSignedMoneyStr(num) {
-        if (num === 0) return "0đ";
-        const sign = num > 0 ? "+" : (num < 0 ? "-" : "");
-        const absVal = Math.abs(num);
-        return sign + new Intl.NumberFormat('vi-VN').format(absVal) + "đ";
-    }
-
     document.addEventListener('input', (e) => {
         if (e.target.classList.contains('money-input')) {
             const val = parseMoney(e.target.value);
@@ -361,7 +372,7 @@ document.addEventListener("DOMContentLoaded", () => {
             let sign = "";
             if (valStr.startsWith('+')) sign = "+";
             else if (valStr.startsWith('-')) sign = "-";
-            
+
             const num = parseFloat(valStr.replace(/[^\d]/g, '')) || 0;
             if (num === 0 && sign === "") {
                 e.target.value = "";
@@ -813,7 +824,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const totalTr = document.createElement('tr');
             totalTr.className = 'total-row';
             totalTr.style.cssText = 'background: rgba(16, 185, 129, 0.05); border-top: 2px dashed var(--success); font-weight: 800;';
-            
+
             const colCount = currentTableTab === 'expense' ? 6 : 11;
 
             let cellsHtml = '';
@@ -1038,7 +1049,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             // 1. Collect Data
             const updates = {};
-            
+
             // Luôn đảm bảo Loại DT được giữ nguyên hoặc cập nhật đúng theo tab hiện tại nếu đang trống
             updates["Loại DT"] = originalData["Loại DT"] || (currentTableTab === 'vua' ? 'Vựa' : 'Farm');
 
@@ -1060,7 +1071,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     updates["Giá"] = price.toString();
                     updates["Doanh Thu Bông"] = (parseFloat(updates["Số lượng"] || 0) * price).toString();
                 }
-                
+
                 // Đối với Vựa, có các trường khác cần tính toán lại nếu bạn cho phép sửa (hiện tại UI inline edit Vựa đang đơn giản)
                 if (currentTableTab === 'vua') {
                     updates["Loại DT"] = "Vựa";
@@ -1073,20 +1084,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const response = await fetch(CONFIG.WEB_APP_URL, {
                 method: "POST",
-                body: JSON.stringify({ 
-                    action: "update", 
+                body: JSON.stringify({
+                    action: "update",
                     rowNumber: sheetRow,
                     updates: updates,
-                    token: getToken() 
+                    token: getToken()
                 }),
                 headers: { "Content-Type": "text/plain;charset=utf-8" }
             });
-            
+
             const result = await response.json();
             if (result.status !== "success") throw new Error("Lỗi cập nhật: " + result.message);
 
             showToast("Cập nhật thành công!", "success");
-            
+
             // Reload data to show updated state
             const syncBtn = document.getElementById('sync-gsheet-btn');
             if (syncBtn) syncBtn.click();
@@ -1103,6 +1114,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const menuDebt = document.getElementById('menu-debt');
     const menuCashFlow = document.getElementById('menu-cashflow'); // NEW
     const menuFinancial = document.getElementById('menu-financial');
+    const menuInvestment = document.getElementById('menu-investment');
     const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
 
     const viewData = document.getElementById('view-data');
@@ -1110,6 +1122,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const viewDebt = document.getElementById('view-debt');
     const viewCashFlow = document.getElementById('view-cashflow'); // NEW
     const viewFinancial = document.getElementById('view-financial');
+    const viewInvestment = document.getElementById('view-investment');
 
     function hideAllViews() {
         if (menuData) menuData.classList.remove('active');
@@ -1117,6 +1130,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (menuDebt) menuDebt.classList.remove('active');
         if (menuCashFlow) menuCashFlow.classList.remove('active');
         if (menuFinancial) menuFinancial.classList.remove('active');
+        if (menuInvestment) menuInvestment.classList.remove('active');
 
         mobileNavItems.forEach(i => i.classList.remove('active'));
 
@@ -1125,6 +1139,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (viewDebt) viewDebt.style.display = 'none';
         if (viewCashFlow) viewCashFlow.style.display = 'none';
         if (viewFinancial) viewFinancial.style.display = 'none';
+        if (viewInvestment) viewInvestment.style.display = 'none';
     }
 
     function syncMobileNav(viewId) {
@@ -1166,6 +1181,11 @@ document.addEventListener("DOMContentLoaded", () => {
             syncMobileNav('financial');
             if (viewFinancial) viewFinancial.style.display = 'block';
             fetchFinancialReport();
+        } else if (viewId === 'investment') {
+            if (menuInvestment) menuInvestment.classList.add('active');
+            syncMobileNav('investment');
+            if (viewInvestment) viewInvestment.style.display = 'block';
+            if (typeof fetchInvestmentData === 'function') fetchInvestmentData();
         }
     }
 
@@ -1187,6 +1207,13 @@ document.addEventListener("DOMContentLoaded", () => {
         menuDebt.addEventListener('click', (e) => {
             e.preventDefault();
             switchView('debt');
+        });
+    }
+
+    if (menuInvestment) {
+        menuInvestment.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchView('investment');
         });
     }
 
@@ -1456,8 +1483,8 @@ document.addEventListener("DOMContentLoaded", () => {
             toggleBtn.addEventListener('click', () => {
                 const isActive = detailsDiv.classList.toggle('active');
                 toggleBtn.classList.toggle('active');
-                toggleBtn.innerHTML = isActive ? 
-                    `<i class="fa-solid fa-chevron-up"></i> Thu gọn` : 
+                toggleBtn.innerHTML = isActive ?
+                    `<i class="fa-solid fa-chevron-up"></i> Thu gọn` :
                     `<i class="fa-solid fa-chevron-down"></i> Xem chi tiết (${t.lines.length} mục)`;
             });
 
@@ -1500,7 +1527,7 @@ document.addEventListener("DOMContentLoaded", () => {
             titleEl.innerText = title;
             subtitleEl.innerHTML = subtitle.replace(/\n/g, '<br>');
             inputAmount.value = defaultAmount ? defaultAmount : '';
-            
+
             modal.style.display = 'flex';
             setTimeout(() => inputAmount.focus(), 100);
 
@@ -1539,8 +1566,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!isFull) {
             const rawInput = await showPaymentModal(
-                "Thanh toán nợ", 
-                `Tổng nợ hiện tại: <b>${formatCurrency(totalDebt)}</b>\nNhập số tiền muốn thanh toán (VNĐ):`, 
+                "Thanh toán nợ",
+                `Tổng nợ hiện tại: <b>${formatCurrency(totalDebt)}</b>\nNhập số tiền muốn thanh toán (VNĐ):`,
                 ""
             );
             if (!rawInput) return;
@@ -1588,7 +1615,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Lấy giá trị mong đợi và hiện tại
                 const lineExpected = line.isVua ? (parseFloat(String(row["Tiền Phải Thu"] || "0").replace(/[^\d]/g, '')) || 0)
-                                              : (parseFloat(String(row["Doanh Thu Bông"] || "0").replace(/[^\d]/g, '')) || 0);
+                    : (parseFloat(String(row["Doanh Thu Bông"] || "0").replace(/[^\d]/g, '')) || 0);
                 const linePaid = parseFloat(String(row["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0;
                 const lineDebt = lineExpected - linePaid;
 
@@ -1617,7 +1644,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const fullTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
                     const noteType = isFull ? "hết" : "một phần";
                     let finalNote = `Thanh toán ${noteType} ngày ${fullDateStr} ${fullTimeStr}`;
-                    
+
                     if (existingNote.trim() !== '') {
                         finalNote = existingNote + " | " + finalNote;
                     }
@@ -1640,16 +1667,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const now = new Date();
             const dateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
             const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-            
+
             if (isFull) {
                 showToast(`Đang thanh toán HẾT cho ${currentSelectedBuyer.name}...`, "info");
                 const response = await fetch(CONFIG.WEB_APP_URL, {
                     method: "POST",
-                    body: JSON.stringify({ 
-                        action: "bulkPay", 
-                        buyerName: currentSelectedBuyer.name, 
+                    body: JSON.stringify({
+                        action: "bulkPay",
+                        buyerName: currentSelectedBuyer.name,
                         isAllDates: true,
-                        token: getToken() 
+                        token: getToken()
                     }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
@@ -1662,11 +1689,11 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 // LOGIC TRẢ MỘT PHẦN THEO YÊU CẦU: Track theo ngày và tạo dòng nếu cần
                 showToast(`Đang ghi nhận số tiền ${formatCurrency(amountToPay)}...`, "info");
-                
+
                 // 1. Kiểm tra xem hôm nay khách có đơn nào không (DD/MM/YYYY)
                 const todayTx = currentSelectedBuyer.transactions.find(t => t.dateStr === dateStr);
                 const noteContent = `Thanh toán một phần ngày ${dateStr} ${timeStr}`;
-                
+
                 if (todayTx && todayTx.lines.length > 0) {
                     // CÓ đơn hôm nay -> Ghi vào dòng đầu tiên của ngày hôm nay
                     const targetRow = todayTx.lines[0].rawRow;
@@ -1677,15 +1704,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     const response = await fetch(CONFIG.WEB_APP_URL, {
                         method: "POST",
-                        body: JSON.stringify({ 
-                            action: "update", 
+                        body: JSON.stringify({
+                            action: "update",
                             rowNumber: targetRow._sheetRowNumber,
                             updates: {
                                 "Đã Thu": newPaidTotal,
                                 "Status": "Chưa Xong", // Không gạch đơn
                                 "Ghi Chú": finalNote
-                            }, 
-                            token: getToken() 
+                            },
+                            token: getToken()
                         }),
                         headers: { "Content-Type": "text/plain;charset=utf-8" }
                     });
@@ -1695,8 +1722,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     // KHÔNG có đơn hôm nay -> Tạo đơn hàng mới (chỉ ghi số tiền và ghi chú)
                     const response = await fetch(CONFIG.WEB_APP_URL, {
                         method: "POST",
-                        body: JSON.stringify({ 
-                            action: "add", 
+                        body: JSON.stringify({
+                            action: "add",
                             data: {
                                 "Ngày": dateStr,
                                 "Người Mua": currentSelectedBuyer.name,
@@ -1704,15 +1731,15 @@ document.addEventListener("DOMContentLoaded", () => {
                                 "Đã Thu": amountToPay,
                                 "Ghi Chú": noteContent,
                                 "Loại DT": currentSelectedBuyer.isVua ? "Vựa" : "Farm"
-                            }, 
-                            token: getToken() 
+                            },
+                            token: getToken()
                         }),
                         headers: { "Content-Type": "text/plain;charset=utf-8" }
                     });
                     const result = await response.json();
                     if (result.status !== "success") throw new Error(result.message);
                 }
-                
+
                 showToast(`Đã ghi nhận thanh toán một phần thành công!`, "success");
             }
 
@@ -1743,13 +1770,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const remaining = t.totalExpected - t.paid;
         const rawInput = await showPaymentModal(
-            `Thanh toán ngày ${t.dateStr}`, 
-            `Số nợ còn lại: <b>${formatCurrency(remaining)}</b>\n\nNhập số tiền muốn trả (Mặc định: trả hết):`, 
+            `Thanh toán ngày ${t.dateStr}`,
+            `Số nợ còn lại: <b>${formatCurrency(remaining)}</b>\n\nNhập số tiền muốn trả (Mặc định: trả hết):`,
             formatMoneyStr(remaining)
         );
-        
+
         if (rawInput === null) return; // Cancel
-        
+
         const amountToPay = parseMoney(rawInput);
         if (amountToPay <= 0) {
             alert("Số tiền không hợp lệ.");
@@ -1774,7 +1801,7 @@ document.addEventListener("DOMContentLoaded", () => {
         t.lines.forEach(line => {
             const row = line.rawRow;
             const lineExpected = line.isVua ? (parseFloat(String(row["Tiền Phải Thu"] || "0").replace(/[^\d]/g, '')) || 0)
-                                        : (parseFloat(String(row["Doanh Thu Bông"] || "0").replace(/[^\d]/g, '')) || 0);
+                : (parseFloat(String(row["Doanh Thu Bông"] || "0").replace(/[^\d]/g, '')) || 0);
 
             const linePaid = parseFloat(String(row["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0;
             const lineDebt = lineExpected - linePaid;
@@ -1790,7 +1817,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const fullDateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
             const fullTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
             const noteType = isLineDone ? "hết" : "một phần";
-            
+
             const existingNote = row["Ghi Chú"] || "";
             const newNote = `Thanh toán ${noteType} ngày ${fullDateStr} ${fullTimeStr}`;
             const finalNote = existingNote ? `${existingNote} | ${newNote}` : newNote;
@@ -1834,11 +1861,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 showToast(`Đang thanh toán HẾT ngày ${t.dateStr}...`, "info");
                 const response = await fetch(CONFIG.WEB_APP_URL, {
                     method: "POST",
-                    body: JSON.stringify({ 
-                        action: "bulkPay", 
-                        buyerName: currentSelectedBuyer.name, 
+                    body: JSON.stringify({
+                        action: "bulkPay",
+                        buyerName: currentSelectedBuyer.name,
                         dateStr: t.dateStr,
-                        token: getToken() 
+                        token: getToken()
                     }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
@@ -1848,27 +1875,27 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 // Thanh toán MỘT PHẦN -> Dùng updatesList tuần tự
                 if (updatesList.length === 0) return;
-                
+
                 showToast(`Đang thu một phần: ${updatesList.length} dòng...`, "info");
 
                 for (let i = 0; i < updatesList.length; i++) {
                     const req = updatesList[i];
                     const realRow = req.targetRow._sheetRowNumber;
-                    
-                    showToast(`Đang thu (${i+1}/${updatesList.length}): Dòng #${realRow}...`, "info", 1000);
+
+                    showToast(`Đang thu (${i + 1}/${updatesList.length}): Dòng #${realRow}...`, "info", 1000);
 
                     const response = await fetch(CONFIG.WEB_APP_URL, {
                         method: "POST",
-                        body: JSON.stringify({ 
-                            action: "update", 
-                            targetRow: req.targetRow, 
+                        body: JSON.stringify({
+                            action: "update",
+                            targetRow: req.targetRow,
                             rowNumber: realRow,
-                            updates: req.updates, 
-                            token: getToken() 
+                            updates: req.updates,
+                            token: getToken()
                         }),
                         headers: { "Content-Type": "text/plain;charset=utf-8" }
                     });
-                    
+
                     const result = await response.json();
                     if (result.status !== "success") throw new Error(result.message);
 
@@ -1876,7 +1903,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 showToast(`Thu tiền một phần thành công!`, "success");
             }
- 
+
             renderDebtTable();
             const syncBtn = document.getElementById('sync-gsheet-btn');
             if (syncBtn) syncBtn.click();
@@ -2013,7 +2040,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const sortedYears = Array.from(years).sort((a, b) => b - a);
         const allYearSelectors = [yearSelect, cmpY1Select, cmpY2Select, prevYearSelect, cfYearSelect, cfYearSelect2, annualRatiosYearSelect];
-        
+
         allYearSelectors.forEach(sel => {
             if (!sel) return;
             sel.innerHTML = sortedYears.map(y => `<option value="${y}">${y}</option>`).join('');
@@ -2025,12 +2052,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (years.has(currentYear)) {
             if (yearSelect) yearSelect.value = currentYear;
             if (annualRatiosYearSelect) annualRatiosYearSelect.value = currentYear;
-            
+
             const monthSelect = document.getElementById('report-month');
             if (monthSelect) monthSelect.value = currentMonthNum;
 
             if (cmpY2Select) cmpY2Select.value = currentYear;
-            
+
             const cfMonthSelect = document.getElementById('cashflow-month');
             const cfMonthSelect2 = document.getElementById('cashflow-month-2');
 
@@ -2620,7 +2647,7 @@ document.addEventListener("DOMContentLoaded", () => {
     async function fetchFinancialReport(forced = false) {
         const loadingEl = document.getElementById('financial-loading');
         const tableContainer = document.querySelector('.financial-table-container-card');
-        
+
         // Caching logic
         const cacheKey = 'cached_financial_report';
         const cachedData = localStorage.getItem(cacheKey);
@@ -2632,7 +2659,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 renderFinancialTable(result);
                 // Vẫn hiện loading mờ để báo hiệu đang kiểm tra bản mới nhất trong background
                 if (tableContainer) tableContainer.style.opacity = '0.7';
-                
+
                 // Update Annual Financial Ratios from cache
                 const annSel = document.getElementById('financial-ratios-year');
                 if (annSel && annSel.value) {
@@ -2661,7 +2688,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (result.status === "success") {
                 localStorage.setItem(cacheKey, JSON.stringify(result));
                 renderFinancialTable(result);
-                
+
                 // Update Annual Financial Ratios from new data
                 const annSel = document.getElementById('financial-ratios-year');
                 if (annSel && annSel.value) {
@@ -2717,7 +2744,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 const year = cell;
                 const isLocked = notes[cIdx] === "LOCKED";
-                
+
                 // Chỉ hiển thị icon khóa nếu năm đó bị khóa bên Sheet, không cho phép bấm
                 let lockIndicator = '';
                 if (isLocked) {
@@ -2741,16 +2768,16 @@ document.addEventListener("DOMContentLoaded", () => {
         for (let rIdx = 1; rIdx < values.length; rIdx++) {
             const rowData = values[rIdx];
             // Bỏ qua dòng chỉ chứa text cũ 'LOCKED' nếu còn sót lại (đề phòng)
-            if (rIdx === 1 && String(rowData[1]).toUpperCase() === "LOCKED") continue; 
-            
+            if (rIdx === 1 && String(rowData[1]).toUpperCase() === "LOCKED") continue;
+
             const tr = document.createElement('tr');
-            
+
             // ... (row styling)
             const rowLabel = String(rowData[0] || "").trim();
             const upperLabel = rowLabel.toUpperCase();
             const isSectionHeader = rowLabel && rowLabel === rowLabel.toUpperCase() && !rowLabel.includes("TỔNG");
             const isTotalRow = upperLabel.includes("TỔNG");
-            
+
             const isPercentageRatio = ["ROE", "ROA", "NỢ/VCSH", "NỢ / VCSH", "TĂNG TRƯỞNG VCSH", "HOÀN THÀNH MỤC TIÊU", "(%)", "%"].some(r => upperLabel.includes(r));
             const isOtherRatio = ["PAYBACK TIME"].includes(upperLabel);
 
@@ -2761,8 +2788,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Apply important formatting to specific user-requested rows
             const importantKeywords = [
-                "TÀI SẢN NGẮN HẠN", "TÀI SẢN DÀI HẠN", "TỔNG CỘNG TÀI SẢN", 
-                "TỔNG NỢ PHẢI TRẢ", "VỐN CHỦ SỞ HỮU", "TỔNG CỘNG NGUỒN VỐN", 
+                "TÀI SẢN NGẮN HẠN", "TÀI SẢN DÀI HẠN", "TỔNG CỘNG TÀI SẢN",
+                "TỔNG NỢ PHẢI TRẢ", "VỐN CHỦ SỞ HỮU", "TỔNG CỘNG NGUỒN VỐN",
                 "LỢI NHUẬN", "PAYBACK TIME", "NỢ/VCSH", "ROA", "ROE"
             ];
             const isImportantRow = importantKeywords.some(key => upperLabel.includes(key));
@@ -2771,7 +2798,7 @@ document.addEventListener("DOMContentLoaded", () => {
             rowData.forEach((cell, cIdx) => {
                 const td = document.createElement('td');
                 const isLocked = notes[cIdx] === "LOCKED";
-                
+
                 if (cIdx === 0) {
                     td.innerText = cell;
                 } else {
@@ -2780,7 +2807,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const cellStr = String(headerRow[cIdx] || "").trim();
                     const isCurrentYear = cellStr.includes(currentYearStr) || cellStr === "2026";
                     if (isCurrentYear) td.classList.add("financial-col-current");
-                    
+
                     const val = cell === "" ? 0 : cell;
                     let displayVal = "";
 
@@ -2797,21 +2824,21 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (upperLabel.includes("HOÀN THÀNH MỤC TIÊU")) {
                             td.style.color = pctVal >= 100 ? "#10b981" : "#ef4444";
                         }
-                        
+
                         // Dynamic coloring for Growth Ratio (> 5% is green, else red)
                         if (upperLabel.includes("TĂNG TRƯỞNG VCSH")) {
                             td.style.color = pctVal > 5 ? "#10b981" : "#ef4444";
                         }
                     } else if (isOtherRatio) {
                         // Giữ lại số lẻ cho các tỷ số đặc biệt nếu cần (vd: Payback time)
-                        displayVal = (typeof val === 'number' ? val.toLocaleString('vi-VN', {minimumFractionDigits: 1, maximumFractionDigits: 1}) : val);
+                        displayVal = (typeof val === 'number' ? val.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : val);
                     } else {
                         // Tất cả các con số thông thường (Tiền, sản lượng) đều làm tròn nguyên
                         displayVal = formatNumber(val);
                     }
-                    
+
                     td.innerText = displayVal;
-                    
+
                 }
 
                 if (isImportantRow) {
@@ -2831,7 +2858,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const container = document.querySelector('.financial-table-responsive');
             if (currentYearCol && container) {
                 // Cuộn sao cho mép phải của cột hiện tại sát mép phải màn hình
-                const scrollPos = currentYearCol.offsetLeft + currentYearCol.clientWidth - container.clientWidth + 5; 
+                const scrollPos = currentYearCol.offsetLeft + currentYearCol.clientWidth - container.clientWidth + 5;
                 container.scrollTo({
                     left: scrollPos,
                     behavior: 'smooth'
@@ -2843,7 +2870,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const headerRow = values[0] || [];
             const years = headerRow.slice(1);
-            
+
             // Tìm hàng VCSH và Mục Tiêu
             const equityRow = values.find(row => {
                 const label = String(row[0] || "").toUpperCase();
@@ -3638,7 +3665,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Populate year selector and default to current month/year
     function initCashSelectors() {
-        const yearSel  = document.getElementById('cash-year-select');
+        const yearSel = document.getElementById('cash-year-select');
         const monthSel = document.getElementById('cash-month-select');
         if (!yearSel || !farmData) return;
 
@@ -3652,10 +3679,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const o = document.createElement('option'); o.value = y; o.textContent = y; yearSel.appendChild(o);
         });
 
-        yearSel.value  = now.getFullYear();
+        yearSel.value = now.getFullYear();
         monthSel.value = now.getMonth() + 1;
 
-        yearSel.addEventListener('change',  () => updateCashInHand());
+        yearSel.addEventListener('change', () => updateCashInHand());
         monthSel.addEventListener('change', () => updateCashInHand());
     }
 
@@ -3663,21 +3690,21 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!farmData || farmData.length === 0) return;
 
         const monthSel = document.getElementById('cash-month-select');
-        const yearSel  = document.getElementById('cash-year-select');
+        const yearSel = document.getElementById('cash-year-select');
         const selMonth = parseInt(monthSel?.value) || (new Date().getMonth() + 1);
-        const selYear  = parseInt(yearSel?.value)  || new Date().getFullYear();
+        const selYear = parseInt(yearSel?.value) || new Date().getFullYear();
 
         // 1. Find opening balance = Cash (Q) from the last row BEFORE selected month
         let openingBalance = null;
-        let lastPrevDate   = null;
+        let lastPrevDate = null;
 
         farmData.forEach(row => {
             if (!row.parsedDate) return;
             const ry = row.parsedDate.getFullYear(), rm = row.parsedDate.getMonth() + 1;
             const isBefore = ry < selYear || (ry === selYear && rm < selMonth);
             if (isBefore && (!lastPrevDate || row.parsedDate >= lastPrevDate)) {
-                lastPrevDate   = row.parsedDate;
-                const cashVal  = parseFloat(row["Cash"]);
+                lastPrevDate = row.parsedDate;
+                const cashVal = parseFloat(row["Cash"]);
                 if (!isNaN(cashVal)) openingBalance = cashVal;
             }
 
@@ -3688,8 +3715,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         // 2. Aggregate current month transactions
-        let cashIn   = 0;
-        let cashOut  = 0;
+        let cashIn = 0;
+        let cashOut = 0;
         let adjTotal = 0;
 
         farmData.forEach(row => {
@@ -3697,22 +3724,22 @@ document.addEventListener("DOMContentLoaded", () => {
             if (row.parsedDate.getFullYear() !== selYear || row.parsedDate.getMonth() + 1 !== selMonth) return;
 
             const loaiDT = (row["Loại DT"] || "").trim();
-            const valI   = parseFloat(row["Đã Thu"]) || 0;
+            const valI = parseFloat(row["Đã Thu"]) || 0;
             const valExp = parseFloat(row["Chi Phí"]) || 0;
             // Lấy giá trị từ cột R (Khoản Thu Chi Bất Thường)
-            const valR   = parseFloat(row["Khoản Thu Chi Bất Thường"]) || 0;
+            const valR = parseFloat(row["Khoản Thu Chi Bất Thường"]) || 0;
 
 
 
             if (loaiDT === "ADJ") {
                 adjTotal += valR;
             } else {
-                cashIn   += valI;
+                cashIn += valI;
                 if (loaiDT === "Company") {
                     cashIn += (parseFloat(row["Doanh Thu Khác"]) || 0);
                 }
 
-                cashOut  += valExp;
+                cashOut += valExp;
                 adjTotal += valR; // Cộng dồn nếu dòng thường có ghi nhận bất thường
             }
 
@@ -3721,23 +3748,23 @@ document.addEventListener("DOMContentLoaded", () => {
         const currentCash = openingBalance + cashIn - cashOut + adjTotal;
 
         // 3. Update UI
-        const cashEl  = document.getElementById('kpi-cash-hand');
-        const openEl  = document.getElementById('cash-opening');
-        const inEl    = document.getElementById('cash-in-total');
-        const outEl   = document.getElementById('cash-out-total');
-        const adjEl   = document.getElementById('cash-adj-total');
-        const adjRow  = document.getElementById('cash-adj-row');
+        const cashEl = document.getElementById('kpi-cash-hand');
+        const openEl = document.getElementById('cash-opening');
+        const inEl = document.getElementById('cash-in-total');
+        const outEl = document.getElementById('cash-out-total');
+        const adjEl = document.getElementById('cash-adj-total');
+        const adjRow = document.getElementById('cash-adj-row');
 
         if (cashEl) {
-            cashEl.innerText    = formatCurrency(currentCash);
-            cashEl.style.color  = currentCash >= 0 ? '#10b981' : '#ef4444';
+            cashEl.innerText = formatCurrency(currentCash);
+            cashEl.style.color = currentCash >= 0 ? '#10b981' : '#ef4444';
         }
         if (openEl) openEl.innerText = formatCurrency(openingBalance);
-        if (inEl)   inEl.innerText   = formatCurrency(cashIn);
-        if (outEl)  outEl.innerText  = formatCurrency(cashOut);
+        if (inEl) inEl.innerText = formatCurrency(cashIn);
+        if (outEl) outEl.innerText = formatCurrency(cashOut);
         if (adjEl && adjRow) {
             if (adjTotal !== 0) {
-                adjEl.innerText      = (adjTotal > 0 ? '+' : '') + formatCurrency(adjTotal);
+                adjEl.innerText = (adjTotal > 0 ? '+' : '') + formatCurrency(adjTotal);
                 adjRow.style.display = '';
             } else { adjRow.style.display = 'none'; }
         }
@@ -3751,16 +3778,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // ─── MODAL: Điều Chỉnh Quỹ ───────────────────────────────────────────────
-    const modalAdj       = document.getElementById('modal-adjust-cash');
-    const btnAdjust      = document.getElementById('btn-adjust-cash');
-    const btnSaveAdj     = document.getElementById('btn-save-adj');
-    const btnCancelAdj   = document.getElementById('btn-cancel-adj');
+    const modalAdj = document.getElementById('modal-adjust-cash');
+    const btnAdjust = document.getElementById('btn-adjust-cash');
+    const btnSaveAdj = document.getElementById('btn-save-adj');
+    const btnCancelAdj = document.getElementById('btn-cancel-adj');
     const inputAdjAmount = document.getElementById('input-adj-amount');
-    const inputAdjNote   = document.getElementById('input-adj-note');
+    const inputAdjNote = document.getElementById('input-adj-note');
 
     if (btnAdjust) btnAdjust.addEventListener('click', () => {
         if (inputAdjAmount) inputAdjAmount.value = '';
-        if (inputAdjNote)   inputAdjNote.value   = '';
+        if (inputAdjNote) inputAdjNote.value = '';
         if (modalAdj) modalAdj.style.display = 'flex';
         if (inputAdjAmount) inputAdjAmount.focus();
     });
@@ -3784,15 +3811,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 showToast(`Đã ghi khoản bất thường ${formatSignedMoneyStr(amount)} — ${note}`, "success");
                 document.getElementById('sync-gsheet-btn')?.click();
             } else throw new Error(res.message);
-        } catch(e) { showToast("Lỗi: " + e.message, "error"); }
+        } catch (e) { showToast("Lỗi: " + e.message, "error"); }
         btnSaveAdj.innerHTML = 'Lưu bản ghi'; btnSaveAdj.disabled = false;
     });
 
     // Close modals by clicking outside
     [modalAdj, document.getElementById('modal-partial-pay')].forEach(m => {
-        if (m) m.addEventListener('click', e => { 
+        if (m) m.addEventListener('click', e => {
             if (e.target === m) {
-                m.style.display = 'none'; 
+                m.style.display = 'none';
                 // Since this modal resolves a promise, clicking outside won't immediately resolve it unless we capture it. 
                 // Currently, clicking outside just hides it (leaving the promise hanging).
                 // Actually, wait, let's trigger the cancel button instead to resolve the promise.
@@ -4519,31 +4546,31 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => {
             console.log("Auto-syncing data for role:", role);
             // Kích hoạt sync trực tiếp thay vì click button (vì button có thể bị ẩn với EMP_LV2)
-            syncData(); 
+            syncData();
         }, 800);
     }
     // --- RECEIPT EXPORT LOGIC ---
-    window.showReceipt = function() {
+    window.showReceipt = function () {
         if (!currentSelectedBuyer) return;
-        
+
         const modal = document.getElementById('receipt-modal');
         const itemsBody = document.getElementById('receipt-items-body');
-        
+
         // Cập nhật thông tin chung
         document.getElementById('receipt-customer-name').innerText = currentSelectedBuyer.name;
         document.getElementById('receipt-date').innerText = formatDateVN(new Date());
         document.getElementById('receipt-id').innerText = "Số: INV-" + Date.now().toString().slice(-6);
-        
+
         // Đổ dữ liệu mặt hàng (Lấy từ các đơn nợ hiện tại)
         itemsBody.innerHTML = '';
         currentSelectedBuyer.transactions.forEach(t => {
             const row = document.createElement('tr');
             const summary = t.lines.map(l => {
                 // Định dạng giá kiểu rút gọn (ví dụ 2500 -> 2.5k) cho gọn hóa đơn
-                const shortPrice = l.price >= 1000 ? (l.price / 1000).toLocaleString('en-US', {maximumFractionDigits: 1}) + 'k' : l.price;
+                const shortPrice = l.price >= 1000 ? (l.price / 1000).toLocaleString('en-US', { maximumFractionDigits: 1 }) + 'k' : l.price;
                 return `${l.qty} ${l.flowerType} x ${shortPrice}`;
             }).join(', ');
-            
+
             // Định dạng lại ngày từ DD/MM/YYYY sang DD/MM/YY
             let shortDateWithYear = t.dateStr;
             if (t.dateStr.length >= 10) {
@@ -4563,12 +4590,12 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
             itemsBody.appendChild(row);
         });
-        
+
         // Tính toán tổng kết từ danh sách giao dịch
         let totalQty = 0;
         let totalAmount = 0;
         let totalPaid = 0;
-        
+
         currentSelectedBuyer.transactions.forEach(t => {
             totalQty += (t.totalQty || 0);
             totalAmount += (t.totalExpected || 0);
@@ -4581,25 +4608,25 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('receipt-summary-total').innerText = formatCurrency(totalAmount);
         document.getElementById('receipt-summary-paid').innerText = formatCurrency(totalPaid);
         document.getElementById('receipt-summary-debt').innerText = formatCurrency(totalDebt);
-        
+
         modal.style.display = 'flex';
     };
 
-    window.closeReceipt = function() {
+    window.closeReceipt = function () {
         document.getElementById('receipt-modal').style.display = 'none';
     };
 
-    window.downloadPDF = function() {
+    window.downloadPDF = function () {
         const element = document.querySelector('.receipt-paper');
         const buyerName = currentSelectedBuyer ? currentSelectedBuyer.name : 'KhachHang';
         const dateStr = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-');
-        
+
         const opt = {
-            margin:       10,
-            filename:     `HoaDon_${buyerName}_${dateStr}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            margin: 10,
+            filename: `HoaDon_${buyerName}_${dateStr}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 
         // Hiện thông báo đang xử lý
@@ -4623,4 +4650,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnExportReceipt) {
         btnExportReceipt.addEventListener('click', showReceipt);
     }
+
+    // Investment logic moved to investment.js
 });

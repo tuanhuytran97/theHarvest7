@@ -394,10 +394,10 @@
             <nav>
                 <a href="#" id="menu-data" class="active"><i class="fa-solid fa-table"></i> <span>Dữ Liệu</span></a>
                 <a href="#" id="menu-report"><i class="fa-solid fa-chart-pie"></i> <span>Báo Cáo</span></a>
-                <a href="#" id="menu-cashflow"><i class="fa-solid fa-money-bill-transfer"></i> <span>Dòng
-                        Tiền</span></a>
+                <a href="#" id="menu-cashflow"><i class="fa-solid fa-money-bill-transfer"></i> <span>Dòng Tiền</span></a>
                 <a href="#" id="menu-debt"><i class="fa-solid fa-book-journal-whills"></i> <span>Sổ Nợ</span></a>
                 <a href="#" id="menu-financial"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Báo Cáo Tài Chính</span></a>
+                <a href="#" id="menu-investment"><i class="fa-solid fa-seedling"></i> <span>Đầu Tư (Buffett)</span></a>
             </nav>
         </aside>
 
@@ -1185,6 +1185,88 @@
                     </section>
                 </div> <!-- End of VIEW-DEBT -->
 
+                <!-- VIEW 5: INVESTMENT (ĐẦU TƯ - BUFFETT STYLE) -->
+                <div id="view-investment" class="app-view" style="display: none;">
+                    
+                    <div class="report-controls glassmorphism" style="padding: 1.5rem; margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border-radius: 12px; border-left: 5px solid #0f172a;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                            <div>
+                                <h2 style="margin:0; font-size: 1.4rem; color: #0f172a; font-weight: 800;"><i class="fa-solid fa-seedling"></i> Quản Lý Danh Mục Đầu Tư</h2>
+                                <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: #475569;">"Luôn hướng tới biên an toàn và lãi kép dài hạn" - Warren Buffett</p>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button id="btn-sync-prices" class="btn-primary" style="background: #ffffff; color: #0f172a; border: 1px solid #e2e8f0; padding: 10px 20px; font-weight: 700; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Cập nhật giá
+                                </button>
+                                <button id="btn-add-investment" class="btn-primary" style="background: #0f172a; color: #f8fafc; border: none; padding: 10px 20px; font-weight: 700; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.2);">
+                                    <i class="fa-solid fa-plus-circle"></i> Thêm Mã Đầu Tư
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Core Philosophy Panel -->
+                        <div style="margin-top: 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; font-size: 0.9rem; color: #334155;">
+                            <div style="font-weight: 800; color: #0f172a; margin-bottom: 8px; font-size: 1rem;"><i class="fa-solid fa-lightbulb" style="color: #f59e0b;"></i> Triết Lý Tích Lũy Bền Vững</div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
+                                <div><strong style="color: #10b981;">1. Sức mạnh của Số Lượng:</strong> Thời gian thị trường đi ngang (sideway) hoặc giảm là "cơ hội vàng" để tích lũy. Mua được nhiều cổ phiếu quan trọng hơn việc giá tăng sớm.</div>
+                                <div><strong style="color: #6366f1;">2. Nguyên tắc 20/80:</strong> Tham lam khi người khác sợ hãi, và sợ hãi khi người khác tham lam. Tuân thủ kỷ luật DCA đều đặn.</div>
+                                <div><strong style="color: #f43f5e;">3. Kỷ luật Thép:</strong> Không bao giờ All-in, hạn chế đòn bẩy. Đầu tư là một kế hoạch tẻ nhạt đến phát chán — đó chính là quy trình làm giàu.</div>
+                                <div><strong style="color: #eab308;">4. Quy tắc Số 1 - Không mất tiền:</strong> Sai lầm 1 lần là mất trắng. Khi vốn ít, ưu tiên số 1 là tạo Dòng tiền kinh doanh/thu nhập thủ động, không đánh cược đầu cơ.</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Value KPIs -->
+                        <div class="financial-ratios-summary-container" style="margin-top: 10px;">
+                            <div class="ratio-summary-card" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;">
+                                <div class="ratio-label"><i class="fa-solid fa-vault"></i> TỔNG TÀI SẢN (NAV)</div>
+                                <h3 id="inv-kpi-nav" class="ratio-value" style="font-size: 1.8rem;">0 ₫</h3>
+                            </div>
+                            <div class="ratio-summary-card" style="background: linear-gradient(135deg, #b45309 0%, #d97706 100%) !important;">
+                                <div class="ratio-label"><i class="fa-solid fa-chart-line"></i> LÃI KÉP (CAGR)</div>
+                                <h3 id="inv-kpi-cagr" class="ratio-value" style="font-size: 1.8rem;">0%</h3>
+                            </div>
+                            <div class="ratio-summary-card" style="background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;">
+                                <div class="ratio-label"><i class="fa-solid fa-shield-halved"></i> BIÊN AN TOÀN TRUNG BÌNH</div>
+                                <h3 id="inv-kpi-mos" class="ratio-value" style="font-size: 1.8rem;">0%</h3>
+                            </div>
+                            <div class="ratio-summary-card" style="background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%) !important;">
+                                <div class="ratio-label"><i class="fa-solid fa-hand-holding-dollar"></i> CỔ TỨC TÍCH LUỸ</div>
+                                <h3 id="inv-kpi-dividends" class="ratio-value" style="font-size: 1.8rem;">0 ₫</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Owner's Ledger Table -->
+                    <section class="card table-card glassmorphism">
+                        <div class="table-header">
+                            <h2><i class="fa-solid fa-book-open"></i> Nhật Ký Cổ Đông (Danh mục hiện tại)</h2>
+                        </div>
+                        <div class="table-responsive" style="margin-top: 15px;">
+                            <table class="financial-table" id="inv-portfolio-table" style="width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th>Mã / Tên Tài Sản</th>
+                                        <th>Thời Gian Nắm Giữ</th>
+                                        <th>Số Lượng/Cổ</th>
+                                        <th>Vốn Sở Hữu</th>
+                                        <th>Định Giá Lý Thuyết</th>
+                                        <th><span style="color:#eab308;">Đơn Giá Hiện Tại</span></th>
+                                        <th>Giá Trị Hiện Tại</th>
+                                        <th>Lãi Chênh Lệch</th>
+                                        <th>Trạng Thái</th>
+                                        <th style="min-width: 100px;">Thao Tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inv-portfolio-body">
+                                    <tr>
+                                        <td colspan="8" style="text-align: center; color: var(--text-light); padding: 2rem;">Chưa có danh mục đầu tư nào. Bấm "Thêm Mã Đầu Tư" để bắt đầu.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div> <!-- End of VIEW-INVESTMENT -->
+
 
             </div>
         </main>
@@ -1303,6 +1385,10 @@
             <a href="#" class="mobile-nav-item" data-view="debt">
                 <i class="fa-solid fa-book-journal-whills"></i>
                 <span>Sổ Nợ</span>
+            </a>
+            <a href="#" class="mobile-nav-item" data-view="investment">
+                <i class="fa-solid fa-seedling"></i>
+                <span>Đầu Tư</span>
             </a>
         </nav>
     </div>
@@ -1427,10 +1513,176 @@
             </div>
         </div>
     </div>
+    </div>
+
+    <!-- MODAL: Đầu Tư - Buffett Checklist -->
+    <div id="modal-invest-checklist" class="cash-modal-overlay" style="display:none;">
+        <div class="cash-modal-box glassmorphism" style="max-width: 550px !important; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header-premium" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;">
+                <div class="modal-icon-adjust" style="background: rgba(255,255,255,0.1) !important; color: #fbbf24;">
+                    <i class="fa-solid fa-list-check"></i>
+                </div>
+                <div class="modal-title-group">
+                    <h3 style="font-size: 1.15rem !important;">Buffett's Checklist</h3>
+                    <p style="color: #cbd5e1 !important;">Đánh giá rào cản cảm xúc trước khi xuống tiền</p>
+                </div>
+            </div>
+
+            <div class="cash-modal-body" style="padding: 1.5rem !important;">
+                
+                <h4 style="margin: 0 0 1rem 0; color: #334155; font-size: 0.9rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">Thông tin Tài sản</h4>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 1.5rem;">
+                    <div class="cash-modal-field" style="margin-bottom: 0 !important;">
+                        <label>Tên/Mã Tài Sản</label>
+                        <input type="text" id="inv-input-name" placeholder="VD: VNM, Đất sào..." autocomplete="off">
+                    </div>
+                    <div class="cash-modal-field" style="margin-bottom: 0 !important;">
+                        <label>Loại (Phân Lớp)</label>
+                        <select id="inv-input-type" style="width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 600;">
+                            <option value="Cổ Phiếu">Cổ Phiếu</option>
+                            <option value="ETF">ETF (Quỹ Chỉ Số)</option>
+                            <option value="Bất Động Sản">Bất Động Sản</option>
+                            <option value="Góp Vốn KD">Góp Vốn Công ty</option>
+                            <option value="Tài Sản An Toàn">Tài Sản An Toàn</option>
+                            <option value="Khác">Khác</option>
+                        </select>
+                    </div>
+                    <div class="cash-modal-field" style="margin-bottom: 0 !important;">
+                        <label>Tổng Mức Vốn (VNĐ)</label>
+                        <input type="text" id="inv-input-capital" class="money-input" placeholder="VD: 100.000.000" autocomplete="off">
+                    </div>
+                    <div class="cash-modal-field" style="margin-bottom: 0 !important;">
+                        <label>Số Lượng Khởi Tạo</label>
+                        <input type="number" id="inv-input-qty" placeholder="Số lượng tài sản..." autocomplete="off">
+                    </div>
+                    <div class="cash-modal-field" style="margin-bottom: 0 !important;">
+                        <label>Định Giá Lý Thuyết</label>
+                        <input type="text" id="inv-input-intrinsic" class="money-input" placeholder="Khuyến nghị: Rẻ hơn 20%" autocomplete="off">
+                    </div>
+                </div>
+
+                <h4 style="margin: 0 0 1rem 0; color: #334155; font-size: 0.9rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">Quy tắc 4 Cột Trụ (Phải đánh dấu đủ)</h4>
+                
+                <div id="inv-checklist-group" style="display: flex; flex-direction: column; gap: 12px; font-size: 0.85rem; color: #475569; font-weight: 500; margin-bottom: 1.5rem;">
+                    <label style="display: flex; gap: 10px; align-items: flex-start; cursor: pointer;">
+                        <input type="checkbox" class="inv-rule-chk" style="margin-top: 3px; transform: scale(1.2);">
+                        <span><strong>Tầm nhìn Dài Hạn & Có Lợi thế:</strong> Doanh nghiệp đầu ngành, có Lợi thế cạnh tranh bền vững (Moat) và tôi có chiến lược mua gom DCA dài hạn.</span>
+                    </label>
+                    <label style="display: flex; gap: 10px; align-items: flex-start; cursor: pointer;">
+                        <input type="checkbox" class="inv-rule-chk" style="margin-top: 3px; transform: scale(1.2);">
+                        <span><strong>Vòng tròn Năng lực:</strong> Tôi hoàn toàn hiểu rõ mô hình kinh doanh và cách tài sản này đẻ ra lợi nhuận bền vững.</span>
+                    </label>
+                    <label style="display: flex; gap: 10px; align-items: flex-start; cursor: pointer;">
+                        <input type="checkbox" class="inv-rule-chk" style="margin-top: 3px; transform: scale(1.2);">
+                        <span><strong>Tài chính Khỏe mạnh:</strong> Tỷ lệ Nợ vay thấp, ROE đạt trên 15%, không rủi ro dòng tiền ngắn hạn.</span>
+                    </label>
+                    <label style="display: flex; gap: 10px; align-items: flex-start; cursor: pointer;">
+                        <input type="checkbox" class="inv-rule-chk" style="margin-top: 3px; transform: scale(1.2);">
+                        <span><strong>Biên an toàn (Margin of Safety):</strong> Mua khi giá thấp hơn Giá trị thực. Đồng thời tuân thủ Kỷ Luật Ngưng Đòn Bẩy & Không All-in.</span>
+                    </label>
+                </div>
+
+                <div class="cash-modal-field" style="margin-bottom: 0 !important;">
+                    <label>Luận điểm đầu tư & Ghi chú (Bắt buộc)</label>
+                    <textarea id="inv-input-note" rows="3" placeholder="Ghi lại lý do tại sao bạn tin tưởng vào khoản đầu tư này để kỷ luật nắm giữ..." style="width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-family: inherit; font-size: 0.9rem; resize: vertical; box-sizing: border-box; outline: none;"></textarea>
+                </div>
+            </div>
+
+            <div class="cash-modal-actions">
+                <button id="btn-save-inv" class="btn-save-premium" disabled style="opacity: 0.5; background: #0f172a !important; cursor: not-allowed;">
+                    <i class="fa-solid fa-lock"></i> Rót Vốn Khởi Tạo
+                </button>
+                <button id="btn-cancel-inv" class="btn-cancel-premium">
+                    Suy Nghĩ Thêm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Giao Dịch Đầu Tư (Mua Thêm/Bán Bớt) -->
+    <div id="modal-invest-transaction" class="cash-modal-overlay" style="display:none;">
+        <div class="cash-modal-box glassmorphism" style="max-width: 500px !important;">
+            <div class="modal-header-premium" style="background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important;">
+                <div class="modal-icon-adjust" style="background: rgba(255,255,255,0.1) !important; color: #fff;">
+                    <i class="fa-solid fa-money-bill-transfer"></i>
+                </div>
+                <div class="modal-title-group">
+                    <h3 id="inv-tx-title" style="font-size: 1.15rem !important; color: white; margin:0">Giao Dịch</h3>
+                    <p style="color: #d1fae5 !important; margin:0; font-size:0.85rem">Ghi chú dòng tiền (Mua thêm / Bán bớt / Cổ tức)</p>
+                </div>
+            </div>
+
+            <div class="cash-modal-body" style="padding: 1.5rem !important;">
+                <input type="hidden" id="inv-tx-symbol">
+                
+                <div class="cash-modal-field">
+                    <label>Loại Giao Dịch</label>
+                    <div style="display: flex; gap: 10px;">
+                        <label style="flex: 1; display:flex; align-items:center; justify-content:center; gap:5px; background: #ecfdf5; padding: 10px; border-radius: 8px; border: 1px solid #10b981; cursor: pointer; color: #065f46; font-weight: 600;">
+                            <input type="radio" name="inv-tx-type" value="Mua" checked> Mua
+                        </label>
+                        <label style="flex: 1; display:flex; align-items:center; justify-content:center; gap:5px; background: #fff1f2; padding: 10px; border-radius: 8px; border: 1px solid #f43f5e; cursor: pointer; color: #9f1239; font-weight: 600;">
+                            <input type="radio" name="inv-tx-type" value="Bán"> Bán
+                        </label>
+                        <label style="flex: 1; display:flex; align-items:center; justify-content:center; gap:5px; background: #fefce8; padding: 10px; border-radius: 8px; border: 1px solid #eab308; cursor: pointer; color: #854d0e; font-weight: 600;">
+                            <input type="radio" name="inv-tx-type" value="Cổ Tức"> Cổ Tức
+                        </label>
+                    </div>
+
+                    <div id="inv-dividend-options" style="display: none; margin-top: 10px;">
+                        <label style="font-size: 0.85rem; color: #64748b; margin-bottom: 5px; display: block;">Chi tiết hình thức nhận Cổ Tức:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <label style="flex: 1; display:flex; align-items:center; justify-content:center; gap:5px; background: #eff6ff; padding: 8px; border-radius: 6px; border: 1px solid #3b82f6; cursor: pointer; color: #1e3a8a; font-size: 0.9rem; font-weight: 500;">
+                                <input type="radio" name="inv-div-type" value="Tiền" checked> Tiền mặt
+                            </label>
+                            <label style="flex: 1; display:flex; align-items:center; justify-content:center; gap:5px; background: #fdf4ff; padding: 8px; border-radius: 6px; border: 1px solid #d946ef; cursor: pointer; color: #86198f; font-size: 0.9rem; font-weight: 500;">
+                                <input type="radio" name="inv-div-type" value="Cổ Phiếu"> Cổ phiếu
+                            </label>
+                            <label style="flex: 1; display:flex; align-items:center; justify-content:center; gap:5px; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #94a3b8; cursor: pointer; color: #475569; font-size: 0.9rem; font-weight: 500;">
+                                <input type="radio" name="inv-div-type" value="Cả Hai"> Cả hai
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 1.5rem;">
+                    <div class="cash-modal-field" style="margin-bottom: 0 !important;">
+                        <label>Số Lượng Khớp</label>
+                        <input type="number" id="inv-tx-qty" placeholder="VD: 500" autocomplete="off">
+                    </div>
+                    <div class="cash-modal-field" style="margin-bottom: 0 !important;">
+                        <label>Đơn Giá (Nghìn/Đồng)</label>
+                        <input type="text" id="inv-tx-price" class="money-input" placeholder="VD: 75.000" autocomplete="off">
+                    </div>
+                </div>
+                
+                <div class="cash-modal-field">
+                    <label>Tổng Tiền Giao Dịch (Sau Thuế/Phí)</label>
+                    <input type="text" id="inv-tx-total" class="money-input" placeholder="Giá trị thực tế trừ/nhận về" autocomplete="off">
+                </div>
+
+                <div class="cash-modal-field" style="margin-bottom: 0 !important;">
+                    <label>Ghi chú (Tâm lý khi GD)</label>
+                    <textarea id="inv-tx-note" rows="2" placeholder="VD: Mua thêm DCA... / Chốt lời 1 phần..." style="width: 100%; padding: 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-family: inherit; font-size: 0.9rem; resize: vertical; box-sizing: border-box; outline: none;"></textarea>
+                </div>
+            </div>
+
+            <div class="cash-modal-actions">
+                <button id="btn-save-inv-tx" class="btn-save-premium">
+                    <i class="fa-solid fa-check"></i> Lưu Giao Dịch
+                </button>
+                <button onclick="document.getElementById('modal-invest-transaction').style.display='none'" class="btn-cancel-premium">
+                    Hủy bỏ
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- SCRIPTS -->
     <script src="config.js"></script>
     <script src="app.js"></script>
+    <script src="investment.js"></script>
     <script src="chatbot.js"></script>
 </body>
 
