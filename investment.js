@@ -77,24 +77,30 @@ document.addEventListener("DOMContentLoaded", () => {
                 invPortfolioData.forEach(p => {
                     const related = invCashFlowData.filter(cf => cf["Mã/Tên"] === p["Mã/Tên"]);
                     let qty = 0;
+                    let totalDivCash = 0;
                     p.capital = related.reduce((sum, cf) => {
+                        const type = String(cf["Loại Giao Dịch"] || "");
                         const amt = parseFloat(cf["Số Tiền"]) || 0;
                         const sl = parseFloat(cf["Số Lượng"]) || 0;
-                        if (cf["Loại Giao Dịch"] === "Mua") {
+                        
+                        if (type === "Mua") {
                             qty += sl;
                             return sum + amt;
-                        }
-                        if (cf["Loại Giao Dịch"] === "Bán") {
+                        } else if (type === "Bán") {
                             qty -= sl;
                             return sum - amt;
+                        } else if (type.includes("Cổ Tức")) {
+                            if (type.includes("Cổ Phiếu") || type.includes("Tiền & CP") || type === "Cổ Tức" || type === "Cổ Tức (Cổ Phiếu)") {
+                                qty += sl;
+                            }
+                            if (type.includes("Tiền") || type === "Cổ Tức" || type === "Cổ Tức (Tiền)") {
+                                totalDivCash += amt;
+                            }
                         }
                         return sum;
                     }, 0);
                     p.totalQty = qty;
-                    p.divs = related.reduce((sum, cf) => {
-                        if (cf["Loại Giao Dịch"] === "Cổ Tức") return sum + (parseFloat(cf["Số Tiền"]) || 0);
-                        return sum;
-                    }, 0);
+                    p.divs = totalDivCash;
                 });
 
                 console.log("Investment Data Loaded:", invPortfolioData);
@@ -254,24 +260,30 @@ document.addEventListener("DOMContentLoaded", () => {
                         invPortfolioData.forEach(p => {
                             const related = invCashFlowData.filter(cf => cf["Mã/Tên"] === p["Mã/Tên"]);
                             let qty = 0;
+                            let totalDivCash = 0;
                             p.capital = related.reduce((sum, cf) => {
+                                const type = String(cf["Loại Giao Dịch"] || "");
                                 const amt = parseFloat(cf["Số Tiền"]) || 0;
                                 const sl = parseFloat(cf["Số Lượng"]) || 0;
-                                if (cf["Loại Giao Dịch"] === "Mua") {
+                                
+                                if (type === "Mua") {
                                     qty += sl;
                                     return sum + amt;
-                                }
-                                if (cf["Loại Giao Dịch"] === "Bán") {
+                                } else if (type === "Bán") {
                                     qty -= sl;
                                     return sum - amt;
+                                } else if (type.includes("Cổ Tức")) {
+                                    if (type.includes("Cổ Phiếu") || type.includes("Tiền & CP") || type === "Cổ Tức") {
+                                        qty += sl;
+                                    }
+                                    if (type.includes("Tiền") || type === "Cổ Tức") {
+                                        totalDivCash += amt;
+                                    }
                                 }
                                 return sum;
                             }, 0);
                             p.totalQty = qty;
-                            p.divs = related.reduce((sum, cf) => {
-                                if (cf["Loại Giao Dịch"] === "Cổ Tức") return sum + (parseFloat(cf["Số Tiền"]) || 0);
-                                return sum;
-                            }, 0);
+                            p.divs = totalDivCash;
                         });
                         
                         renderInvestmentPortfolio();
@@ -333,7 +345,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     const months = Math.floor(diffDays / 30);
                     const timeStr = months > 11 ? `${Math.floor(months / 12)} năm ${months % 12} tháng` : `${months} tháng`;
 
-                    const profitVal = currentVal - (item.capital || 0);
+                    // Lãi ròng = (Giá Trị Hiện Tại + Tổng Cổ Tức Bằng Tiền) - Vốn Sở Hữu
+                    const profitVal = (currentVal + (item.divs || 0)) - (item.capital || 0);
                     const profitStr = window.formatSignedMoneyStr ? window.formatSignedMoneyStr(profitVal) : profitVal;
 
                     const typeStr = String(item["Phân Loại"] || "").trim().toLowerCase();
