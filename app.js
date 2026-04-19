@@ -681,6 +681,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <th data-sort="Người Mua">Tên Vựa <i class="fa-solid fa-sort"></i></th>
                     <th>Phân Loại</th>
                     <th data-sort="Số lượng">SL <i class="fa-solid fa-sort"></i></th>
+                    <th data-sort="Giá">Giá <i class="fa-solid fa-sort"></i></th>
                     <th data-sort="Tiền Phải Thu">Phải Thu <i class="fa-solid fa-sort"></i></th>
                     <th data-sort="Doanh Thu Khác">Doanh Thu <i class="fa-solid fa-sort"></i></th>
                     <th data-sort="Đã Thu">Đã Thu <i class="fa-solid fa-sort"></i></th>
@@ -718,7 +719,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (dataToRender.length === 0) {
-            const colCount = currentTableTab === 'expense' ? 6 : 11;
+            let colCount = 11;
+            if (currentTableTab === 'expense') colCount = 6;
+            else if (currentTableTab === 'vua') colCount = 12;
             tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;color:var(--text-light)">Không tìm thấy giao dịch nào.</td></tr>`;
             return;
         }
@@ -771,6 +774,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td data-label="Tên Vựa" style="font-weight:600;">${row["Người Mua"] || ''}</td>
                     <td data-label="Loại Bông">${row["Phân Loại Bông"] || ''}</td>
                     <td data-label="SL">${row["Số lượng"] ? row["Số lượng"].toLocaleString('vi-VN') : 0}</td>
+                    <td data-label="Giá">${formatCurrency(row["Giá"])}</td>
                     <td data-label="Phải Thu" style="color:var(--primary-color); font-weight:600;">${formatCurrency(pt)}</td>
                     <td data-label="Doanh Thu" style="color:#ec4899; font-weight:700;">${formatCurrency(dt)}</td>
                     <td data-label="Đã Thu" style="color:#10b981; font-weight:700;">${formatCurrency(parseFloat(String(row["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0)}</td>
@@ -847,7 +851,9 @@ document.addEventListener("DOMContentLoaded", () => {
             totalTr.className = 'total-row';
             totalTr.style.cssText = 'background: rgba(16, 185, 129, 0.05); border-top: 2px dashed var(--success); font-weight: 800;';
 
-            const colCount = currentTableTab === 'expense' ? 6 : 11;
+            let colCount = 11;
+            if (currentTableTab === 'expense') colCount = 6;
+            else if (currentTableTab === 'vua') colCount = 12;
 
             let cellsHtml = '';
             for (let i = 0; i < colCount; i++) {

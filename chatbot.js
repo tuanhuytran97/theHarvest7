@@ -292,6 +292,7 @@ document.addEventListener("DOMContentLoaded", () => {
             else if (noteLower.includes("lãi")) category = "Lãi";
             else if (noteLower.includes("công") || noteLower.includes("lương")) category = "Công";
             else if (noteLower.includes("vận chuyển") || noteLower.includes("ship")) category = "Vận Chuyển";
+            else if (noteLower.includes("vật tư kd")) category = "Vật tư KD";
             // 2. Prefix-based Priority (If no high-priority keywords match)
             else if (lowerText.startsWith("exp")) category = "Expensed";
             else if (lowerText.startsWith("chi") || lowerText.startsWith("trả") || lowerText.startsWith("tra")) category = "Chi Phí Khác";
