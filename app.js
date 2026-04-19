@@ -39,7 +39,7 @@ function formatSignedMoneyStr(num) {
 }
 
 function formatShorthandCurrency(num, isSigned = false) {
-    if (window.innerWidth > 768) {
+    if (window.innerWidth > 992) {
         return isSigned ? formatSignedMoneyStr(num) : formatCurrency(num);
     }
     
