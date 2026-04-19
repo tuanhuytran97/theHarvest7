@@ -38,6 +38,27 @@ function formatSignedMoneyStr(num) {
     return sign + new Intl.NumberFormat('vi-VN').format(num) + " ₫";
 }
 
+function formatShorthandCurrency(num, isSigned = false) {
+    if (window.innerWidth > 768) {
+        return isSigned ? formatSignedMoneyStr(num) : formatCurrency(num);
+    }
+    
+    if (!num && num !== 0) return "-";
+    const absNum = Math.abs(num);
+    let formatted = "";
+    
+    if (absNum >= 1000000000) {
+        formatted = (num / 1000000000).toLocaleString('vi-VN', { maximumFractionDigits: 3 }) + " tỷ";
+    } else if (absNum >= 1000000) {
+        formatted = (num / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + " triệu";
+    } else {
+        return isSigned ? formatSignedMoneyStr(num) : formatCurrency(num);
+    }
+    
+    if (isSigned && num > 0) formatted = "+" + formatted;
+    return formatted;
+}
+
 // Global expose
 window.getRole = getRole;
 window.getToken = getToken;
@@ -46,6 +67,7 @@ window.formatCurrency = formatCurrency;
 window.formatNumber = formatNumber;
 window.parseMoney = parseMoney;
 window.formatSignedMoneyStr = formatSignedMoneyStr;
+window.formatShorthandCurrency = formatShorthandCurrency;
 
 document.addEventListener("DOMContentLoaded", () => {
     // 0. Internal Access Control (Server-side validation)

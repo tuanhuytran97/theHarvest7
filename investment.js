@@ -347,7 +347,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     // Lãi ròng = (Giá Trị Hiện Tại + Tổng Cổ Tức Bằng Tiền) - Vốn Sở Hữu
                     const profitVal = (currentVal + (item.divs || 0)) - (item.capital || 0);
-                    const profitStr = window.formatSignedMoneyStr ? window.formatSignedMoneyStr(profitVal) : profitVal;
+                    const profitStr = window.formatShorthandCurrency ? window.formatShorthandCurrency(profitVal, true) : profitVal;
 
                     const typeStr = String(item["Phân Loại"] || "").trim().toLowerCase();
                     let displayUnitPrice = "-";
@@ -362,8 +362,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         <td style="font-weight: 700; color: #0f172a;">${item["Mã/Tên"]} <br> <span style="font-size: 0.75rem; color: #64748b; font-weight: normal;">${item["Phân Loại"]}</span></td>
                         <td style="font-weight: 700; color: #3b82f6;">${new Intl.NumberFormat('vi-VN').format(totalQty)}</td>
                         <td style="color: #eab308; font-weight: 700;">${displayUnitPrice}</td>
-                        <td style="font-weight: 600;">${window.formatCurrency ? window.formatCurrency(item.capital) : item.capital}</td>
-                        <td style="color: #0f172a; font-weight: 700;">${window.formatCurrency ? window.formatCurrency(currentVal) : currentVal}</td>
+                        <td style="font-weight: 600;">${window.formatShorthandCurrency ? window.formatShorthandCurrency(item.capital) : item.capital}</td>
+                        <td style="color: #0f172a; font-weight: 700;">${window.formatShorthandCurrency ? window.formatShorthandCurrency(currentVal) : currentVal}</td>
                         <td style="font-weight: bold;"><span style="color: ${profitVal >= 0 ? '#10b981' : '#ef4444'}">${profitStr}</span></td>
                         <td>${timeStr}</td>
                         <td>${window.formatCurrency ? window.formatCurrency(item["Định Giá Lý Thuyết"]) : item["Định Giá Lý Thuyết"]}</td>
