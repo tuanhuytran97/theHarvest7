@@ -20,6 +20,24 @@ document.addEventListener("DOMContentLoaded", () => {
     let invPortfolioData = []; // To be loaded from GS
     let invCashFlowData = [];  // To be loaded from GS
 
+    // 0. Load Cache from LocalStorage for instant view
+    function loadInvCache() {
+        const cachedPortfolio = localStorage.getItem('cached_inv_portfolio');
+        const cachedCashFlow = localStorage.getItem('cached_inv_cashflow');
+        if (cachedPortfolio && cachedCashFlow) {
+            try {
+                invPortfolioData = JSON.parse(cachedPortfolio);
+                invCashFlowData = JSON.parse(cachedCashFlow);
+                console.log("Loaded Investment Cache:", invPortfolioData.length);
+                if (typeof renderInvestmentPortfolio === "function") renderInvestmentPortfolio();
+            } catch (e) {
+                console.error("Cache Parse Error:", e);
+            }
+        }
+    }
+    
+    loadInvCache();
+
     // 2. Data Sync Logic
     window.fetchInvestmentData = async function () {
         const savedView = localStorage.getItem("active_app_view");
@@ -102,6 +120,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     p.totalQty = qty;
                     p.divs = totalDivCash;
                 });
+
+                // Save to Cache for next time
+                localStorage.setItem('cached_inv_portfolio', JSON.stringify(invPortfolioData));
+                localStorage.setItem('cached_inv_cashflow', JSON.stringify(invCashFlowData));
 
                 console.log("Investment Data Loaded:", invPortfolioData);
                 renderInvestmentPortfolio();
@@ -286,6 +308,10 @@ document.addEventListener("DOMContentLoaded", () => {
                             p.divs = totalDivCash;
                         });
                         
+                        // Update cache
+                        localStorage.setItem('cached_inv_portfolio', JSON.stringify(invPortfolioData));
+                        localStorage.setItem('cached_inv_cashflow', JSON.stringify(invCashFlowData));
+
                         renderInvestmentPortfolio();
                     }
                 } else {
