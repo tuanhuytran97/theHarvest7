@@ -197,6 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
             summaryHtml += `• ${it["Số lượng"]} ${it["Phân Loại Bông"]} x ${window.utils.formatMoneyStr(it["Giá"])}đ<br>`;
         });
         
+        pendingData.summaryHtml = summaryHtml;
         showConfirmationCard(summaryHtml);
     }
 
@@ -251,7 +252,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             };
 
-            showConfirmationCard(`Bán cho <b>${buyer}</b><br>📦 <b>${qty} ${flower}</b> x <b>${window.utils.formatMoneyStr(price)}đ</b><br>💰 Tổng: <b>${window.utils.formatCurrency(revenue)}</b>`);
+            const summaryHtml = `Bán cho <b>${buyer}</b><br>📦 <b>${qty} ${flower}</b> x <b>${window.utils.formatMoneyStr(price)}đ</b><br>💰 Tổng: <b>${window.utils.formatCurrency(revenue)}</b>`;
+            pendingData.summaryHtml = summaryHtml;
+            showConfirmationCard(summaryHtml);
         } else {
             addMessage("Cấu trúc chưa đúng. Thử: <i>'Quân 150 ô hồng x 1k6'</i> hoặc <i>'Bán 50 hồng 10k'</i>", 'ai');
         }
@@ -314,7 +317,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             };
 
-            showConfirmationCard(`Ghi nhận chi phí:<br>💸 <b>${window.utils.formatCurrency(amount)}</b><br>📂 Loại: <b>${category}</b><br>📝 Ghi chú: <b>${note}</b>`);
+            const summaryHtml = `Ghi nhận chi phí:<br>💸 <b>${window.utils.formatCurrency(amount)}</b><br>📂 Loại: <b>${category}</b><br>📝 Ghi chú: <b>${note}</b>`;
+            pendingData.summaryHtml = summaryHtml;
+            showConfirmationCard(summaryHtml);
         } else {
             addMessage("Thử gõ: <i>'Chi 500k tiền điện'</i>", 'ai');
         }
@@ -368,7 +373,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const fail = results.find(r => r.status !== 'success');
                 if (fail) throw new Error(fail.message);
                 
-                cardDiv.innerHTML = `Đã lưu thành công ${results.length} đơn cho ${pendingData.buyer}! 🚀`;
+                cardDiv.innerHTML = `<div style="opacity: 0.8; font-size: 0.9em;">${pendingData.summaryHtml}</div><hr style="margin: 8px 0; border: none; border-top: 1px dashed #ccc;">✅ Đã lưu thành công ${results.length} đơn cho ${pendingData.buyer}! 🚀`;
             } else {
                 const action = pendingData.type === 'expense' ? 'add_expense' : 'add';
                 const response = await fetch(CONFIG.WEB_APP_URL, {
@@ -378,7 +383,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 const result = await response.json();
                 if (result.status !== "success") throw new Error(result.message);
-                cardDiv.innerHTML = "Đã lưu thành công! 🚀";
+                cardDiv.innerHTML = `<div style="opacity: 0.8; font-size: 0.9em;">${pendingData.summaryHtml}</div><hr style="margin: 8px 0; border: none; border-top: 1px dashed #ccc;">✅ Đã lưu thành công! 🚀`;
             }
 
             window.showToast("Dữ liệu đã được lưu qua Trợ lý Harvest!", "success");

@@ -4,8 +4,8 @@
  */
 
 // --- Global State ---
+let invHistoryData = []; 
 let invPortfolioData = []; 
-let invCashFlowData = [];  
 let invEquityChart = null;
 let invRoiChart = null;
 
@@ -116,7 +116,7 @@ function renderInvestmentPortfolio() {
     }
 
     // Update charts if data exists
-    if (invCashFlowData.length > 0) {
+    if (invHistoryData.length > 0) {
         updateInvestmentCharts();
     }
 }
@@ -128,7 +128,7 @@ function updateInvestmentCharts() {
 
     // 1. Process Data for Capital Fluctuation (Equity over time)
     // Sort transactions by date
-    const sortedTx = [...invCashFlowData].sort((a, b) => {
+    const sortedTx = [...invHistoryData].sort((a, b) => {
         const dateA = parseDate(a["Ngày Giao Dịch"] || a["Ngày"]);
         const dateB = parseDate(b["Ngày Giao Dịch"] || b["Ngày"]);
         return dateA - dateB;
@@ -138,7 +138,7 @@ function updateInvestmentCharts() {
     const timelineData = [];
     
     sortedTx.forEach(tx => {
-        const type = String(tx["Loại Giao Dịch"] || "");
+        const type = String(tx["Loại Sự Kiện"] || tx["Loại Giao Dịch"] || "");
         const amt = parseFloat(tx["Số Tiền"]) || 0;
         
         if (type === "Mua") {
@@ -181,7 +181,7 @@ function updateInvestmentCharts() {
         if (!yearlyData[year]) yearlyData[year] = { profit: 0, capitalBase: 0 };
         
         const symbol = tx["Mã/Tên"];
-        const type = String(tx["Loại Giao Dịch"] || "");
+        const type = String(tx["Loại Sự Kiện"] || tx["Loại Giao Dịch"] || "");
         const amt = parseFloat(tx["Số Tiền"]) || 0;
         const qty = parseFloat(tx["Số Lượng"]) || 0;
         const currentPrice = currentPriceMap[symbol] || 0;
@@ -325,8 +325,7 @@ window.loadInvestmentDemoData = function() {
         "Ghi Chú": "Tài sản Demo"
     }));
 
-    localStorage.setItem('cached_inv_portfolio', JSON.stringify(demoPortfolio));
-    localStorage.setItem('cached_inv_cashflow', JSON.stringify(demoCashFlow));
+    localStorage.setItem('cached_inv_history', JSON.stringify(demoCashFlow));
     localStorage.setItem('inv_demo_mode', 'true');
     
     if (confirm("Đã tạo 40 bản ghi demo (2022-2025). Hệ thống đã tạm dừng đồng bộ dữ liệu thật để bạn xem demo. Tải lại trang?")) {
@@ -340,15 +339,58 @@ window.exitInvestmentDemoMode = function() {
     window.fetchInvestmentData();
 };
 
+    function derivePortfolioFromHistory() {
+        if (!invHistoryData || invHistoryData.length === 0) return;
+        const grouped = {};
+        invHistoryData.forEach(row => {
+            const symbol = String(row["Mã/Tên"] || "").trim();
+            if (!symbol) return;
+            if (!grouped[symbol]) {
+                grouped[symbol] = {
+                    "Mã/Tên": symbol,
+                    totalQty: 0,
+                    capital: 0,
+                    divs: 0,
+                    "Phân Loại": "",
+                    "Định Giá Lý Thuyết": 0,
+                    "Giá Hiện Tại": 0,
+                    "Luận Điểm Đầu Tư": "",
+                    "Ngày Bắt Đầu": row["Ngày"]
+                };
+            }
+            const g = grouped[symbol];
+            const type = String(row["Loại Sự Kiện"] || row["Loại Giao Dịch"] || "");
+            const qty = parseFloat(row["Số Lượng"]) || 0;
+            const amt = parseFloat(row["Số Tiền"]) || 0;
+
+            if (type === "Mua") {
+                g.totalQty += qty;
+                g.capital += amt;
+            } else if (type === "Bán") {
+                g.totalQty -= qty;
+                g.capital -= amt;
+            } else if (type.includes("Cổ Tức")) {
+                if (type.includes("Tiền")) g.divs += amt;
+                if (type.includes("CP") || type.includes("Cổ Phiếu")) g.totalQty += qty;
+            }
+
+            // Metadata: Take latest non-empty values
+            if (row["Phân Loại"]) g["Phân Loại"] = row["Phân Loại"];
+            if (row["Định Giá Lý Thuyết"]) g["Định Giá Lý Thuyết"] = row["Định Giá Lý Thuyết"];
+            if (row["Giá Hiện Tại"]) g["Giá Hiện Tại"] = row["Giá Hiện Tại"];
+            if (row["Luận Điểm Đầu Tư"]) g["Luận Điểm Đầu Tư"] = row["Luận Điểm Đầu Tư"];
+        });
+        invPortfolioData = Object.values(grouped).filter(p => p.totalQty !== 0 || p.capital !== 0);
+    }
+
 // --- 1. Load Cache IMMEDIATELY (Instant Load) ---
 function loadInvCache() {
-    const cachedPortfolio = localStorage.getItem('cached_inv_portfolio');
-    const cachedCashFlow = localStorage.getItem('cached_inv_cashflow');
-    if (cachedPortfolio && cachedCashFlow) {
+    const cachedHistory = localStorage.getItem('cached_inv_history');
+    if (cachedHistory) {
         try {
-            invPortfolioData = JSON.parse(cachedPortfolio);
-            invCashFlowData = JSON.parse(cachedCashFlow);
-            console.log("Instant Cache Loaded:", invPortfolioData.length);
+            invHistoryData = JSON.parse(cachedHistory);
+            derivePortfolioFromHistory();
+            console.log("Instant Cache Loaded:", invHistoryData.length);
             // Attempt to render immediately. Since script is loaded at </body>, 
             // the DOM elements should be available even without DOMContentLoaded.
             renderInvestmentPortfolio();
@@ -405,72 +447,20 @@ document.addEventListener("DOMContentLoaded", () => {
             const res = await response.json();
 
             if (res.status === "success") {
-                // Parse Portfolio
-                const rowsDM = res.portfolio || [];
-                if (rowsDM.length > 1) {
-                    const headers = rowsDM[0];
-                    const rawPortfolio = rowsDM.slice(1).map(row => {
-                        let obj = {};
-                        headers.forEach((h, i) => obj[h] = row[i]);
-                        obj.capital = 0; 
-                        return obj;
-                    });
-
-                    // DEDUPLICATE: Chỉ lấy 1 dòng duy nhất cho mỗi Mã cổ phiếu
-                    const uniqueMap = new Map();
-                    rawPortfolio.forEach(item => {
-                        const symbol = String(item["Mã/Tên"] || "").trim();
-                        if (symbol && !uniqueMap.has(symbol)) {
-                            uniqueMap.set(symbol, item);
-                        }
-                    });
-                    invPortfolioData = Array.from(uniqueMap.values());
-                }
-
-                // Parse Cash Flow
-                const rowsDT = res.cashflow || [];
-                if (rowsDT.length > 1) {
-                    const headers = rowsDT[0];
-                    invCashFlowData = rowsDT.slice(1).map(row => {
+                const rows = res.history || [];
+                if (rows.length > 1) {
+                    const headers = rows[0];
+                    invHistoryData = rows.slice(1).map(row => {
                         let obj = {};
                         headers.forEach((h, i) => obj[h] = row[i]);
                         return obj;
                     });
                 }
 
-                // Aggregation
-                invPortfolioData.forEach(p => {
-                    const related = invCashFlowData.filter(cf => cf["Mã/Tên"] === p["Mã/Tên"]);
-                    let qty = 0;
-                    let totalDivCash = 0;
-                    p.capital = related.reduce((sum, cf) => {
-                        const type = String(cf["Loại Giao Dịch"] || "");
-                        const amt = parseFloat(cf["Số Tiền"]) || 0;
-                        const sl = parseFloat(cf["Số Lượng"]) || 0;
-                        
-                        if (type === "Mua") {
-                            qty += sl;
-                            return sum + amt;
-                        } else if (type === "Bán") {
-                            qty -= sl;
-                            return sum - amt;
-                        } else if (type.includes("Cổ Tức")) {
-                            if (type.includes("Cổ Phiếu") || type.includes("Tiền & CP") || type === "Cổ Tức (Cổ Phiếu)") {
-                                qty += sl;
-                            }
-                            if (type.includes("Tiền") || type === "Cổ Tức (Tiền)") {
-                                totalDivCash += amt;
-                            }
-                        }
-                        return sum;
-                    }, 0);
-                    p.totalQty = qty;
-                    p.divs = totalDivCash;
-                });
+                derivePortfolioFromHistory();
 
                 // Update Cache
-                localStorage.setItem('cached_inv_portfolio', JSON.stringify(invPortfolioData));
-                localStorage.setItem('cached_inv_cashflow', JSON.stringify(invCashFlowData));
+                localStorage.setItem('cached_inv_history', JSON.stringify(invHistoryData));
 
                 renderInvestmentPortfolio();
             }
@@ -478,6 +468,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Investment Fetch Error:", e);
         }
     };
+
 
     // Initialize Auto-load if in correct view
     const currentView = localStorage.getItem("active_app_view");
@@ -524,13 +515,26 @@ document.addEventListener("DOMContentLoaded", () => {
             btnSaveInv.disabled = true;
 
             try {
+                const eventData = {
+                    "Ngày": window.getTodayStr(),
+                    "Mã/Tên": name,
+                    "Loại Sự Kiện": "Mua",
+                    "Số Tiền": amount,
+                    "Số Lượng": quantity,
+                    "Đơn Giá": amount/quantity,
+                    "Phân Loại": invInputType.value,
+                    "Định Giá Lý Thuyết": intrinsic,
+                    "Giá Hiện Tại": amount/quantity,
+                    "Luận Điểm Đầu Tư": note,
+                    "Ghi Chú": note
+                };
+
                 const response = await fetch(CONFIG.WEB_APP_URL, {
                     method: "POST",
                     body: JSON.stringify({
-                        action: "save_investment_entry",
+                        action: "save_investment_event",
                         token: window.getToken(),
-                        dataDM: { "Mã/Tên": name, "Phân Loại": invInputType.value, "Định Giá Lý Thuyết": intrinsic, "Giá Hiện Tại": amount/quantity, "Luận Điểm Đầu Tư": note, "Ngày Bắt Đầu": window.getTodayStr() },
-                        dataDT: { "Ngày": window.getTodayStr(), "Mã/Tên": name, "Loại Giao Dịch": "Mua", "Số Tiền": amount, "Số Lượng": quantity, "Đơn Giá": amount/quantity, "Ghi Chú": note }
+                        data: eventData
                     }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
@@ -590,20 +594,93 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('modal-invest-transaction').style.display = 'flex';
     };
 
+    // Toggling Dividend Options & Field States
+    const txTypeRadios = document.querySelectorAll('input[name="inv-tx-type"]');
+    const divTypeRadios = document.querySelectorAll('input[name="inv-div-type"]');
+    const divOptions = document.getElementById('inv-dividend-options');
+    
+    const itxQtyInput = document.getElementById('inv-tx-qty');
+    const itxPriceInput = document.getElementById('inv-tx-price');
+    const itxTotalInput = document.getElementById('inv-tx-total');
+
+    function applyInvTxFieldStates() {
+        const type = document.querySelector('input[name="inv-tx-type"]:checked').value;
+        const subType = document.querySelector('input[name="inv-div-type"]:checked')?.value || 'Tiền';
+
+        // Reset all
+        [itxQtyInput, itxPriceInput, itxTotalInput].forEach(inp => {
+            if (inp) {
+                inp.disabled = false;
+                inp.parentElement.style.opacity = "1";
+            }
+        });
+
+        if (type === 'Cổ Tức') {
+            if (subType === 'Tiền') {
+                if (itxQtyInput) { itxQtyInput.disabled = true; itxQtyInput.parentElement.style.opacity = "0.4"; }
+                if (itxPriceInput) { itxPriceInput.disabled = true; itxPriceInput.parentElement.style.opacity = "0.4"; }
+            } else if (subType === 'Cổ Phiếu') {
+                if (itxPriceInput) { itxPriceInput.disabled = true; itxPriceInput.parentElement.style.opacity = "0.4"; }
+                if (itxTotalInput) { itxTotalInput.disabled = true; itxTotalInput.parentElement.style.opacity = "0.4"; }
+            } else if (subType === 'Cả Hai') {
+                if (itxPriceInput) { itxPriceInput.disabled = true; itxPriceInput.parentElement.style.opacity = "0.4"; }
+            }
+        }
+    }
+
+    txTypeRadios.forEach(r => {
+        r.addEventListener('change', () => {
+            if (divOptions) divOptions.style.display = r.value === 'Cổ Tức' ? 'block' : 'none';
+            applyInvTxFieldStates();
+        });
+    });
+    divTypeRadios.forEach(r => {
+        r.addEventListener('change', applyInvTxFieldStates);
+    });
+
+    // Also call on modal open
+    const originalOpenInvTxModal = window.openInvTxModal;
+    window.openInvTxModal = function(symbol) {
+        originalOpenInvTxModal(symbol);
+        // Reset radio to Mua
+        const muaRadio = document.querySelector('input[name="inv-tx-type"][value="Mua"]');
+        if (muaRadio) {
+            muaRadio.checked = true;
+            muaRadio.dispatchEvent(new Event('change'));
+        }
+    };
+
     const btnSaveTx = document.getElementById('btn-save-inv-tx');
     if (btnSaveTx) {
         btnSaveTx.addEventListener('click', async () => {
-            const dataDT = {
+            let txType = document.querySelector('input[name="inv-tx-type"]:checked').value;
+            if (txType === 'Cổ Tức') {
+                const subType = document.querySelector('input[name="inv-div-type"]:checked').value;
+                if (subType === 'Tiền') txType = "Cổ Tức Tiền";
+                else if (subType === 'Cổ Phiếu') txType = "Cổ Tức CP";
+                else txType = "Cổ Tức"; // Cả hai or general
+            }
+
+            const eventData = {
                 "Ngày": window.getTodayStr(),
                 "Mã/Tên": document.getElementById('inv-tx-symbol').value,
-                "Loại Giao Dịch": document.querySelector('input[name="inv-tx-type"]:checked').value,
+                "Loại Sự Kiện": txType,
                 "Số Tiền": window.parseMoney(document.getElementById('inv-tx-total').value),
                 "Số Lượng": parseFloat(document.getElementById('inv-tx-qty').value) || 0,
                 "Đơn Giá": window.parseMoney(document.getElementById('inv-tx-price').value),
                 "Ghi Chú": document.getElementById('inv-tx-note').value
             };
 
-            if (!confirm(`Xác nhận Lưu giao dịch ${dataDT["Loại Giao Dịch"]} cho mã ${dataDT["Mã/Tên"]}?`)) return;
+            // Inherit current metadata
+            const currentAsset = invPortfolioData.find(p => p["Mã/Tên"] === eventData["Mã/Tên"]);
+            if (currentAsset) {
+                eventData["Phân Loại"] = currentAsset["Phân Loại"];
+                eventData["Định Giá Lý Thuyết"] = currentAsset["Định Giá Lý Thuyết"];
+                eventData["Giá Hiện Tại"] = currentAsset["Giá Hiện Tại"];
+                eventData["Luận Điểm Đầu Tư"] = currentAsset["Luận Điểm Đầu Tư"];
+            }
+
+            if (!confirm(`Xác nhận Lưu giao dịch ${eventData["Loại Sự Kiện"]} cho mã ${eventData["Mã/Tên"]}?`)) return;
 
             // Hiệu ứng Loading
             const originalHTML = btnSaveTx.innerHTML;
@@ -613,7 +690,7 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
                 const response = await fetch(CONFIG.WEB_APP_URL, {
                     method: "POST",
-                    body: JSON.stringify({ action: "save_investment_transaction", token: window.getToken(), dataDT: dataDT }),
+                    body: JSON.stringify({ action: "save_investment_event", token: window.getToken(), data: eventData }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
                 const res = await response.json();

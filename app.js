@@ -26,6 +26,14 @@ function parseMoney(val) {
     return parseFloat(String(val).replace(/[^\d]/g, '')) || 0;
 }
 
+function parseSignedMoney(val) {
+    if (!val) return 0;
+    // Xoá tất cả trừ số và dấu trừ
+    const clean = String(val).replace(/[^\d-]/g, '');
+    const n = parseFloat(clean);
+    return isNaN(n) ? 0 : n;
+}
+
 function formatMoneyStr(num) {
     if (num === 0) return "0";
     if (!num) return "";
@@ -3835,12 +3843,34 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: { "Content-Type": "text/plain;charset=utf-8" }
             })).json();
             if (res.status === "success") {
-                if (modalAdj) modalAdj.style.display = 'none';
+                // Đóng panel NGAY LẬP TỨC bằng nhiều phương thức để đảm bảo hiệu quả
+                const panel = document.getElementById('modal-adjust-cash');
+                if (panel) {
+                    panel.style.display = 'none';
+                    panel.setAttribute('style', 'display: none !important');
+                }
+
                 showToast(`Đã ghi khoản bất thường ${formatSignedMoneyStr(amount)} — ${note}`, "success");
-                document.getElementById('sync-gsheet-btn')?.click();
-            } else throw new Error(res.message);
-        } catch (e) { showToast("Lỗi: " + e.message, "error"); }
-        btnSaveAdj.innerHTML = 'Lưu bản ghi'; btnSaveAdj.disabled = false;
+                
+                // Clear inputs
+                if (inputAdjAmount) inputAdjAmount.value = '';
+                if (inputAdjNote) inputAdjNote.value = '';
+                
+                // Sync data
+                if (window.syncData) window.syncData();
+            } else throw new Error(res.message || "Lưu thất bại");
+        } catch (e) { 
+            console.error("Lỗi khi lưu khoản bất thường:", e);
+            showToast("Lỗi: " + e.message, "error"); 
+        } finally {
+            const btn = document.getElementById('btn-save-adj');
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Lưu bản ghi';
+                btn.disabled = false;
+            }
+            // Fallback: Kiểm tra lại nếu modal chưa đóng thì đóng tiếp ở đây (nếu thành công)
+            // Tuy nhiên không đóng ở đây nếu có lỗi để người dùng sửa dữ liệu.
+        }
     });
 
     // Close modals by clicking outside
