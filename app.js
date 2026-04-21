@@ -698,6 +698,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     <th>Ghi Chú</th>
                     <th>Thao Tác</th>
                 `;
+            } else if (currentTableTab === 'adjustment') {
+                thead.innerHTML = `
+                    <th><input type="checkbox" id="select-all-checkbox"></th>
+                    <th data-sort="Ngày">Ngày <i class="fa-solid fa-sort"></i></th>
+                    <th>Số Tiền</th>
+                    <th>Ghi Chú</th>
+                    <th>Thao Tác</th>
+                `;
             } else {
                 thead.innerHTML = `
                     <th><input type="checkbox" id="select-all-checkbox"></th>
@@ -731,6 +739,7 @@ document.addEventListener("DOMContentLoaded", () => {
             let colCount = 11;
             if (currentTableTab === 'expense') colCount = 6;
             else if (currentTableTab === 'vua') colCount = 12;
+            else if (currentTableTab === 'adjustment') colCount = 5;
             tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;color:var(--text-light)">Không tìm thấy giao dịch nào.</td></tr>`;
             return;
         }
@@ -789,6 +798,30 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td data-label="Đã Thu" style="color:#10b981; font-weight:700;">${formatCurrency(parseFloat(String(row["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0)}</td>
                     <td data-label="Status">${row["Status"] ? `<span class="${statusClass}">${row["Status"]}</span>` : ''}</td>
                     <td data-label="Ghi chú" title="${row["Ghi Chú"] || ''}">${(row["Ghi Chú"] || '').substring(0, 15)}${(row["Ghi Chú"] || '').length > 15 ? '...' : ''}</td>
+                    <td data-label="Thao tác">
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
+                            <button class="action-btn" data-row-index="${rowIndex}" onclick="switchToInlineEdit(this)" title="Sửa" style="color:var(--primary-color);">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            ` : ''}
+                            ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
+                            <button class="action-btn" data-row-index="${rowIndex}" onclick="deleteRowByIndex(this)" title="Xoá">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                            ` : (getRole() === 'EMP_LV2' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Khóa'}</span>`)}
+                        </div>
+                    </td>
+                `;
+            } else if (currentTableTab === 'adjustment') {
+                const adjVal = parseFloat(String(row["Khoản Thu Chi Bất Thường"] || "0").replace(/[^\d]/g, '')) || 0;
+                tr.innerHTML = `
+                    <td data-label="Chọn" style="text-align: center;">
+                        ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `<input type="checkbox" class="row-checkbox" data-row-index="${rowIndex}" style="cursor:pointer;">` : `<input type="checkbox" disabled>`}
+                    </td>
+                    <td data-label="Ngày">${formatDateVietnamese(row.parsedDate)}</td>
+                    <td data-label="Số tiền" style="color:#f59e0b; font-weight:700;">${formatCurrency(adjVal)}</td>
+                    <td data-label="Ghi chú" title="${row["Ghi Chú Thu Chi Bất Thường"] || row["Ghi Chú"] || ''}">${(row["Ghi Chú Thu Chi Bất Thường"] || row["Ghi Chú"] || '').substring(0, 30)}</td>
                     <td data-label="Thao tác">
                         <div style="display: flex; gap: 8px; justify-content: center;">
                             ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
@@ -863,17 +896,32 @@ document.addEventListener("DOMContentLoaded", () => {
             let colCount = 11;
             if (currentTableTab === 'expense') colCount = 6;
             else if (currentTableTab === 'vua') colCount = 12;
+            else if (currentTableTab === 'adjustment') colCount = 5;
 
             let cellsHtml = '';
             for (let i = 0; i < colCount; i++) {
-                if (i === 4) { // Cột Phân Loại / Số Lượng
-                    cellsHtml += `<td style="text-align: right; color: var(--text-dark);">TỔNG CỘNG:</td>`;
-                } else if (i === 6) { // Cột Doanh Thu
-                    cellsHtml += `<td style="color: var(--secondary-color); font-size: 1.1rem;">${formatCurrency(totalRevenue)}</td>`;
-                } else if (i === 7) { // Cột Đã Thu
-                    cellsHtml += `<td style="color: var(--success); font-size: 1.1rem;">${formatCurrency(totalPaid)}</td>`;
+                if (currentTableTab === 'adjustment') {
+                    if (i === 1) {
+                         cellsHtml += `<td style="text-align: right; color: var(--text-dark);">TỔNG CỘNG:</td>`;
+                    } else if (i === 2) {
+                        let totalAdj = 0;
+                        dataToRender.forEach(r => {
+                            totalAdj += (parseFloat(String(r["Khoản Thu Chi Bất Thường"] || "0").replace(/[^\d]/g, '')) || 0);
+                        });
+                        cellsHtml += `<td style="color: #f59e0b; font-size: 1.1rem;">${formatCurrency(totalAdj)}</td>`;
+                    } else {
+                        cellsHtml += `<td></td>`;
+                    }
                 } else {
-                    cellsHtml += `<td></td>`;
+                    if (i === 4) { // Cột Phân Loại / Số Lượng
+                        cellsHtml += `<td style="text-align: right; color: var(--text-dark);">TỔNG CỘNG:</td>`;
+                    } else if (i === 6) { // Cột Doanh Thu
+                        cellsHtml += `<td style="color: var(--secondary-color); font-size: 1.1rem;">${formatCurrency(totalRevenue)}</td>`;
+                    } else if (i === 7) { // Cột Đã Thu
+                        cellsHtml += `<td style="color: var(--success); font-size: 1.1rem;">${formatCurrency(totalPaid)}</td>`;
+                    } else {
+                        cellsHtml += `<td></td>`;
+                    }
                 }
             }
             totalTr.innerHTML = cellsHtml;
@@ -1022,6 +1070,20 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </td>
             `;
+        } else if (currentTableTab === 'adjustment') {
+            const adjVal = parseFloat(String(rowData["Khoản Thu Chi Bất Thường"] || "0").replace(/[^\d]/g, ''));
+            tr.innerHTML = `
+                <td></td>
+                <td>${formatDateVietnamese(rowData.parsedDate)}</td>
+                <td><input type="text" class="inline-edit-input money-input" id="edit-adj-amount" value="${formatMoneyStr(adjVal)}"></td>
+                <td><input type="text" class="inline-edit-input" id="edit-adj-note" value="${rowData["Ghi Chú Thu Chi Bất Thường"] || rowData["Ghi Chú"] || ""}"></td>
+                <td>
+                    <div style="display:flex; gap:5px;">
+                        <button onclick="saveInlineEdit(${idx}, this)" class="btn-primary" style="padding:5px; background:var(--success); color:white; border:none; cursor:pointer;"><i class="fa-solid fa-check"></i></button>
+                        <button onclick="cancelInlineEdit(this)" class="btn-primary" style="padding:5px; background:var(--danger); color:white; border:none; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </td>
+            `;
         } else {
             // Farm Mode
             tr.innerHTML = `
@@ -1094,12 +1156,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 updates["Loại CP"] = document.getElementById('edit-exp-type').value;
                 updates["Ghi Chú"] = document.getElementById('edit-exp-note').value;
                 updates["Chi Phí"] = parseMoney(document.getElementById('edit-exp-amount').value).toString();
+            } else if (currentTableTab === 'adjustment') {
+                updates["Khoản Thu Chi Bất Thường"] = parseMoney(document.getElementById('edit-adj-amount').value).toString();
+                updates["Ghi Chú Thu Chi Bất Thường"] = document.getElementById('edit-adj-note').value;
+                // Preserve original classification
+                if (originalData["Loại CP"]) updates["Loại CP"] = originalData["Loại CP"];
+                if (originalData["Phân Loại Bông"]) updates["Phân Loại Bông"] = originalData["Phân Loại Bông"];
             } else {
-                updates["Người Mua"] = document.getElementById('edit-buyer').value;
-                updates["Phân Loại Bông"] = document.getElementById('edit-flower-type').value;
-                updates["Số lượng"] = document.getElementById('edit-qty').value;
-                updates["Status"] = document.getElementById('edit-status').value;
-                updates["Ghi Chú"] = document.getElementById('edit-note').value;
+                // Farm / Vua Mode
+                const buyerInput = document.getElementById('edit-buyer');
+                const flowerTypeInput = document.getElementById('edit-flower-type');
+                const qtyInput = document.getElementById('edit-qty');
+                const statusInput = document.getElementById('edit-status');
+                const noteInput = document.getElementById('edit-note');
+
+                if (buyerInput) updates["Người Mua"] = buyerInput.value;
+                if (flowerTypeInput) updates["Phân Loại Bông"] = flowerTypeInput.value;
+                if (qtyInput) updates["Số lượng"] = qtyInput.value;
+                if (statusInput) updates["Status"] = statusInput.value;
+                if (noteInput) updates["Ghi Chú"] = noteInput.value;
 
                 // Auto-calculate revenue if Price field exists
                 const priceInput = document.getElementById('edit-price');
@@ -1109,7 +1184,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     updates["Doanh Thu Bông"] = (parseFloat(updates["Số lượng"] || 0) * price).toString();
                 }
 
-                // Đối với Vựa, có các trường khác cần tính toán lại nếu bạn cho phép sửa (hiện tại UI inline edit Vựa đang đơn giản)
                 if (currentTableTab === 'vua') {
                     updates["Loại DT"] = "Vựa";
                 }
@@ -3545,6 +3619,12 @@ document.addEventListener("DOMContentLoaded", () => {
             filtered = filtered.filter(item => {
                 const cpVal = parseFloat(String(item["Chi Phí"] || "0").replace(/[^\d]/g, '')) || 0;
                 return cpVal > 0 || (item["Loại CP"] && item["Loại CP"].trim() !== "");
+            });
+            sliceLimit = 15;
+        } else if (currentTableTab === 'adjustment') {
+            filtered = filtered.filter(item => {
+                const adjVal = parseFloat(String(item["Khoản Thu Chi Bất Thường"] || "0").replace(/[^\d]/g, '')) || 0;
+                return adjVal !== 0;
             });
             sliceLimit = 15;
         }
