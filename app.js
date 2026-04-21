@@ -2869,6 +2869,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         // Dynamic coloring for Target Completion
                         if (upperLabel.includes("HOÀN THÀNH MỤC TIÊU")) {
                             td.style.color = pctVal >= 100 ? "#10b981" : "#ef4444";
+                            if (!isCurrentYear) {
+                                const statusText = pctVal >= 100 ? "(Passed)" : "(Failed)";
+                                displayVal = `<div>${displayVal}</div><div style="font-size: 0.75rem; font-weight: 500; margin-top: 4px; border-top: 1px dashed ${pctVal >= 100 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}; padding-top: 2px;">${statusText}</div>`;
+                            }
                         }
 
                         // Dynamic coloring for Growth Ratio (> 5% is green, else red)
@@ -2883,7 +2887,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         displayVal = formatNumber(val);
                     }
 
-                    td.innerText = displayVal;
+                    if (upperLabel.includes("HOÀN THÀNH MỤC TIÊU") && isPercentageRatio) {
+                        td.innerHTML = displayVal;
+                    } else {
+                        td.innerText = displayVal;
+                    }
 
                 }
 
