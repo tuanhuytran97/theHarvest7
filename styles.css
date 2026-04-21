@@ -3112,11 +3112,18 @@ tr.swiping td:first-child::before {
 .financial-row-equity { background-color: rgba(254, 243, 199, 0.4); }
 .financial-row-profit { background-color: rgba(220, 252, 231, 0.4); }
 
-/* Highlight Important Financial Rows */
-.financial-row-important td {
-    font-weight: 800 !important;
-    text-decoration: underline !important;
-    text-underline-offset: 4px;
+/* New Premium Highlight Class — Bypass Cache */
+.financial-row-highlight-premium td {
+    font-weight: 900 !important;
+    background-color: rgba(14, 165, 233, 0.12) !important;
+    color: #0369a1 !important;
+    border-top: 1px solid rgba(14, 165, 233, 0.25) !important;
+    border-bottom: 1px solid rgba(14, 165, 233, 0.25) !important;
+    font-size: 1.05rem !important;
+}
+
+.financial-row-highlight-premium td:first-child {
+    border-left: 5px solid #0369a1 !important;
 }
 
 /* Edit Inputs */

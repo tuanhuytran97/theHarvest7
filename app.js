@@ -2817,19 +2817,23 @@ document.addEventListener("DOMContentLoaded", () => {
             const isPercentageRatio = ["ROE", "ROA", "NỢ/VCSH", "NỢ / VCSH", "TĂNG TRƯỞNG VCSH", "HOÀN THÀNH MỤC TIÊU", "(%)", "%"].some(r => upperLabel.includes(r));
             const isOtherRatio = ["PAYBACK TIME"].includes(upperLabel);
 
-            if (isSectionHeader) tr.className = "financial-row-header";
-            if (isTotalRow) tr.className = "financial-row-total";
+            if (isSectionHeader) tr.classList.add("financial-row-header");
+            if (isTotalRow) tr.classList.add("financial-row-total");
             if (upperLabel.includes("VỐN CHỦ")) tr.classList.add("financial-row-equity");
             if (upperLabel.includes("LỢI NHUẬN")) tr.classList.add("financial-row-profit");
 
             // Apply important formatting to specific user-requested rows
-            const importantKeywords = [
-                "TÀI SẢN NGẮN HẠN", "TÀI SẢN DÀI HẠN", "TỔNG CỘNG TÀI SẢN",
-                "TỔNG NỢ PHẢI TRẢ", "VỐN CHỦ SỞ HỮU", "TỔNG CỘNG NGUỒN VỐN",
-                "LỢI NHUẬN", "PAYBACK TIME", "NỢ/VCSH", "ROA", "ROE"
+            const exactKeywords = [
+                "VỐN CHỦ SỞ HỮU", "TỔNG NỢ PHẢI TRẢ", "TỔNG CỘNG TÀI SẢN",
+                "TỔNG CỘNG NGUỒN VỐN", "LỢI NHUẬN", "ROE", "ROA", 
+                "NỢ/VCSH", "PAYBACK TIME", 
+                "TÀI SẢN DÀI HẠN", "TÀI SẢN NGẮN HẠN"
             ];
-            const isImportantRow = importantKeywords.some(key => upperLabel.includes(key));
-            if (isImportantRow) tr.classList.add("financial-row-important");
+            // Match if row starts with keyword or equals keyword (avoiding middle matches like 'Tỷ lệ VCSH')
+            const isImportantRow = exactKeywords.some(key => upperLabel === key || upperLabel.startsWith(key + " ") || upperLabel === "[" + key + "]");
+            if (isImportantRow) {
+                tr.classList.add("financial-row-highlight-premium");
+            }
 
             rowData.forEach((cell, cIdx) => {
                 const td = document.createElement('td');
@@ -2838,6 +2842,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (cIdx === 0) {
                     td.innerText = cell;
                 } else {
+                    if (isImportantRow) {
+                        td.style.backgroundColor = "rgba(14, 165, 233, 0.12)"; // Inline backup
+                        td.style.fontWeight = "900";
+                        td.style.color = "#0369a1";
+                    }
                     if (isLocked) td.className = "financial-col-locked";
                     // So snh t?ng th? v?i c? th? 2026
                     const cellStr = String(headerRow[cIdx] || "").trim();
