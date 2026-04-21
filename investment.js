@@ -126,19 +126,24 @@ function renderInvestmentPortfolio() {
         kpiMos.innerText = mos > 0 ? `${mos.toFixed(1)}%` : "0%";
     }
 
+    const isDemo = localStorage.getItem('inv_demo_mode') === 'true';
+
     // Update Last Updated Timestamp UI
     const lastUpdatedEl = document.getElementById('inv-last-updated');
     if (lastUpdatedEl) {
         const lastFetched = localStorage.getItem('inv_last_fetch_time');
-        if (lastFetched) {
+        if (lastFetched && !isDemo) {
             lastUpdatedEl.innerText = `Cập nhật: ${lastFetched}`;
+            lastUpdatedEl.style.display = 'inline-block';
+        } else {
+            lastUpdatedEl.style.display = 'none';
         }
     }
 
     // Update Demo Badge
     const demoBadge = document.getElementById('inv-demo-badge');
     if (demoBadge) {
-        demoBadge.style.display = localStorage.getItem('inv_demo_mode') === 'true' ? 'inline-block' : 'none';
+        demoBadge.style.display = isDemo ? 'inline-block' : 'none';
     }
 
     // Update charts if data exists
