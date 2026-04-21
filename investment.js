@@ -135,6 +135,12 @@ function renderInvestmentPortfolio() {
         }
     }
 
+    // Update Demo Badge
+    const demoBadge = document.getElementById('inv-demo-badge');
+    if (demoBadge) {
+        demoBadge.style.display = localStorage.getItem('inv_demo_mode') === 'true' ? 'inline-block' : 'none';
+    }
+
     // Update charts if data exists
     if (invHistoryData.length > 0) {
         updateInvestmentCharts();
@@ -531,6 +537,13 @@ document.addEventListener("DOMContentLoaded", () => {
         btnRefresh.addEventListener('click', async () => {
             btnRefresh.style.transform = 'rotate(360deg)';
             btnRefresh.disabled = true;
+
+            // Tự động tắt Demo Mode nếu người dùng chủ động nhấn Refresh
+            if (localStorage.getItem('inv_demo_mode') === 'true') {
+                localStorage.setItem('inv_demo_mode', 'false');
+                if (window.showToast) window.showToast("Đã tắt Chế độ Demo để đồng bộ dữ liệu thật!", "info");
+            }
+            
             if (window.showToast) window.showToast("Đang làm mới dữ liệu đầu tư...", "info");
             
             await window.fetchInvestmentData();
