@@ -1297,8 +1297,14 @@
 
                     <!-- Owner's Ledger Table -->
                     <section class="card table-card glassmorphism">
-                        <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                            <h2 style="margin: 0;"><i class="fa-solid fa-book-open"></i> Danh mục hiện tại</h2>
+                        <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 10px;">
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <h2 style="margin: 0;"><i class="fa-solid fa-book-open"></i> Danh mục hiện tại</h2>
+                                <span id="inv-last-updated" style="font-size: 0.8rem; color: #64748b; font-weight: 500;"></span>
+                                <button id="btn-refresh-inv" class="btn-icon-refresh" title="Làm mới dữ liệu" style="background: none; border: none; color: #3b82f6; cursor: pointer; font-size: 1.1rem; transition: transform 0.3s ease;">
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                </button>
+                            </div>
                             <button id="btn-add-investment" class="btn-primary" style="background: #0f172a; color: #f8fafc; border: none; padding: 10px 20px; font-weight: 700; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.2);">
                                 <i class="fa-solid fa-plus-circle"></i> Thêm Mã Đầu Tư
                             </button>

@@ -24,11 +24,17 @@ function renderInvestmentPortfolio() {
         tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem;">Chưa có danh mục đầu tư nào.</td></tr>`;
     } else {
         invPortfolioData.forEach(item => {
-            const unitPrice = parseFloat(item["Giá Hiện Tại"]) || 0;
+            // Robust parsing: handle strings with dots/commas and fall back to 0
+            const rawPrice = item["Giá Hiện Tại"];
+            const unitPrice = typeof rawPrice === 'number' ? rawPrice : 
+                             parseFloat(String(rawPrice || 0).replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1')) || 0;
+            
             const totalQty = item.totalQty || 1; 
             const currentVal = unitPrice * totalQty;
             
-            const unitIntrinsic = parseFloat(item["Định Giá Lý Thuyết"]) || 0;
+            const rawIntrinsic = item["Định Giá Lý Thuyết"];
+            const unitIntrinsic = typeof rawIntrinsic === 'number' ? rawIntrinsic :
+                                 parseFloat(String(rawIntrinsic || 0).replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1')) || 0;
             const intrinsicVal = unitIntrinsic * totalQty; 
 
             totalCapital += item.capital || 0;
@@ -118,6 +124,15 @@ function renderInvestmentPortfolio() {
     if (kpiMos && totalIntrinsic > 0) {
         const mos = ((totalIntrinsic - totalCurrent) / totalIntrinsic) * 100;
         kpiMos.innerText = mos > 0 ? `${mos.toFixed(1)}%` : "0%";
+    }
+
+    // Update Last Updated Timestamp UI
+    const lastUpdatedEl = document.getElementById('inv-last-updated');
+    if (lastUpdatedEl) {
+        const lastFetched = localStorage.getItem('inv_last_fetch_time');
+        if (lastFetched) {
+            lastUpdatedEl.innerText = `Cập nhật: ${lastFetched}`;
+        }
     }
 
     // Update charts if data exists
@@ -382,7 +397,10 @@ window.exitInvestmentDemoMode = function() {
             // Metadata: Take latest non-empty values
             if (row["Phân Loại"]) g["Phân Loại"] = row["Phân Loại"];
             if (row["Định Giá Lý Thuyết"]) g["Định Giá Lý Thuyết"] = row["Định Giá Lý Thuyết"];
-            if (row["Giá Hiện Tại"]) g["Giá Hiện Tại"] = row["Giá Hiện Tại"];
+            if (row["Giá Hiện Tại"]) {
+                // Keep as raw for now, render handles parsing
+                g["Giá Hiện Tại"] = row["Giá Hiện Tại"];
+            }
             if (row["Luận Điểm Đầu Tư"]) g["Luận Điểm Đầu Tư"] = row["Luận Điểm Đầu Tư"];
         });
         invPortfolioData = Object.values(grouped).filter(p => p.totalQty !== 0 || p.capital !== 0);
@@ -441,11 +459,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const token = window.getToken ? window.getToken() : null;
             if (!token) return;
 
+            // Cache busting: adding a timestamp
             const response = await fetch(CONFIG.WEB_APP_URL, {
                 method: "POST",
                 body: JSON.stringify({
                     action: "get_investment_data",
-                    token: token
+                    token: token,
+                    _cb: Date.now() 
                 }),
                 headers: { "Content-Type": "text/plain;charset=utf-8" }
             });
@@ -463,6 +483,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 derivePortfolioFromHistory();
+                
+                // Update Last Fetch Time
+                const nowStr = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                localStorage.setItem('inv_last_fetch_time', nowStr);
 
                 // Update Cache
                 localStorage.setItem('cached_inv_history', JSON.stringify(invHistoryData));
@@ -492,6 +516,22 @@ document.addEventListener("DOMContentLoaded", () => {
         chkRules.forEach(chk => chk.checked = false);
         if (btnSaveInv) btnSaveInv.disabled = true;
     });
+
+    const btnRefresh = document.getElementById('btn-refresh-inv');
+    if (btnRefresh) {
+        btnRefresh.addEventListener('click', async () => {
+            btnRefresh.style.transform = 'rotate(360deg)';
+            btnRefresh.disabled = true;
+            if (window.showToast) window.showToast("Đang làm mới dữ liệu đầu tư...", "info");
+            
+            await window.fetchInvestmentData();
+            
+            setTimeout(() => {
+                btnRefresh.style.transform = 'rotate(0deg)';
+                btnRefresh.disabled = false;
+            }, 500);
+        });
+    }
 
     if (btnCancelInv) btnCancelInv.addEventListener('click', () => {
         if (modalInvest) modalInvest.style.display = 'none';
