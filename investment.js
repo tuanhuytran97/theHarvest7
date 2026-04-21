@@ -363,7 +363,7 @@ window.exitInvestmentDemoMode = function() {
         if (!invHistoryData || invHistoryData.length === 0) return;
         const grouped = {};
         invHistoryData.forEach(row => {
-            const symbol = String(row["Mã/Tên"] || "").trim();
+            const symbol = String(row["Mã/Tên"] || "").trim().toUpperCase();
             if (!symbol) return;
             if (!grouped[symbol]) {
                 grouped[symbol] = {
@@ -397,13 +397,16 @@ window.exitInvestmentDemoMode = function() {
             // Metadata: Take latest non-empty values
             if (row["Phân Loại"]) g["Phân Loại"] = row["Phân Loại"];
             if (row["Định Giá Lý Thuyết"]) g["Định Giá Lý Thuyết"] = row["Định Giá Lý Thuyết"];
-            if (row["Giá Hiện Tại"]) {
+            if (row["Giá Hiện Tại"] !== undefined && row["Giá Hiện Tại"] !== null && row["Giá Hiện Tại"] !== "") {
                 // Keep as raw for now, render handles parsing
                 g["Giá Hiện Tại"] = row["Giá Hiện Tại"];
             }
             if (row["Luận Điểm Đầu Tư"]) g["Luận Điểm Đầu Tư"] = row["Luận Điểm Đầu Tư"];
         });
         invPortfolioData = Object.values(grouped).filter(p => p.totalQty !== 0 || p.capital !== 0);
+        
+        console.log("=== Active Portfolio Calculated ===");
+        console.table(invPortfolioData);
     }
 
 // --- 1. Load Cache IMMEDIATELY (Instant Load) ---
@@ -474,12 +477,18 @@ document.addEventListener("DOMContentLoaded", () => {
             if (res.status === "success") {
                 const rows = res.history || [];
                 if (rows.length > 1) {
-                    const headers = rows[0];
+                    const rawHeaders = rows[0];
+                    // Standardize headers: Trim and treat nulls gracefully
+                    const headers = rawHeaders.map(h => String(h || "").trim());
+                    
                     invHistoryData = rows.slice(1).map(row => {
                         let obj = {};
-                        headers.forEach((h, i) => obj[h] = row[i]);
+                        headers.forEach((h, i) => { if (h) obj[h] = row[i]; });
                         return obj;
                     });
+                    
+                    console.log("=== Investment History Data (Raw) ===");
+                    console.log(invHistoryData);
                 }
 
                 derivePortfolioFromHistory();
