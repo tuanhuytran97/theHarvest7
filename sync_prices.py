@@ -53,20 +53,26 @@ def fetch_portfolio_symbols():
             print("Error fetching data:", res.get("message"))
             return []
             
-        portfolio = res.get("portfolio", [])
-        if len(portfolio) < 2:
+        # FIX: The backend App_script returns data in the 'history' key, not 'portfolio'
+        history = res.get("history", [])
+        if len(history) < 2:
+            print("No history data found or only headers present.")
             return []
             
-        headers = portfolio[0]
+        headers = history[0]
         col_symbol = headers.index("Mã/Tên") if "Mã/Tên" in headers else -1
         col_type = next((headers.index(h) for h in headers if "loại" in h.lower() or "type" in h.lower()), -1)
         
         symbols_to_fetch = []
-        for row in portfolio[1:]:
-            symbol = str(row[col_symbol]).strip().upper() if col_symbol > -1 else ""
-            t_str = str(row[col_type]).lower() if col_type > -1 else ""
-            if len(symbol) >= 3 and ("phiếu" in t_str or "etf" in t_str or len(symbol) == 3):
-                symbols_to_fetch.append(symbol)
+        for row in history[1:]:
+            if col_symbol > -1 and len(row) > col_symbol:
+                symbol = str(row[col_symbol]).strip().upper()
+                t_str = str(row[col_type]).lower() if col_type > -1 and len(row) > col_type else ""
+                
+                # Only fetch for Stocks, ETFs or 3-letter symbols that likely represent assets
+                if len(symbol) >= 3 and symbol not in symbols_to_fetch:
+                    if ("phiếu" in t_str or "etf" in t_str or len(symbol) == 3):
+                        symbols_to_fetch.append(symbol)
                 
         return symbols_to_fetch
     except Exception as e:
@@ -78,26 +84,24 @@ def get_current_prices(symbols):
     print(f"Crawling prices using vnstock for: {', '.join(symbols)}")
     for sym in symbols:
         try:
-            quote = Quote(symbol=sym, source="vci") # VCI provides good realtime and history
-            df = quote.intraday(page_size=1) # Get the latest intraday match
+            # Use 'KBS' source as it is currently the most reliable in vnstock (replacing VCI/TCBS)
+            quote = Quote(symbol=sym, source="KBS")
+            # Fetch the most recent price record
+            df = quote.history(length='1', interval='d') 
             
-            if df is not None and not df.empty and 'price' in df.columns:
-                p = df.iloc[0]['price']
-                if p > 0 and p < 1000: p = p * 1000
+            if df is not None and not df.empty:
+                # The 'close' column contains the last closing or current price
+                p = df.iloc[-1]['close']
+                # vnstock prices are often displayed in units of 1,000 VND (e.g., 61.2 instead of 61,200)
+                if 0 < p < 1000: 
+                    p = p * 1000
+                
                 prices[sym] = p
                 print(f"[{sym}] = {p:,.0f} VND")
             else:
-                # Fallback to history close if intraday is empty
-                df_hist = quote.history()
-                if df_hist is not None and not df_hist.empty and 'close' in df_hist.columns:
-                    p = df_hist.iloc[-1]['close']
-                    if p > 0 and p < 1000: p = p * 1000
-                    prices[sym] = p
-                    print(f"[{sym}] = {p:,.0f} VND (Close Price)")
-                else:
-                    print(f"[{sym}] = No data")
+                print(f"[{sym}] = No data found")
         except Exception as e:
-            pass # ignore print error to console
+            print(f"[{sym}] Skip due to error: {e}")
             
     return prices
 

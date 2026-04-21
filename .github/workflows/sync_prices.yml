@@ -3,8 +3,8 @@ name: Auto Sync Stock Prices
 on:
   schedule:
     # Chạy vào 15:00 giờ Việt Nam (UTC+7) -> 08:00 UTC (Vì GitHub Actions dùng múi giờ UTC)
-    # Lịch này thiết lập từ Thứ 2 đến Thứ 6
-    - cron: '0 8 * * 1-5'
+    # Lịch này thiết lập chạy hàng ngày
+    - cron: '0 8 * * *'
   
   # Cho phép kích hoạt thủ công (Bấm nút trên GitHub hoặc ĐTDĐ)
   workflow_dispatch:

@@ -69,6 +69,12 @@ function renderInvestmentPortfolio() {
             const tr = document.createElement('tr');
             tr.style.cursor = 'pointer';
             tr.title = `Luận điểm Mua: ${item["Luận Điểm Đầu Tư"]}`;
+            
+            const actionButtons = `
+                    <button class="action-btn" title="Giao Dịch" onclick="window.openInvTxModal('${item["Mã/Tên"]}')" style="background: #10b981; color: white;"><i class="fa-solid fa-money-bill-transfer"></i></button>
+                    <button class="action-btn" title="Chỉnh sửa" onclick="if(getRole()!=='ADMIN') { if(window.showToast) window.showToast('Bạn không có quyền chỉnh sửa', 'error'); else alert('Bạn không có quyền chỉnh sửa'); } else { alert('Tính năng chỉnh sửa đang được phát triển'); }"><i class="fa-solid fa-pen-to-square"></i></button>
+            `;
+
             tr.innerHTML = `
                 <td style="font-weight: 700; color: #0f172a;">${item["Mã/Tên"]} <br> <span style="font-size: 0.75rem; color: #64748b; font-weight: normal;">${item["Phân Loại"]}</span></td>
                 <td style="font-weight: 700; color: #3b82f6;">${new Intl.NumberFormat('vi-VN').format(totalQty)}</td>
@@ -80,8 +86,7 @@ function renderInvestmentPortfolio() {
                 <td>${window.formatShorthandCurrency ? window.formatShorthandCurrency(item["Định Giá Lý Thuyết"]) : item["Định Giá Lý Thuyết"]}</td>
                 <td><span class="status-badge status-pending" style="background:#f1f5f9; color:#475569;">Đang nắm giữ</span></td>
                 <td style="display: flex; gap: 8px;">
-                    <button class="action-btn" title="Giao Dịch" onclick="window.openInvTxModal('${item["Mã/Tên"]}')" style="background: #10b981; color: white;"><i class="fa-solid fa-money-bill-transfer"></i></button>
-                    <button class="action-btn" title="Chỉnh sửa"><i class="fa-solid fa-pen-to-square"></i></button>
+                    ${actionButtons}
                 </td>
             `;
             tbody.appendChild(tr);
@@ -478,6 +483,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 3. UI Handlers (Shortened for brevity)
     if (btnAddInv) btnAddInv.addEventListener('click', () => {
+        if (getRole() !== 'ADMIN') {
+            if (window.showToast) window.showToast("Bạn không có quyền thực hiện thao tác này", "error");
+            else alert("Bạn không có quyền thực hiện thao tác này");
+            return;
+        }
         if (modalInvest) modalInvest.style.display = 'flex';
         chkRules.forEach(chk => chk.checked = false);
         if (btnSaveInv) btnSaveInv.disabled = true;
@@ -576,6 +586,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Giao Dịch Logic
     window.openInvTxModal = function(symbol) {
+        if (getRole() !== 'ADMIN') {
+            if (window.showToast) window.showToast("Bạn không có quyền thực hiện giao dịch", "error");
+            else alert("Bạn không có quyền thực hiện giao dịch");
+            return;
+        }
         document.getElementById('inv-tx-symbol').value = symbol;
         document.getElementById('inv-tx-title').innerText = `Giao Dịch: ${symbol}`;
         

@@ -179,6 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const entryCard = document.querySelector('.card:has(#dataEntryForm)');
         const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
         const debtActionBox = document.querySelector('.invoice-footer-actions');
+        const btnAddInv = document.getElementById('btn-add-investment');
 
         // EMP_LV2: Readonly, hide sensitive/entry tools
         if (role === 'EMP_LV2') {
