@@ -140,10 +140,10 @@ function renderInvestmentPortfolio() {
         }
     }
 
-    // Update Demo Badge
-    const demoBadge = document.getElementById('inv-demo-badge');
-    if (demoBadge) {
-        demoBadge.style.display = isDemo ? 'inline-block' : 'none';
+    // Update Demo UI Toggle
+    const btnExitDemo = document.getElementById('btn-exit-demo');
+    if (btnExitDemo) {
+        btnExitDemo.style.display = isDemo ? 'flex' : 'none';
     }
 
     // Update charts if data exists
@@ -538,6 +538,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const btnRefresh = document.getElementById('btn-refresh-inv');
+    const btnExitDemo = document.getElementById('btn-exit-demo');
+
     if (btnRefresh) {
         btnRefresh.addEventListener('click', async () => {
             btnRefresh.style.transform = 'rotate(360deg)';
@@ -557,6 +559,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 btnRefresh.style.transform = 'rotate(0deg)';
                 btnRefresh.disabled = false;
             }, 500);
+        });
+    }
+
+    if (btnExitDemo) {
+        btnExitDemo.addEventListener('click', async () => {
+            localStorage.setItem('inv_demo_mode', 'false');
+            if (window.showToast) window.showToast("Đang chuyển sang dữ liệu thật...", "info");
+            await window.fetchInvestmentData();
+            renderInvestmentPortfolio();
         });
     }
 
