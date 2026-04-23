@@ -17,7 +17,10 @@ function formatNumber(num) {
 }
 
 function formatCurrency(number) {
-    if (!number) return "0 ₫";
+    if (!number && number !== 0) return "0 ₫";
+    if (number < 0) {
+        return `(-${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Math.abs(number))})`;
+    }
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(number);
 }
 
@@ -36,7 +39,7 @@ function parseSignedMoney(val) {
 
 function formatMoneyStr(num) {
     if (num === 0) return "0";
-    if (!num) return "";
+    if (!num && num !== 0) return "";
     return new Intl.NumberFormat('vi-VN').format(num);
 }
 
@@ -399,18 +402,20 @@ document.addEventListener("DOMContentLoaded", () => {
             e.target.value = val === 0 ? "0" : formatMoneyStr(val);
         }
         if (e.target.classList.contains('money-input-signed')) {
-            let valStr = e.target.value;
+            let valStr = e.target.value.trim();
             let sign = "";
             if (valStr.startsWith('+')) sign = "+";
             else if (valStr.startsWith('-')) sign = "-";
 
-            const num = parseFloat(valStr.replace(/[^\d]/g, '')) || 0;
-            if (num === 0 && sign === "") {
-                e.target.value = "";
-            } else if (num === 0 && sign !== "") {
+            const numStr = valStr.replace(/[^\d]/g, '');
+            const num = parseFloat(numStr) || 0;
+
+            if (numStr === "" && sign !== "") {
                 e.target.value = sign;
+            } else if (numStr === "" && sign === "") {
+                e.target.value = "";
             } else {
-                e.target.value = sign + new Intl.NumberFormat('vi-VN').format(num) + "đ";
+                e.target.value = sign + new Intl.NumberFormat('vi-VN').format(num);
             }
         }
     });
@@ -814,7 +819,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </td>
                 `;
             } else if (currentTableTab === 'adjustment') {
-                const adjVal = parseFloat(String(row["Khoản Thu Chi Bất Thường"] || "0").replace(/[^\d]/g, '')) || 0;
+                const adjVal = parseSignedMoney(row["Khoản Thu Chi Bất Thường"]);
                 tr.innerHTML = `
                     <td data-label="Chọn" style="text-align: center;">
                         ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `<input type="checkbox" class="row-checkbox" data-row-index="${rowIndex}" style="cursor:pointer;">` : `<input type="checkbox" disabled>`}
@@ -885,7 +890,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const dtBong = parseFloat(String(row["Doanh Thu Bông"] || "0").replace(/[^\d]/g, '')) || 0;
                 const dtKhac = parseFloat(String(row["Doanh Thu Khác"] || "0").replace(/[^\d]/g, '')) || 0;
                 const daThu = parseFloat(String(row["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0;
-                totalRevenue += (dtBong + dtKhac);
+                const adjVal = parseSignedMoney(row["Khoản Thu Chi Bất Thường"]);
+                totalRevenue += (dtBong + dtKhac + adjVal);
                 totalPaid += daThu;
             });
 
@@ -906,9 +912,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     } else if (i === 2) {
                         let totalAdj = 0;
                         dataToRender.forEach(r => {
-                            totalAdj += (parseFloat(String(r["Khoản Thu Chi Bất Thường"] || "0").replace(/[^\d]/g, '')) || 0);
+                            totalAdj += parseSignedMoney(r["Khoản Thu Chi Bất Thường"]);
                         });
-                        cellsHtml += `<td style="color: #f59e0b; font-size: 1.1rem;">${formatCurrency(totalAdj)}</td>`;
+                        cellsHtml += `<td style="color: ${totalAdj < 0 ? '#ef4444' : '#f59e0b'}; font-size: 1.1rem;">${formatCurrency(totalAdj)}</td>`;
                     } else {
                         cellsHtml += `<td></td>`;
                     }
@@ -1071,11 +1077,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 </td>
             `;
         } else if (currentTableTab === 'adjustment') {
-            const adjVal = parseFloat(String(rowData["Khoản Thu Chi Bất Thường"] || "0").replace(/[^\d]/g, ''));
+            const adjVal = parseSignedMoney(rowData["Khoản Thu Chi Bất Thường"]);
             tr.innerHTML = `
                 <td></td>
                 <td>${formatDateVietnamese(rowData.parsedDate)}</td>
-                <td><input type="text" class="inline-edit-input money-input" id="edit-adj-amount" value="${formatMoneyStr(adjVal)}"></td>
+                <td><input type="text" class="inline-edit-input money-input-signed" id="edit-adj-amount" value="${formatMoneyStr(adjVal)}"></td>
                 <td><input type="text" class="inline-edit-input" id="edit-adj-note" value="${rowData["Ghi Chú Thu Chi Bất Thường"] || rowData["Ghi Chú"] || ""}"></td>
                 <td>
                     <div style="display:flex; gap:5px;">
@@ -1157,7 +1163,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 updates["Ghi Chú"] = document.getElementById('edit-exp-note').value;
                 updates["Chi Phí"] = parseMoney(document.getElementById('edit-exp-amount').value).toString();
             } else if (currentTableTab === 'adjustment') {
-                updates["Khoản Thu Chi Bất Thường"] = parseMoney(document.getElementById('edit-adj-amount').value).toString();
+                updates["Khoản Thu Chi Bất Thường"] = parseSignedMoney(document.getElementById('edit-adj-amount').value).toString();
                 updates["Ghi Chú Thu Chi Bất Thường"] = document.getElementById('edit-adj-note').value;
                 // Preserve original classification
                 if (originalData["Loại CP"]) updates["Loại CP"] = originalData["Loại CP"];
