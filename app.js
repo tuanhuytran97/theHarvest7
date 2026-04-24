@@ -990,9 +990,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
             document.body.style.cursor = 'wait';
+
+            // Determine context based on current tab
+            const context = currentTableTab === 'adjustment' ? 'adjustment' : 
+                          (currentTableTab === 'expense' ? 'expense' : 'all');
+
             const response = await fetch(CONFIG.WEB_APP_URL, {
                 method: "POST",
-                body: JSON.stringify({ action: "deleteByRow", rowNumber: sheetRow, token: getToken() }),
+                body: JSON.stringify({ action: "deleteByRow", rowNumber: sheetRow, context: context, token: getToken() }),
                 headers: { "Content-Type": "text/plain;charset=utf-8" }
             });
             const result = await response.json();
@@ -3834,8 +3839,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const selMonth = parseInt(monthSel?.value) || (new Date().getMonth() + 1);
         const selYear = parseInt(yearSel?.value) || new Date().getFullYear();
 
-        // 1. Find opening balance = Cash (Q) from the last row BEFORE selected month
-        let openingBalance = null;
+        // 1. Opening balance = Cash (Q) của dòng cuối cùng TRƯỚC tháng được chọn
+        let openingBalance = 0;
         let lastPrevDate = null;
 
         farmData.forEach(row => {
@@ -3847,52 +3852,50 @@ document.addEventListener("DOMContentLoaded", () => {
                 const cashVal = parseFloat(row["Cash"]);
                 if (!isNaN(cashVal)) openingBalance = cashVal;
             }
-
         });
 
-        // No previous month → fall back to Config initial balance
-        if (openingBalance === null) openingBalance = 0;
-
-
-        // 2. Aggregate current month transactions
-        let cashIn = 0;
-        let cashOut = 0;
-        let adjTotal = 0;
+        // 2. Số dư cuối kỳ = Cash (Q) của dòng cuối cùng TRONG tháng được chọn
+        //    Đây là giá trị backend đã tính và lưu vào sheet — không tính lại tránh cộng kép
+        let currentCash = openingBalance; // fallback nếu tháng chưa có dữ liệu
+        let lastInMonthDate = null;
 
         farmData.forEach(row => {
             if (!row.parsedDate) return;
+            const ry = row.parsedDate.getFullYear(), rm = row.parsedDate.getMonth() + 1;
+            if (ry === selYear && rm === selMonth) {
+                if (!lastInMonthDate || row.parsedDate >= lastInMonthDate) {
+                    lastInMonthDate = row.parsedDate;
+                    const cashVal = parseFloat(row["Cash"]);
+                    if (!isNaN(cashVal)) currentCash = cashVal;
+                }
+            }
+        });
+
+        // 3. Tính breakdown để hiển thị (chỉ phục vụ UI)
+        let cashIn = 0, cashOut = 0, adjTotal = 0;
+        farmData.forEach(row => {
+            if (!row.parsedDate) return;
             if (row.parsedDate.getFullYear() !== selYear || row.parsedDate.getMonth() + 1 !== selMonth) return;
-
             const loaiDT = (row["Loại DT"] || "").trim();
-            const valI = parseFloat(row["Đã Thu"]) || 0;
+            const valI   = parseFloat(row["Đã Thu"]) || 0;
             const valExp = parseFloat(row["Chi Phí"]) || 0;
-            // Lấy giá trị từ cột R (Khoản Thu Chi Bất Thường)
-            const valR = parseFloat(row["Khoản Thu Chi Bất Thường"]) || 0;
-
-
-
+            const valR   = parseFloat(row["Khoản Thu Chi Bất Thường"]) || 0;
             if (loaiDT === "ADJ") {
                 adjTotal += valR;
             } else {
                 cashIn += valI;
-                if (loaiDT === "Company") {
-                    cashIn += (parseFloat(row["Doanh Thu Khác"]) || 0);
-                }
-
+                if (loaiDT === "Company") cashIn += (parseFloat(row["Doanh Thu Khác"]) || 0);
                 cashOut += valExp;
-                adjTotal += valR; // Cộng dồn nếu dòng thường có ghi nhận bất thường
+                adjTotal += valR;
             }
-
         });
 
-        const currentCash = openingBalance + cashIn - cashOut + adjTotal;
-
-        // 3. Update UI
+        // 4. Cập nhật UI
         const cashEl = document.getElementById('kpi-cash-hand');
         const openEl = document.getElementById('cash-opening');
-        const inEl = document.getElementById('cash-in-total');
-        const outEl = document.getElementById('cash-out-total');
-        const adjEl = document.getElementById('cash-adj-total');
+        const inEl   = document.getElementById('cash-in-total');
+        const outEl  = document.getElementById('cash-out-total');
+        const adjEl  = document.getElementById('cash-adj-total');
         const adjRow = document.getElementById('cash-adj-row');
 
         if (cashEl) {
@@ -3900,8 +3903,8 @@ document.addEventListener("DOMContentLoaded", () => {
             cashEl.style.color = currentCash >= 0 ? '#10b981' : '#ef4444';
         }
         if (openEl) openEl.innerText = formatCurrency(openingBalance);
-        if (inEl) inEl.innerText = formatCurrency(cashIn);
-        if (outEl) outEl.innerText = formatCurrency(cashOut);
+        if (inEl)   inEl.innerText   = formatCurrency(cashIn);
+        if (outEl)  outEl.innerText  = formatCurrency(cashOut);
         if (adjEl && adjRow) {
             if (adjTotal !== 0) {
                 adjEl.innerText = (adjTotal > 0 ? '+' : '') + formatCurrency(adjTotal);
@@ -4243,9 +4246,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     bulkDeleteBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang Xoá (${i + 1}/${rowsToDelete.length})...`;
 
+                    const context = currentTableTab === 'adjustment' ? 'adjustment' : 
+                                  (currentTableTab === 'expense' ? 'expense' : 'all');
+
                     const response = await fetch(CONFIG.WEB_APP_URL, {
                         method: "POST",
-                        body: JSON.stringify({ action: "deleteByRow", rowNumber: sheetRow, token: getToken() }),
+                        body: JSON.stringify({ action: "deleteByRow", rowNumber: sheetRow, context: context, token: getToken() }),
                         headers: { "Content-Type": "text/plain;charset=utf-8" }
                     });
                     const result = await response.json();
@@ -4499,10 +4505,7 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('date-input').value = formatDateInput(new Date());
 
 
-            // Trigger mode toggle to restore UI state (label, required fields, visibility)
-            if (entryTypeSelect) {
-                entryTypeSelect.dispatchEvent(new Event('change'));
-            }
+            // Trigger mode toggle later to restore UI state correctly after innerHTML resets
 
             // Khôi phục lại một dòng chuẩn cho Bông
             if (flowerItemsContainer) {
@@ -4566,7 +4569,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                         <div class="form-group" style="margin: 0;">
                             <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Số tiền</label>
-                            <input type="text" placeholder="0" class="exp-amount money-input" style="border-color: #f87171; color: #b91c1c; font-weight: bold;">
+                            <input type="text" placeholder="0" class="exp-amount money-input" required style="border-color: #f87171; color: #b91c1c; font-weight: bold;">
                         </div>
                         <div class="form-group" style="margin: 0;">
                             <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Ghi chú chi tiết</label>
@@ -4576,6 +4579,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 `;
                 attachExpenseRowEvents(expenseItemsContainer.querySelector('.expense-item'));
+            }
+
+            // Trigger mode toggle NOW to restore UI state (label, required fields, visibility) on the new items
+            if (entryTypeSelect) {
+                entryTypeSelect.dispatchEvent(new Event('change'));
             }
 
             showToast(`✅ Đã lưu thành công ${payloadRowsStr.length} dòng dữ liệu!`, 'success');
