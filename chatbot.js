@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // UI State
     let isWindowOpen = false;
     let pendingData = null;
+    let isProcessing = false;
 
     // Toggle Chatbot
     const toggleChat = (forceState) => {
@@ -29,6 +30,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     chatbotToggle.addEventListener('click', () => toggleChat());
     closeChatbot.addEventListener('click', () => toggleChat(false));
+    
+    // Bot Status Helper
+    const setBotBusy = (busy) => {
+        isProcessing = busy;
+        chatInput.readOnly = busy;
+        sendBtn.disabled = busy;
+        chatInput.style.opacity = busy ? "0.6" : "1";
+        if (busy) {
+            chatbotWindow.classList.add('bot-busy');
+        } else {
+            chatbotWindow.classList.remove('bot-busy');
+        }
+    };
 
     // Handle Input
     const addMessage = (text, sender) => {
@@ -48,6 +62,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const handleSend = () => {
+        if (isProcessing || pendingData) return;
+
         const text = chatInput.value.trim();
         if (!text) return;
 
@@ -55,9 +71,13 @@ document.addEventListener("DOMContentLoaded", () => {
         chatInput.value = '';
         chatInput.style.height = 'auto'; // Reset height
 
+        setBotBusy(true);
+
         // Processing
         setTimeout(() => {
             processInput(text);
+            // If parsing didn't result in a pending confirmation, release the lock
+            if (!pendingData) setBotBusy(false);
         }, 500);
     };
 
@@ -100,6 +120,8 @@ document.addEventListener("DOMContentLoaded", () => {
             parseExpenseEntry(text);
         } else if (lowerText.startsWith('vựa') || lowerText.includes('đối soát')) {
             parseVuaEntry(text);
+        } else if (lowerText.startsWith('company')) {
+            parseCompanyEntry(text);
         } else {
             // Default: Attempt to parse as Farm Entry (Sale)
             // This covers "Bán...", "100 hoa...", "Quân 100 hoa..."
@@ -330,6 +352,34 @@ document.addEventListener("DOMContentLoaded", () => {
          addMessage("Vựa hiện tại phải nhập thủ công vì có nhiều chi phí đối soát phức tạp.", 'ai');
     }
 
+    // COMPANY ENTRY PARSER
+    // Pattern: "Company [Số tiền]"
+    function parseCompanyEntry(text) {
+        const match = text.match(/^company\s+(\d+(?:[.,]\d+)?[ktr]*)$/i);
+        if (match) {
+            const amount = extractMoney(match[1]);
+            if (amount > 0) {
+                pendingData = {
+                    type: 'company',
+                    data: {
+                        "Ngày": window.utils.formatDateVietnamese(new Date()),
+                        "Doanh Thu Khác": amount,
+                        "Loại DT": "Company",
+                        "Status": "Xong"
+                    }
+                };
+
+                const summaryHtml = `Ghi nhận doanh thu <b>Company</b>:<br>💰 <b>${window.utils.formatCurrency(amount)}</b><br>📂 Loại: <b>Company</b><br>✅ Trạng thái: <b>Xong</b>`;
+                pendingData.summaryHtml = summaryHtml;
+                showConfirmationCard(summaryHtml);
+            } else {
+                addMessage("Số tiền không hợp lệ. Thử lại: <i>'Company 18tr'</i>", 'ai');
+            }
+        } else {
+            addMessage("Cấu trúc chưa đúng. Thử: <i>'Company 18tr'</i>", 'ai');
+        }
+    }
+
     function showConfirmationCard(html) {
         const cardHtml = `
             <div class="parse-confirm-card">
@@ -346,11 +396,14 @@ document.addEventListener("DOMContentLoaded", () => {
         cardDiv.querySelector('#confirm-no').onclick = () => {
             pendingData = null;
             cardDiv.innerHTML = "Đã hủy bỏ. ❌";
+            setBotBusy(false);
         };
     }
 
     async function savePendingData(cardDiv) {
         if (!pendingData) return;
+        
+        setBotBusy(true);
 
         const originalHtml = cardDiv.innerHTML;
         cardDiv.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> Đang lưu lên Cloud...";
@@ -394,6 +447,8 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (err) {
             cardDiv.innerHTML = `Lỗi: ${err.message}. Thử lại?`;
             console.error(err);
+        } finally {
+            setBotBusy(false);
         }
     }
 
