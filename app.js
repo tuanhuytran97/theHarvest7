@@ -4933,16 +4933,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Force Chart.js to resize after container dimensions change
                 setTimeout(() => {
                     const canvas = document.getElementById('monthlyCombinedChart');
-                    const container = canvas ? canvas.parentElement : null;
-                    if (canvas && container) {
+                    if (canvas) {
+                        canvas.removeAttribute('width');
+                        canvas.removeAttribute('height');
                         canvas.style.width = '100%';
                         canvas.style.height = '100%';
                         
                         if (typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
-                            monthlyCombinedChartInstance.resize(container.offsetWidth, container.offsetHeight);
+                            monthlyCombinedChartInstance.resize();
                         }
                     }
-                }, 100);
+                }, 150);
             }
         });
     }
