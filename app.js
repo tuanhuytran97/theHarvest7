@@ -4833,69 +4833,72 @@ document.addEventListener("DOMContentLoaded", () => {
     
     if (btnFullscreenMonthly && monthlyChartWrapper) {
         const chartContainer = monthlyChartWrapper.querySelector('.chart-container');
+        let isFakeFullscreen = false;
         
         btnFullscreenMonthly.addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                if (monthlyChartWrapper.requestFullscreen) {
-                    monthlyChartWrapper.requestFullscreen().catch(err => {
-                        console.error(`Error attempting to enable fullscreen: ${err.message}`);
-                    });
-                } else if (monthlyChartWrapper.webkitRequestFullscreen) { /* Safari */
-                    monthlyChartWrapper.webkitRequestFullscreen();
-                } else if (monthlyChartWrapper.msRequestFullscreen) { /* IE11 */
-                    monthlyChartWrapper.msRequestFullscreen();
-                }
-
-                // Force landscape on mobile if supported
+            if (!isFakeFullscreen) {
+                isFakeFullscreen = true;
+                
                 if (screen.orientation && screen.orientation.lock) {
-                    screen.orientation.lock('landscape').catch(error => {
-                        console.log("Orientation lock failed:", error);
-                    });
+                    screen.orientation.lock('landscape').catch(e => console.log(e));
                 }
                 
                 btnFullscreenMonthly.innerHTML = '<i class="fa-solid fa-compress"></i> <span>Thu Nhỏ</span>';
+                
+                // CSS fake fullscreen
+                monthlyChartWrapper.style.position = 'fixed';
+                monthlyChartWrapper.style.top = '0';
+                monthlyChartWrapper.style.left = '0';
+                monthlyChartWrapper.style.width = '100vw';
+                monthlyChartWrapper.style.height = '100vh';
+                monthlyChartWrapper.style.zIndex = '99999';
+                monthlyChartWrapper.style.margin = '0';
+                monthlyChartWrapper.style.borderRadius = '0';
                 monthlyChartWrapper.style.backgroundColor = '#f8fafc';
                 monthlyChartWrapper.style.padding = '1.5rem';
-                monthlyChartWrapper.style.overflowY = 'auto';
-                
-                // Add flexbox explicitly for fullscreen
                 monthlyChartWrapper.style.display = 'flex';
                 monthlyChartWrapper.style.flexDirection = 'column';
+                monthlyChartWrapper.style.overflowY = 'auto';
+                
                 if (chartContainer) {
                     chartContainer.style.flex = '1';
                     chartContainer.style.minHeight = '0';
+                    chartContainer.style.height = '100%';
                 }
+                
+                document.body.style.overflow = 'hidden';
                 
             } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) { /* Safari */
-                    document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) { /* IE11 */
-                    document.msExitFullscreen();
-                }
-            }
-        });
-
-        // Handle ESC key or system back
-        document.addEventListener('fullscreenchange', () => {
-            if (!document.fullscreenElement) {
-                btnFullscreenMonthly.innerHTML = '<i class="fa-solid fa-expand"></i> <span>Phóng To</span>';
-                monthlyChartWrapper.style.backgroundColor = '';
-                monthlyChartWrapper.style.padding = '';
-                monthlyChartWrapper.style.overflowY = '';
+                isFakeFullscreen = false;
                 
-                // Remove flexbox explicitly
-                monthlyChartWrapper.style.display = '';
-                monthlyChartWrapper.style.flexDirection = '';
-                if (chartContainer) {
-                    chartContainer.style.flex = '';
-                    chartContainer.style.minHeight = '';
-                }
-
                 if (screen.orientation && screen.orientation.unlock) {
                     screen.orientation.unlock();
                 }
+                
+                btnFullscreenMonthly.innerHTML = '<i class="fa-solid fa-expand"></i> <span>Phóng To</span>';
+                
+                // Revert CSS
+                monthlyChartWrapper.style.position = '';
+                monthlyChartWrapper.style.top = '';
+                monthlyChartWrapper.style.left = '';
+                monthlyChartWrapper.style.width = '';
+                monthlyChartWrapper.style.height = '';
+                monthlyChartWrapper.style.zIndex = '';
+                monthlyChartWrapper.style.margin = '';
+                monthlyChartWrapper.style.borderRadius = '';
+                monthlyChartWrapper.style.backgroundColor = '';
+                monthlyChartWrapper.style.padding = '';
+                monthlyChartWrapper.style.display = '';
+                monthlyChartWrapper.style.flexDirection = '';
+                monthlyChartWrapper.style.overflowY = '';
+                
+                if (chartContainer) {
+                    chartContainer.style.flex = '';
+                    chartContainer.style.minHeight = '';
+                    chartContainer.style.height = '';
+                }
+                
+                document.body.style.overflow = '';
             }
         });
     }
