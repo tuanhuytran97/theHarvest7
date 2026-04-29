@@ -4847,10 +4847,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 // CSS fake fullscreen
                 monthlyChartWrapper.style.position = 'fixed';
-                monthlyChartWrapper.style.top = '0';
-                monthlyChartWrapper.style.left = '0';
-                monthlyChartWrapper.style.width = '100vw';
-                monthlyChartWrapper.style.height = '100vh';
                 monthlyChartWrapper.style.zIndex = '99999';
                 monthlyChartWrapper.style.margin = '0';
                 monthlyChartWrapper.style.borderRadius = '0';
@@ -4859,6 +4855,23 @@ document.addEventListener("DOMContentLoaded", () => {
                 monthlyChartWrapper.style.display = 'flex';
                 monthlyChartWrapper.style.flexDirection = 'column';
                 monthlyChartWrapper.style.overflowY = 'auto';
+                
+                // Force landscape visually if in portrait mode
+                if (window.innerHeight > window.innerWidth) {
+                    monthlyChartWrapper.style.width = '100vh';
+                    monthlyChartWrapper.style.height = '100vw';
+                    monthlyChartWrapper.style.top = '50%';
+                    monthlyChartWrapper.style.left = '50%';
+                    monthlyChartWrapper.style.transform = 'translate(-50%, -50%) rotate(90deg)';
+                    monthlyChartWrapper.style.transformOrigin = 'center';
+                } else {
+                    monthlyChartWrapper.style.width = '100vw';
+                    monthlyChartWrapper.style.height = '100vh';
+                    monthlyChartWrapper.style.top = '0';
+                    monthlyChartWrapper.style.left = '0';
+                    monthlyChartWrapper.style.transform = 'none';
+                    monthlyChartWrapper.style.transformOrigin = 'initial';
+                }
                 
                 if (chartContainer) {
                     chartContainer.style.flex = '1';
@@ -4891,6 +4904,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 monthlyChartWrapper.style.display = '';
                 monthlyChartWrapper.style.flexDirection = '';
                 monthlyChartWrapper.style.overflowY = '';
+                monthlyChartWrapper.style.transform = '';
+                monthlyChartWrapper.style.transformOrigin = '';
                 
                 if (chartContainer) {
                     chartContainer.style.flex = '';
