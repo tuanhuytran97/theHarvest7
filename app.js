@@ -4881,6 +4881,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 document.body.style.overflow = 'hidden';
                 
+                // Force Chart.js to resize after entering fullscreen
+                setTimeout(() => {
+                    if (typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
+                        monthlyCombinedChartInstance.resize();
+                    }
+                }, 50);
+                
             } else {
                 isFakeFullscreen = false;
                 
@@ -4914,6 +4921,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 
                 document.body.style.overflow = '';
+                
+                // Force Chart.js to resize after container dimensions change
+                setTimeout(() => {
+                    if (typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
+                        monthlyCombinedChartInstance.resize();
+                    }
+                }, 50);
             }
         });
     }
