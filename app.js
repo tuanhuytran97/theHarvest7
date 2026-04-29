@@ -4883,10 +4883,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 // Force Chart.js to resize after entering fullscreen
                 setTimeout(() => {
+                    const canvas = document.getElementById('monthlyCombinedChart');
+                    if (canvas) {
+                        canvas.style.width = '100%';
+                        canvas.style.height = '100%';
+                    }
+                    window.dispatchEvent(new Event('resize'));
+                    
                     if (typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
                         monthlyCombinedChartInstance.resize();
                     }
-                }, 50);
+                }, 100);
                 
             } else {
                 isFakeFullscreen = false;
@@ -4923,11 +4930,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.body.style.overflow = '';
                 
                 // Force Chart.js to resize after container dimensions change
+                // We dispatch a window resize event to trigger Chart.js internal listeners
                 setTimeout(() => {
+                    const canvas = document.getElementById('monthlyCombinedChart');
+                    if (canvas) {
+                        canvas.style.width = '100%';
+                        canvas.style.height = '100%';
+                    }
+                    window.dispatchEvent(new Event('resize'));
+                    
                     if (typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
                         monthlyCombinedChartInstance.resize();
                     }
-                }, 50);
+                }, 100);
             }
         });
     }
