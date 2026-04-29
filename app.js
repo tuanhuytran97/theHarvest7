@@ -4884,14 +4884,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Force Chart.js to resize after entering fullscreen
                 setTimeout(() => {
                     const canvas = document.getElementById('monthlyCombinedChart');
-                    if (canvas) {
+                    const container = canvas ? canvas.parentElement : null;
+                    if (canvas && container) {
                         canvas.style.width = '100%';
                         canvas.style.height = '100%';
-                    }
-                    window.dispatchEvent(new Event('resize'));
-                    
-                    if (typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
-                        monthlyCombinedChartInstance.resize();
+                        
+                        // When rotated, getBoundingClientRect is swapped, so we use offsetWidth/Height
+                        if (typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
+                            monthlyCombinedChartInstance.resize(container.offsetWidth, container.offsetHeight);
+                        }
                     }
                 }, 100);
                 
@@ -4930,17 +4931,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.body.style.overflow = '';
                 
                 // Force Chart.js to resize after container dimensions change
-                // We dispatch a window resize event to trigger Chart.js internal listeners
                 setTimeout(() => {
                     const canvas = document.getElementById('monthlyCombinedChart');
-                    if (canvas) {
+                    const container = canvas ? canvas.parentElement : null;
+                    if (canvas && container) {
                         canvas.style.width = '100%';
                         canvas.style.height = '100%';
-                    }
-                    window.dispatchEvent(new Event('resize'));
-                    
-                    if (typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
-                        monthlyCombinedChartInstance.resize();
+                        
+                        if (typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
+                            monthlyCombinedChartInstance.resize(container.offsetWidth, container.offsetHeight);
+                        }
                     }
                 }, 100);
             }
