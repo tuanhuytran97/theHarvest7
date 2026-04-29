@@ -953,8 +953,13 @@
                     </section>
 
                     <section id="monthly-report-charts" class="charts-grid" style="display: grid;">
-                        <div class="card glassmorphism">
-                            <h2><i class="fa-solid fa-chart-line"></i> <span>Báo Cáo Chi Tiết Tháng</span></h2>
+                        <div class="card glassmorphism" id="monthly-chart-wrapper" style="position: relative;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h2 style="margin: 0;"><i class="fa-solid fa-chart-line"></i> <span>Báo Cáo Chi Tiết Tháng</span></h2>
+                                <button id="btn-fullscreen-monthly-chart" class="btn-icon mobile-only-flex" title="Toàn màn hình" style="background: rgba(14, 165, 233, 0.1); color: var(--primary-color); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 8px; padding: 6px 12px; cursor: pointer; gap: 6px; align-items: center; font-weight: bold; font-size: 0.9rem;">
+                                    <i class="fa-solid fa-expand"></i> <span>Phóng To</span>
+                                </button>
+                            </div>
                             <div class="chart-container">
                                 <canvas id="monthlyCombinedChart"></canvas>
                             </div>

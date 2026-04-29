@@ -4827,5 +4827,79 @@ document.addEventListener("DOMContentLoaded", () => {
         btnExportReceipt.addEventListener('click', showReceipt);
     }
 
+    // Fullscreen Chart Logic
+    const btnFullscreenMonthly = document.getElementById('btn-fullscreen-monthly-chart');
+    const monthlyChartWrapper = document.getElementById('monthly-chart-wrapper');
+    
+    if (btnFullscreenMonthly && monthlyChartWrapper) {
+        const chartContainer = monthlyChartWrapper.querySelector('.chart-container');
+        
+        btnFullscreenMonthly.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                if (monthlyChartWrapper.requestFullscreen) {
+                    monthlyChartWrapper.requestFullscreen().catch(err => {
+                        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+                    });
+                } else if (monthlyChartWrapper.webkitRequestFullscreen) { /* Safari */
+                    monthlyChartWrapper.webkitRequestFullscreen();
+                } else if (monthlyChartWrapper.msRequestFullscreen) { /* IE11 */
+                    monthlyChartWrapper.msRequestFullscreen();
+                }
+
+                // Force landscape on mobile if supported
+                if (screen.orientation && screen.orientation.lock) {
+                    screen.orientation.lock('landscape').catch(error => {
+                        console.log("Orientation lock failed:", error);
+                    });
+                }
+                
+                btnFullscreenMonthly.innerHTML = '<i class="fa-solid fa-compress"></i> <span>Thu Nhỏ</span>';
+                monthlyChartWrapper.style.backgroundColor = '#f8fafc';
+                monthlyChartWrapper.style.padding = '1.5rem';
+                monthlyChartWrapper.style.overflowY = 'auto';
+                
+                // Add flexbox explicitly for fullscreen
+                monthlyChartWrapper.style.display = 'flex';
+                monthlyChartWrapper.style.flexDirection = 'column';
+                if (chartContainer) {
+                    chartContainer.style.flex = '1';
+                    chartContainer.style.minHeight = '0';
+                }
+                
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) { /* Safari */
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) { /* IE11 */
+                    document.msExitFullscreen();
+                }
+            }
+        });
+
+        // Handle ESC key or system back
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                btnFullscreenMonthly.innerHTML = '<i class="fa-solid fa-expand"></i> <span>Phóng To</span>';
+                monthlyChartWrapper.style.backgroundColor = '';
+                monthlyChartWrapper.style.padding = '';
+                monthlyChartWrapper.style.overflowY = '';
+                
+                // Remove flexbox explicitly
+                monthlyChartWrapper.style.display = '';
+                monthlyChartWrapper.style.flexDirection = '';
+                if (chartContainer) {
+                    chartContainer.style.flex = '';
+                    chartContainer.style.minHeight = '';
+                }
+
+                if (screen.orientation && screen.orientation.unlock) {
+                    screen.orientation.unlock();
+                }
+            }
+        });
+    }
+
     // Investment logic moved to investment.js
 });
+
