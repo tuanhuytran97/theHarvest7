@@ -3309,13 +3309,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (hoveredLabels.some(l => l && l.includes("Chi Phí"))) {
             const expenseDetails = filtered.filter(r => (r["Chi Phí"] || 0) > 0);
             if (expenseDetails.length > 0) {
-                let lines = [" [CHI PHÍ CHI TIẾT]"];
+                let lines = ["", "────── 💸 CHI TIẾT CHI PHÍ ──────"];
                 expenseDetails.forEach(r => {
                     const cat = (r["Loại CP"] || "Khác").trim();
-                    const note = (r["Ghi chú"] || "").trim();
-                    lines.push(`• ${cat}: ${formatCurrency(r["Chi Phí"]).replace('₫', '').trim()} ${note ? '- ' + note : ''}`);
+                    const note = (r["Ghi Chú Chi Phí"] || r["Ghi Chú"] || r["Ghi chú"] || "").trim();
+                    let displayCat = cat;
+                    let displayNote = note ? '- ' + note : '';
+                    if (cat.toLowerCase() === "chi phí khác" && note) {
+                        displayCat = `Chi Phí Khác (${note})`;
+                        displayNote = '';
+                    }
+                    lines.push(` ▸ ${displayCat}: ${formatCurrency(r["Chi Phí"]).replace('₫', '').trim()} ${displayNote}`.trim());
                 });
-                if (lines.length > 1) return lines;
+                if (lines.length > 2) return lines;
             }
         }
 
@@ -3327,14 +3333,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 return isFarm && ((r["Doanh Thu Bông"] || 0) > 0 || (r["Doanh Thu Khác"] || 0) > 0);
             });
             if (revItems.length > 0) {
-                let lines = [" [CHI TIẾT FARM]"];
+                let lines = ["", "────── 🌾 CHI TIẾT FARM ──────"];
                 revItems.forEach(r => {
                     const buyer = (r["Người Mua"] || "").trim();
                     const amount = (r["Doanh Thu Bông"] || 0) + (r["Doanh Thu Khác"] || 0);
-                    const note = (r["Ghi chú"] || "").trim();
-                    lines.push(`• ${buyer || 'Khách lẻ'}: ${formatCurrency(amount).replace('₫', '').trim()} ${note ? '- ' + note : ''}`);
+                    const note = (r["Ghi Chú"] || r["Ghi chú"] || "").trim();
+                    lines.push(` ▸ ${buyer || 'Khách lẻ'}: ${formatCurrency(amount).replace('₫', '').trim()} ${note ? '- ' + note : ''}`.trim());
                 });
-                return lines;
+                if (lines.length > 2) return lines;
             }
         }
 
@@ -3345,14 +3351,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 return (type === "vựa" || type === "vua") && (r["Doanh Thu Khác"] || 0) > 0;
             });
             if (revItems.length > 0) {
-                let lines = [" [CHI TIẾT VỰA]"];
+                let lines = ["", "────── 🏘️ CHI TIẾT VỰA ──────"];
                 revItems.forEach(r => {
                     const buyer = (r["Người Mua"] || "").trim();
                     const amount = r["Doanh Thu Khác"] || 0;
-                    const note = (r["Ghi chú"] || "").trim();
-                    lines.push(`• ${buyer || 'Khách lẻ'}: ${formatCurrency(amount).replace('₫', '').trim()} ${note ? '- ' + note : ''}`);
+                    const note = (r["Ghi Chú"] || r["Ghi chú"] || "").trim();
+                    lines.push(` ▸ ${buyer || 'Khách lẻ'}: ${formatCurrency(amount).replace('₫', '').trim()} ${note ? '- ' + note : ''}`.trim());
                 });
-                return lines;
+                if (lines.length > 2) return lines;
             }
         }
 
