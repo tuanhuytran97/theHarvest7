@@ -3240,7 +3240,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     legend: { position: 'top', labels: { usePointStyle: true, font: { weight: 'bold' } } },
                     title: { display: true, text: `BIỂU ĐỒ DOANH THU & SẢN LƯỢNG - THÁNG ${month}/${year}`, font: { size: 16, weight: 'bold' }, padding: 20 },
                     datalabels: {
-                        display: (context) => (window.innerWidth > 768 && context.dataset.data[context.dataIndex] > 0),
+                        display: (context) => {
+                            const wrapper = document.getElementById('monthly-chart-wrapper');
+                            const isFullscreen = wrapper && wrapper.style.position === 'fixed';
+                            const isLandscape = window.innerWidth > window.innerHeight;
+                            return (window.innerWidth > 768 || isFullscreen || isLandscape) && context.dataset.data[context.dataIndex] > 0;
+                        },
                         formatter: (val, context) => {
                             if (context.dataset.type === 'line') return val.toLocaleString('vi-VN');
                             return val.toLocaleString('vi-VN') + ' ₫';
@@ -3417,7 +3422,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 },
                 datalabels: {
-                    display: () => window.innerWidth > 768,
+                    display: () => window.innerWidth > 768 || window.innerWidth > window.innerHeight,
                     anchor: 'end', align: 'top',
                     formatter: val => (val === 0 ? '' : new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(val)),
                     font: { size: 9, weight: 'bold' }
@@ -4892,6 +4897,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         // When rotated, getBoundingClientRect is swapped, so we use offsetWidth/Height
                         if (typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
                             monthlyCombinedChartInstance.resize(container.offsetWidth, container.offsetHeight);
+                            monthlyCombinedChartInstance.update('none');
                         }
                     }
                 }, 100);
@@ -4941,6 +4947,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         
                         if (typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
                             monthlyCombinedChartInstance.resize();
+                            monthlyCombinedChartInstance.update('none');
                         }
                     }
                 }, 150);
