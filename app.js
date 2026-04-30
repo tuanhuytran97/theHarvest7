@@ -2044,6 +2044,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // Report Setup
+    function syncMainToComparison() {
+        const reportRangeSelect = document.getElementById('report-range');
+        const reportMonthSelect = document.getElementById('report-month');
+        const reportYearSelect = document.getElementById('report-year');
+
+        const reportYearPrev = document.getElementById('report-year-prev');
+        const reportMonthPrev = document.getElementById('report-month-prev');
+        const reportQuarterPrev = document.getElementById('report-quarter-prev');
+
+        if (!reportYearSelect || !reportYearPrev) return;
+
+        // Auto-sync Month/Quarter when range changes, but keep the Comparison Year as is (usually -1)
+        if (reportMonthSelect && reportMonthPrev) {
+            reportMonthPrev.value = reportMonthSelect.value;
+        }
+        if (reportRangeSelect && reportQuarterPrev) {
+            reportQuarterPrev.value = reportRangeSelect.value;
+        }
+    }
+
     const reportRangeSelect = document.getElementById('report-range');
     const reportMonthSelect = document.getElementById('report-month');
     const monthSelectContainer = document.getElementById('month-select-container');
@@ -4096,7 +4116,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Create script tag for JSONP
         const script = document.createElement('script');
         script.id = 'gsheet-script';
-        script.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:handleGvizResponse&sheet=Farm`;
+        script.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:handleGvizResponse&sheet=Data`;
 
         // Handle network errors for script loading
         script.onerror = function () {
