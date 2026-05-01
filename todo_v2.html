@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>theHarvest7 | To-Do List Premium</title>
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="todo_v2.css">
+    <!-- Standalone Reset (not needed when embedded in index.html) -->
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #f1f5f9;
+            background-image: radial-gradient(at 0% 0%, rgba(99,102,241,0.05) 0px, transparent 50%),
+                              radial-gradient(at 100% 0%, rgba(16,185,129,0.05) 0px, transparent 50%);
+            color: #0f172a;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+    </style>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+</head>
+<body>
+
+    <div class="todo-standalone-wrapper">
+        <header class="main-header glass-card">
+            <div class="header-title">
+                <h1>theHarvest7</h1>
+                <div class="quote-wrapper">
+                    <img src="warrent_buffet.png" alt="Warren Buffett" class="buffett-logo">
+                    <p>"Sự khác biệt giữa người thành công và người cực kỳ thành công là họ nói 'không' với hầu hết mọi thứ." <br><strong>— Warren Buffett</strong></p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="add-task-btn" class="btn-primary">
+                    <i class="fa-solid fa-plus"></i> Thêm Công Việc
+                </button>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs glass-card">
+            <button class="nav-btn active" data-target="view-focus">
+                <i class="fa-solid fa-bolt"></i> Tiêu Điểm
+            </button>
+            <button class="nav-btn" data-target="view-dashboard">
+                <i class="fa-solid fa-chart-line"></i> Dashboard
+            </button>
+            <button class="nav-btn" data-target="view-calendar">
+                <i class="fa-solid fa-calendar-days"></i> Lịch Biểu
+            </button>
+            <button class="nav-btn" data-target="view-list">
+                <i class="fa-solid fa-list-ul"></i> Danh Sách
+            </button>
+        </div>
+
+        <!-- VIEW: FOCUS (Split View - Default) -->
+        <div id="view-focus" class="subview">
+            <div class="focus-grid">
+                <div class="glass-card focus-column">
+                    <div class="focus-header" style="border-left: 5px solid var(--accent);">
+                        <i class="fa-solid fa-calendar-day"></i> CÔNG VIỆC HÔM NAY
+                    </div>
+                    <div id="focus-today-list" class="focus-list">
+                        <!-- Today tasks injected by JS -->
+                    </div>
+                </div>
+                <div class="glass-card focus-column">
+                    <div class="focus-header" style="border-left: 5px solid var(--danger);">
+                        <i class="fa-solid fa-triangle-exclamation"></i> VIỆC KHẨN CẤP
+                    </div>
+                    <div id="focus-urgent-list" class="focus-list">
+                        <!-- Urgent tasks injected by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: DASHBOARD -->
+        <div id="view-dashboard" class="subview" style="display: none;">
+            <!-- Dashboard Filters -->
+            <div class="dashboard-controls glass-card" style="display: flex; gap: 1rem; padding: 1.25rem; margin-bottom: 1.5rem; align-items: center; flex-wrap: wrap;">
+                <div class="control-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label style="font-weight: 700; font-size: 0.9rem; color: var(--text-dark);">Xem theo:</label>
+                    <select id="dash-month" class="input-modern" style="padding: 0.5rem; width: auto;">
+                        <option value="all">Tất cả tháng</option>
+                        <option value="0">Tháng 1</option>
+                        <option value="1">Tháng 2</option>
+                        <option value="2">Tháng 3</option>
+                        <option value="3">Tháng 4</option>
+                        <option value="4">Tháng 5</option>
+                        <option value="5">Tháng 6</option>
+                        <option value="6">Tháng 7</option>
+                        <option value="7">Tháng 8</option>
+                        <option value="8">Tháng 9</option>
+                        <option value="9">Tháng 10</option>
+                        <option value="10">Tháng 11</option>
+                        <option value="11">Tháng 12</option>
+                    </select>
+                    <select id="dash-year" class="input-modern" style="padding: 0.5rem; width: auto;">
+                        <!-- Will be populated by JS -->
+                    </select>
+                </div>
+                <button id="btn-reset-dash-filter" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: var(--text-light);">
+                    <i class="fa-solid fa-rotate-left"></i> Hiện tại
+                </button>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="glass-card metric-card" onclick="applyDashboardFilter('total')">
+                    <h3>Tổng công việc</h3>
+                    <div class="value" id="stat-total">0</div>
+                </div>
+                <div class="glass-card metric-card" style="border-bottom: 4px solid var(--accent);" onclick="applyDashboardFilter('today')">
+                    <h3>Hôm nay</h3>
+                    <div class="value" id="stat-today" style="color: var(--accent);">0</div>
+                </div>
+                <div class="glass-card metric-card" style="border-bottom: 4px solid var(--primary);" onclick="applyDashboardFilter('inprogress')">
+                    <h3>Đang thực hiện</h3>
+                    <div class="value" id="stat-inprogress" style="color: var(--primary);">0</div>
+                </div>
+                <div class="glass-card metric-card" style="border-bottom: 4px solid var(--secondary);" onclick="applyDashboardFilter('completed')">
+                    <h3>Hoàn thành</h3>
+                    <div class="value" id="stat-completed" style="color: var(--secondary);">0</div>
+                </div>
+                <div class="glass-card metric-card" style="border-bottom: 4px solid #f59e0b;" onclick="applyDashboardFilter('pending')">
+                    <h3>Chờ xử lý</h3>
+                    <div class="value" id="stat-pending" style="color: #f59e0b;">0</div>
+                </div>
+            </div>
+
+            <div class="chart-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+                <div class="glass-card chart-container">
+                    <h3>Phân bổ Trạng Thái</h3>
+                    <canvas id="statusChart"></canvas>
+                </div>
+                <div class="glass-card chart-container">
+                    <h3>Mức độ Ưu Tiên</h3>
+                    <canvas id="priorityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: CALENDAR -->
+        <div id="view-calendar" class="subview" style="display: none;">
+            <div class="glass-card calendar-wrapper">
+                <div class="calendar-header">
+                    <div style="display: flex; gap: 1rem;">
+                        <select id="cal-month" class="input-modern" style="width: 150px;">
+                            <option value="0">Tháng 1</option><option value="1">Tháng 2</option>
+                            <option value="2">Tháng 3</option><option value="3">Tháng 4</option>
+                            <option value="4">Tháng 5</option><option value="5">Tháng 6</option>
+                            <option value="6">Tháng 7</option><option value="7">Tháng 8</option>
+                            <option value="8">Tháng 9</option><option value="9">Tháng 10</option>
+                            <option value="10">Tháng 11</option><option value="11">Tháng 12</option>
+                        </select>
+                        <input type="number" id="cal-year" class="input-modern" style="width: 100px;" value="2026">
+                    </div>
+                </div>
+                <div id="calendar-grid" class="calendar-grid">
+                    <!-- Calendar injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: LIST -->
+        <div id="view-list" class="subview" style="display: none;">
+            <!-- Filters Bar -->
+            <div class="glass-card" style="padding: 1rem; margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+                <div style="flex: 2; min-width: 200px;">
+                    <div class="input-with-icon" style="position: relative;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-light);"></i>
+                        <input type="text" id="filter-search" class="input-modern" placeholder="Tìm kiếm công việc..." style="padding-left: 35px;">
+                    </div>
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <select id="filter-status" class="input-modern">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="Chưa bắt đầu">Chưa bắt đầu</option>
+                        <option value="Đang thực hiện">Đang thực hiện</option>
+                        <option value="Đang chờ duyệt">Đang chờ duyệt</option>
+                        <option value="Hoàn thành">Hoàn thành</option>
+                        <option value="Tạm dừng">Tạm dừng</option>
+                        <option value="Hủy bỏ">Hủy bỏ</option>
+                    </select>
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <select id="filter-priority" class="input-modern">
+                        <option value="">Tất cả ưu tiên</option>
+                        <option value="Thấp">Thấp</option>
+                        <option value="Trung bình">Trung bình</option>
+                        <option value="Cao">Cao</option>
+                        <option value="Khẩn cấp">Khẩn cấp</option>
+                    </select>
+                </div>
+                <button id="btn-clear-filters" class="btn-icon" title="Xóa bộ lọc"><i class="fa-solid fa-filter-circle-xmark"></i></button>
+            </div>
+
+            <div class="glass-card table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 25%; cursor: pointer;" onclick="toggleSort('task')">Công Việc <i class="fa-solid fa-sort"></i></th>
+                            <th style="cursor: pointer;" onclick="toggleSort('deadline')">Deadline <i class="fa-solid fa-sort"></i></th>
+                            <th style="cursor: pointer;" onclick="toggleSort('deadline')">Thời Gian <i class="fa-solid fa-sort"></i></th>
+                            <th style="cursor: pointer;" onclick="toggleSort('priority')">Ưu Tiên <i class="fa-solid fa-sort"></i></th>
+                            <th style="cursor: pointer;" onclick="toggleSort('status')">Trạng Thái <i class="fa-solid fa-sort"></i></th>
+                            <th>Phân Loại</th>
+                            <th>Ghi Chú</th>
+                            <th style="text-align: right;">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="todo-table-body">
+                        <!-- Data injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add/Edit Task -->
+    <div id="todo-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title" style="font-size: 1.25rem; font-weight: 800;">Thêm Công Việc</h2>
+                <button id="close-modal" class="btn-icon"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="task-id">
+                <div class="form-group">
+                    <label>Tên Công Việc</label>
+                    <input type="text" id="task-name" class="input-modern" placeholder="VD: Thu hoạch hoa hồng...">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Hạn chót (Deadline)</label>
+                        <input type="date" id="task-deadline" class="input-modern">
+                    </div>
+                    <div class="form-group">
+                        <label>Phân loại</label>
+                        <select id="task-category" class="input-modern">
+                            <option value="Airbus (job)">Airbus (job)</option>
+                            <option value="Farm">Farm</option>
+                            <option value="Family">Family</option>
+                            <option value="Cá nhân">Cá nhân</option>
+                            <option value="Phát triển bản thân">Phát triển bản thân</option>
+                            <option value="Khác">Khác</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Ghi chú</label>
+                    <textarea id="task-note" class="input-modern" rows="3" placeholder="Nhập ghi chú chi tiết..."></textarea>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Mức độ ưu tiên</label>
+                        <select id="task-priority" class="input-modern">
+                            <option value="Thấp">Thấp</option>
+                            <option value="Trung bình" selected>Trung bình</option>
+                            <option value="Cao">Cao</option>
+                            <option value="Khẩn cấp">Khẩn cấp</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Trạng thái</label>
+                        <select id="task-status" class="input-modern">
+                            <option value="Chưa bắt đầu" selected>Chưa bắt đầu</option>
+                            <option value="Đang thực hiện">Đang thực hiện</option>
+                            <option value="Đang chờ duyệt">Đang chờ duyệt</option>
+                            <option value="Hoàn thành">Hoàn thành</option>
+                            <option value="Tạm dừng">Tạm dừng</option>
+                            <option value="Hủy bỏ">Hủy bỏ</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="save-task-btn" class="btn-primary" style="width: 100%; margin-top: 1rem;">Lưu Công Việc</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="todo_v2.js"></script>
+</body>
+</html>

@@ -130,24 +130,35 @@ document.addEventListener("DOMContentLoaded", () => {
         const roleBadgeEl = document.getElementById("user-role-badge");
 
         if (displayNameEl) displayNameEl.innerText = name;
-        if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0D8ABC&color=fff`;
+        if (avatarEl) avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff&bold=true`;
 
         if (roleBadgeEl) {
             roleBadgeEl.className = 'role-badge'; // reset
             if (role === 'ADMIN') {
                 roleBadgeEl.innerText = 'Quản trị';
                 roleBadgeEl.classList.add('admin');
+                roleBadgeEl.style.background = 'rgba(99, 102, 241, 0.1)';
+                roleBadgeEl.style.color = '#6366f1';
             } else if (role === 'EMP_LV1') {
                 roleBadgeEl.innerText = 'Bậc 1';
                 roleBadgeEl.classList.add('emp1');
+                roleBadgeEl.style.background = 'rgba(16, 185, 129, 0.1)';
+                roleBadgeEl.style.color = '#10b981';
             } else if (role === 'EMP_LV2') {
                 roleBadgeEl.innerText = 'Bậc 2';
                 roleBadgeEl.classList.add('emp2');
+                roleBadgeEl.style.background = 'rgba(245, 158, 11, 0.1)';
+                roleBadgeEl.style.color = '#f59e0b';
             } else {
-                roleBadgeEl.style.display = 'none';
+                roleBadgeEl.innerText = 'Guest';
+                roleBadgeEl.style.background = 'rgba(148, 163, 184, 0.1)';
+                roleBadgeEl.style.color = '#64748b';
             }
         }
     };
+
+    // Auto-update on load
+    updateUserProfile();
 
     // User Profile Dropdown Logic
     const userTrigger = document.getElementById("user-avatar-trigger");
@@ -203,6 +214,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const isAuthorizedForSync = () => !!getRole(); // Mọi user đăng nhập đều được sync (đọc) dữ liệu 
     const isAuthorizedForEntry = () => canMutate();
     const isAuthorizedForDebt = () => canMutate();
+
+    // AUTO-SYNC DATA ON STARTUP
+    if (checkAuth()) {
+        setTimeout(() => {
+            if (typeof syncData === 'function') {
+                console.log("Startup: Auto-fetching farm data...");
+                syncData();
+            }
+            if (typeof renderFocusView === 'function') {
+                renderFocusView();
+            }
+        }, 1000);
+    }
 
     if (!checkAuth()) {
         loginForm.addEventListener("submit", async (e) => {
@@ -1231,6 +1255,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Menu Routing
+    const menuTodo = document.getElementById('menu-todo'); // NEW
     const menuData = document.getElementById('menu-data');
     const menuReport = document.getElementById('menu-report');
     const menuDebt = document.getElementById('menu-debt');
@@ -1239,6 +1264,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const menuInvestment = document.getElementById('menu-investment');
     const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
 
+    const viewTodo = document.getElementById('view-todo'); // NEW
     const viewData = document.getElementById('view-data');
     const viewReport = document.getElementById('view-report');
     const viewDebt = document.getElementById('view-debt');
@@ -1247,6 +1273,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const viewInvestment = document.getElementById('view-investment');
 
     function hideAllViews() {
+        if (menuTodo) menuTodo.classList.remove('active');
         if (menuData) menuData.classList.remove('active');
         if (menuReport) menuReport.classList.remove('active');
         if (menuDebt) menuDebt.classList.remove('active');
@@ -1256,6 +1283,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         mobileNavItems.forEach(i => i.classList.remove('active'));
 
+        if (viewTodo) viewTodo.style.display = 'none';
         if (viewData) viewData.style.display = 'none';
         if (viewReport) viewReport.style.display = 'none';
         if (viewDebt) viewDebt.style.display = 'none';
@@ -1278,7 +1306,12 @@ document.addEventListener("DOMContentLoaded", () => {
         hideAllViews();
         localStorage.setItem("active_app_view", viewId);
 
-        if (viewId === 'data') {
+        if (viewId === 'todo') {
+            if (menuTodo) menuTodo.classList.add('active');
+            syncMobileNav('todo');
+            if (viewTodo) viewTodo.style.display = 'block';
+            if (typeof renderFocus === 'function') renderFocus(); // Refresh todo
+        } else if (viewId === 'data') {
             if (menuData) menuData.classList.add('active');
             syncMobileNav('data');
             if (viewData) viewData.style.display = 'block';
@@ -1309,6 +1342,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (viewInvestment) viewInvestment.style.display = 'block';
             if (typeof fetchInvestmentData === 'function') fetchInvestmentData();
         }
+    }
+
+    if (menuTodo) {
+        menuTodo.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchView('todo');
+        });
     }
 
     if (menuData) {
@@ -1376,7 +1416,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const detailView = document.getElementById('debt-detail-view');
         const filterVal = document.getElementById('debt-filter') ? document.getElementById('debt-filter').value : 'farm';
 
-        if (masterView) masterView.style.display = 'block';
+        if (masterView) masterView.style.display = 'grid';
         if (detailView) detailView.style.display = 'none';
 
         let debtData = farmData.filter(row => (row["Status"] || "").toLowerCase() !== "xong");
@@ -1515,7 +1555,7 @@ document.addEventListener("DOMContentLoaded", () => {
             showDebtDetail(buyers[currentSelectedBuyer.name]);
         } else {
             currentSelectedBuyer = null;
-            if (masterView) masterView.style.display = 'block';
+            if (masterView) masterView.style.display = 'grid';
             if (detailView) detailView.style.display = 'none';
         }
     }
@@ -1631,7 +1671,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnBack) {
         btnBack.addEventListener('click', () => {
             currentSelectedBuyer = null;
-            document.getElementById('debt-master-view').style.display = 'block';
+            document.getElementById('debt-master-view').style.display = 'grid';
             document.getElementById('debt-detail-view').style.display = 'none';
         });
     }
@@ -2078,7 +2118,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const isMonth = val === 'month';
             const isQuarter = val.startsWith('q');
 
-            monthSelectContainer.style.display = isMonth ? 'block' : 'none';
+            monthSelectContainer.style.display = isMonth ? 'flex' : 'none';
 
             // Adjust chart displays
             document.getElementById('yearly-report-charts').style.display = (isMonth || isQuarter) ? 'none' : 'grid';
@@ -3188,7 +3228,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const expData = data.map(d => d.expense);
         const qtyData = data.map(d => d.qty);
 
-        const ctx = document.getElementById('monthlyCombinedChart').getContext('2d');
+        const canvas = document.getElementById('monthlyCombinedChart');
+        const container = document.getElementById('MONTHLY_CHART_FIX_CONTAINER');
+        const ctx = canvas.getContext('2d');
+        
+        const isMobile = window.innerWidth <= 768;
+        const targetH = isMobile ? (window.innerHeight * 0.85) : 785;
+        
+        if (container) {
+            container.style.height = isMobile ? '90vh' : '825px';
+        }
+        canvas.style.height = targetH + 'px';
+        canvas.height = targetH;
+        
         if (monthlyCombinedChartInstance) monthlyCombinedChartInstance.destroy();
 
         monthlyCombinedChartInstance = new Chart(ctx, {
@@ -3198,43 +3250,79 @@ document.addEventListener("DOMContentLoaded", () => {
                 datasets: [
                     {
                         type: 'bar', label: 'Doanh Thu Farm', data: revFarmData,
-                        backgroundColor: 'rgba(56, 189, 248, 0.85)', yAxisID: 'y',
-                        stack: 'revenue'
+                        backgroundColor: '#38bdf8', yAxisID: 'y',
+                        stack: 'revenue', barPercentage: 0.9, categoryPercentage: 0.8
                     },
                     {
                         type: 'bar', label: 'Doanh Thu Vựa', data: revVuaData,
-                        backgroundColor: 'rgba(59, 130, 246, 0.85)', yAxisID: 'y',
-                        stack: 'revenue'
+                        backgroundColor: '#3b82f6', yAxisID: 'y',
+                        stack: 'revenue', barPercentage: 0.9, categoryPercentage: 0.8
                     },
                     {
                         type: 'bar', label: 'Chi Phí', data: expData,
-                        backgroundColor: 'rgba(239, 68, 68, 0.8)', yAxisID: 'y',
-                        stack: 'expense'
+                        backgroundColor: '#ef4444', yAxisID: 'y',
+                        stack: 'expense', barPercentage: 0.9, categoryPercentage: 0.8
                     },
                     {
                         type: 'line', label: 'Sản Lượng (Bông)', data: qtyData,
                         borderColor: 'rgb(249, 115, 22)', backgroundColor: 'rgba(249, 115, 22, 0.1)',
-                        borderWidth: 4, tension: 0.4, pointRadius: 5, pointBackgroundColor: '#fff',
+                        borderWidth: 5, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#fff',
                         pointBorderColor: 'rgb(249, 115, 22)', yAxisID: 'y1'
                     }
                 ]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
+                layout: { padding: { top: 5, bottom: 20, left: 20, right: 20 } },
+                interaction: { 
+                    mode: 'index', 
+                    intersect: false,
+                    axis: 'x'
+                },
                 scales: {
                     x: {
                         stacked: true,
-                        grid: { display: false }
+                        grid: { display: false },
+                        ticks: { 
+                            font: { weight: 'bold', size: 14 }, 
+                            color: '#000',
+                            autoSkip: false 
+                        }
                     },
                     y: {
                         type: 'linear', display: true, position: 'left',
                         stacked: true,
-                        title: { display: true, text: 'Doanh Thu (VNĐ)', font: { weight: 'bold' } },
-                        grid: { color: 'rgba(0,0,0,0.05)' }
+                        grace: '20%',
+                        title: { 
+                            display: true, 
+                            text: 'Doanh Thu (VNĐ)', 
+                            font: { weight: 'bold', size: 14 }, 
+                            color: '#000',
+                            padding: 10 
+                        },
+                        grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false },
+                        ticks: { 
+                            font: { weight: 'bold', size: 13 }, 
+                            color: '#000',
+                            callback: (val) => val.toLocaleString('vi-VN') 
+                        }
                     },
                     y1: {
-                        type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false },
-                        title: { display: true, text: 'Sản lượng Bông', font: { weight: 'bold' } }
+                        type: 'linear', display: true, position: 'right', 
+                        grid: { drawOnChartArea: false },
+                        grace: '20%',
+                        title: { 
+                            display: true, 
+                            text: 'Sản lượng Bông', 
+                            font: { weight: 'bold', size: 14 }, 
+                            color: '#000',
+                            padding: 10 
+                        },
+                        ticks: { 
+                            font: { weight: 'bold', size: 13 }, 
+                            color: '#000',
+                            callback: (val) => val.toLocaleString('vi-VN') 
+                        }
                     }
                 },
                 plugins: {
@@ -3257,30 +3345,56 @@ document.addEventListener("DOMContentLoaded", () => {
                             }
                         }
                     },
-                    legend: { position: 'top', labels: { usePointStyle: true, font: { weight: 'bold' } } },
-                    title: { display: true, text: `BIỂU ĐỒ DOANH THU & SẢN LƯỢNG - THÁNG ${month}/${year}`, font: { size: 16, weight: 'bold' }, padding: 20 },
+                    legend: { 
+                        position: 'top', 
+                        align: 'center',
+                        labels: { 
+                            usePointStyle: true, 
+                            padding: 20,
+                            font: { weight: 'bold', size: 13 },
+                            color: '#000'
+                        } 
+                    },
+                    title: { 
+                        display: true, 
+                        text: `BIỂU ĐỒ DOANH THU & SẢN LƯỢNG - THÁNG ${month}/${year}`, 
+                        font: { size: 18, weight: 'bold' }, 
+                        padding: { top: 5, bottom: 10 },
+                        color: '#000'
+                    },
                     datalabels: {
                         display: (context) => {
+                            const val = context.dataset.data[context.dataIndex];
+                            if (val <= 0) return false;
+                            
                             const wrapper = document.getElementById('monthly-chart-wrapper');
                             const isFullscreen = wrapper && wrapper.style.position === 'fixed';
                             const isLandscape = window.innerWidth > window.innerHeight;
-                            return (window.innerWidth > 768 || isFullscreen || isLandscape) && context.dataset.data[context.dataIndex] > 0;
+                            
+                            // Always show if enough space or desktop
+                            if (window.innerWidth > 1024 || isFullscreen || isLandscape) return true;
+                            
+                            // On mobile, show only for the line chart to avoid clutter, or if specifically important
+                            return context.dataset.type === 'line';
                         },
                         formatter: (val, context) => {
                             if (context.dataset.type === 'line') return val.toLocaleString('vi-VN');
                             return val.toLocaleString('vi-VN') + ' ₫';
                         },
                         font: { size: 10, weight: 'bold' },
-                        color: '#000',
-                        backgroundColor: (context) => {
-                            if (context.dataset.type === 'line') return 'rgba(255, 193, 7, 0.9)';
-                            return 'rgba(255, 255, 255, 0.7)';
+                        color: (context) => {
+                            return context.dataset.type === 'line' ? '#000' : '#1e293b';
                         },
-                        padding: 2,
-                        borderRadius: 3,
+                        backgroundColor: (context) => {
+                            if (context.dataset.type === 'line') return '#fbbf24';
+                            return 'rgba(255, 255, 255, 0.65)';
+                        },
+                        padding: 3,
+                        borderRadius: 4,
                         anchor: 'end',
                         align: 'top',
-                        offset: 4
+                        offset: 4,
+                        clip: false
                     }
                 }
             },
@@ -4723,7 +4837,7 @@ document.addEventListener("DOMContentLoaded", () => {
     currentLimit = 20;
 
     // Restore saved view on load (Centralized initialization)
-    const savedView = localStorage.getItem("active_app_view") || 'data';
+    const savedView = localStorage.getItem("active_app_view") || 'todo';
     switchView(savedView);
 
     if (entryTypeSelect) {
@@ -4871,37 +4985,69 @@ document.addEventListener("DOMContentLoaded", () => {
                 btnFullscreenMonthly.innerHTML = '<i class="fa-solid fa-compress"></i> <span>Thu Nhỏ</span>';
                 
                 // CSS fake fullscreen
-                monthlyChartWrapper.style.position = 'fixed';
-                monthlyChartWrapper.style.zIndex = '99999';
-                monthlyChartWrapper.style.margin = '0';
-                monthlyChartWrapper.style.borderRadius = '0';
-                monthlyChartWrapper.style.backgroundColor = '#f8fafc';
-                monthlyChartWrapper.style.padding = '1.5rem';
-                monthlyChartWrapper.style.display = 'flex';
-                monthlyChartWrapper.style.flexDirection = 'column';
-                monthlyChartWrapper.style.overflowY = 'auto';
-                
-                // Force landscape visually if in portrait mode
-                if (window.innerHeight > window.innerWidth) {
-                    monthlyChartWrapper.style.width = '100vh';
-                    monthlyChartWrapper.style.height = '100vw';
-                    monthlyChartWrapper.style.top = '50%';
-                    monthlyChartWrapper.style.left = '50%';
-                    monthlyChartWrapper.style.transform = 'translate(-50%, -50%) rotate(90deg)';
-                    monthlyChartWrapper.style.transformOrigin = 'center';
-                } else {
-                    monthlyChartWrapper.style.width = '100vw';
-                    monthlyChartWrapper.style.height = '100vh';
-                    monthlyChartWrapper.style.top = '0';
-                    monthlyChartWrapper.style.left = '0';
-                    monthlyChartWrapper.style.transform = 'none';
-                    monthlyChartWrapper.style.transformOrigin = 'initial';
+                monthlyChartWrapper.classList.add('force-fullscreen-mode');
+                monthlyChartWrapper.style.setProperty('position', 'fixed', 'important');
+                monthlyChartWrapper.style.setProperty('z-index', '9999999', 'important');
+                monthlyChartWrapper.style.setProperty('margin', '0', 'important');
+                // Hide title and float the toggle button
+                const wrapperHeader = monthlyChartWrapper.querySelector('div[style*="justify-content: space-between"]');
+                if (wrapperHeader) {
+                    const titleH2 = wrapperHeader.querySelector('h2');
+                    if (titleH2) titleH2.style.display = 'none';
+                    wrapperHeader.style.setProperty('position', 'absolute', 'important');
+                    wrapperHeader.style.setProperty('top', '10px', 'important');
+                    wrapperHeader.style.setProperty('right', '10px', 'important');
+                    wrapperHeader.style.setProperty('z-index', '10', 'important');
+                    wrapperHeader.style.setProperty('margin', '0', 'important');
                 }
-                
+
+                // Force landscape visually if in portrait mode
+                const updateFullscreenSize = () => {
+                    const vW = window.innerWidth;
+                    const vH = window.innerHeight;
+                    
+                    if (vH > vW) {
+                        // Portrait orientation -> Rotate to Landscape
+                        monthlyChartWrapper.style.setProperty('width', vH + 'px', 'important');
+                        monthlyChartWrapper.style.setProperty('height', vW + 'px', 'important');
+                        monthlyChartWrapper.style.setProperty('top', '0', 'important');
+                        monthlyChartWrapper.style.setProperty('left', '100%', 'important');
+                        monthlyChartWrapper.style.setProperty('transform', 'rotate(90deg)', 'important');
+                        monthlyChartWrapper.style.setProperty('transform-origin', 'top left', 'important');
+                    } else {
+                        // Already Landscape
+                        monthlyChartWrapper.style.setProperty('width', '100vw', 'important');
+                        monthlyChartWrapper.style.setProperty('height', '100vh', 'important');
+                        monthlyChartWrapper.style.setProperty('top', '0', 'important');
+                        monthlyChartWrapper.style.setProperty('left', '0', 'important');
+                        monthlyChartWrapper.style.setProperty('transform', 'none', 'important');
+                        monthlyChartWrapper.style.setProperty('transform-origin', 'initial', 'important');
+                    }
+
+                    setTimeout(() => {
+                        const canvas = document.getElementById('monthlyCombinedChart');
+                        const container = canvas ? canvas.parentElement : null;
+                        if (canvas && container && typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
+                            canvas.style.setProperty('width', '100%', 'important');
+                            canvas.style.setProperty('height', '100%', 'important');
+                            monthlyCombinedChartInstance.resize(container.offsetWidth, container.offsetHeight);
+                            monthlyCombinedChartInstance.update('none');
+                        }
+                    }, 300);
+                };
+
+                updateFullscreenSize();
+                window.addEventListener('resize', updateFullscreenSize);
+                window._updateFullscreenMonthly = updateFullscreenSize;
+
                 if (chartContainer) {
+                    chartContainer.style.setProperty('height', '100%', 'important');
+                    chartContainer.style.setProperty('width', '100%', 'important');
+                    chartContainer.style.setProperty('min-height', '0', 'important');
+                    chartContainer.style.setProperty('display', 'flex', 'important');
+                    chartContainer.style.setProperty('align-items', 'center', 'important');
+                    chartContainer.style.setProperty('justify-content', 'center', 'important');
                     chartContainer.style.flex = '1';
-                    chartContainer.style.minHeight = '0';
-                    chartContainer.style.height = '100%';
                 }
                 
                 document.body.style.overflow = 'hidden';
@@ -4911,16 +5057,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     const canvas = document.getElementById('monthlyCombinedChart');
                     const container = canvas ? canvas.parentElement : null;
                     if (canvas && container) {
-                        canvas.style.width = '100%';
-                        canvas.style.height = '100%';
+                        canvas.style.setProperty('width', '100%', 'important');
+                        canvas.style.setProperty('height', '100%', 'important');
                         
-                        // When rotated, getBoundingClientRect is swapped, so we use offsetWidth/Height
                         if (typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
                             monthlyCombinedChartInstance.resize(container.offsetWidth, container.offsetHeight);
                             monthlyCombinedChartInstance.update('none');
                         }
                     }
-                }, 100);
+                }, 200);
                 
             } else {
                 isFakeFullscreen = false;
@@ -4932,42 +5077,65 @@ document.addEventListener("DOMContentLoaded", () => {
                 btnFullscreenMonthly.innerHTML = '<i class="fa-solid fa-expand"></i> <span>Phóng To</span>';
                 
                 // Revert CSS
-                monthlyChartWrapper.style.position = '';
-                monthlyChartWrapper.style.top = '';
-                monthlyChartWrapper.style.left = '';
-                monthlyChartWrapper.style.width = '';
-                monthlyChartWrapper.style.height = '';
-                monthlyChartWrapper.style.zIndex = '';
-                monthlyChartWrapper.style.margin = '';
-                monthlyChartWrapper.style.borderRadius = '';
-                monthlyChartWrapper.style.backgroundColor = '';
-                monthlyChartWrapper.style.padding = '';
-                monthlyChartWrapper.style.display = '';
-                monthlyChartWrapper.style.flexDirection = '';
-                monthlyChartWrapper.style.overflowY = '';
-                monthlyChartWrapper.style.transform = '';
-                monthlyChartWrapper.style.transformOrigin = '';
+                monthlyChartWrapper.classList.remove('force-fullscreen-mode');
+                
+                const bottomNav = document.querySelector('.mobile-nav');
+                if (bottomNav) bottomNav.style.display = 'flex';
+
+                const wrapperHeader = monthlyChartWrapper.querySelector('div[style*="justify-content: space-between"]');
+                if (wrapperHeader) {
+                    const titleH2 = wrapperHeader.querySelector('h2');
+                    if (titleH2) titleH2.style.display = '';
+                    wrapperHeader.style.removeProperty('position');
+                    wrapperHeader.style.removeProperty('top');
+                    wrapperHeader.style.removeProperty('right');
+                    wrapperHeader.style.removeProperty('z-index');
+                    wrapperHeader.style.removeProperty('margin');
+                }
+
+                monthlyChartWrapper.style.removeProperty('position');
+                monthlyChartWrapper.style.removeProperty('top');
+                monthlyChartWrapper.style.removeProperty('left');
+                monthlyChartWrapper.style.removeProperty('width');
+                monthlyChartWrapper.style.removeProperty('height');
+                monthlyChartWrapper.style.removeProperty('z-index');
+                monthlyChartWrapper.style.removeProperty('margin');
+                monthlyChartWrapper.style.removeProperty('border-radius');
+                monthlyChartWrapper.style.removeProperty('background-color');
+                monthlyChartWrapper.style.removeProperty('padding');
+                monthlyChartWrapper.style.removeProperty('display');
+                monthlyChartWrapper.style.removeProperty('flex-direction');
+                monthlyChartWrapper.style.removeProperty('overflow');
+                monthlyChartWrapper.style.removeProperty('transform');
+                monthlyChartWrapper.style.removeProperty('transform-origin');
                 
                 if (chartContainer) {
-                    chartContainer.style.flex = '';
-                    chartContainer.style.minHeight = '';
-                    chartContainer.style.height = '';
+                    chartContainer.style.removeProperty('flex');
+                    chartContainer.style.removeProperty('min-height');
+                    chartContainer.style.removeProperty('height');
                 }
+                
+                window.removeEventListener('resize', window._updateFullscreenMonthly);
+                delete window._updateFullscreenMonthly;
                 
                 document.body.style.overflow = '';
                 
                 // Force Chart.js to resize after container dimensions change
                 setTimeout(() => {
                     const canvas = document.getElementById('monthlyCombinedChart');
+                    const container = document.getElementById('MONTHLY_CHART_FIX_CONTAINER');
                     if (canvas) {
-                        canvas.removeAttribute('width');
-                        canvas.removeAttribute('height');
+                        const container = document.getElementById('MONTHLY_CHART_FIX_CONTAINER');
+                        const isMobile = window.innerWidth <= 768;
+                        if (container) {
+                            container.style.height = isMobile ? '90vh' : '825px';
+                        }
+                        canvas.style.height = isMobile ? '85vh' : '785px';
                         canvas.style.width = '100%';
-                        canvas.style.height = '100%';
                         
                         if (typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
                             monthlyCombinedChartInstance.resize();
-                            monthlyCombinedChartInstance.update('none');
+                            monthlyCombinedChartInstance.update();
                         }
                     }
                 }, 150);

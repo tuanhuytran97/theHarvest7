@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --primary-color: #0ea5e9;
   --primary-hover: #0284c7;
   --secondary-color: #10b981;
@@ -121,11 +121,11 @@
   justify-content: center;
   border-radius: 50%;
   z-index: 20;
-  opacity: 0.4; /* Mặc định mờ */
+  opacity: 0.4; /* Máº·c Ä‘á»‹nh má» */
 }
 
 .toggle-password-btn.active {
-  opacity: 1; /* Hiện rõ khi kích hoạt */
+  opacity: 1; /* Hiá»‡n rÃµ khi kÃ­ch hoáº¡t */
   color: var(--primary-color);
 }
 
@@ -193,8 +193,6 @@ body {
   background-size: cover;
   color: var(--text-dark);
   min-height: 100vh;
-  width: 100%;
-  overflow-x: hidden;
 }
 
 body::before {
@@ -210,10 +208,8 @@ body::before {
 }
 
 .app-container {
-  display: flex !important;
-  min-height: 100vh !important;
-  width: 100% !important;
-  max-width: 100% !important;
+  display: flex;
+  min-height: 100vh;
 }
 
 /* Sidebar */
@@ -399,37 +395,6 @@ header h1 {
   overflow: hidden;
 }
 
-/* Monthly Detailed Report Expansion */
-#monthly-report-charts {
-  grid-template-columns: 1fr !important;
-  width: 100% !important;
-}
-
-#monthly-report-charts .card {
-  width: 100% !important;
-}
-
-.monthly-report-chart-container, 
-#MONTHLY_CHART_FIX_CONTAINER {
-  height: 825px;
-  min-height: 825px;
-  position: relative;
-  width: 100%;
-}
-
-@media (max-width: 768px) {
-  .monthly-report-chart-container, 
-  #MONTHLY_CHART_FIX_CONTAINER {
-    height: 350px !important;
-    min-height: 350px !important;
-  }
-}
-
-#monthlyCombinedChart {
-  width: 100% !important;
-  height: 100% !important;
-}
-
 .charts-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -449,37 +414,33 @@ header h1 {
 .report-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.25rem;
+  gap: 2rem;
   align-items: center;
-  justify-content: flex-start;
-  padding: 1rem 1.5rem;
+  padding: 1.25rem 2rem;
   margin-bottom: 2rem;
 }
 
 .form-group.row-align {
-  display: flex;
   flex-direction: row;
-  align-items: center !important;
-  gap: 0.75rem;
-  margin: 0;
+  align-items: center;
+  gap: 1rem;
 }
 
 .form-group.row-align label {
   white-space: nowrap;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: var(--text-light);
   font-weight: 500;
-  margin-bottom: 0;
+  width: 90px;
 }
 
 .form-group.row-align select {
-  padding: 0.5rem 0.75rem;
+  padding: 0.625rem 1rem;
   font-weight: 700;
-  min-width: 100px;
+  min-width: 130px;
   color: var(--text-dark);
   border-color: rgba(0, 0, 0, 0.1);
   background: white;
-  border-radius: 8px;
 }
 
 #report-year {
@@ -579,110 +540,6 @@ select:focus {
 }
 
 /* Table Section */
-.customer-debt-btn {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    width: 100%;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-}
-
-.customer-debt-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(0,0,0,0.05);
-    border-color: #cbd5e1;
-    background: #f8fafc;
-}
-
-.customer-debt-btn:active {
-    transform: translateY(0);
-}
-
-.vua-flavor {
-    border-left: 4px solid #0284c7;
-}
-
-.farm-flavor {
-    border-left: 4px solid #16a34a;
-}
-
-/* Modern Todo Table Style (BCTC Style) */
-.todo-table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-    border-radius: 20px;
-    background: white;
-    box-shadow: var(--shadow-sm);
-    border: 1px solid #e2e8f0;
-    margin-top: 1rem;
-}
-
-.modern-todo-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-    min-width: 900px;
-}
-
-.modern-todo-table th {
-    background: #f8fafc;
-    padding: 14px 16px;
-    text-align: left;
-    color: #64748b;
-    font-weight: 800;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.5px;
-    border-bottom: 2px solid #f1f5f9;
-    white-space: nowrap;
-}
-
-.modern-todo-table td {
-    padding: 14px 16px;
-    border-bottom: 1px solid #f1f5f9;
-    color: #1e293b;
-    vertical-align: middle;
-}
-
-.modern-todo-table tr:hover td {
-    background: #fbfcfe;
-}
-
-/* Cố định cột đầu tiên giống BCTC */
-.modern-todo-table th:first-child,
-.modern-todo-table td:first-child {
-    position: sticky;
-    left: 0;
-    background: white;
-    z-index: 5;
-    min-width: 200px;
-    max-width: 300px;
-    white-space: normal !important;
-    font-weight: 700;
-    border-right: 2px solid #f1f5f9;
-}
-
-.modern-todo-table th:first-child {
-    background: #f8fafc;
-    z-index: 6;
-}
-
-@media (max-width: 768px) {
-    .modern-todo-table td, .modern-todo-table th {
-        padding: 10px 12px;
-        font-size: 0.85rem;
-    }
-    .modern-todo-table td:first-child {
-        min-width: 150px;
-    }
-}
-
 .table-header {
   display: flex;
   justify-content: space-between;
@@ -990,7 +847,7 @@ tbody tr:hover {
   #farm-data-table td:nth-child(1)::before { display: none !important; }
 
   /* Date & Status - Header Line */
-  #farm-data-table td[data-label="Ngày"] {
+  #farm-data-table td[data-label="NgÃ y"] {
     justify-content: flex-start !important;
     gap: 8px !important;
     font-size: 0.75rem !important;
@@ -1004,34 +861,34 @@ tbody tr:hover {
   }
 
   #farm-data-table td[data-label="Status"],
-  #farm-data-table td[data-label="Trạng Thái"] {
+  #farm-data-table td[data-label="Tráº¡ng ThÃ¡i"] {
     position: absolute !important;
     top: 0.75rem !important;
     right: 1rem !important;
     width: auto !important;
   }
   #farm-data-table td[data-label="Status"]::before,
-  #farm-data-table td[data-label="Trạng Thái"]::before { display: none !important; }
+  #farm-data-table td[data-label="Tráº¡ng ThÃ¡i"]::before { display: none !important; }
 
   /* Buyer Name - Highlighted Subject */
-  #farm-data-table td[data-label="Người Mua"],
-  #farm-data-table td[data-label="Tên Vựa"],
-  #farm-data-table td[data-label="Loại CP"] {
+  #farm-data-table td[data-label="NgÆ°á»i Mua"],
+  #farm-data-table td[data-label="TÃªn Vá»±a"],
+  #farm-data-table td[data-label="Loáº¡i CP"] {
     font-size: 1.15rem !important;
     font-weight: 800 !important;
     color: var(--text-dark) !important;
     margin-bottom: 8px !important;
     display: block !important;
   }
-  #farm-data-table td[data-label="Người Mua"]::before,
-  #farm-data-table td[data-label="Tên Vựa"]::before,
-  #farm-data-table td[data-label="Loại CP"]::before { display: none !important; }
+  #farm-data-table td[data-label="NgÆ°á»i Mua"]::before,
+  #farm-data-table td[data-label="TÃªn Vá»±a"]::before,
+  #farm-data-table td[data-label="Loáº¡i CP"]::before { display: none !important; }
 
   /* Details - Grouped Rows */
-  #farm-data-table td[data-label="Loại Bông"],
-  #farm-data-table td[data-label="Số Lượng"],
+  #farm-data-table td[data-label="Loáº¡i BÃ´ng"],
+  #farm-data-table td[data-label="Sá»‘ LÆ°á»£ng"],
   #farm-data-table td[data-label="SL"],
-  #farm-data-table td[data-label="Giá"] {
+  #farm-data-table td[data-label="GiÃ¡"] {
     font-size: 0.85rem !important;
     color: var(--text-light) !important;
   }
@@ -1045,8 +902,8 @@ tbody tr:hover {
 
   /* Revenue/Amount - Main Highlight */
   #farm-data-table td[data-label="Doanh Thu"],
-  #farm-data-table td[data-label="Doanh Thu Bông"],
-  #farm-data-table td[data-label="Số tiền"] {
+  #farm-data-table td[data-label="Doanh Thu BÃ´ng"],
+  #farm-data-table td[data-label="Sá»‘ tiá»n"] {
     background: #f8fafc !important;
     margin: 8px -1rem -0.75rem -1rem !important;
     padding: 10px 1rem !important;
@@ -1057,16 +914,16 @@ tbody tr:hover {
   }
   
   #farm-data-table td[data-label="Doanh Thu"]::before,
-  #farm-data-table td[data-label="Doanh Thu Bông"]::before,
-  #farm-data-table td[data-label="Số tiền"]::before {
-    content: "Tổng: " !important;
+  #farm-data-table td[data-label="Doanh Thu BÃ´ng"]::before,
+  #farm-data-table td[data-label="Sá»‘ tiá»n"]::before {
+    content: "Tá»•ng: " !important;
     margin-right: auto !important;
     color: var(--text-light) !important;
   }
 
   /* Hide labels for Action/Check columns */
   /* Better Action Buttons position - Space Saving */
-  #farm-data-table td[data-label="Thao tác"] {
+  #farm-data-table td[data-label="Thao tÃ¡c"] {
     border-top: none !important;
     margin-top: 0 !important;
     padding-top: 0 !important;
@@ -1101,8 +958,8 @@ tbody tr:hover {
     font-size: 1.1rem !important;
   }
 
-  /* Ghi chú - subtle line */
-  #farm-data-table td[data-label="Ghi chú"] {
+  /* Ghi chÃº - subtle line */
+  #farm-data-table td[data-label="Ghi chÃº"] {
     font-style: italic !important;
     opacity: 0.8 !important;
     font-size: 0.8rem !important;
@@ -1269,7 +1126,7 @@ tbody tr:hover {
 
 /* Header for each fluid block on mobile (optional icons) */
 .flower-item::before {
-  content: "📦 Thông tin mặt hàng";
+  content: "ðŸ“¦ ThÃ´ng tin máº·t hÃ ng";
   width: 100%;
   display: block;
   font-size: 0.75rem;
@@ -1279,7 +1136,7 @@ tbody tr:hover {
 }
 
 .expense-item::before {
-  content: "💸 Chi tiết chi phí";
+  content: "ðŸ’¸ Chi tiáº¿t chi phÃ­";
   width: 100%;
   display: block;
   font-size: 0.75rem;
@@ -1472,7 +1329,7 @@ tbody tr:hover {
   border-color: var(--primary-color) !important;
 }
 
-/* --- MODERN INVOICE STYLES (SỔ NỢ) --- */
+/* --- MODERN INVOICE STYLES (Sá»” Ná»¢) --- */
 .invoice-receipt {
   background: #ffffff;
   border-radius: 8px;
@@ -1729,7 +1586,7 @@ tbody tr:hover {
 @media (max-width: 768px) {
   .ledger-summary-row {
     display: grid !important;
-    grid-template-columns: 1fr 1fr !important; /* Chia 2 cột để rộng rãi hơn */
+    grid-template-columns: 1fr 1fr !important; /* Chia 2 cá»™t Ä‘á»ƒ rá»™ng rÃ£i hÆ¡n */
     max-width: 100% !important;
     margin: 0 10px 10px 10px !important;
     padding: 12px 20px !important;
@@ -1741,18 +1598,18 @@ tbody tr:hover {
   .summary-item {
     display: flex !important;
     flex-direction: column !important;
-    align-items: flex-start !important; /* Cân đối lề trái */
+    align-items: flex-start !important; /* CÃ¢n Ä‘á»‘i lá» trÃ¡i */
     min-height: 0 !important;
   }
   .summary-label {
-    font-size: 0.65rem !important; /* Tăng 1.5 lần (từ 10px lên ~13px) */
+    font-size: 0.65rem !important; /* TÄƒng 1.5 láº§n (tá»« 10px lÃªn ~13px) */
     margin-bottom: 2px !important;
     color: #64748b !important;
     white-space: nowrap !important;
     opacity: 1 !important;
   }
   .summary-value {
-    font-size: 1.1rem !important; /* Tăng 1.5 lần (từ 12px lên ~18px) */
+    font-size: 1.1rem !important; /* TÄƒng 1.5 láº§n (tá»« 12px lÃªn ~18px) */
     font-weight: 800 !important;
     white-space: nowrap !important;
   }
@@ -1804,7 +1661,7 @@ tbody tr:hover {
 
 .customer-debt-btn.vua-flavor {
   border-left-color: #0ea5e9;
-  /* Vựa color */
+  /* Vá»±a color */
 }
 
 .customer-debt-btn:hover {
@@ -2009,7 +1866,7 @@ tbody tr:hover {
 }
 
 .statement-row.sub-indented .statement-label::before {
-  content: "└ ";
+  content: "â”” ";
   margin-right: 6px;
   opacity: 0.5;
 }
@@ -2196,7 +2053,7 @@ tbody tr:hover {
 }
 
 tr.swiping td:first-child::before {
-  content: '← Vuốt để xoá';
+  content: 'â† Vuá»‘t Ä‘á»ƒ xoÃ¡';
   font-size: 0.7rem;
   color: #94a3b8;
   display: block;
@@ -2272,7 +2129,7 @@ tr.swiping td:first-child::before {
 
 /* Reporting & Dashboard Optimization (iPad Pro and below) */
 @media (max-width: 1024px) {
-  /* Mỗi ô nằm trên 1 hàng riêng biệt */
+  /* Má»—i Ã´ náº±m trÃªn 1 hÃ ng riÃªng biá»‡t */
   .summary-grid, 
   .kpi-cards, 
   .dashboard-metrics,
@@ -2280,7 +2137,7 @@ tr.swiping td:first-child::before {
   [class*="summary-grid"], 
   [class*="kpi-cards"] {
     display: flex !important;
-    flex-direction: column !important; /* Xếp chồng theo chiều dọc */
+    flex-direction: column !important; /* Xáº¿p chá»“ng theo chiá»u dá»c */
     gap: 15px !important;
     padding: 10px !important;
     width: 100% !important;
@@ -2307,7 +2164,7 @@ tr.swiping td:first-child::before {
     white-space: normal !important;
   }
 
-  /* Khung báo cáo và biểu đồ */
+  /* Khung bÃ¡o cÃ¡o vÃ  biá»ƒu Ä‘á»“ */
   .report-card, .view-section, #view-report {
     margin: 10px 0 !important;
     padding: 15px !important;
@@ -2374,16 +2231,16 @@ tr.swiping td:first-child::before {
     color: #334155;
     position: relative;
     overflow: hidden;
-    box-sizing: border-box; /* Đảm bảo padding không làm tăng chiều rộng thực tế */
+    box-sizing: border-box; /* Äáº£m báº£o padding khÃ´ng lÃ m tÄƒng chiá»u rá»™ng thá»±c táº¿ */
 }
 
 @media (max-width: 480px) {
     .receipt-paper {
-        padding: 20px 12px; /* Giảm lề ngang trên điện thoại */
+        padding: 20px 12px; /* Giáº£m lá» ngang trÃªn Ä‘iá»‡n thoáº¡i */
     }
 }
 
-/* Vân chìm Leaf trang trí */
+/* VÃ¢n chÃ¬m Leaf trang trÃ­ */
 .receipt-paper::before {
     content: '\f06c';
     font-family: 'Font Awesome 6 Free';
@@ -2475,7 +2332,7 @@ tr.swiping td:first-child::before {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 30px;
-    table-layout: fixed; /* Khóa chiều rộng các cột để tránh tràn */
+    table-layout: fixed; /* KhÃ³a chiá»u rá»™ng cÃ¡c cá»™t Ä‘á»ƒ trÃ¡nh trÃ n */
 }
 
 .receipt-table th {
@@ -2492,21 +2349,21 @@ tr.swiping td:first-child::before {
     font-size: 0.8rem;
     border-bottom: 1px dashed #f1f5f9;
     vertical-align: top;
-    word-wrap: break-word; /* Tự động xuống dòng */
+    word-wrap: break-word; /* Tá»± Ä‘á»™ng xuá»‘ng dÃ²ng */
     overflow-wrap: break-word;
 }
 
-/* Cột Ngày */
+/* Cá»™t NgÃ y */
 .receipt-table th:first-child, .receipt-table td:first-child {
     width: 65px;
 }
 
-/* Cột Chi tiết */
+/* Cá»™t Chi tiáº¿t */
 .receipt-table th:nth-child(2), .receipt-table td:nth-child(2) {
     width: auto;
 }
 
-/* Cột Thành tiền */
+/* Cá»™t ThÃ nh tiá»n */
 .receipt-table th:last-child,
 .receipt-table td:last-child {
     text-align: right;
@@ -2554,7 +2411,7 @@ tr.swiping td:first-child::before {
 }
 
 @media print {
-    /* Ẩn tất cả mọi thứ trừ hóa đơn */
+    /* áº¨n táº¥t cáº£ má»i thá»© trá»« hÃ³a Ä‘Æ¡n */
     body * {
         visibility: hidden;
     }
@@ -2586,7 +2443,7 @@ tr.swiping td:first-child::before {
         width: 100% !important;
         max-width: 100% !important;
     }
-    /* Ẩn các nút thao tác khi in */
+    /* áº¨n cÃ¡c nÃºt thao tÃ¡c khi in */
     .receipt-actions-top, 
     .receipt-actions-bottom, 
     .modal-close-circle {
@@ -3024,7 +2881,7 @@ tr.swiping td:first-child::before {
     .cash-value { font-size: 1.4rem; }
 }
 
-/* Cash Card — Breakdown column */
+/* Cash Card â€” Breakdown column */
 .cash-breakdown {
     display: flex;
     flex-direction: column;
@@ -3044,7 +2901,7 @@ tr.swiping td:first-child::before {
 .cash-break-label { opacity: 0.65; }
 .cash-break-val   { font-weight: 700; }
 
-/* Cash Card — Action buttons column */
+/* Cash Card â€” Action buttons column */
 .cash-actions {
     display: flex;
     flex-direction: column;
@@ -3152,7 +3009,7 @@ tr.swiping td:first-child::before {
     white-space: nowrap;
 }
 
-/* Ép t?t c? c?t (tr? c?t đ?u) ph?i canh gi?a */
+/* Ã‰p t?t c? c?t (tr? c?t Ä‘?u) ph?i canh gi?a */
 .financial-table th:not(:first-child),
 .financial-table td:not(:first-child) {
     text-align: center !important;
@@ -3213,13 +3070,13 @@ tr.swiping td:first-child::before {
 }
 
 .financial-col-current::after {
-    display: none; /* Bo cách c s? d?ng ::after c? */
+    display: none; /* Bo cÃ¡ch c s? d?ng ::after c? */
 }
 
 /* RESPONSIVE TUNING FOR MOBILE (iPhone 14 Pro Max & others) */
 @media (max-width: 768px) {
     .main-content {
-        padding: 0.75rem !important; /* Giảm padding lề để thêm chỗ cho bảng */
+        padding: 0.75rem !important; /* Giáº£m padding lá» Ä‘á»ƒ thÃªm chá»— cho báº£ng */
     }
 
     .financial-table {
@@ -3228,20 +3085,20 @@ tr.swiping td:first-child::before {
 
     .financial-table th, 
     .financial-table td {
-        padding: 5px 3px !important; /* Rút gọn padding ngang tối đa */
+        padding: 5px 3px !important; /* RÃºt gá»n padding ngang tá»‘i Ä‘a */
         white-space: normal !important; 
     }
 
     .financial-table th:first-child, 
     .financial-table td:first-child {
-        min-width: 80px !important; /* Gọn nhất có thể */
+        min-width: 80px !important; /* Gá»n nháº¥t cÃ³ thá»ƒ */
         max-width: 80px !important;
         font-size: 0.625rem !important;
         line-height: 1.05;
         word-break: break-word !important;
     }
 
-    /* Các cột dữ liệu (năm) */
+    /* CÃ¡c cá»™t dá»¯ liá»‡u (nÄƒm) */
     .financial-table th:not(:first-child),
     .financial-table td:not(:first-child) {
         min-width: 70px !important; 
@@ -3250,7 +3107,7 @@ tr.swiping td:first-child::before {
         white-space: nowrap !important;
     }
 
-    /* Đè font size cực to của cột hiện tại trên mobile */
+    /* ÄÃ¨ font size cá»±c to cá»§a cá»™t hiá»‡n táº¡i trÃªn mobile */
     thead th.financial-col-current {
         font-size: 0.85rem !important;
     }
@@ -3264,7 +3121,7 @@ tr.swiping td:first-child::before {
 .financial-row-equity { background-color: rgba(254, 243, 199, 0.4); }
 .financial-row-profit { background-color: rgba(220, 252, 231, 0.4); }
 
-/* New Premium Highlight Class — Bypass Cache */
+/* New Premium Highlight Class â€” Bypass Cache */
 .financial-row-highlight-premium td {
     font-weight: 900 !important;
     background-color: rgba(14, 165, 233, 0.12) !important;
@@ -3379,43 +3236,226 @@ tr.swiping td:first-child::before {
 
 
 
- / *   - - -   F U L L S C R E E N   C H A R T   S T Y L E S   - - -   * / 
- . c h a r t - c a r d - f u l l s c r e e n   { 
-         p o s i t i o n :   f i x e d   ! i m p o r t a n t ; 
-         t o p :   0   ! i m p o r t a n t ; 
-         l e f t :   0   ! i m p o r t a n t ; 
-         w i d t h :   1 0 0 %   ! i m p o r t a n t ; 
-         h e i g h t :   1 0 0 %   ! i m p o r t a n t ; 
-         z - i n d e x :   9 9 9 9 9   ! i m p o r t a n t ; 
-         m a r g i n :   0   ! i m p o r t a n t ; 
-         b o r d e r - r a d i u s :   0   ! i m p o r t a n t ; 
-         d i s p l a y :   f l e x   ! i m p o r t a n t ; 
-         f l e x - d i r e c t i o n :   c o l u m n   ! i m p o r t a n t ; 
-         b a c k g r o u n d :   w h i t e   ! i m p o r t a n t ; 
-         p a d d i n g :   1 r e m   ! i m p o r t a n t ; 
- } 
- 
- . c h a r t - c a r d - f u l l s c r e e n   . c h a r t - c o n t a i n e r   { 
-         f l e x :   1   ! i m p o r t a n t ; 
-         h e i g h t :   1 0 0 %   ! i m p o r t a n t ; 
-         w i d t h :   1 0 0 %   ! i m p o r t a n t ; 
- } 
- 
- / *   F o r c e   l a n d s c a p e   s i m u l a t i o n   i f   p o r t r a i t   a n d   r e q u e s t e d   * / 
- . c h a r t - l a n d s c a p e - f o r c e   { 
-         w i d t h :   1 0 0 v h   ! i m p o r t a n t ; 
-         h e i g h t :   1 0 0 v w   ! i m p o r t a n t ; 
-         p o s i t i o n :   f i x e d   ! i m p o r t a n t ; 
-         t o p :   5 0 %   ! i m p o r t a n t ; 
-         l e f t :   5 0 %   ! i m p o r t a n t ; 
-         t r a n s f o r m :   t r a n s l a t e ( - 5 0 % ,   - 5 0 % )   r o t a t e ( 9 0 d e g )   ! i m p o r t a n t ; 
-         t r a n s f o r m - o r i g i n :   c e n t e r   ! i m p o r t a n t ; 
- } 
- 
- @ m e d i a   ( m a x - w i d t h :   7 6 8 p x )   { 
-         . h i d e - m o b i l e   { 
-                 d i s p l a y :   n o n e   ! i m p o r t a n t ; 
-         } 
- } 
-  
- 
+
+/* --- FULLSCREEN CHART STYLES --- */
+.chart-card-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 99999 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: white !important;
+    padding: 1rem !important;
+}
+
+.chart-card-fullscreen .chart-container {
+    flex: 1 !important;
+    height: 100% !important;
+    width: 100% !important;
+}
+
+/* Force landscape simulation if portrait and requested */
+.chart-landscape-force {
+    width: 100vh !important;
+    height: 100vw !important;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) rotate(90deg) !important;
+    transform-origin: center !important;
+}
+
+@media (max-width: 768px) {
+    .hide-mobile {
+        display: none !important;
+    }
+}
+
+/* TASK TRACKER STYLES */
+.todo-subview {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.todo-nav-btn {
+    background: none;
+    border: none;
+    padding: 8px 16px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.todo-nav-btn:hover {
+    background: rgba(14, 165, 233, 0.1);
+    color: var(--primary-color);
+}
+
+.todo-nav-btn.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Table View */
+.todo-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+}
+
+.todo-table th {
+    background: #f1f5f9;
+    padding: 12px;
+    text-align: left;
+    font-size: 0.85rem;
+    color: var(--text-dark);
+    font-weight: 700;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.todo-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+    font-size: 0.95rem;
+}
+
+.todo-table tr:hover {
+    background: #f8fafc;
+}
+
+.badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.badge-priority-low { background: #e0f2fe; color: #0284c7; }
+.badge-priority-medium { background: #fef08a; color: #854d0e; }
+.badge-priority-high { background: #fed7aa; color: #c2410c; }
+.badge-priority-urgent { background: #fecaca; color: #b91c1c; }
+
+.badge-status-notstarted { background: #f1f5f9; color: #64748b; }
+.badge-status-inprogress { background: #e0e7ff; color: #4338ca; }
+.badge-status-completed { background: #dcfce7; color: #15803d; }
+.badge-status-cancelled { background: #fee2e2; color: #b91c1c; }
+.badge-status-waiting { background: #ffedd5; color: #c2410c; }
+
+/* Calendar View */
+.calendar-wrapper {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.calendar-header-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.calendar-header-row div {
+    padding: 10px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--text-dark);
+    border-right: 1px solid #e2e8f0;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    auto-rows: minmax(120px, auto);
+}
+
+.calendar-day {
+    min-height: 120px;
+    border-right: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 8px;
+    background: white;
+}
+
+.calendar-day.other-month {
+    background: #f8fafc;
+    color: #94a3b8;
+}
+
+.calendar-day-number {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    color: var(--text-dark);
+}
+
+.calendar-day.today .calendar-day-number {
+    background: var(--primary-color);
+    color: white;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.cal-task-item {
+    font-size: 0.75rem;
+    padding: 4px 6px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.cal-task-item.completed {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+/* Dashboard View */
+.metric-card {
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+.metric-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 0.9rem;
+    color: var(--text-light);
+}
+.metric-card .value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-dark);
+}
+
+/* Modal Update */
+.btn-action-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--text-light);
+    transition: color 0.2s;
+    padding: 4px;
+}
+.btn-action-icon.edit:hover { color: #3b82f6; }
+.btn-action-icon.delete:hover { color: #ef4444; }
+
