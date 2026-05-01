@@ -3471,16 +3471,32 @@ document.addEventListener("DOMContentLoaded", () => {
                 const isFarm = type === "farm" || type === "" || (r["Doanh Thu Bông"] || 0) > 0;
                 return isFarm && ((r["Doanh Thu Bông"] || 0) > 0 || (r["Doanh Thu Khác"] || 0) > 0);
             });
+            let lines = [];
             if (revItems.length > 0) {
-                let lines = ["", "────── 🌾 CHI TIẾT FARM ──────"];
+                lines.push("", "────── 🌾 CHI TIẾT FARM ──────");
                 revItems.forEach(r => {
                     const buyer = (r["Người Mua"] || "").trim();
                     const amount = (r["Doanh Thu Bông"] || 0) + (r["Doanh Thu Khác"] || 0);
                     const note = (r["Ghi Chú"] || r["Ghi chú"] || "").trim();
                     lines.push(` ▸ ${buyer || 'Khách lẻ'}: ${formatCurrency(amount).replace('₫', '').trim()} ${note ? '- ' + note : ''}`.trim());
                 });
-                if (lines.length > 2) return lines;
             }
+
+            // ALSO show Vựa details if hovering on Farm
+            const vuaItems = filtered.filter(r => {
+                const type = (r["Loại DT"] || "").trim().toLowerCase();
+                return (type === "vựa" || type === "vua") && (r["Doanh Thu Khác"] || 0) > 0;
+            });
+            if (vuaItems.length > 0) {
+                lines.push("", "────── 🏘️ CHI TIẾT VỰA ──────");
+                vuaItems.forEach(r => {
+                    const buyer = (r["Người Mua"] || "").trim();
+                    const amount = r["Doanh Thu Khác"] || 0;
+                    const note = (r["Ghi Chú"] || r["Ghi chú"] || "").trim();
+                    lines.push(` ▸ ${buyer || 'Khách lẻ'}: ${formatCurrency(amount).replace('₫', '').trim()} ${note ? '- ' + note : ''}`.trim());
+                });
+            }
+            if (lines.length > 0) return lines;
         }
 
         // 3. If hovering over Doanh Thu Vựa, show Vựa details
