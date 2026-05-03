@@ -13,9 +13,6 @@ if (typeof ChartDataLabels !== 'undefined') {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initial Load
-    loadTodoData();
-
     // Tab Navigation (Updated for new Premium UI)
     const navButtons = document.querySelectorAll('.todo-nav-btn');
     const subviews = document.querySelectorAll('.subview');
@@ -89,12 +86,35 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filter-search')?.addEventListener('input', renderTable);
     document.getElementById('filter-status')?.addEventListener('change', renderTable);
     document.getElementById('filter-priority')?.addEventListener('change', renderTable);
+    document.getElementById('filter-category')?.addEventListener('change', renderTable);
+    document.getElementById('filter-month')?.addEventListener('change', renderTable);
+    document.getElementById('filter-year')?.addEventListener('change', renderTable);
     document.getElementById('btn-clear-filters')?.addEventListener('click', () => {
         document.getElementById('filter-search').value = '';
         document.getElementById('filter-status').value = '';
         document.getElementById('filter-priority').value = '';
+        document.getElementById('filter-category').value = '';
+        document.getElementById('filter-month').value = '';
+        document.getElementById('filter-year').value = '';
         renderTable();
     });
+
+    // Populate List Filter years
+    const filterYear = document.getElementById('filter-year');
+    const filterMonth = document.getElementById('filter-month');
+    const now = new Date();
+
+    if (filterYear) {
+        const currentYear = now.getFullYear();
+        let yearHtml = '<option value="">Năm</option>';
+        for (let y = currentYear - 1; y <= currentYear + 2; y++) {
+            yearHtml += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
+        }
+        filterYear.innerHTML = yearHtml;
+    }
+    if (filterMonth) {
+        filterMonth.value = now.getMonth();
+    }
 
     // Dashboard Filters
     const dashMonth = document.getElementById('dash-month');
@@ -119,11 +139,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initial Calendar values
-    const now = new Date();
     const monthEl = document.getElementById('cal-month');
     const yearEl = document.getElementById('cal-year');
     if (monthEl) monthEl.value = now.getMonth();
     if (yearEl) yearEl.value = now.getFullYear();
+
+    // Initial Load
+    loadTodoData();
 });
 
 // --- API LAYER ---
@@ -206,6 +228,7 @@ async function loadTodoData() {
         }
         todoCache = parsed;
         localStorage.setItem('todo_cache_v2', JSON.stringify(todoCache));
+        updateCategoryFilterOptions();
         renderActiveView();
     } else {
         console.error("Failed to load data:", res.message);
@@ -225,6 +248,20 @@ function renderActiveView() {
     else if (targetId === 'view-focus') renderFocus();
 }
 
+function updateCategoryFilterOptions() {
+    const filterCat = document.getElementById('filter-category');
+    if (!filterCat) return;
+
+    const currentVal = filterCat.value;
+    const categories = [...new Set(todoCache.map(t => t.category || 'Chung'))].sort();
+    
+    let html = '<option value="">Tất cả phân loại</option>';
+    categories.forEach(c => {
+        html += `<option value="${c}" ${c === currentVal ? 'selected' : ''}>${c}</option>`;
+    });
+    filterCat.innerHTML = html;
+}
+
 // --- RENDERING: TABLE ---
 function renderTable() {
     const tableBody = document.getElementById('todo-table-body');
@@ -239,6 +276,9 @@ function renderTable() {
     const searchQuery = document.getElementById('filter-search')?.value.toLowerCase() || '';
     const statusFilter = document.getElementById('filter-status')?.value || '';
     const priorityFilter = document.getElementById('filter-priority')?.value || '';
+    const categoryFilter = document.getElementById('filter-category')?.value || '';
+    const monthFilter = document.getElementById('filter-month')?.value || '';
+    const yearFilter = document.getElementById('filter-year')?.value || '';
 
     // Apply Filters
     let filtered = todoCache.filter(t => {
@@ -271,7 +311,17 @@ function renderTable() {
         }
 
         const matchesPriority = !priorityFilter || t.priority === priorityFilter;
-        return matchesSearch && matchesStatus && matchesPriority;
+        const matchesCategory = !categoryFilter || t.category === categoryFilter;
+
+        let matchesMonthYear = true;
+        if (t.deadlineDate) {
+            if (monthFilter !== '' && t.deadlineDate.getMonth() != monthFilter) matchesMonthYear = false;
+            if (yearFilter !== '' && t.deadlineDate.getFullYear() != yearFilter) matchesMonthYear = false;
+        } else if (monthFilter !== '' || yearFilter !== '') {
+            matchesMonthYear = false; // If filter set but no deadline, exclude
+        }
+
+        return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesMonthYear;
     });
 
     if (filtered.length === 0) {
@@ -302,10 +352,12 @@ function renderTable() {
     now.setHours(0, 0, 0, 0);
 
     sorted.forEach(t => {
+        const isDone = t.status === 'Hoàn thành' || t.status === 'Hủy bỏ';
         const tr = document.createElement('tr');
+        if (isDone) tr.classList.add('task-row-done');
 
         let daysLeftHtml = "-";
-        if (t.deadline && t.status !== 'Hoàn thành' && t.status !== 'Hủy bỏ') {
+        if (t.deadline && !isDone) {
             const dl = parseLocalDate(t.deadline);
             if (dl) {
                 dl.setHours(0, 0, 0, 0);
@@ -315,17 +367,16 @@ function renderTable() {
                 else if (diff === 0) daysLeftHtml = `<span style="color: var(--accent); font-weight: 700;">Hôm nay</span>`;
                 else daysLeftHtml = `Còn ${diff} ngày`;
             }
+        } else if (isDone && t.status === 'Hoàn thành') {
+            daysLeftHtml = `<span style="color: var(--secondary-color); font-weight: 700;"><i class="fa-solid fa-check-double"></i> Xong</span>`;
         }
-
-        const isDone = t.status === 'Hoàn thành' || t.status === 'Hủy bỏ';
-        const nameStyle = isDone ? 'text-decoration: line-through; opacity: 0.5;' : 'font-weight: 600;';
 
         const dl = t.deadlineDate;
         const isDelayed = dl && dl.getTime() < now.getTime() && !isDone;
         const delayHtml = isDelayed ? `<span class="badge badge-status-delay" style="margin-left: 5px;">delay</span>` : '';
 
         tr.innerHTML = `
-            <td style="${nameStyle}">${escapeHtml(t.task)}${delayHtml}</td>
+            <td>${isDone ? '<i class="fa-solid fa-check" style="color: var(--secondary-color); margin-right: 8px;"></i>' : ''}${escapeHtml(t.task)}${delayHtml}</td>
             <td>${t.deadline ? formatDate(t.deadline) : '-'}</td>
             <td>${daysLeftHtml}</td>
             <td><span class="badge ${getPriorityClass(t.priority)}">${t.priority}</span></td>
@@ -381,64 +432,93 @@ function renderCalendar() {
     let startDay = firstDay.getDay();
     if (startDay === 0) startDay = 7; // Sunday is 7
 
-    // Empty slots
-    for (let i = 1; i < startDay; i++) {
-        const div = document.createElement('div');
-        div.className = 'calendar-day';
-        div.style.background = '#f8fafc';
-        grid.appendChild(div);
-    }
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    for (let d = 1; d <= lastDay.getDate(); d++) {
-        const div = document.createElement('div');
-        div.className = 'calendar-day';
-
-        const curDate = new Date(year, month, d);
-        if (curDate.getTime() === today.getTime()) div.classList.add('today');
-
-        div.innerHTML = `<div class="calendar-day-num">${d}</div>`;
-
-        // Find tasks: Tasks due today OR (if d is today) overdue tasks
-        const dayTasks = todoCache.filter(t => {
-            if (!t.deadline) return false;
-            const dl = parseLocalDate(t.deadline);
-            if (!dl) return false;
-
-            const isSameDay = dl.getDate() === d && dl.getMonth() === month && dl.getFullYear() === year;
-            
-            // Logic for Overdue/Delayed: if this cell is TODAY, show all past incomplete tasks
-            const isTodayCell = curDate.getTime() === today.getTime();
-            const isOverdue = dl.getTime() < today.getTime() && t.status !== 'Hoàn thành' && t.status !== 'Hủy bỏ';
-
-            return isSameDay || (isTodayCell && isOverdue);
-        });
-
-        dayTasks.forEach(t => {
-            const tDiv = document.createElement('div');
-            tDiv.className = 'calendar-task';
-            
-            // Add (Trễ) indicator if it's an overdue task appearing on Today's cell
-            const dl = parseLocalDate(t.deadline);
-            const isOverdue = dl && dl.getTime() < today.getTime() && t.status !== 'Hoàn thành';
-            tDiv.innerHTML = (isOverdue ? '<span style="color: #ef4444; font-weight: 800;">(Trễ)</span> ' : '') + escapeHtml(t.task);
-            tDiv.title = t.task;
-
-            // Color by priority
-            if (t.priority === 'Khẩn cấp') tDiv.style.background = '#fee2e2';
-            else if (t.priority === 'Cao') tDiv.style.background = '#ffedd5';
-            else tDiv.style.background = '#f1f5f9';
-
-            if (t.status === 'Hoàn thành') tDiv.style.textDecoration = 'line-through';
-
-            tDiv.onclick = () => editTask(t.id);
-            div.appendChild(tDiv);
-        });
-
-        grid.appendChild(div);
+    // Previous Month Days
+    const prevMonthLastDate = new Date(year, month, 0).getDate();
+    for (let i = 1; i < startDay; i++) {
+        const d = prevMonthLastDate - (startDay - i - 1);
+        const cellDate = new Date(year, month - 1, d);
+        renderCalendarCell(grid, cellDate, d, true, today);
     }
+
+    // Current Month Days
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+        const cellDate = new Date(year, month, d);
+        renderCalendarCell(grid, cellDate, d, false, today);
+    }
+
+    // Next Month Days (Fill to complete the last week)
+    const totalCells = grid.children.length - 7; // Subtract headers
+    const remaining = 7 - (totalCells % 7);
+    if (remaining < 7) {
+        for (let d = 1; d <= remaining; d++) {
+            const cellDate = new Date(year, month + 1, d);
+            renderCalendarCell(grid, cellDate, d, true, today);
+        }
+    }
+}
+
+function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
+    const div = document.createElement('div');
+    div.className = 'calendar-day';
+    if (isOtherMonth) div.classList.add('other-month');
+    if (date.getTime() === today.getTime()) div.classList.add('today');
+
+    div.innerHTML = `<div class="calendar-day-num">${dayNum}</div>`;
+
+    const m = date.getMonth();
+    const y = date.getFullYear();
+
+    // Find tasks: Tasks due on this date OR (if cell is today) overdue tasks
+    const dayTasks = todoCache.filter(t => {
+        if (!t.deadline) return false;
+        const dl = parseLocalDate(t.deadline);
+        if (!dl) return false;
+
+        const isSameDay = dl.getDate() === dayNum && dl.getMonth() === m && dl.getFullYear() === y;
+        
+        // Logic for Overdue/Delayed: if this cell is TODAY, show all past incomplete tasks
+        const isTodayCell = date.getTime() === today.getTime();
+        const isOverdue = dl.getTime() < today.getTime() && t.status !== 'Hoàn thành' && t.status !== 'Hủy bỏ';
+
+        return isSameDay || (isTodayCell && isOverdue);
+    });
+
+    // Sort tasks by priority
+    const priorityWeight = { 'Khẩn cấp': 1, 'Cao': 2, 'Trung bình': 3, 'Thấp': 4 };
+    dayTasks.sort((a, b) => (priorityWeight[a.priority] || 99) - (priorityWeight[b.priority] || 99));
+
+    dayTasks.forEach(t => {
+        const isDone = t.status === 'Hoàn thành' || t.status === 'Hủy bỏ';
+        const tDiv = document.createElement('div');
+        tDiv.className = 'calendar-task';
+        if (isDone) tDiv.style.opacity = '0.6';
+        
+        const dl = parseLocalDate(t.deadline);
+        const isOverdue = dl && dl.getTime() < today.getTime() && !isDone;
+        const farmTag = t.category === 'Farm' ? ' <span style="font-size: 0.65rem; font-weight: 800; color: #16a34a;">(Farm)</span>' : '';
+        const checkIcon = t.status === 'Hoàn thành' ? '<i class="fa-solid fa-check" style="font-size: 0.7rem;"></i> ' : '';
+        
+        tDiv.innerHTML = (isOverdue ? '<span style="color: #ef4444; font-weight: 800;">(Trễ)</span> ' : '') + checkIcon + escapeHtml(t.task) + farmTag;
+        tDiv.title = t.task + (t.category ? ` [${t.category}]` : '');
+
+        // Color by priority
+        if (t.priority === 'Khẩn cấp') tDiv.style.background = '#fee2e2';
+        else if (t.priority === 'Cao') tDiv.style.background = '#ffedd5';
+        else tDiv.style.background = '#f1f5f9';
+
+        if (isDone) tDiv.style.textDecoration = 'line-through';
+
+        tDiv.onclick = (e) => {
+            e.stopPropagation();
+            editTask(t.id);
+        };
+        div.appendChild(tDiv);
+    });
+
+    grid.appendChild(div);
 }
 
 // --- RENDERING: FOCUS VIEW ---
