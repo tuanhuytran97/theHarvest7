@@ -237,8 +237,8 @@ function renderTable() {
 
     // Get Filter Values
     const searchQuery = document.getElementById('filter-search')?.value.toLowerCase() || '';
-    const statusFilter = document.getElementById('todo-filter-status')?.value || '';
-    const priorityFilter = document.getElementById('todo-filter-priority')?.value || '';
+    const statusFilter = document.getElementById('filter-status')?.value || '';
+    const priorityFilter = document.getElementById('filter-priority')?.value || '';
 
     // Apply Filters
     let filtered = todoCache.filter(t => {
@@ -259,7 +259,17 @@ function renderTable() {
             matchesSearch = true;
         }
 
-        const matchesStatus = !statusFilter || t.status === statusFilter;
+        let matchesStatus = !statusFilter || t.status === statusFilter;
+        
+        // Handle special derived filter: Delayed
+        if (statusFilter === 'Trễ') {
+            const isDone = t.status === 'Hoàn thành' || t.status === 'Hủy bỏ';
+            const dl = t.deadlineDate;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            matchesStatus = dl && dl.getTime() < today.getTime() && !isDone;
+        }
+
         const matchesPriority = !priorityFilter || t.priority === priorityFilter;
         return matchesSearch && matchesStatus && matchesPriority;
     });
@@ -542,6 +552,7 @@ function renderDashboard() {
     const statusMap = {};
 
     filteredTasks.forEach(t => {
+        const isDone = t.status === 'Hoàn thành' || t.status === 'Hủy bỏ';
         if (t.status === 'Hoàn thành') completed++;
         else if (t.status === 'Đang thực hiện') inProgress++;
         else pending++;
@@ -552,12 +563,25 @@ function renderDashboard() {
         statusMap[t.status] = (statusMap[t.status] || 0) + 1;
     });
 
+    // Delayed tasks should be counted globally (not just in the selected month) 
+    // because a task delayed from last month is still a priority today.
+    let globalDelayedCount = 0;
+    todoCache.forEach(t => {
+        const isDone = t.status === 'Hoàn thành' || t.status === 'Hủy bỏ';
+        if (t.deadlineDate && t.deadlineDate.getTime() < now.getTime() && !isDone) {
+            globalDelayedCount++;
+        }
+    });
+
     // Update Counters
     document.getElementById('stat-total').innerText = total;
     document.getElementById('stat-completed').innerText = completed;
     document.getElementById('stat-inprogress').innerText = inProgress;
     document.getElementById('stat-pending').innerText = pending;
     document.getElementById('stat-today').innerText = todayCount;
+    if (document.getElementById('stat-delayed')) {
+        document.getElementById('stat-delayed').innerText = globalDelayedCount;
+    }
 
     // Charts
     initChart('statusChart', 'doughnut', Object.keys(statusMap), Object.values(statusMap), ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#94a3b8', '#8b5cf6'], 'status');
@@ -763,8 +787,8 @@ window.deleteTask = async function (id) {
 window.applyDashboardFilter = function (type, value) {
     // Clear all filters first
     const searchInput = document.getElementById('filter-search');
-    const statusInput = document.getElementById('todo-filter-status');
-    const priorityInput = document.getElementById('todo-filter-priority');
+    const statusInput = document.getElementById('filter-status');
+    const priorityInput = document.getElementById('filter-priority');
 
     if (searchInput) searchInput.value = '';
     if (statusInput) statusInput.value = '';
@@ -786,6 +810,8 @@ window.applyDashboardFilter = function (type, value) {
         if (statusInput) statusInput.value = 'Đang thực hiện';
     } else if (type === 'pending') {
         if (statusInput) statusInput.value = 'Chưa bắt đầu';
+    } else if (type === 'delayed') {
+        if (statusInput) statusInput.value = 'Trễ';
     }
 
     // Switch view

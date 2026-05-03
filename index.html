@@ -521,7 +521,7 @@
                 <a href="#" id="menu-report"><i class="fa-solid fa-chart-pie"></i> <span>Báo Cáo</span></a>
                 <a href="#" id="menu-cashflow"><i class="fa-solid fa-money-bill-transfer"></i> <span>Dòng
                         Tiền</span></a>
-                <a href="#" id="menu-debt"><i class="fa-solid fa-book-journal-whills"></i> <span>Sổ Nợ</span></a>
+                <a href="#" id="menu-debt"><i class="fa-solid fa-book-journal-whills"></i> <span>Các khoản phải thu</span></a>
                 <a href="#" id="menu-investment"><i class="fa-solid fa-seedling"></i> <span>Đầu Tư</span></a>
                 <a href="#" id="menu-financial"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Báo Cáo Tài
                         Chính</span></a>
@@ -769,6 +769,21 @@
                                         style="font-size: 1.8rem; font-weight: 900; color: #f59e0b;">0</span>
                                 </div>
                             </div>
+
+                            <!-- Công việc trễ -->
+                            <div class="metric-card premium-card" onclick="applyDashboardFilter('delayed')"
+                                style="background: white; padding: 1.5rem; border-radius: 24px; border: 1px solid #fee2e2; border-bottom: 5px solid #ef4444; cursor: pointer; display: flex; align-items: center; gap: 1.5rem;">
+                                <div class="icon-box"
+                                    style="background: #fee2e2; color: #ef4444; width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                </div>
+                                <div class="card-info">
+                                    <span
+                                        style="display: block; font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Việc trễ</span>
+                                    <span id="stat-delayed"
+                                        style="font-size: 1.8rem; font-weight: 900; color: #ef4444;">0</span>
+                                </div>
+                            </div>
                         </div>
                         <div class="chart-grid"
                             style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
@@ -828,8 +843,9 @@
                                     placeholder="Tìm kiếm công việc..." style="padding-left: 35px; width: 100%;">
                             </div>
                             <div style="flex: 1; min-width: 150px;">
-                                <select id="todo-filter-status" class="input-modern" style="width: 100%;">
+                                <select id="filter-status" class="input-modern" style="width: 100%;">
                                     <option value="">Tất cả trạng thái</option>
+                                    <option value="Trễ">⚠️ Công việc trễ</option>
                                     <option value="Chưa bắt đầu">Chưa bắt đầu</option>
                                     <option value="Đang thực hiện">Đang thực hiện</option>
                                     <option value="Đang chờ duyệt">Đang chờ duyệt</option>
@@ -1580,10 +1596,9 @@
                                     <i class="fa-solid fa-book-journal-whills"></i>
                                 </div>
                                 <div style="display: flex; flex-direction: column;">
-                                    <h2 style="margin: 0; font-size: 1.1rem; color: #1e293b; font-weight: 800;">SỔ NỢ
-                                        (PHẢI THU)</h2>
+                                    <h2 style="margin: 0; font-size: 1.1rem; color: #1e293b; font-weight: 800;">CÁC KHOẢN PHẢI THU</h2>
                                     <p style="margin: 0; font-size: 0.8rem; color: #64748b; font-weight: 500;">Quản lý
-                                        nợ từ Farm và Vựa</p>
+                                        các khoản phải thu từ Farm và Vựa</p>
                                 </div>
                             </div>
                         </div>
@@ -1591,7 +1606,7 @@
                             style="text-align: right; background: #f8fafc; padding: 12px 24px; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm);">
                             <span
                                 style="display: block; font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Tổng
-                                nợ phải thu</span>
+                                phải thu</span>
                             <span id="master-total-debt"
                                 style="color: #ef4444; font-size: 2rem; font-weight: 900; letter-spacing: -1px;">0₫</span>
                         </div>
@@ -1603,7 +1618,7 @@
                             style="background: white; border-radius: 20px; padding: 1.5rem; border: 1px solid var(--border-color);">
                             <div class="focus-header"
                                 style="font-weight: 800; font-size: 1.1rem; color: #16a34a; border-left: 5px solid #16a34a; padding-left: 15px; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
-                                <span><i class="fa-solid fa-leaf"></i> NỢ FARM</span>
+                                <span><i class="fa-solid fa-leaf"></i> PHẢI THU FARM</span>
                                 <span id="farm-total-debt" class="badge"
                                     style="background: #16a34a; color: white;">0₫</span>
                             </div>
@@ -1617,7 +1632,7 @@
                             style="background: white; border-radius: 20px; padding: 1.5rem; border: 1px solid var(--border-color);">
                             <div class="focus-header"
                                 style="font-weight: 800; font-size: 1.1rem; color: #0284c7; border-left: 5px solid #0284c7; padding-left: 15px; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
-                                <span><i class="fa-solid fa-truck"></i> NỢ VỰA</span>
+                                <span><i class="fa-solid fa-truck"></i> PHẢI THU VỰA</span>
                                 <span id="vua-total-debt" class="badge"
                                     style="background: #0284c7; color: white;">0₫</span>
                             </div>
@@ -1657,7 +1672,7 @@
                                 <span id="detail-paid-amount" class="summary-value" style="color: #059669;">0₫</span>
                             </div>
                             <div class="summary-item">
-                                <span class="summary-label">Còn nợ</span>
+                                <span class="summary-label">Còn phải thu</span>
                                 <span id="detail-debt-amount" class="summary-value danger">0₫</span>
                             </div>
                         </div>
@@ -1932,7 +1947,7 @@
                         <strong id="receipt-summary-paid" style="color: #059669;">0₫</strong>
                     </div>
                     <div class="summary-line grand-total">
-                        <span>CÒN NỢ:</span>
+                        <span>CÒN PHẢI THU:</span>
                         <strong id="receipt-summary-debt">0₫</strong>
                     </div>
                 </div>
@@ -1987,7 +2002,7 @@
         </a>
         <a href="#" class="mobile-nav-item" data-view="debt">
             <i class="fa-solid fa-book-journal-whills"></i>
-            <span>Sổ Nợ</span>
+            <span>Phải thu</span>
         </a>
         <a href="#" class="mobile-nav-item" data-view="investment">
             <i class="fa-solid fa-seedling"></i>

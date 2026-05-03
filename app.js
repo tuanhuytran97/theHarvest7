@@ -1540,10 +1540,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (farmCount === 0) {
-            farmListContainer.innerHTML = `<div style="text-align: center; color: var(--text-dark); padding: 10px; background: white; border-radius: 8px;">Hoan hô! Không có công nợ.</div>`;
+            farmListContainer.innerHTML = `<div style="text-align: center; color: var(--text-dark); padding: 10px; background: white; border-radius: 8px;">Hoan hô! Không có khoản phải thu.</div>`;
         }
         if (vuaCount === 0) {
-            vuaListContainer.innerHTML = `<div style="text-align: center; color: var(--text-dark); padding: 10px; background: white; border-radius: 8px;">Hoan hô! Không có công nợ.</div>`;
+            vuaListContainer.innerHTML = `<div style="text-align: center; color: var(--text-dark); padding: 10px; background: white; border-radius: 8px;">Hoan hô! Không có khoản phải thu.</div>`;
         }
 
         if (masterTotalEl) masterTotalEl.innerText = formatCurrency(globalDebt);
@@ -1632,7 +1632,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <button class="btn-pay-row ${t.isVua ? 'vua' : ''}" data-txkey="${t.key}">
                             <i class="fa-solid fa-money-bill-transfer"></i> Thu tiền
                         </button>
-                        ${remaining > 0 ? `<div style="font-size: 0.7rem; color: var(--danger); font-weight: 700;">Còn nợ: ${formatCurrency(remaining)}</div>` : ''}
+                        ${remaining > 0 ? `<div style="font-size: 0.7rem; color: var(--danger); font-weight: 700;">Còn phải thu: ${formatCurrency(remaining)}</div>` : ''}
                     </div>
                 </div>
             `;
@@ -1728,18 +1728,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!isFull) {
             const rawInput = await showPaymentModal(
-                "Thanh toán nợ",
-                `Tổng nợ hiện tại: <b>${formatCurrency(totalDebt)}</b>\nNhập số tiền muốn thanh toán (VNĐ):`,
+                "Thu tiền phải thu",
+                `Tổng phải thu hiện tại: <b>${formatCurrency(totalDebt)}</b>\nNhập số tiền muốn thu (VNĐ):`,
                 ""
             );
             if (!rawInput) return;
             amountToPay = parseFloat(rawInput.replace(/[^\d]/g, ''));
             if (isNaN(amountToPay) || amountToPay <= 0 || amountToPay > totalDebt) {
-                alert("Số tiền không hợp lệ hoặc lớn hơn tổng nợ!");
+                alert("Số tiền không hợp lệ hoặc lớn hơn tổng phải thu!");
                 return;
             }
         } else {
-            if (!confirm(`Xác nhận thanh toán HẾT toàn bộ số nợ ${formatCurrency(totalDebt)} của ${currentSelectedBuyer.name}?`)) return;
+            if (!confirm(`Xác nhận thu HẾT toàn bộ số tiền phải thu ${formatCurrency(totalDebt)} của ${currentSelectedBuyer.name}?`)) return;
         }
 
         if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
@@ -1933,7 +1933,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const remaining = t.totalExpected - t.paid;
         const rawInput = await showPaymentModal(
             `Thanh toán ngày ${t.dateStr}`,
-            `Số nợ còn lại: <b>${formatCurrency(remaining)}</b>\n\nNhập số tiền muốn trả (Mặc định: trả hết):`,
+            `Số tiền phải thu còn lại: <b>${formatCurrency(remaining)}</b>\n\nNhập số tiền muốn thu (Mặc định: thu hết):`,
             formatMoneyStr(remaining)
         );
 
@@ -1945,7 +1945,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
         if (amountToPay > remaining) {
-            if (!confirm(`Số tiền ${formatCurrency(amountToPay)} lớn hơn số nợ ${formatCurrency(remaining)}. Bạn vẫn muốn tiếp tục?`)) return;
+            if (!confirm(`Số tiền ${formatCurrency(amountToPay)} lớn hơn số tiền phải thu ${formatCurrency(remaining)}. Bạn vẫn muốn tiếp tục?`)) return;
         }
 
         if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {

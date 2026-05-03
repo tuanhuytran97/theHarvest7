@@ -133,6 +133,10 @@
                     <h3>Chờ xử lý</h3>
                     <div class="value" id="stat-pending" style="color: #f59e0b;">0</div>
                 </div>
+                <div class="glass-card metric-card" style="border-bottom: 4px solid var(--danger);" onclick="applyDashboardFilter('delayed')">
+                    <h3>Công việc trễ</h3>
+                    <div class="value" id="stat-delayed" style="color: var(--danger);">0</div>
+                </div>
             </div>
 
             <div class="chart-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
@@ -182,6 +186,7 @@
                 <div style="flex: 1; min-width: 150px;">
                     <select id="filter-status" class="input-modern">
                         <option value="">Tất cả trạng thái</option>
+                        <option value="Trễ">⚠️ Công việc trễ</option>
                         <option value="Chưa bắt đầu">Chưa bắt đầu</option>
                         <option value="Đang thực hiện">Đang thực hiện</option>
                         <option value="Đang chờ duyệt">Đang chờ duyệt</option>
