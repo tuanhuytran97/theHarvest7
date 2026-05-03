@@ -626,7 +626,7 @@ function initChart(id, type, labels, data, colors, filterKey) {
                     }
                 },
                 legend: {
-                    position: type === 'doughnut' ? 'bottom' : 'top',
+                    position: 'bottom',
                     labels: {
                         usePointStyle: true,
                         padding: 20,
