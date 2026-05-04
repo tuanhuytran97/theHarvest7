@@ -393,7 +393,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2. DOM Elements
     const tableBody = document.getElementById('table-body');
     const searchBuyerInput = document.getElementById('search-buyer');
-    const filterStatusSelect = document.getElementById('filter-status');
+    const filterStatusSelect = document.getElementById('transaction-filter-status');
     const headers = document.querySelectorAll('th[data-sort]');
 
     const form = document.getElementById('dataEntryForm');
@@ -3842,7 +3842,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const total = filtered.length;
             const done = filtered.filter(r => r["Status"] === "Xong").length;
             const pending = total - done;
-            const currentStatus = document.getElementById('filter-status')?.value ?? 'all';
+            const currentStatus = document.getElementById('transaction-filter-status')?.value ?? 'all';
             countRow.innerHTML = [
                 { label: `Tất cả (${total})`, val: 'all', cls: '' },
                 { label: `✅ Xong (${done})`, val: 'Xong', cls: 'badge-done' },
@@ -3850,7 +3850,7 @@ document.addEventListener("DOMContentLoaded", () => {
             ].map(b => `<span class="filter-count-badge ${b.cls} ${currentStatus === b.val ? 'active' : ''}" data-status="${b.val}">${b.label}</span>`).join('');
             countRow.querySelectorAll('.filter-count-badge').forEach(badge => {
                 badge.addEventListener('click', () => {
-                    const fs = document.getElementById('filter-status');
+                    const fs = document.getElementById('transaction-filter-status');
                     if (fs) { fs.value = badge.dataset.status; fs.dispatchEvent(new Event('change')); }
                 });
             });
