@@ -1085,19 +1085,21 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (currentTableTab === 'vua') {
             tr.innerHTML = `
                 <td></td>
-                <td>${formatDateVietnamese(rowData.parsedDate)}</td>
-                <td><input type="text" class="inline-edit-input" id="edit-buyer" value="${rowData["Người Mua"] || ""}"></td>
-                <td><input type="text" class="inline-edit-input" id="edit-flower-type" value="${rowData["Phân Loại Bông"] || ""}"></td>
-                <td><input type="number" class="inline-edit-input" id="edit-qty" value="${rowData["Số lượng"] || 0}"></td>
-                <td>-</td>
-                <td>-</td>
-                <td>
+                <td data-label="Ngày">${formatDateVietnamese(rowData.parsedDate)}</td>
+                <td data-label="Tên Vựa"><input type="text" class="inline-edit-input" id="edit-buyer" value="${rowData["Người Mua"] || ""}"></td>
+                <td data-label="Loại Bông"><input type="text" class="inline-edit-input" id="edit-flower-type" value="${rowData["Phân Loại Bông"] || ""}"></td>
+                <td data-label="SL"><input type="number" class="inline-edit-input" id="edit-qty" oninput="updateVuaInline('cost')" value="${rowData["Số lượng"] || 0}"></td>
+                <td data-label="Giá"><input type="text" class="inline-edit-input money-input" id="edit-price" oninput="updateVuaInline('cost')" value="${formatMoneyStr(rowData["Giá"] || 0)}"></td>
+                <td data-label="Phải Thu"><input type="text" class="inline-edit-input money-input" id="edit-phai-thu" oninput="updateVuaInline('phai-thu')" value="${formatMoneyStr(rowData["Tiền Phải Thu"] || 0)}" style="color:var(--primary-color); font-weight:700;"></td>
+                <td data-label="Doanh Thu"><input type="text" class="inline-edit-input money-input" id="edit-doanh-thu" oninput="updateVuaInline('doanh-thu')" value="${formatMoneyStr(rowData["Doanh Thu Khác"] || 0)}" style="color:#ec4899; font-weight:700;"></td>
+                <td data-label="Đã Thu"><input type="text" class="inline-edit-input money-input" id="edit-da-thu" value="${formatMoneyStr(rowData["Đã Thu"] || 0)}" style="color:#10b981; font-weight:700;"></td>
+                <td data-label="Status">
                     <select class="inline-edit-input" id="edit-status">
                         <option value="Chưa Xong" ${rowData["Status"] === "Chưa Xong" ? "selected" : ""}>Chưa Xong</option>
                         <option value="Xong" ${rowData["Status"] === "Xong" ? "selected" : ""}>Xong</option>
                     </select>
                 </td>
-                <td><input type="text" class="inline-edit-input" id="edit-note" value="${rowData["Ghi Chú"] || ""}"></td>
+                <td data-label="Ghi chú"><input type="text" class="inline-edit-input" id="edit-note" value="${rowData["Ghi Chú"] || ""}"></td>
                 <td>
                     <div style="display:flex; gap:5px;">
                         <button onclick="saveInlineEdit(${idx}, this)" class="btn-primary" style="padding:5px; background:var(--success); color:white; border:none; cursor:pointer;"><i class="fa-solid fa-check"></i></button>
@@ -1105,6 +1107,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </td>
             `;
+            // Ghi lại Chi phí (vận chuyển) vào dataset để tính toán
+            tr.dataset.shipping = rowData["Chi Phí"] || 0;
+            tr.dataset.vattu = rowData["Vật Tư"] || 0;
         } else if (currentTableTab === 'adjustment') {
             const adjVal = parseSignedMoney(rowData["Khoản Thu Chi Bất Thường"]);
             tr.innerHTML = `
@@ -1147,6 +1152,36 @@ document.addEventListener("DOMContentLoaded", () => {
         // Initialize revenue display if in Farm mode
         if (currentTableTab === 'farm') {
             window.updateInlineRevenue();
+        }
+    };
+ 
+    window.updateVuaInline = function (source) {
+        const qtyEl = document.getElementById('edit-qty');
+        const priceEl = document.getElementById('edit-price');
+        const ptEl = document.getElementById('edit-phai-thu');
+        const dtEl = document.getElementById('edit-doanh-thu');
+        if (!qtyEl || !priceEl || !ptEl || !dtEl) return;
+
+        const tr = qtyEl.closest('tr');
+        const qty = parseFloat(qtyEl.value) || 0;
+        const price = parseMoney(priceEl.value);
+        const flowerCost = qty * price;
+        const shipping = parseFloat(tr.dataset.shipping) || 0;
+        const vattu = parseFloat(tr.dataset.vattu) || 0;
+        const baseCost = flowerCost + shipping + vattu;
+
+        if (source === 'cost') {
+            // Qty hoặc Giá thay đổi -> Cập nhật Phải Thu dựa trên Doanh Thu hiện có
+            const dt = parseMoney(dtEl.value);
+            ptEl.value = formatMoneyStr(baseCost + dt);
+        } else if (source === 'phai-thu') {
+            // Phải Thu thay đổi -> Cập nhật Doanh Thu (Packing)
+            const pt = parseMoney(ptEl.value);
+            dtEl.value = formatMoneyStr(Math.max(0, pt - baseCost));
+        } else if (source === 'doanh-thu') {
+            // Doanh Thu thay đổi -> Cập nhật Phải Thu
+            const dt = parseMoney(dtEl.value);
+            ptEl.value = formatMoneyStr(baseCost + dt);
         }
     };
 
@@ -1197,11 +1232,38 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Preserve original classification
                 if (originalData["Loại CP"]) updates["Loại CP"] = originalData["Loại CP"];
                 if (originalData["Phân Loại Bông"]) updates["Phân Loại Bông"] = originalData["Phân Loại Bông"];
-            } else {
-                // Farm / Vua Mode
+            } else if (currentTableTab === 'vua') {
                 const buyerInput = document.getElementById('edit-buyer');
                 const flowerTypeInput = document.getElementById('edit-flower-type');
                 const qtyInput = document.getElementById('edit-qty');
+                const priceInput = document.getElementById('edit-price');
+                const ptInput = document.getElementById('edit-phai-thu');
+                const dtInput = document.getElementById('edit-doanh-thu');
+                const daThuInput = document.getElementById('edit-da-thu');
+                const statusInput = document.getElementById('edit-status');
+                const noteInput = document.getElementById('edit-note');
+
+                if (buyerInput) updates["Người Mua"] = buyerInput.value;
+                if (flowerTypeInput) updates["Phân Loại Bông"] = flowerTypeInput.value;
+                if (qtyInput) updates["Số lượng"] = qtyInput.value;
+                if (priceInput) updates["Giá"] = parseMoney(priceInput.value).toString();
+                if (ptInput) updates["Tiền Phải Thu"] = parseMoney(ptInput.value).toString();
+                if (dtInput) updates["Doanh Thu Khác"] = parseMoney(dtInput.value).toString();
+                if (daThuInput) updates["Đã Thu"] = parseMoney(daThuInput.value).toString();
+                if (statusInput) updates["Status"] = statusInput.value;
+                if (noteInput) updates["Ghi Chú"] = noteInput.value;
+
+                // Auto-calculate flower revenue for completeness
+                if (qtyInput && priceInput) {
+                    updates["Doanh Thu Bông"] = (parseFloat(qtyInput.value || 0) * parseMoney(priceInput.value)).toString();
+                }
+                updates["Loại DT"] = "Vựa";
+            } else {
+                // Farm Mode
+                const buyerInput = document.getElementById('edit-buyer');
+                const flowerTypeInput = document.getElementById('edit-flower-type');
+                const qtyInput = document.getElementById('edit-qty');
+                const priceInput = document.getElementById('edit-price');
                 const statusInput = document.getElementById('edit-status');
                 const noteInput = document.getElementById('edit-note');
 
@@ -1211,17 +1273,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (statusInput) updates["Status"] = statusInput.value;
                 if (noteInput) updates["Ghi Chú"] = noteInput.value;
 
-                // Auto-calculate revenue if Price field exists
-                const priceInput = document.getElementById('edit-price');
                 if (priceInput) {
                     const price = parseMoney(priceInput.value);
                     updates["Giá"] = price.toString();
                     updates["Doanh Thu Bông"] = (parseFloat(updates["Số lượng"] || 0) * price).toString();
                 }
-
-                if (currentTableTab === 'vua') {
-                    updates["Loại DT"] = "Vựa";
-                }
+                updates["Loại DT"] = "Farm";
             }
 
             // 2. Send IN-PLACE Update
