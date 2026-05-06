@@ -763,7 +763,7 @@ function resetModal() {
     document.getElementById('task-id').value = "";
     document.getElementById('task-name').value = "";
     document.getElementById('task-deadline').value = todayStr;
-    document.getElementById('task-category').value = "";
+    document.getElementById('task-category').value = "Farm";
     document.getElementById('task-note').value = "";
     document.getElementById('task-priority').value = "Trung bình";
     document.getElementById('task-status').value = "Chưa bắt đầu";
