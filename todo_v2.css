@@ -338,6 +338,8 @@ tr:hover {
 /* Calendar Styling */
 .calendar-wrapper {
     padding: 1.5rem;
+    overflow-x: auto !important;
+    width: 100%;
 }
 
 .calendar-header {
@@ -349,12 +351,12 @@ tr:hover {
 
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(180px, 1fr));
     gap: 1px;
     background: var(--border);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    overflow: hidden;
+    min-width: 1260px; /* 180px * 7 */
 }
 
 .calendar-day-header {
@@ -368,7 +370,8 @@ tr:hover {
 
 .calendar-day {
     background: white;
-    min-height: 100px;
+    min-height: 120px;
+    min-width: 180px;
     padding: 0.5rem;
 }
 
@@ -731,3 +734,24 @@ tr:hover {
     flex: 1;
     max-height: 280px !important;
 }
+
+/* Category Tags for Calendar */
+.cat-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    margin-left: 4px;
+    text-transform: uppercase;
+    vertical-align: middle;
+    line-height: 1;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.cat-tag-farm { background: #dcfce7 !important; color: #166534 !important; border: 1px solid #bbf7d0 !important; }
+.cat-tag-airbus { background: #dbeafe !important; color: #1e40af !important; border: 1px solid #bfdbfe !important; }
+.cat-tag-family { background: #fef2f2 !important; color: #991b1b !important; border: 1px solid #fee2e2 !important; }
+.cat-tag-ca-nhan { background: #f3e8ff !important; color: #6b21a8 !important; border: 1px solid #e9d5ff !important; }
+.cat-tag-phat-trien { background: #ffedd5 !important; color: #9a3412 !important; border: 1px solid #fed7aa !important; }
+.cat-tag-khac { background: #f1f5f9 !important; color: #475569 !important; border: 1px solid #e2e8f0 !important; }

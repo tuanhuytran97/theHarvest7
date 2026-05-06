@@ -498,10 +498,23 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
         
         const dl = parseLocalDate(t.deadline);
         const isOverdue = dl && dl.getTime() < today.getTime() && !isDone;
-        const farmTag = t.category === 'Farm' ? ' <span style="font-size: 0.65rem; font-weight: 800; color: #16a34a;">(Farm)</span>' : '';
+        // Category Tag Logic
+        let catTag = '';
+        if (t.category) {
+            let catClass = 'cat-tag-khac';
+            const cat = t.category.toLowerCase();
+            if (cat.includes('farm')) catClass = 'cat-tag-farm';
+            else if (cat.includes('airbus')) catClass = 'cat-tag-airbus';
+            else if (cat.includes('family')) catClass = 'cat-tag-family';
+            else if (cat.includes('cá nhân')) catClass = 'cat-tag-ca-nhan';
+            else if (cat.includes('self-help')) catClass = 'cat-tag-phat-trien';
+            
+            catTag = ` <span class="cat-tag ${catClass}">${t.category}</span>`;
+        }
+
         const checkIcon = t.status === 'Hoàn thành' ? '<i class="fa-solid fa-check" style="font-size: 0.7rem;"></i> ' : '';
         
-        tDiv.innerHTML = (isOverdue ? '<span style="color: #ef4444; font-weight: 800;">(Trễ)</span> ' : '') + checkIcon + escapeHtml(t.task) + farmTag;
+        tDiv.innerHTML = (isOverdue ? '<span style="color: #ef4444; font-weight: 800;">(Trễ)</span> ' : '') + checkIcon + escapeHtml(t.task) + catTag;
         tDiv.title = t.task + (t.category ? ` [${t.category}]` : '');
 
         // Color by priority
