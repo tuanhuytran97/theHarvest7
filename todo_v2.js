@@ -6,6 +6,9 @@
 let todoCache = [];
 let todoCharts = {};
 let currentSort = { key: 'deadline', asc: true };
+let selectedFocusDate = new Date();
+selectedFocusDate.setHours(0,0,0,0);
+
 
 // Register Chart.js Plugins
 if (typeof ChartDataLabels !== 'undefined') {
@@ -146,6 +149,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial Load
     loadTodoData();
+    
+    // Fallback: If for some reason renderActiveView isn't called by loadTodoData
+    setTimeout(() => {
+        if (document.getElementById('view-focus')?.style.display !== 'none') {
+            renderFocus();
+        }
+    }, 1500);
 });
 
 // --- API LAYER ---
@@ -536,6 +546,7 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
 
 // --- RENDERING: FOCUS VIEW ---
 function renderFocus() {
+    console.log("Rendering Focus View... selected date:", selectedFocusDate);
     const now = new Date();
     now.setHours(0, 0, 0, 0);
 
@@ -544,20 +555,26 @@ function renderFocus() {
 
     if (!todayList || !urgentList) return;
 
-    // Filter Today + Overdue (Incomplete tasks from past)
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    // Filter Selected Date + Overdue (Incomplete tasks from past)
     const todayTasks = todoCache.filter(t => {
         const dl = t.deadlineDate;
         if (!dl) return false;
 
-        const isToday = dl.getTime() === now.getTime();
-        const isPast = dl.getTime() < now.getTime();
-        const isIncomplete = t.status !== 'Hoàn thành';
+        const isSameDay = dl.getTime() === selectedFocusDate.getTime();
+        
+        // If viewing TODAY, also show overdue tasks
+        const isPast = dl.getTime() < today.getTime();
+        const isIncomplete = t.status !== 'Hoàn thành' && t.status !== 'Hủy bỏ';
+        const showOverdue = selectedFocusDate.getTime() === today.getTime() && isPast && isIncomplete;
 
-        return isToday || (isPast && isIncomplete);
+        return isSameDay || showOverdue;
     }).sort((a, b) => {
         // Incomplete first, then by deadline
-        const aDone = a.status === 'Hoàn thành' ? 1 : 0;
-        const bDone = b.status === 'Hoàn thành' ? 1 : 0;
+        const aDone = a.status === 'Hoàn thành' || a.status === 'Hủy bỏ' ? 1 : 0;
+        const bDone = b.status === 'Hoàn thành' || b.status === 'Hủy bỏ' ? 1 : 0;
         if (aDone !== bDone) return aDone - bDone;
         return (a.deadlineDate || 0) - (b.deadlineDate || 0);
     });
@@ -575,10 +592,17 @@ function renderFocus() {
             return dA - dB;
         });
 
+    // Update Header Label
+    const todayHeader = document.querySelector('#view-focus .focus-column:first-child .focus-header');
+    if (todayHeader) {
+        const isToday = selectedFocusDate.getTime() === today.getTime();
+        todayHeader.innerHTML = `<i class="fa-solid fa-calendar-day"></i> ${isToday ? 'CÔNG VIỆC HÔM NAY' : 'CÔNG VIỆC NGÀY ' + formatDate(selectedFocusDate)}`;
+    }
+
     // Render Today
     const todayHtml = todayTasks.length
         ? todayTasks.map(t => createFocusItemHTML(t, 'var(--accent)')).join('')
-        : '<div style="text-align:center; color: var(--text-light); padding: 2rem;">Hôm nay không có việc.</div>';
+        : `<div style="text-align:center; color: var(--text-light); padding: 2rem;">Ngày này không có việc.</div>`;
     todayList.innerHTML = todayHtml;
 
     // Render Urgent
@@ -586,6 +610,52 @@ function renderFocus() {
         ? urgentTasks.map(t => createFocusItemHTML(t, 'var(--danger)')).join('')
         : '<div style="text-align:center; color: var(--text-light); padding: 2rem;">Không có việc khẩn cấp.</div>';
     urgentList.innerHTML = urgentHtml;
+
+    renderWeeklyFilter();
+}
+
+function renderWeeklyFilter() {
+    console.log("Rendering Weekly Filter...");
+    const filterContainer = document.getElementById('focus-weekly-filter');
+    if (!filterContainer) return;
+
+    filterContainer.innerHTML = '';
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Generate 7 days: 2 days ago to 4 days ahead
+    const startDate = new Date(today);
+    startDate.setDate(today.getDate() - 2);
+
+    const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(startDate);
+        d.setDate(startDate.getDate() + i);
+        d.setHours(0,0,0,0);
+
+        const isActive = d.getTime() === selectedFocusDate.getTime();
+        const isToday = d.getTime() === today.getTime();
+
+        const pill = document.createElement('div');
+        pill.className = `date-pill ${isActive ? 'active' : ''} ${isToday ? 'today' : ''}`;
+        
+        const dayName = dayNames[d.getDay()];
+        const dayNum = d.getDate();
+
+        pill.innerHTML = `
+            <span class="day-name">${dayName}</span>
+            <span class="day-num">${dayNum}</span>
+        `;
+
+        pill.onclick = () => {
+            selectedFocusDate = d;
+            renderFocus();
+        };
+
+        filterContainer.appendChild(pill);
+    }
 }
 
 function createFocusItemHTML(t, borderColor) {
