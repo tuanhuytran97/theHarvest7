@@ -1906,18 +1906,39 @@ document.addEventListener("DOMContentLoaded", () => {
                     throw new Error(result.message);
                 }
             } else {
-                // Simplified Partial Payment using backend recordPayment action
-                showToast(`Đang ghi nhận số tiền ${formatCurrency(amountToPay)}...`, "info");
+                // Thanh toán một phần: Tạo hàng mới, status để "", nội dung thanh toán một phần ngày xxxxx, đã thu, các hàng khác giữ nguyên
+                showToast(`Đang ghi nhận thanh toán một phần ${formatCurrency(amountToPay)}...`, "info");
+                
+                const now = new Date();
+                const fullDateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+                const fullTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+                
+                const payload = {
+                    action: "add",
+                    token: getToken(),
+                    data: {
+                        "Ngày": fullDateStr,
+                        "Status": "",
+                        "Người Mua": currentSelectedBuyer.name,
+                        "Số lượng": "",
+                        "Giá": "",
+                        "Doanh Thu Bông": "",
+                        "Phân Loại Bông": "",
+                        "Ghi Chú": `Thanh toán một phần ngày ${fullDateStr} ${fullTimeStr}`,
+                        "Đã Thu": amountToPay.toString(),
+                        "Tiền Phải Thu": "",
+                        "Ghi Chú Vựa thu": "",
+                        "Doanh Thu Khác": "",
+                        "Loại DT": currentSelectedBuyer.isVua ? "Vựa" : "Farm",
+                        "Chi Phí": "",
+                        "Loại CP": "",
+                        "Ghi Chú Chi Phí": ""
+                    }
+                };
 
                 const response = await fetch(CONFIG.WEB_APP_URL, {
                     method: "POST",
-                    body: JSON.stringify({
-                        action: "recordPayment",
-                        buyerName: currentSelectedBuyer.name,
-                        amount: amountToPay,
-                        isFull: false, // Partial
-                        token: getToken()
-                    }),
+                    body: JSON.stringify(payload),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
                 
@@ -1980,18 +2001,53 @@ document.addEventListener("DOMContentLoaded", () => {
             const isFull = amountToPay >= remaining;
             showToast(`Đang ghi nhận thanh toán ${isFull ? 'HẾT' : 'một phần'} ngày ${t.dateStr}...`, "info");
 
-            const response = await fetch(CONFIG.WEB_APP_URL, {
-                method: "POST",
-                body: JSON.stringify({
-                    action: "recordPayment",
-                    buyerName: currentSelectedBuyer.name,
-                    amount: amountToPay,
-                    dateStr: t.dateStr,
-                    isFull: isFull,
-                    token: getToken()
-                }),
-                headers: { "Content-Type": "text/plain;charset=utf-8" }
-            });
+            let response;
+            if (isFull) {
+                response = await fetch(CONFIG.WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "recordPayment",
+                        buyerName: currentSelectedBuyer.name,
+                        amount: amountToPay,
+                        dateStr: t.dateStr,
+                        isFull: true,
+                        token: getToken()
+                    }),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                });
+            } else {
+                // Thanh toán một phần: Tạo hàng mới
+                const now = new Date();
+                const fullDateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+                const fullTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+
+                response = await fetch(CONFIG.WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "add",
+                        token: getToken(),
+                        data: {
+                            "Ngày": fullDateStr,
+                            "Status": "",
+                            "Người Mua": currentSelectedBuyer.name,
+                            "Số lượng": "",
+                            "Giá": "",
+                            "Doanh Thu Bông": "",
+                            "Phân Loại Bông": "",
+                            "Ghi Chú": `Thanh toán một phần ngày ${fullDateStr} ${fullTimeStr}`,
+                            "Đã Thu": amountToPay.toString(),
+                            "Tiền Phải Thu": "",
+                            "Ghi Chú Vựa thu": "",
+                            "Doanh Thu Khác": "",
+                            "Loại DT": currentSelectedBuyer.isVua ? "Vựa" : "Farm",
+                            "Chi Phí": "",
+                            "Loại CP": "",
+                            "Ghi Chú Chi Phí": ""
+                        }
+                    }),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                });
+            }
 
             const result = await response.json();
             if (result.status !== "success") throw new Error(result.message);
