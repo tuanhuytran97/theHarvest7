@@ -1906,58 +1906,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     throw new Error(result.message);
                 }
             } else {
-                // LOGIC TRẢ MỘT PHẦN THEO YÊU CẦU: Track theo ngày và tạo dòng nếu cần
+                // Simplified Partial Payment using backend recordPayment action
                 showToast(`Đang ghi nhận số tiền ${formatCurrency(amountToPay)}...`, "info");
 
-                // 1. Kiểm tra xem hôm nay khách có đơn nào không (DD/MM/YYYY)
-                const todayTx = currentSelectedBuyer.transactions.find(t => t.dateStr === dateStr);
-                const noteContent = `Thanh toán một phần ngày ${dateStr} ${timeStr}`;
-
-                if (todayTx && todayTx.lines.length > 0) {
-                    // CÓ đơn hôm nay -> Ghi vào dòng đầu tiên của ngày hôm nay
-                    const targetRow = todayTx.lines[0].rawRow;
-                    const currentPaid = parseFloat(String(targetRow["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0;
-                    const newPaidTotal = currentPaid + amountToPay;
-                    const oldNote = targetRow["Ghi Chú"] || "";
-                    const finalNote = (oldNote ? oldNote + " | " : "") + noteContent;
-
-                    const response = await fetch(CONFIG.WEB_APP_URL, {
-                        method: "POST",
-                        body: JSON.stringify({
-                            action: "update",
-                            rowNumber: targetRow._sheetRowNumber,
-                            updates: {
-                                "Đã Thu": newPaidTotal,
-                                "Status": "Chưa Xong", // Không gạch đơn
-                                "Ghi Chú": finalNote
-                            },
-                            token: getToken()
-                        }),
-                        headers: { "Content-Type": "text/plain;charset=utf-8" }
-                    });
-                    const result = await response.json();
-                    if (result.status !== "success") throw new Error(result.message);
-                } else {
-                    // KHÔNG có đơn hôm nay -> Tạo đơn hàng mới (chỉ ghi số tiền và ghi chú)
-                    const response = await fetch(CONFIG.WEB_APP_URL, {
-                        method: "POST",
-                        body: JSON.stringify({
-                            action: "add",
-                            data: {
-                                "Ngày": dateStr,
-                                "Người Mua": currentSelectedBuyer.name,
-                                "Status": "Chưa Xong",
-                                "Đã Thu": amountToPay,
-                                "Ghi Chú": noteContent,
-                                "Loại DT": currentSelectedBuyer.isVua ? "Vựa" : "Farm"
-                            },
-                            token: getToken()
-                        }),
-                        headers: { "Content-Type": "text/plain;charset=utf-8" }
-                    });
-                    const result = await response.json();
-                    if (result.status !== "success") throw new Error(result.message);
-                }
+                const response = await fetch(CONFIG.WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "recordPayment",
+                        buyerName: currentSelectedBuyer.name,
+                        amount: amountToPay,
+                        isFull: false, // Partial
+                        token: getToken()
+                    }),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                });
+                
+                const result = await response.json();
+                if (result.status !== "success") throw new Error(result.message);
 
                 showToast(`Đã ghi nhận thanh toán một phần thành công!`, "success");
             }
@@ -2011,117 +1976,27 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         document.body.style.cursor = 'wait';
-        const now = new Date();
-        const dateTimeStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        try {
+            const isFull = amountToPay >= remaining;
+            showToast(`Đang ghi nhận thanh toán ${isFull ? 'HẾT' : 'một phần'} ngày ${t.dateStr}...`, "info");
 
-        const updatesList = [];
-        let remainingForDay = amountToPay;
-
-        t.lines.forEach(line => {
-            const row = line.rawRow;
-            const lineExpected = line.isVua ? (parseFloat(String(row["Tiền Phải Thu"] || "0").replace(/[^\d]/g, '')) || 0)
-                : (parseFloat(String(row["Doanh Thu Bông"] || "0").replace(/[^\d]/g, '')) || 0);
-
-            const linePaid = parseFloat(String(row["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0;
-            const lineDebt = lineExpected - linePaid;
-
-            if (lineDebt <= 0 || remainingForDay <= 0) return;
-
-            const payForThisLine = Math.min(lineDebt, remainingForDay);
-            const newPaid = linePaid + payForThisLine;
-            remainingForDay -= payForThisLine;
-
-            const isLineDone = newPaid >= lineExpected;
-            const now = new Date();
-            const fullDateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
-            const fullTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-            const noteType = isLineDone ? "hết" : "một phần";
-
-            const existingNote = row["Ghi Chú"] || "";
-            const newNote = `Thanh toán ${noteType} ngày ${fullDateStr} ${fullTimeStr}`;
-            const finalNote = existingNote ? `${existingNote} | ${newNote}` : newNote;
-
-
-            updatesList.push({
-                targetRow: row,
-                updates: {
-                    "Status": isLineDone ? "Xong" : "Chưa Xong",
-                    "Ghi Chú": finalNote,
-                    "Đã Thu": newPaid
-                }
+            const response = await fetch(CONFIG.WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "recordPayment",
+                    buyerName: currentSelectedBuyer.name,
+                    amount: amountToPay,
+                    dateStr: t.dateStr,
+                    isFull: isFull,
+                    token: getToken()
+                }),
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
             });
 
-            // Local update
-            row["Status"] = isLineDone ? "Xong" : "Chưa Xong";
-            row["Ghi Chú"] = finalNote;
-            row["Đã Thu"] = newPaid;
-
-        });
-
-        // Nếu còn dư tiền sau khi trả hết nợ của ngày này, cộng vào dòng đầu tiên (hoặc có thể xử lý khác)
-        if (remainingForDay > 0 && t.lines.length > 0) {
-            const firstRow = t.lines[0].rawRow;
-            firstRow["Đã Thu"] = (parseFloat(String(firstRow["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0) + remainingForDay;
-            // update existing entry in updatesList if exists
-            const existing = updatesList.find(u => u.targetRow === firstRow);
-            if (existing) {
-                existing.updates["Đã Thu"] = firstRow["Đã Thu"];
-            } else {
-                updatesList.push({
-                    targetRow: firstRow,
-                    updates: { "Đã Thu": firstRow["Đã Thu"] }
-                });
-            }
-        }
-
-        try {
-            if (amountToPay >= remaining) {
-                // Thanh toán HẾT cho ngày này -> Dùng bulkPay cho an toàn
-                showToast(`Đang thanh toán HẾT ngày ${t.dateStr}...`, "info");
-                const response = await fetch(CONFIG.WEB_APP_URL, {
-                    method: "POST",
-                    body: JSON.stringify({
-                        action: "bulkPay",
-                        buyerName: currentSelectedBuyer.name,
-                        dateStr: t.dateStr,
-                        token: getToken()
-                    }),
-                    headers: { "Content-Type": "text/plain;charset=utf-8" }
-                });
-                const result = await response.json();
-                if (result.status !== "success") throw new Error(result.message);
-                showToast(`Thành công! Đã xử lý ${result.count} đơn.`, "success");
-            } else {
-                // Thanh toán MỘT PHẦN -> Dùng updatesList tuần tự
-                if (updatesList.length === 0) return;
-
-                showToast(`Đang thu một phần: ${updatesList.length} dòng...`, "info");
-
-                for (let i = 0; i < updatesList.length; i++) {
-                    const req = updatesList[i];
-                    const realRow = req.targetRow._sheetRowNumber;
-
-                    showToast(`Đang thu (${i + 1}/${updatesList.length}): Dòng #${realRow}...`, "info", 1000);
-
-                    const response = await fetch(CONFIG.WEB_APP_URL, {
-                        method: "POST",
-                        body: JSON.stringify({
-                            action: "update",
-                            targetRow: req.targetRow,
-                            rowNumber: realRow,
-                            updates: req.updates,
-                            token: getToken()
-                        }),
-                        headers: { "Content-Type": "text/plain;charset=utf-8" }
-                    });
-
-                    const result = await response.json();
-                    if (result.status !== "success") throw new Error(result.message);
-
-                    if (updatesList.length > 1) await new Promise(r => setTimeout(r, 300));
-                }
-                showToast(`Thu tiền một phần thành công!`, "success");
-            }
+            const result = await response.json();
+            if (result.status !== "success") throw new Error(result.message);
+            
+            showToast(`Thành công! Đã ghi nhận ${formatCurrency(amountToPay)}.`, "success");
 
             renderDebtTable();
             const syncBtn = document.getElementById('sync-gsheet-btn');
