@@ -1044,22 +1044,28 @@
                                 <!-- Template for flower item -->
                                 <div class="flower-item"
                                     style="display: grid; grid-template-columns: 0.6fr 1.2fr 1.2fr 1.5fr 30px; gap: 10px; align-items: center;">
-                                    <div class="form-group" style="margin: 0;"><input type="number" placeholder="SL"
-                                            class="fw-qty" min="0" required></div>
                                     <div class="form-group" style="margin: 0;">
+                                        <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
+                                        <input type="number" placeholder="SL" class="fw-qty" min="0" required>
+                                    </div>
+                                    <div class="form-group" style="margin: 0;">
+                                        <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Loại mặt hàng</label>
                                         <input type="text" class="fw-type" list="flower-types" placeholder="Tên hoa..."
                                             style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;"
                                             required>
                                     </div>
-                                    <div class="form-group" style="margin: 0;"><input type="text" placeholder="Giá"
-                                            class="fw-price money-input" required></div>
-                                    <div class="form-group" style="margin: 0;"><input type="text"
-                                            placeholder="Thành tiền" class="fw-total" readonly
+                                    <div class="form-group" style="margin: 0;">
+                                        <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Đơn Giá</label>
+                                        <input type="text" placeholder="Giá" class="fw-price money-input" required>
+                                    </div>
+                                    <div class="form-group" style="margin: 0;">
+                                        <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Thành tiền</label>
+                                        <input type="text" placeholder="Thành tiền" class="fw-total" readonly
                                             style="background: #f9fafb; color: #374151; font-weight: bold; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px; width: 100%;">
                                     </div>
                                     <button type="button" class="del-flower-btn"
                                         style="background: none; border: none; color: var(--danger); font-size: 1.2rem; cursor: pointer; padding: 0;"
-                                        title="Xoá"><i class="fa-solid fa-circle-xmark"></i></button>
+                                        title="Xoá"><i class="fa-solid fa-trash-can"></i></button>
                                 </div>
                             </div>
 

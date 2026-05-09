@@ -50,23 +50,25 @@ function formatSignedMoneyStr(num) {
 }
 
 function formatShorthandCurrency(num, isSigned = false) {
-    if (window.innerWidth > 992) {
-        return isSigned ? formatSignedMoneyStr(num) : formatCurrency(num);
-    }
-    
-    if (!num && num !== 0) return "-";
-    const absNum = Math.abs(num);
+    if (num === 0) return "0đ";
+    const absNum = Math.round(Math.abs(num));
     let formatted = "";
     
-    if (absNum >= 1000000000) {
-        formatted = (num / 1000000000).toLocaleString('vi-VN', { maximumFractionDigits: 3 }) + " tỷ";
-    } else if (absNum >= 1000000) {
-        formatted = (num / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + " triệu";
+    if (absNum >= 1000000) {
+        const tr = Math.floor(absNum / 1000000);
+        const k = Math.floor((absNum % 1000000) / 1000);
+        formatted = k > 0 ? `${tr}tr${k}k` : `${tr}tr`;
+    } else if (absNum >= 1000) {
+        formatted = Math.floor(absNum / 1000) + "k";
     } else {
         return isSigned ? formatSignedMoneyStr(num) : formatCurrency(num);
     }
     
-    if (isSigned && num > 0) formatted = "+" + formatted;
+    if (isSigned) {
+        return (num > 0 ? "+" : "-") + formatted;
+    } else if (num < 0) {
+        return "-" + formatted;
+    }
     return formatted;
 }
 
@@ -440,6 +442,58 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.target.value = "";
             } else {
                 e.target.value = sign + new Intl.NumberFormat('vi-VN').format(num);
+            }
+        }
+    });
+    
+    // --- GLOBAL KEYBOARD LISTENERS ---
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            let handled = false;
+
+            // 1. Close Receipt Modal
+            const receiptModal = document.getElementById('receipt-modal');
+            if (receiptModal && (receiptModal.style.display === 'flex' || receiptModal.style.display === 'block')) {
+                if (typeof window.closeReceipt === 'function') window.closeReceipt();
+                else receiptModal.style.display = 'none';
+                handled = true;
+            }
+
+            // 2. Close Partial Payment Modal
+            if (!handled) {
+                const partialPayModal = document.getElementById('modal-partial-pay');
+                if (partialPayModal && (partialPayModal.style.display === 'flex' || partialPayModal.style.display === 'block')) {
+                    partialPayModal.style.display = 'none';
+                    handled = true;
+                }
+            }
+
+            // 3. Close Cash Adjustment Modal
+            if (!handled) {
+                const adjustModal = document.getElementById('modal-adjust-cash');
+                if (adjustModal && (adjustModal.style.display === 'flex' || adjustModal.style.display === 'block')) {
+                    adjustModal.style.display = 'none';
+                    handled = true;
+                }
+            }
+
+            // 4. Close Todo Modal
+            if (!handled) {
+                const todoModal = document.getElementById('todo-modal');
+                if (todoModal && (todoModal.style.display === 'flex' || todoModal.style.display === 'block')) {
+                    todoModal.style.display = 'none';
+                    handled = true;
+                }
+            }
+
+            // 5. Back from Debt Detail View to Master List
+            if (!handled) {
+                const detailView = document.getElementById('debt-detail-view');
+                if (detailView && detailView.style.display === 'block') {
+                    const btnBack = document.getElementById('btn-back-to-master');
+                    if (btnBack) btnBack.click();
+                    handled = true;
+                }
             }
         }
     });
@@ -1542,7 +1596,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 buyers[t.buyer].isVua = true;
             }
             buyers[t.buyer].totalDebt += (t.totalExpected - t.paid);
-            buyers[t.buyer].orderCount += t.lines.length; // Count each sheet row as 1 "đơn"
+            buyers[t.buyer].orderCount += 1; // Đếm số ngày nợ thay vì số đơn lẻ
             buyers[t.buyer].transactions.push(t);
         });
 
@@ -1575,12 +1629,11 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.className = 'customer-debt-btn';
             if (b.isVua) btn.classList.add('vua-flavor');
 
-            let debtFormatted = (b.totalDebt / 1000000).toFixed(1) + "tr";
-            if (b.totalDebt < 1000000) debtFormatted = (b.totalDebt / 1000).toFixed(0) + "k";
+            let debtFormatted = formatShorthandCurrency(b.totalDebt);
 
             btn.innerHTML = `
                  <span class="buyer-name-part">👤 <span>${b.name}</span></span>
-                 <span class="debt-amount-part">🔴 ${debtFormatted} <span class="order-count-tag">(${b.orderCount} đơn)</span></span>
+                 <span class="debt-amount-part">🔴 ${debtFormatted} <span class="order-count-tag">(${b.orderCount} toa)</span></span>
              `;
 
             btn.onclick = () => showDebtDetail(b);
@@ -1652,9 +1705,11 @@ document.addEventListener("DOMContentLoaded", () => {
             invoiceItem.className = 'invoice-item';
 
             // Chi tiết sản phẩm trong đơn
-            const linesHtml = t.lines.map(l => {
-                const unitPriceLabel = l.price ? ` x ${formatCurrency(l.price)}` : '';
-                return `
+            const linesHtml = t.lines
+                .filter(l => l.qty > 0)
+                .map(l => {
+                    const unitPriceLabel = l.price ? ` x ${formatCurrency(l.price)}` : '';
+                    return `
                 <div class="line-item-row">
                     <span style="color: #475569;">${l.qty} ${l.flowerType}${unitPriceLabel}</span>
                     <span style="font-weight: 600; color: #1e293b;">${formatCurrency(l.isVua ? l.rawRow["Tiền Phải Thu"] : l.dtBong)}</span>
@@ -4661,26 +4716,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 flowerItemsContainer.innerHTML = `
                     <div class="flower-item">
                         <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Loại mặt hàng</label>
-                            <select class="fw-type" required>
-                                <option value="Xô ngoại">Xô ngoại</option>
-                                <option value="Xô nội">Xô nội</option>
-                                <option value="Ecuador">Ecuador</option>
-                                <option value="Pháp">Pháp</option>
-                                <option value="Trắng ù">Trắng ù</option>
-                                <option value="Ô Hồng">Ô Hồng</option>
-                                <option value="Ô Trắng">Ô Trắng</option>
-                                <option value="Simmo">Simmo</option>
-                                <option value="Cam Cháy">Cam Cháy</option>
-                                <option value="Vitto">Vitto</option>
-                                <option value="Lạc Thần">Lạc Thần</option>
-                                <option value="Hỷ Trứng">Hỷ Trứng</option>
-                                <option value="Khác">Khác</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="margin: 0;">
                             <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
                             <input type="number" placeholder="0" class="fw-qty" min="0" required>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Loại mặt hàng</label>
+                            <input type="text" class="fw-type" list="flower-types" placeholder="Tên hoa..." required
+                                style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;">
                         </div>
                         <div class="form-group" style="margin: 0;">
                             <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Đơn Giá</label>
@@ -4884,11 +4926,13 @@ document.addEventListener("DOMContentLoaded", () => {
         itemsBody.innerHTML = '';
         currentSelectedBuyer.transactions.forEach(t => {
             const row = document.createElement('tr');
-            const summary = t.lines.map(l => {
-                // Định dạng giá kiểu rút gọn (ví dụ 2500 -> 2.5k) cho gọn hóa đơn
-                const shortPrice = l.price >= 1000 ? (l.price / 1000).toLocaleString('en-US', { maximumFractionDigits: 1 }) + 'k' : l.price;
-                return `${l.qty} ${l.flowerType} x ${shortPrice}`;
-            }).join(', ');
+            const summary = t.lines
+                .filter(l => l.qty > 0)
+                .map(l => {
+                    // Định dạng giá kiểu rút gọn (ví dụ 2500 -> 2.5k) cho gọn hóa đơn
+                    const shortPrice = l.price >= 1000 ? (l.price / 1000).toLocaleString('en-US', { maximumFractionDigits: 1 }) + 'k' : l.price;
+                    return `${l.qty} ${l.flowerType} x ${shortPrice}`;
+                }).join(', ');
 
             // Định dạng lại ngày từ DD/MM/YYYY sang DD/MM/YY
             let shortDateWithYear = t.dateStr;
