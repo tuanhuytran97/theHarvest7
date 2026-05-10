@@ -476,6 +476,10 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
     if (isOtherMonth) div.classList.add('other-month');
     if (date.getTime() === today.getTime()) div.classList.add('today');
 
+    div.onclick = () => {
+        openAddTaskModalWithDate(date);
+    };
+
     div.innerHTML = `<div class="calendar-day-num">${dayNum}</div>`;
 
     const m = date.getMonth();
@@ -854,6 +858,19 @@ function resetModal() {
     // Hide delete button for new tasks
     const delBtn = document.getElementById('delete-task-btn');
     if (delBtn) delBtn.style.display = 'none';
+}
+
+window.openAddTaskModalWithDate = function (date) {
+    resetModal();
+    document.getElementById('modal-title').innerText = "Thêm Công Việc Mới";
+    
+    // Format date as YYYY-MM-DD for input[type="date"]
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    document.getElementById('task-deadline').value = `${y}-${m}-${d}`;
+    
+    document.getElementById('todo-modal').style.display = 'flex';
 }
 
 window.editTask = function (id) {
