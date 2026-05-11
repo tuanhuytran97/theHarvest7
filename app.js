@@ -1352,7 +1352,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (currentTableTab === 'expense') {
                 updates["Loại CP"] = document.getElementById('edit-exp-type').value;
-                updates["Ghi Chú"] = document.getElementById('edit-exp-note').value;
+                updates["Ghi Chú Chi Phí"] = document.getElementById('edit-exp-note').value;
                 updates["Chi Phí"] = parseMoney(document.getElementById('edit-exp-amount').value).toString();
             } else if (currentTableTab === 'adjustment') {
                 updates["Khoản Thu Chi Bất Thường"] = parseSignedMoney(document.getElementById('edit-adj-amount').value).toString();
