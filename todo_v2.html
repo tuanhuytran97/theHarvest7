@@ -46,22 +46,22 @@
 
         <!-- Navigation Tabs -->
         <div class="nav-tabs glass-card">
-            <button class="nav-btn active" data-target="view-focus">
-                <i class="fa-solid fa-bolt"></i> Tiêu Điểm
-            </button>
-            <button class="nav-btn" data-target="view-dashboard">
-                <i class="fa-solid fa-chart-line"></i> Dashboard
-            </button>
-            <button class="nav-btn" data-target="view-calendar">
+            <button class="nav-btn todo-nav-btn active" data-target="view-calendar">
                 <i class="fa-solid fa-calendar-days"></i> Lịch Biểu
             </button>
-            <button class="nav-btn" data-target="view-list">
+            <button class="nav-btn todo-nav-btn" data-target="view-focus">
+                <i class="fa-solid fa-bolt"></i> Tiêu Điểm
+            </button>
+            <button class="nav-btn todo-nav-btn" data-target="view-dashboard">
+                <i class="fa-solid fa-chart-line"></i> Dashboard
+            </button>
+            <button class="nav-btn todo-nav-btn" data-target="view-list">
                 <i class="fa-solid fa-list-ul"></i> Danh Sách
             </button>
         </div>
 
         <!-- VIEW: FOCUS (Split View - Default) -->
-        <div id="view-focus" class="subview">
+        <div id="view-focus" class="subview" style="display: none;">
             <!-- Weekly Date Filter -->
             <div id="focus-weekly-filter" class="weekly-filter">
                 <!-- Date pills injected by JS -->
@@ -157,7 +157,7 @@
         </div>
 
         <!-- VIEW: CALENDAR -->
-        <div id="view-calendar" class="subview" style="display: none;">
+        <div id="view-calendar" class="subview">
             <div class="glass-card calendar-wrapper">
                 <div class="calendar-header">
                     <div style="display: flex; gap: 1rem;">

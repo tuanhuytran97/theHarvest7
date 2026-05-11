@@ -617,17 +617,17 @@
                     <!-- Navigation Tabs for To-Do (Redesigned to match todo_v2) -->
                     <div class="todo-nav-container glassmorphism"
                         style="padding: 4px; border-radius: 12px; margin-bottom: 1.5rem; display: flex; gap: 4px; background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: var(--shadow-sm); overflow-x: auto; white-space: nowrap;">
-                        <button class="todo-nav-btn active" data-target="view-focus"
+                        <button class="todo-nav-btn active" data-target="view-calendar"
                             style="flex: 1; min-width: max-content; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; transition: all 0.3s; font-size: 0.8rem;">
+                            <i class="fa-solid fa-calendar-days"></i> <span>Lịch Biểu</span>
+                        </button>
+                        <button class="todo-nav-btn" data-target="view-focus"
+                            style="flex: 1; min-width: max-content; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; border-radius: 8px; border: none; background: transparent; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 0.8rem;">
                             <i class="fa-solid fa-bolt"></i> <span>Tiêu Điểm</span>
                         </button>
                         <button class="todo-nav-btn" data-target="view-dashboard"
                             style="flex: 1; min-width: max-content; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; border-radius: 8px; border: none; background: transparent; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 0.8rem;">
                             <i class="fa-solid fa-chart-line"></i> <span>Dashboard</span>
-                        </button>
-                        <button class="todo-nav-btn" data-target="view-calendar"
-                            style="flex: 1; min-width: max-content; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; border-radius: 8px; border: none; background: transparent; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 0.8rem;">
-                            <i class="fa-solid fa-calendar-days"></i> <span>Lịch Biểu</span>
                         </button>
                         <button class="todo-nav-btn" data-target="view-list"
                             style="flex: 1; min-width: max-content; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; border-radius: 8px; border: none; background: transparent; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 0.8rem;">
@@ -637,7 +637,7 @@
 
 
                     <!-- VIEW: FOCUS (Split View - Default) -->
-                    <div id="view-focus" class="subview">
+                    <div id="view-focus" class="subview" style="display: none;">
                         <!-- Weekly Date Filter -->
                         <div id="focus-weekly-filter" class="weekly-filter">
                             <!-- Date pills injected by JS -->
@@ -822,7 +822,7 @@
                     </div>
 
                     <!-- VIEW: CALENDAR -->
-                    <div id="view-calendar" class="subview" style="display: none;">
+                    <div id="view-calendar" class="subview">
                         <div class="glass-card calendar-wrapper"
                             style="background: white; padding: 1.5rem; border-radius: 20px;">
                             <div class="calendar-header"

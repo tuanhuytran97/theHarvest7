@@ -163,7 +163,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Fallback: If for some reason renderActiveView isn't called by loadTodoData
     setTimeout(() => {
-        if (document.getElementById('view-focus')?.style.display !== 'none') {
+        if (document.getElementById('view-calendar')?.style.display !== 'none') {
+            renderCalendar();
+        } else if (document.getElementById('view-focus')?.style.display !== 'none') {
             renderFocus();
         }
     }, 1500);
@@ -261,7 +263,7 @@ async function loadTodoData() {
 
 function renderActiveView() {
     const activeBtn = document.querySelector('.todo-nav-btn.active');
-    const targetId = activeBtn?.getAttribute('data-target') || 'view-dashboard';
+    const targetId = activeBtn?.getAttribute('data-target') || 'view-calendar';
 
     if (targetId === 'view-list') renderTable();
     else if (targetId === 'view-calendar') renderCalendar();
