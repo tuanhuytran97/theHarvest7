@@ -1,7 +1,7 @@
 // CONFIGURATION UTILITIES
-const getRole = () => sessionStorage.getItem("user-role");
-const getUserName = () => sessionStorage.getItem("user-name");
-const getToken = () => sessionStorage.getItem("user-token");
+var getRole = () => sessionStorage.getItem("user-role");
+var getUserName = () => sessionStorage.getItem("user-name");
+var getToken = () => sessionStorage.getItem("user-token");
 
 function getTodayStr() {
     const now = new Date();
@@ -53,7 +53,7 @@ function formatShorthandCurrency(num, isSigned = false) {
     if (num === 0) return "0đ";
     const absNum = Math.round(Math.abs(num));
     let formatted = "";
-    
+
     if (absNum >= 1000000) {
         const tr = Math.floor(absNum / 1000000);
         const k = Math.floor((absNum % 1000000) / 1000);
@@ -63,7 +63,7 @@ function formatShorthandCurrency(num, isSigned = false) {
     } else {
         return isSigned ? formatSignedMoneyStr(num) : formatCurrency(num);
     }
-    
+
     if (isSigned) {
         return (num > 0 ? "+" : "-") + formatted;
     } else if (num < 0) {
@@ -137,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (roleBadgeEl) {
             roleBadgeEl.className = 'role-badge'; // reset
             if (role === 'ADMIN') {
-                roleBadgeEl.innerText = 'Quản trị';
+                roleBadgeEl.innerText = 'ADMIN';
                 roleBadgeEl.classList.add('admin');
                 roleBadgeEl.style.background = 'rgba(99, 102, 241, 0.1)';
                 roleBadgeEl.style.color = '#6366f1';
@@ -203,7 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (entryCard) entryCard.style.display = 'none';
             if (bulkDeleteBtn) bulkDeleteBtn.style.display = 'none';
             if (debtActionBox) debtActionBox.style.display = 'none';
-            if (chatbotContainer) chatbotContainer.style.display = 'none';
+            // chatbotContainer is now allowed to be displayed
         }
     }
 
@@ -445,7 +445,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     });
-    
+
     // --- GLOBAL KEYBOARD LISTENERS ---
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -774,6 +774,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     <th>Phân Loại</th>
                     <th data-sort="Số lượng">SL <i class="fa-solid fa-sort"></i></th>
                     <th data-sort="Giá">Giá <i class="fa-solid fa-sort"></i></th>
+                    <th data-sort="Chi Phí">Chi Phí <i class="fa-solid fa-sort"></i></th>
+                    <th>Loại CP</th>
                     <th data-sort="Tiền Phải Thu">Phải Thu <i class="fa-solid fa-sort"></i></th>
                     <th data-sort="Doanh Thu Khác">Doanh Thu <i class="fa-solid fa-sort"></i></th>
                     <th data-sort="Đã Thu">Đã Thu <i class="fa-solid fa-sort"></i></th>
@@ -821,7 +823,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (dataToRender.length === 0) {
             let colCount = 11;
             if (currentTableTab === 'expense') colCount = 6;
-            else if (currentTableTab === 'vua') colCount = 12;
+            else if (currentTableTab === 'vua') colCount = 14;
             else if (currentTableTab === 'adjustment') colCount = 5;
             tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align:center;color:var(--text-light)">Không tìm thấy giao dịch nào.</td></tr>`;
             return;
@@ -841,23 +843,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (currentTableTab === 'expense') {
                 const amount = parseFloat(String(row["Chi Phí"] || "0").replace(/,/g, ''));
+                const isVuaShipping = (row["Loại CP"] === "Vận Chuyển");
+                const opacity = isVuaShipping ? '0.5' : '1';
+                const pointerEvents = isVuaShipping ? 'none' : 'auto';
+
+                tr.style.opacity = opacity;
+
                 tr.innerHTML = `
                     <td data-label="Chọn" style="text-align: center;">
-                        ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `<input type="checkbox" class="row-checkbox" data-row-index="${rowIndex}" style="cursor:pointer;">` : `<input type="checkbox" disabled>`}
+                        ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) && !isVuaShipping ? `<input type="checkbox" class="row-checkbox" data-row-index="${rowIndex}" style="cursor:pointer;">` : `<input type="checkbox" disabled>`}
                     </td>
                     <td data-label="Ngày">${formatDateVietnamese(row.parsedDate)}</td>
                     <td data-label="Loại CP" style="font-weight:600;">${row["Loại CP"] || 'Chi phí'}</td>
                     <td data-label="Ghi chú" title="${row["Ghi Chú Chi Phí"] || row["Ghi Chú"] || ''}">${(row["Ghi Chú Chi Phí"] || row["Ghi Chú"] || '').substring(0, 30)}</td>
                     <td data-label="Số tiền" style="color:#ef4444; font-weight:700;">${formatCurrency(amount)}</td>
                     <td data-label="Thao tác">
-                        <div style="display: flex; gap: 8px; justify-content: center;">
+                        <div style="display: flex; gap: 8px; justify-content: center; ${isVuaShipping ? 'filter: grayscale(1); opacity: 0.5;' : ''}">
                             ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
-                            <button class="action-btn" data-row-index="${rowIndex}" onclick="switchToInlineEdit(this)" title="Sửa" style="color:var(--primary-color);">
+                            <button class="action-btn" data-row-index="${rowIndex}" ${isVuaShipping ? 'disabled' : 'onclick="switchToInlineEdit(this)"'} title="${isVuaShipping ? 'Sửa trong tab Vựa' : 'Sửa'}" style="color:var(--primary-color); ${isVuaShipping ? 'cursor: not-allowed;' : ''}">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </button>
                             ` : ''}
                             ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
-                            <button class="action-btn" data-row-index="${rowIndex}" onclick="deleteRowByIndex(this)" title="Xoá">
+                            <button class="action-btn" data-row-index="${rowIndex}" ${isVuaShipping ? 'disabled' : 'onclick="deleteRowByIndex(this)"'} title="${isVuaShipping ? 'Xóa trong tab Vựa' : 'Xoá'}" style="${isVuaShipping ? 'cursor: not-allowed;' : ''}">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                             ` : (getRole() === 'EMP_LV2' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Khóa'}</span>`)}
@@ -867,6 +875,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (currentTableTab === 'vua') {
                 const pt = parseFloat(String(row["Tiền Phải Thu"] || "0").replace(/[^\d]/g, '')) || 0;
                 const dt = parseFloat(String(row["Doanh Thu Khác"] || "0").replace(/[^\d]/g, '')) || 0;
+                const cp = parseFloat(String(row["Chi Phí"] || "0").replace(/[^\d]/g, '')) || 0;
                 tr.innerHTML = `
                     <td data-label="Chọn" style="text-align: center;">
                         ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `<input type="checkbox" class="row-checkbox" data-row-index="${rowIndex}" style="cursor:pointer;">` : `<input type="checkbox" disabled>`}
@@ -876,6 +885,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td data-label="Loại Bông">${row["Phân Loại Bông"] || ''}</td>
                     <td data-label="SL">${row["Số lượng"] ? row["Số lượng"].toLocaleString('vi-VN') : 0}</td>
                     <td data-label="Giá">${formatCurrency(row["Giá"])}</td>
+                    <td data-label="Chi Phí" style="color:#ef4444; font-weight:600;">${formatCurrency(cp)}</td>
+                    <td data-label="Loại CP">${row["Loại CP"] || ''}</td>
                     <td data-label="Phải Thu" style="color:var(--primary-color); font-weight:600;">${formatCurrency(pt)}</td>
                     <td data-label="Doanh Thu" style="color:#ec4899; font-weight:700;">${formatCurrency(dt)}</td>
                     <td data-label="Đã Thu" style="color:#10b981; font-weight:700;">${formatCurrency(parseFloat(String(row["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0)}</td>
@@ -979,14 +990,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let colCount = 11;
             if (currentTableTab === 'expense') colCount = 6;
-            else if (currentTableTab === 'vua') colCount = 12;
+            else if (currentTableTab === 'vua') colCount = 14;
             else if (currentTableTab === 'adjustment') colCount = 5;
 
             let cellsHtml = '';
             for (let i = 0; i < colCount; i++) {
                 if (currentTableTab === 'adjustment') {
                     if (i === 1) {
-                         cellsHtml += `<td style="text-align: right; color: var(--text-dark);">TỔNG CỘNG:</td>`;
+                        cellsHtml += `<td style="text-align: right; color: var(--text-dark);">TỔNG CỘNG:</td>`;
                     } else if (i === 2) {
                         let totalAdj = 0;
                         dataToRender.forEach(r => {
@@ -999,9 +1010,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     if (i === 4) { // Cột Phân Loại / Số Lượng
                         cellsHtml += `<td style="text-align: right; color: var(--text-dark);">TỔNG CỘNG:</td>`;
-                    } else if (i === 6) { // Cột Doanh Thu
+                    } else if (i === 6 && currentTableTab === 'vua') { // Cột Chi Phí trong tab Vựa
+                        let totalCP = 0;
+                        dataToRender.forEach(r => totalCP += (parseFloat(String(r["Chi Phí"] || "0").replace(/[^\d]/g, '')) || 0));
+                        cellsHtml += `<td style="color: #ef4444; font-size: 1.1rem;">${formatCurrency(totalCP)}</td>`;
+                    } else if (i === 8 && currentTableTab === 'vua') { // Cột Phải Thu trong tab Vựa
+                        let totalPT = 0;
+                        dataToRender.forEach(r => totalPT += (parseFloat(String(r["Tiền Phải Thu"] || "0").replace(/[^\d]/g, '')) || 0));
+                        cellsHtml += `<td style="color: var(--primary-color); font-size: 1.1rem;">${formatCurrency(totalPT)}</td>`;
+                    } else if (i === 9 && currentTableTab === 'vua') { // Cột Doanh Thu trong tab Vựa
+                        let totalDT = 0;
+                        dataToRender.forEach(r => totalDT += (parseFloat(String(r["Doanh Thu Khác"] || "0").replace(/[^\d]/g, '')) || 0));
+                        cellsHtml += `<td style="color: #ec4899; font-size: 1.1rem;">${formatCurrency(totalDT)}</td>`;
+                    } else if (i === 10 && currentTableTab === 'vua') { // Cột Đã Thu trong tab Vựa
+                        let totalPaid = 0;
+                        dataToRender.forEach(r => totalPaid += (parseFloat(String(r["Đã Thu"] || "0").replace(/[^\d]/g, '')) || 0));
+                        cellsHtml += `<td style="color: var(--success); font-size: 1.1rem;">${formatCurrency(totalPaid)}</td>`;
+                    } else if (i === 6 && currentTableTab !== 'vua') { // Cột Doanh Thu (Farm)
                         cellsHtml += `<td style="color: var(--secondary-color); font-size: 1.1rem;">${formatCurrency(totalRevenue)}</td>`;
-                    } else if (i === 7) { // Cột Đã Thu
+                    } else if (i === 7 && currentTableTab !== 'vua') { // Cột Đã Thu (Farm)
                         cellsHtml += `<td style="color: var(--success); font-size: 1.1rem;">${formatCurrency(totalPaid)}</td>`;
                     } else {
                         cellsHtml += `<td></td>`;
@@ -1070,8 +1097,8 @@ document.addEventListener("DOMContentLoaded", () => {
             document.body.style.cursor = 'wait';
 
             // Determine context based on current tab
-            const context = currentTableTab === 'adjustment' ? 'adjustment' : 
-                          (currentTableTab === 'expense' ? 'expense' : 'all');
+            const context = currentTableTab === 'adjustment' ? 'adjustment' :
+                (currentTableTab === 'expense' ? 'expense' : 'all');
 
             const response = await fetch(CONFIG.WEB_APP_URL, {
                 method: "POST",
@@ -1106,6 +1133,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Save original HTML for cancel
         tr.dataset.originalHtml = tr.innerHTML;
+        tr.dataset.rowIndex = idx;
         tr.classList.add('editing-row');
 
         if (currentTableTab === 'expense') {
@@ -1144,6 +1172,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 <td data-label="Loại Bông"><input type="text" class="inline-edit-input" id="edit-flower-type" value="${rowData["Phân Loại Bông"] || ""}"></td>
                 <td data-label="SL"><input type="number" class="inline-edit-input" id="edit-qty" oninput="updateVuaInline('cost')" value="${rowData["Số lượng"] || 0}"></td>
                 <td data-label="Giá"><input type="text" class="inline-edit-input money-input" id="edit-price" oninput="updateVuaInline('cost')" value="${formatMoneyStr(rowData["Giá"] || 0)}"></td>
+                <td data-label="Chi Phí"><input type="text" class="inline-edit-input money-input" id="edit-chi-phi" oninput="updateVuaInline('cost')" value="${formatMoneyStr(rowData["Chi Phí"] || 0)}" style="color:#ef4444; font-weight:700;"></td>
+                <td data-label="Loại CP">
+                    <input type="text" class="inline-edit-input" id="edit-loai-cp" list="expense-types-list" value="${rowData["Loại CP"] || ""}">
+                    <datalist id="expense-types-list">
+                        <option value="Vận Chuyển">
+                        <option value="Vật Tư KD">
+                        <option value="Công">
+                        <option value="Mua Bông">
+                        <option value="Bốc xếp">
+                        <option value="Chi Phí Khác">
+                    </datalist>
+                </td>
                 <td data-label="Phải Thu"><input type="text" class="inline-edit-input money-input" id="edit-phai-thu" oninput="updateVuaInline('phai-thu')" value="${formatMoneyStr(rowData["Tiền Phải Thu"] || 0)}" style="color:var(--primary-color); font-weight:700;"></td>
                 <td data-label="Doanh Thu"><input type="text" class="inline-edit-input money-input" id="edit-doanh-thu" oninput="updateVuaInline('doanh-thu')" value="${formatMoneyStr(rowData["Doanh Thu Khác"] || 0)}" style="color:#ec4899; font-weight:700;"></td>
                 <td data-label="Đã Thu"><input type="text" class="inline-edit-input money-input" id="edit-da-thu" value="${formatMoneyStr(rowData["Đã Thu"] || 0)}" style="color:#10b981; font-weight:700;"></td>
@@ -1161,9 +1201,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </td>
             `;
-            // Ghi lại Chi phí (vận chuyển) vào dataset để tính toán
-            tr.dataset.shipping = rowData["Chi Phí"] || 0;
-            tr.dataset.vattu = rowData["Vật Tư"] || 0;
+            // Store original values and derive hidden costs (Vật Tư)
+            const pt = parseMoney(rowData["Tiền Phải Thu"]);
+            const dt = parseMoney(rowData["Doanh Thu Khác"]);
+            const cp = parseMoney(rowData["Chi Phí"]);
+            const fc = parseMoney(rowData["Doanh Thu Bông"]);
+
+            // Vật Tư = Phải Thu - (FlowerCost + Chi Phí + Doanh Thu)
+            // This captures any fixed material costs or discrepancies
+            const derivedVattu = pt - (fc + cp + dt);
+
+            tr.dataset.flowerCost = fc;
+            tr.dataset.vattu = derivedVattu;
+            tr.dataset.originalChiPhi = cp;
         } else if (currentTableTab === 'adjustment') {
             const adjVal = parseSignedMoney(rowData["Khoản Thu Chi Bất Thường"]);
             tr.innerHTML = `
@@ -1208,32 +1258,50 @@ document.addEventListener("DOMContentLoaded", () => {
             window.updateInlineRevenue();
         }
     };
- 
+
     window.updateVuaInline = function (source) {
         const qtyEl = document.getElementById('edit-qty');
         const priceEl = document.getElementById('edit-price');
         const ptEl = document.getElementById('edit-phai-thu');
         const dtEl = document.getElementById('edit-doanh-thu');
-        if (!qtyEl || !priceEl || !ptEl || !dtEl) return;
+        const cpEl = document.getElementById('edit-chi-phi');
+        if (!qtyEl || !priceEl || !ptEl || !dtEl || !cpEl) return;
 
         const tr = qtyEl.closest('tr');
         const qty = parseFloat(qtyEl.value) || 0;
         const price = parseMoney(priceEl.value);
-        const flowerCost = qty * price;
-        const shipping = parseFloat(tr.dataset.shipping) || 0;
+        const shipping = parseMoney(cpEl.value);
         const vattu = parseFloat(tr.dataset.vattu) || 0;
+
+        // Recalculate flower cost only if qty or price has changed from original
+        // This prevents rounding differences in the sheet from causing jumps in profit
+        let flowerCost = parseFloat(tr.dataset.flowerCost) || 0;
+        const rowIndex = parseInt(tr.dataset.rowIndex);
+        const originalData = dataToRenderRef[rowIndex];
+
+        if (source === 'cost') {
+            // If we are here because of SL or Giá input, we should update flowerCost
+            // But if we are here because of Chi Phí, and SL/Giá are same as original, keep flowerCost
+            if (qty !== parseFloat(originalData["Số lượng"]) || price !== parseMoney(originalData["Giá"])) {
+                flowerCost = qty * price;
+            }
+        } else {
+            // For other sources, always use current inputs
+            flowerCost = qty * price;
+        }
+
         const baseCost = flowerCost + shipping + vattu;
 
         if (source === 'cost') {
-            // Qty hoặc Giá thay đổi -> Cập nhật Phải Thu dựa trên Doanh Thu hiện có
-            const dt = parseMoney(dtEl.value);
-            ptEl.value = formatMoneyStr(baseCost + dt);
+            // Update Profit (Doanh Thu) based on fixed Total (Phải Thu)
+            const pt = parseMoney(ptEl.value);
+            dtEl.value = formatMoneyStr(Math.max(0, pt - baseCost));
         } else if (source === 'phai-thu') {
-            // Phải Thu thay đổi -> Cập nhật Doanh Thu (Packing)
+            // Update Profit (Doanh Thu)
             const pt = parseMoney(ptEl.value);
             dtEl.value = formatMoneyStr(Math.max(0, pt - baseCost));
         } else if (source === 'doanh-thu') {
-            // Doanh Thu thay đổi -> Cập nhật Phải Thu
+            // Update Total (Phải Thu)
             const dt = parseMoney(dtEl.value);
             ptEl.value = formatMoneyStr(baseCost + dt);
         }
@@ -1273,8 +1341,14 @@ document.addEventListener("DOMContentLoaded", () => {
             // 1. Collect Data
             const updates = {};
 
-            // Luôn đảm bảo Loại DT được giữ nguyên hoặc cập nhật đúng theo tab hiện tại nếu đang trống
-            updates["Loại DT"] = originalData["Loại DT"] || (currentTableTab === 'vua' ? 'Vựa' : 'Farm');
+            // Preserve original Loại DT if it exists
+            if (originalData["Loại DT"]) {
+                updates["Loại DT"] = originalData["Loại DT"];
+            } else if (currentTableTab === 'vua') {
+                updates["Loại DT"] = "Vựa";
+            } else if (currentTableTab === 'farm') {
+                updates["Loại DT"] = "Farm";
+            }
 
             if (currentTableTab === 'expense') {
                 updates["Loại CP"] = document.getElementById('edit-exp-type').value;
@@ -1291,6 +1365,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const flowerTypeInput = document.getElementById('edit-flower-type');
                 const qtyInput = document.getElementById('edit-qty');
                 const priceInput = document.getElementById('edit-price');
+                const cpInput = document.getElementById('edit-chi-phi');
+                const loaiCPInput = document.getElementById('edit-loai-cp');
                 const ptInput = document.getElementById('edit-phai-thu');
                 const dtInput = document.getElementById('edit-doanh-thu');
                 const daThuInput = document.getElementById('edit-da-thu');
@@ -1301,9 +1377,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (flowerTypeInput) updates["Phân Loại Bông"] = flowerTypeInput.value;
                 if (qtyInput) updates["Số lượng"] = qtyInput.value;
                 if (priceInput) updates["Giá"] = parseMoney(priceInput.value).toString();
+                if (cpInput) updates["Chi Phí"] = parseMoney(cpInput.value).toString();
+                if (loaiCPInput) updates["Loại CP"] = loaiCPInput.value;
                 if (ptInput) updates["Tiền Phải Thu"] = parseMoney(ptInput.value).toString();
                 if (dtInput) updates["Doanh Thu Khác"] = parseMoney(dtInput.value).toString();
-                if (daThuInput) updates["Đã Thu"] = parseMoney(daThuInput.value).toString();
+                if (daThuInput) {
+                    const daThuVal = parseMoney(daThuInput.value);
+                    // Only update "Đã Thu" if it's not zero to prevent accidental overwriting of existing payments
+                    if (daThuVal !== 0) {
+                        updates["Đã Thu"] = daThuVal.toString();
+                    }
+                }
                 if (statusInput) updates["Status"] = statusInput.value;
                 if (noteInput) updates["Ghi Chú"] = noteInput.value;
 
@@ -1311,7 +1395,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (qtyInput && priceInput) {
                     updates["Doanh Thu Bông"] = (parseFloat(qtyInput.value || 0) * parseMoney(priceInput.value)).toString();
                 }
-                updates["Loại DT"] = "Vựa";
+                if (!updates["Loại DT"]) updates["Loại DT"] = "Vựa";
             } else {
                 // Farm Mode
                 const buyerInput = document.getElementById('edit-buyer');
@@ -1332,7 +1416,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     updates["Giá"] = price.toString();
                     updates["Doanh Thu Bông"] = (parseFloat(updates["Số lượng"] || 0) * price).toString();
                 }
-                updates["Loại DT"] = "Farm";
+                if (!updates["Loại DT"]) updates["Loại DT"] = "Farm";
             }
 
             // 2. Send IN-PLACE Update
@@ -1963,11 +2047,11 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 // Thanh toán một phần: Tạo hàng mới, status để "", nội dung thanh toán một phần ngày xxxxx, đã thu, các hàng khác giữ nguyên
                 showToast(`Đang ghi nhận thanh toán một phần ${formatCurrency(amountToPay)}...`, "info");
-                
+
                 const now = new Date();
                 const fullDateStr = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${now.getFullYear()}`;
                 const fullTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-                
+
                 const payload = {
                     action: "add",
                     token: getToken(),
@@ -1996,7 +2080,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     body: JSON.stringify(payload),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
-                
+
                 const result = await response.json();
                 if (result.status !== "success") throw new Error(result.message);
 
@@ -2106,7 +2190,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const result = await response.json();
             if (result.status !== "success") throw new Error(result.message);
-            
+
             showToast(`Thành công! Đã ghi nhận ${formatCurrency(amountToPay)}.`, "success");
 
             renderDebtTable();
@@ -3014,8 +3098,8 @@ document.addEventListener("DOMContentLoaded", () => {
             // Apply important formatting to specific user-requested rows
             const exactKeywords = [
                 "VỐN CHỦ SỞ HỮU", "TỔNG NỢ PHẢI TRẢ", "TỔNG CỘNG TÀI SẢN",
-                "TỔNG CỘNG NGUỒN VỐN", "LỢI NHUẬN", "ROE", "ROA", 
-                "NỢ/VCSH", "PAYBACK TIME", 
+                "TỔNG CỘNG NGUỒN VỐN", "LỢI NHUẬN", "ROE", "ROA",
+                "NỢ/VCSH", "PAYBACK TIME",
                 "TÀI SẢN DÀI HẠN", "TÀI SẢN NGẮN HẠN"
             ];
             // Match if row starts with keyword or equals keyword (avoiding middle matches like 'Tỷ lệ VCSH')
@@ -3274,16 +3358,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const canvas = document.getElementById('monthlyCombinedChart');
         const container = document.getElementById('MONTHLY_CHART_FIX_CONTAINER');
         const ctx = canvas.getContext('2d');
-        
+
         const isMobile = window.innerWidth <= 768;
         const targetH = isMobile ? (window.innerHeight * 0.85) : 785;
-        
+
         if (container) {
             container.style.height = isMobile ? '90vh' : '825px';
         }
         canvas.style.height = targetH + 'px';
         canvas.height = targetH;
-        
+
         if (monthlyCombinedChartInstance) monthlyCombinedChartInstance.destroy();
 
         monthlyCombinedChartInstance = new Chart(ctx, {
@@ -3317,8 +3401,8 @@ document.addEventListener("DOMContentLoaded", () => {
             options: {
                 responsive: true, maintainAspectRatio: false,
                 layout: { padding: { top: 5, bottom: 20, left: 20, right: 20 } },
-                interaction: { 
-                    mode: 'index', 
+                interaction: {
+                    mode: 'index',
                     intersect: false,
                     axis: 'x'
                 },
@@ -3326,45 +3410,45 @@ document.addEventListener("DOMContentLoaded", () => {
                     x: {
                         stacked: true,
                         grid: { display: false },
-                        ticks: { 
-                            font: { weight: 'bold', size: 14 }, 
+                        ticks: {
+                            font: { weight: 'bold', size: 14 },
                             color: '#000',
-                            autoSkip: false 
+                            autoSkip: false
                         }
                     },
                     y: {
                         type: 'linear', display: true, position: 'left',
                         stacked: true,
                         grace: '20%',
-                        title: { 
-                            display: true, 
-                            text: 'Doanh Thu (VNĐ)', 
-                            font: { weight: 'bold', size: 14 }, 
+                        title: {
+                            display: true,
+                            text: 'Doanh Thu (VNĐ)',
+                            font: { weight: 'bold', size: 14 },
                             color: '#000',
-                            padding: 10 
+                            padding: 10
                         },
                         grid: { color: 'rgba(0,0,0,0.06)', drawBorder: false },
-                        ticks: { 
-                            font: { weight: 'bold', size: 13 }, 
+                        ticks: {
+                            font: { weight: 'bold', size: 13 },
                             color: '#000',
-                            callback: (val) => val.toLocaleString('vi-VN') 
+                            callback: (val) => val.toLocaleString('vi-VN')
                         }
                     },
                     y1: {
-                        type: 'linear', display: true, position: 'right', 
+                        type: 'linear', display: true, position: 'right',
                         grid: { drawOnChartArea: false },
                         grace: '20%',
-                        title: { 
-                            display: true, 
-                            text: 'Sản lượng Bông', 
-                            font: { weight: 'bold', size: 14 }, 
+                        title: {
+                            display: true,
+                            text: 'Sản lượng Bông',
+                            font: { weight: 'bold', size: 14 },
                             color: '#000',
-                            padding: 10 
+                            padding: 10
                         },
-                        ticks: { 
-                            font: { weight: 'bold', size: 13 }, 
+                        ticks: {
+                            font: { weight: 'bold', size: 13 },
                             color: '#000',
-                            callback: (val) => val.toLocaleString('vi-VN') 
+                            callback: (val) => val.toLocaleString('vi-VN')
                         }
                     }
                 },
@@ -3388,20 +3472,20 @@ document.addEventListener("DOMContentLoaded", () => {
                             }
                         }
                     },
-                    legend: { 
-                        position: 'top', 
+                    legend: {
+                        position: 'top',
                         align: 'center',
-                        labels: { 
-                            usePointStyle: true, 
+                        labels: {
+                            usePointStyle: true,
                             padding: 20,
                             font: { weight: 'bold', size: 13 },
                             color: '#000'
-                        } 
+                        }
                     },
-                    title: { 
-                        display: true, 
-                        text: `BIỂU ĐỒ DOANH THU & SẢN LƯỢNG - THÁNG ${month}/${year}`, 
-                        font: { size: 18, weight: 'bold' }, 
+                    title: {
+                        display: true,
+                        text: `BIỂU ĐỒ DOANH THU & SẢN LƯỢNG - THÁNG ${month}/${year}`,
+                        font: { size: 18, weight: 'bold' },
                         padding: { top: 5, bottom: 10 },
                         color: '#000'
                     },
@@ -3409,14 +3493,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         display: (context) => {
                             const val = context.dataset.data[context.dataIndex];
                             if (val <= 0) return false;
-                            
+
                             const wrapper = document.getElementById('monthly-chart-wrapper');
                             const isFullscreen = wrapper && wrapper.style.position === 'fixed';
                             const isLandscape = window.innerWidth > window.innerHeight;
-                            
+
                             // Always show if enough space or desktop
                             if (window.innerWidth > 1024 || isFullscreen || isLandscape) return true;
-                            
+
                             // On mobile, show only for the line chart to avoid clutter, or if specifically important
                             return context.dataset.type === 'line';
                         },
@@ -4081,9 +4165,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!row.parsedDate) return;
             if (row.parsedDate.getFullYear() !== selYear || row.parsedDate.getMonth() + 1 !== selMonth) return;
             const loaiDT = (row["Loại DT"] || "").trim();
-            const valI   = parseFloat(row["Đã Thu"]) || 0;
+            const valI = parseFloat(row["Đã Thu"]) || 0;
             const valExp = parseFloat(row["Chi Phí"]) || 0;
-            const valR   = parseFloat(row["Khoản Thu Chi Bất Thường"]) || 0;
+            const valR = parseFloat(row["Khoản Thu Chi Bất Thường"]) || 0;
             if (loaiDT === "ADJ") {
                 adjTotal += valR;
             } else {
@@ -4097,9 +4181,9 @@ document.addEventListener("DOMContentLoaded", () => {
         // 4. Cập nhật UI
         const cashEl = document.getElementById('kpi-cash-hand');
         const openEl = document.getElementById('cash-opening');
-        const inEl   = document.getElementById('cash-in-total');
-        const outEl  = document.getElementById('cash-out-total');
-        const adjEl  = document.getElementById('cash-adj-total');
+        const inEl = document.getElementById('cash-in-total');
+        const outEl = document.getElementById('cash-out-total');
+        const adjEl = document.getElementById('cash-adj-total');
         const adjRow = document.getElementById('cash-adj-row');
 
         if (cashEl) {
@@ -4107,8 +4191,8 @@ document.addEventListener("DOMContentLoaded", () => {
             cashEl.style.color = currentCash >= 0 ? '#10b981' : '#ef4444';
         }
         if (openEl) openEl.innerText = formatCurrency(openingBalance);
-        if (inEl)   inEl.innerText   = formatCurrency(cashIn);
-        if (outEl)  outEl.innerText  = formatCurrency(cashOut);
+        if (inEl) inEl.innerText = formatCurrency(cashIn);
+        if (outEl) outEl.innerText = formatCurrency(cashOut);
         if (adjEl && adjRow) {
             if (adjTotal !== 0) {
                 adjEl.innerText = (adjTotal > 0 ? '+' : '') + formatCurrency(adjTotal);
@@ -4162,17 +4246,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 showToast(`Đã ghi khoản bất thường ${formatSignedMoneyStr(amount)} — ${note}`, "success");
-                
+
                 // Clear inputs
                 if (inputAdjAmount) inputAdjAmount.value = '';
                 if (inputAdjNote) inputAdjNote.value = '';
-                
+
                 // Sync data
                 if (window.syncData) window.syncData();
             } else throw new Error(res.message || "Lưu thất bại");
-        } catch (e) { 
+        } catch (e) {
             console.error("Lỗi khi lưu khoản bất thường:", e);
-            showToast("Lỗi: " + e.message, "error"); 
+            showToast("Lỗi: " + e.message, "error");
         } finally {
             const btn = document.getElementById('btn-save-adj');
             if (btn) {
@@ -4450,8 +4534,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     bulkDeleteBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang Xoá (${i + 1}/${rowsToDelete.length})...`;
 
-                    const context = currentTableTab === 'adjustment' ? 'adjustment' : 
-                                  (currentTableTab === 'expense' ? 'expense' : 'all');
+                    const context = currentTableTab === 'adjustment' ? 'adjustment' :
+                        (currentTableTab === 'expense' ? 'expense' : 'all');
 
                     const response = await fetch(CONFIG.WEB_APP_URL, {
                         method: "POST",
@@ -5017,21 +5101,21 @@ document.addEventListener("DOMContentLoaded", () => {
     // Fullscreen Chart Logic
     const btnFullscreenMonthly = document.getElementById('btn-fullscreen-monthly-chart');
     const monthlyChartWrapper = document.getElementById('monthly-chart-wrapper');
-    
+
     if (btnFullscreenMonthly && monthlyChartWrapper) {
         const chartContainer = monthlyChartWrapper.querySelector('.chart-container');
         let isFakeFullscreen = false;
-        
+
         btnFullscreenMonthly.addEventListener('click', () => {
             if (!isFakeFullscreen) {
                 isFakeFullscreen = true;
-                
+
                 if (screen.orientation && screen.orientation.lock) {
                     screen.orientation.lock('landscape').catch(e => console.log(e));
                 }
-                
+
                 btnFullscreenMonthly.innerHTML = '<i class="fa-solid fa-compress"></i> <span>Thu Nhỏ</span>';
-                
+
                 // CSS fake fullscreen
                 monthlyChartWrapper.classList.add('force-fullscreen-mode');
                 monthlyChartWrapper.style.setProperty('position', 'fixed', 'important');
@@ -5053,7 +5137,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const updateFullscreenSize = () => {
                     const vW = window.innerWidth;
                     const vH = window.innerHeight;
-                    
+
                     if (vH > vW) {
                         // Portrait orientation -> Rotate to Landscape
                         monthlyChartWrapper.style.setProperty('width', vH + 'px', 'important');
@@ -5097,9 +5181,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     chartContainer.style.setProperty('justify-content', 'center', 'important');
                     chartContainer.style.flex = '1';
                 }
-                
+
                 document.body.style.overflow = 'hidden';
-                
+
                 // Force Chart.js to resize after entering fullscreen
                 setTimeout(() => {
                     const canvas = document.getElementById('monthlyCombinedChart');
@@ -5107,26 +5191,26 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (canvas && container) {
                         canvas.style.setProperty('width', '100%', 'important');
                         canvas.style.setProperty('height', '100%', 'important');
-                        
+
                         if (typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
                             monthlyCombinedChartInstance.resize(container.offsetWidth, container.offsetHeight);
                             monthlyCombinedChartInstance.update('none');
                         }
                     }
                 }, 200);
-                
+
             } else {
                 isFakeFullscreen = false;
-                
+
                 if (screen.orientation && screen.orientation.unlock) {
                     screen.orientation.unlock();
                 }
-                
+
                 btnFullscreenMonthly.innerHTML = '<i class="fa-solid fa-expand"></i> <span>Phóng To</span>';
-                
+
                 // Revert CSS
                 monthlyChartWrapper.classList.remove('force-fullscreen-mode');
-                
+
                 const bottomNav = document.querySelector('.mobile-nav');
                 if (bottomNav) bottomNav.style.display = 'flex';
 
@@ -5156,18 +5240,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 monthlyChartWrapper.style.removeProperty('overflow');
                 monthlyChartWrapper.style.removeProperty('transform');
                 monthlyChartWrapper.style.removeProperty('transform-origin');
-                
+
                 if (chartContainer) {
                     chartContainer.style.removeProperty('flex');
                     chartContainer.style.removeProperty('min-height');
                     chartContainer.style.removeProperty('height');
                 }
-                
+
                 window.removeEventListener('resize', window._updateFullscreenMonthly);
                 delete window._updateFullscreenMonthly;
-                
+
                 document.body.style.overflow = '';
-                
+
                 // Force Chart.js to resize after container dimensions change
                 setTimeout(() => {
                     const canvas = document.getElementById('monthlyCombinedChart');
@@ -5180,7 +5264,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                         canvas.style.height = isMobile ? '85vh' : '785px';
                         canvas.style.width = '100%';
-                        
+
                         if (typeof monthlyCombinedChartInstance !== 'undefined' && monthlyCombinedChartInstance) {
                             monthlyCombinedChartInstance.resize();
                             monthlyCombinedChartInstance.update();

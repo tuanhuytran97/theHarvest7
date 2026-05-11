@@ -64,6 +64,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const handleSend = () => {
         if (isProcessing || pendingData) return;
 
+        // Bậc 2 restriction
+        if (typeof window.getRole === 'function' && window.getRole() === 'EMP_LV2') {
+            addMessage("Tài khoản của bạn là tài khoản bậc 2, vui lòng liên hệ admin để nâng cấp hạng tài khoản", 'ai');
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+            return;
+        }
+
         const text = chatInput.value.trim();
         if (!text) return;
 

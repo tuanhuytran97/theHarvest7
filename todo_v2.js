@@ -15,6 +15,16 @@ if (typeof ChartDataLabels !== 'undefined') {
     Chart.register(ChartDataLabels);
 }
 
+var getRole = () => sessionStorage.getItem("user-role");
+
+function isRestricted() {
+    if (getRole() === 'EMP_LV2') {
+        alert("Tài khoản của bạn là tài khoản bậc 2, không được thực hiện chức năng này. Vui lòng liên hệ admin để nâng cấp hạng tài khoản");
+        return true;
+    }
+    return false;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Tab Navigation (Updated for new Premium UI)
     const navButtons = document.querySelectorAll('.todo-nav-btn');
@@ -54,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addBtn = document.getElementById('add-task-btn');
 
     addBtn?.addEventListener('click', () => {
+        if (isRestricted()) return;
         resetModal();
         document.getElementById('modal-title').innerText = "Thêm Công Việc Mới";
         modal.style.display = 'flex';
@@ -477,6 +488,7 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
     if (date.getTime() === today.getTime()) div.classList.add('today');
 
     div.onclick = () => {
+        if (isRestricted()) return;
         openAddTaskModalWithDate(date);
     };
 
@@ -540,6 +552,7 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
 
         tDiv.onclick = (e) => {
             e.stopPropagation();
+            if (isRestricted()) return;
             editTask(t.id);
         };
         div.appendChild(tDiv);
@@ -674,7 +687,7 @@ function createFocusItemHTML(t, borderColor) {
     const delayHtml = isDelayed ? `<span class="badge badge-status-delay" style="margin-left: 8px;">delay</span>` : '';
 
     return `
-        <div class="focus-item" style="border-left-color: ${borderColor}; opacity: ${isCompleted ? 0.6 : 1}" onclick="editTask('${t.id}')">
+        <div class="focus-item" style="border-left-color: ${borderColor}; opacity: ${isCompleted ? 0.6 : 1}" onclick="if(!isRestricted()) editTask('${t.id}')">
             <div class="focus-item-title" style="${titleStyle}">${escapeHtml(t.task)}${delayHtml}</div>
             <div class="focus-item-meta">
                 <span><i class="fa-regular fa-clock"></i> ${t.deadline ? formatDate(t.deadline) : 'Không hạn'}</span>
@@ -870,10 +883,12 @@ window.openAddTaskModalWithDate = function (date) {
     const d = String(date.getDate()).padStart(2, '0');
     document.getElementById('task-deadline').value = `${y}-${m}-${d}`;
     
+    if (isRestricted()) return;
     document.getElementById('todo-modal').style.display = 'flex';
 }
 
 window.editTask = function (id) {
+    if (isRestricted()) return;
     const t = todoCache.find(x => x.id === id);
     if (!t) return;
 
@@ -900,6 +915,7 @@ window.editTask = function (id) {
 }
 
 async function saveTask() {
+    if (isRestricted()) return;
     const id = document.getElementById('task-id').value;
     const task = document.getElementById('task-name').value.trim();
     const deadline = document.getElementById('task-deadline').value;
@@ -940,6 +956,10 @@ async function saveTask() {
 }
 
 window.updateTaskStatus = async function (id, newStatus) {
+    if (isRestricted()) {
+        renderActiveView(); // Reset select value
+        return;
+    }
     const t = todoCache.find(x => x.id === id);
     if (!t) return;
 
@@ -952,6 +972,7 @@ window.updateTaskStatus = async function (id, newStatus) {
 }
 
 window.deleteTask = async function (id) {
+    if (isRestricted()) return;
     if (!confirm("Bạn có chắc chắn muốn xóa công việc này?")) return;
 
     const res = await callApi("delete_todo_task", { id: id });

@@ -591,37 +591,88 @@ tr:hover {
         min-width: 120px;
     }
 
-    .header-title h1 {
-        font-size: 1.5rem;
-    }
-
     .main-header {
         flex-direction: column;
-        align-items: flex-start;
-        padding: 1.5rem;
-        gap: 1.5rem;
+        align-items: center;
+        text-align: center;
+        padding: 2rem 1.25rem;
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+        border-radius: var(--radius-lg);
+        background: rgba(255, 255, 255, 0.98); /* Higher opacity for mobile over farm bg */
+        border: 1.5px solid white;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+    }
+
+    .header-title {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    .header-title h1 {
+        font-size: 1.85rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .quote-wrapper {
-        flex-direction: row;
-        align-items: center;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 0.5rem;
+        padding: 1.25rem 1rem;
+        background: rgba(99, 102, 241, 0.04);
+        border-radius: var(--radius-md);
+        border: 1px solid rgba(99, 102, 241, 0.1);
+        width: 100%;
     }
 
     .buffett-logo {
-        width: 50px;
-        height: 50px;
+        width: 48px;
+        height: 48px;
+        margin-bottom: 0.25rem;
+        border: 2px solid var(--primary-light);
     }
 
-    .header-title h1 {
-        font-size: 1.8rem;
+    .header-title p {
+        font-size: 0.9rem;
+        line-height: 1.6;
+        font-style: italic;
+        color: var(--text-dark);
+        margin: 0;
+    }
+
+    .header-title p strong {
+        display: block;
+        margin-top: 0.6rem;
+        font-style: normal;
+        font-size: 0.8rem;
+        color: var(--primary);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .header-actions {
         width: 100%;
+        margin-top: 0.5rem;
     }
 
     #add-task-btn {
         width: 100%;
+        padding: 1.1rem;
+        font-size: 1.05rem;
+        font-weight: 800;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
     }
 }
 
