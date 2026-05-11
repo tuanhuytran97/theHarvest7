@@ -1,22 +1,31 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>theHarvest7 | To-Do List Premium</title>
     <!-- Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom Styles -->
     <link rel="stylesheet" href="todo_v2.css">
     <!-- Standalone Reset (not needed when embedded in index.html) -->
     <style>
-        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Inter', system-ui, sans-serif;
             background: #f1f5f9;
-            background-image: radial-gradient(at 0% 0%, rgba(99,102,241,0.05) 0px, transparent 50%),
-                              radial-gradient(at 100% 0%, rgba(16,185,129,0.05) 0px, transparent 50%);
+            background-image: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
             color: #0f172a;
             min-height: 100vh;
             overflow-x: hidden;
@@ -26,15 +35,19 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 </head>
+
 <body>
 
     <div class="todo-standalone-wrapper">
         <header class="main-header glass-card">
             <div class="header-title">
-                <h1><i class="fa-solid fa-leaf" style="font-size: 0.85em; margin-right: 8px; vertical-align: middle; opacity: 0.9;"></i>theHarvest7</h1>
+                <h1><i class="fa-solid fa-leaf"
+                        style="font-size: 0.85em; margin-right: 8px; vertical-align: middle; opacity: 0.9;"></i>theHarvest7
+                </h1>
                 <div class="quote-wrapper">
-                    <img src="warrent_buffet.png" alt="Warren Buffett" class="buffett-logo">
-                    <p>"Sự khác biệt giữa người thành công và người cực kỳ thành công là họ nói 'không' với hầu hết mọi thứ." <br><strong>— Warren Buffett</strong></p>
+                    <img src="Buffet1.png" alt="Warren Buffett" class="buffett-logo">
+                    <p>"Sự khác biệt giữa người thành công và người cực kỳ thành công là họ nói 'không' với hầu hết mọi
+                        thứ." <br><strong>— Warren Buffett</strong></p>
                 </div>
             </div>
             <div class="header-actions">
@@ -90,7 +103,8 @@
         <!-- VIEW: DASHBOARD -->
         <div id="view-dashboard" class="subview" style="display: none;">
             <!-- Dashboard Filters -->
-            <div class="dashboard-controls glass-card" style="display: flex; gap: 1rem; padding: 1.25rem; margin-bottom: 1.5rem; align-items: center; flex-wrap: wrap;">
+            <div class="dashboard-controls glass-card"
+                style="display: flex; gap: 1rem; padding: 1.25rem; margin-bottom: 1.5rem; align-items: center; flex-wrap: wrap;">
                 <div class="control-group" style="display: flex; align-items: center; gap: 0.5rem;">
                     <label style="font-weight: 700; font-size: 0.9rem; color: var(--text-dark);">Xem theo:</label>
                     <select id="dash-month" class="input-modern" style="padding: 0.5rem; width: auto;">
@@ -112,7 +126,8 @@
                         <!-- Will be populated by JS -->
                     </select>
                 </div>
-                <button id="btn-reset-dash-filter" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; background: var(--text-light);">
+                <button id="btn-reset-dash-filter" class="btn-primary"
+                    style="padding: 0.5rem 1rem; font-size: 0.85rem; background: var(--text-light);">
                     <i class="fa-solid fa-rotate-left"></i> Hiện tại
                 </button>
             </div>
@@ -122,29 +137,35 @@
                     <h3>Tổng công việc</h3>
                     <div class="value" id="stat-total">0</div>
                 </div>
-                <div class="glass-card metric-card" style="border-bottom: 4px solid var(--accent);" onclick="applyDashboardFilter('today')">
+                <div class="glass-card metric-card" style="border-bottom: 4px solid var(--accent);"
+                    onclick="applyDashboardFilter('today')">
                     <h3>Hôm nay</h3>
                     <div class="value" id="stat-today" style="color: var(--accent);">0</div>
                 </div>
-                <div class="glass-card metric-card" style="border-bottom: 4px solid var(--primary);" onclick="applyDashboardFilter('inprogress')">
+                <div class="glass-card metric-card" style="border-bottom: 4px solid var(--primary);"
+                    onclick="applyDashboardFilter('inprogress')">
                     <h3>Đang thực hiện</h3>
                     <div class="value" id="stat-inprogress" style="color: var(--primary);">0</div>
                 </div>
-                <div class="glass-card metric-card" style="border-bottom: 4px solid var(--secondary);" onclick="applyDashboardFilter('completed')">
+                <div class="glass-card metric-card" style="border-bottom: 4px solid var(--secondary);"
+                    onclick="applyDashboardFilter('completed')">
                     <h3>Hoàn thành</h3>
                     <div class="value" id="stat-completed" style="color: var(--secondary);">0</div>
                 </div>
-                <div class="glass-card metric-card" style="border-bottom: 4px solid #f59e0b;" onclick="applyDashboardFilter('pending')">
+                <div class="glass-card metric-card" style="border-bottom: 4px solid #f59e0b;"
+                    onclick="applyDashboardFilter('pending')">
                     <h3>Chờ xử lý</h3>
                     <div class="value" id="stat-pending" style="color: #f59e0b;">0</div>
                 </div>
-                <div class="glass-card metric-card" style="border-bottom: 4px solid var(--danger);" onclick="applyDashboardFilter('delayed')">
+                <div class="glass-card metric-card" style="border-bottom: 4px solid var(--danger);"
+                    onclick="applyDashboardFilter('delayed')">
                     <h3>Công việc trễ</h3>
                     <div class="value" id="stat-delayed" style="color: var(--danger);">0</div>
                 </div>
             </div>
 
-            <div class="chart-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+            <div class="chart-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
                 <div class="glass-card chart-container">
                     <h3>Phân bổ Trạng Thái</h3>
                     <canvas id="statusChart"></canvas>
@@ -162,12 +183,18 @@
                 <div class="calendar-header">
                     <div style="display: flex; gap: 1rem;">
                         <select id="cal-month" class="input-modern" style="width: 150px;">
-                            <option value="0">Tháng 1</option><option value="1">Tháng 2</option>
-                            <option value="2">Tháng 3</option><option value="3">Tháng 4</option>
-                            <option value="4">Tháng 5</option><option value="5">Tháng 6</option>
-                            <option value="6">Tháng 7</option><option value="7">Tháng 8</option>
-                            <option value="8">Tháng 9</option><option value="9">Tháng 10</option>
-                            <option value="10">Tháng 11</option><option value="11">Tháng 12</option>
+                            <option value="0">Tháng 1</option>
+                            <option value="1">Tháng 2</option>
+                            <option value="2">Tháng 3</option>
+                            <option value="3">Tháng 4</option>
+                            <option value="4">Tháng 5</option>
+                            <option value="5">Tháng 6</option>
+                            <option value="6">Tháng 7</option>
+                            <option value="7">Tháng 8</option>
+                            <option value="8">Tháng 9</option>
+                            <option value="9">Tháng 10</option>
+                            <option value="10">Tháng 11</option>
+                            <option value="11">Tháng 12</option>
                         </select>
                         <input type="number" id="cal-year" class="input-modern" style="width: 100px;" value="2026">
                     </div>
@@ -181,11 +208,14 @@
         <!-- VIEW: LIST -->
         <div id="view-list" class="subview" style="display: none;">
             <!-- Filters Bar -->
-            <div class="glass-card" style="padding: 1rem; margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+            <div class="glass-card"
+                style="padding: 1rem; margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
                 <div style="flex: 2; min-width: 200px;">
                     <div class="input-with-icon" style="position: relative;">
-                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-light);"></i>
-                        <input type="text" id="filter-search" class="input-modern" placeholder="Tìm kiếm công việc..." style="padding-left: 35px;">
+                        <i class="fa-solid fa-magnifying-glass"
+                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-light);"></i>
+                        <input type="text" id="filter-search" class="input-modern" placeholder="Tìm kiếm công việc..."
+                            style="padding-left: 35px;">
                     </div>
                 </div>
                 <div style="flex: 1; min-width: 150px;">
@@ -209,18 +239,24 @@
                         <option value="Khẩn cấp">Khẩn cấp</option>
                     </select>
                 </div>
-                <button id="btn-clear-filters" class="btn-icon" title="Xóa bộ lọc"><i class="fa-solid fa-filter-circle-xmark"></i></button>
+                <button id="btn-clear-filters" class="btn-icon" title="Xóa bộ lọc"><i
+                        class="fa-solid fa-filter-circle-xmark"></i></button>
             </div>
 
             <div class="glass-card table-container">
                 <table>
                     <thead>
                         <tr>
-                            <th style="width: 25%; cursor: pointer;" onclick="toggleSort('task')">Công Việc <i class="fa-solid fa-sort"></i></th>
-                            <th style="cursor: pointer;" onclick="toggleSort('deadline')">Deadline <i class="fa-solid fa-sort"></i></th>
-                            <th style="cursor: pointer;" onclick="toggleSort('deadline')">Thời Gian <i class="fa-solid fa-sort"></i></th>
-                            <th style="cursor: pointer;" onclick="toggleSort('priority')">Ưu Tiên <i class="fa-solid fa-sort"></i></th>
-                            <th style="cursor: pointer;" onclick="toggleSort('status')">Trạng Thái <i class="fa-solid fa-sort"></i></th>
+                            <th style="width: 25%; cursor: pointer;" onclick="toggleSort('task')">Công Việc <i
+                                    class="fa-solid fa-sort"></i></th>
+                            <th style="cursor: pointer;" onclick="toggleSort('deadline')">Deadline <i
+                                    class="fa-solid fa-sort"></i></th>
+                            <th style="cursor: pointer;" onclick="toggleSort('deadline')">Thời Gian <i
+                                    class="fa-solid fa-sort"></i></th>
+                            <th style="cursor: pointer;" onclick="toggleSort('priority')">Ưu Tiên <i
+                                    class="fa-solid fa-sort"></i></th>
+                            <th style="cursor: pointer;" onclick="toggleSort('status')">Trạng Thái <i
+                                    class="fa-solid fa-sort"></i></th>
                             <th>Phân Loại</th>
                             <th>Ghi Chú</th>
                             <th style="text-align: right;">Thao Tác</th>
@@ -266,7 +302,8 @@
                 </div>
                 <div class="form-group">
                     <label>Ghi chú</label>
-                    <textarea id="task-note" class="input-modern" rows="3" placeholder="Nhập ghi chú chi tiết..."></textarea>
+                    <textarea id="task-note" class="input-modern" rows="3"
+                        placeholder="Nhập ghi chú chi tiết..."></textarea>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
@@ -290,7 +327,8 @@
                         </select>
                     </div>
                 </div>
-                <button id="save-task-btn" class="btn-primary" style="width: 100%; margin-top: 1rem;">Lưu Công Việc</button>
+                <button id="save-task-btn" class="btn-primary" style="width: 100%; margin-top: 1rem;">Lưu Công
+                    Việc</button>
             </div>
         </div>
     </div>
@@ -299,4 +337,5 @@
     <script src="config.js"></script>
     <script src="todo_v2.js"></script>
 </body>
+
 </html>
