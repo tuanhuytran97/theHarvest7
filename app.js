@@ -2702,6 +2702,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const equityPrev = (yearIdx > 1) ? (findValAtCol("VỐN CHỦ SỞ HỮU", yearIdx - 1) || 0) : 0;
             const netProfit = findVal("LỢI NHUẬN SAU THUẾ") || findVal("LỢI NHUẬN") || 0;
 
+            // Balance Sheet KPIs
+            const totalAssets = findVal("TỔNG CỘNG TÀI SẢN") || findVal("TỔNG TÀI SẢN") || 0;
+            const totalDebt = findVal("TỔNG NỢ PHẢI TRẢ") || 0;
+            const vcshGrowth = findVal("(TỶ LỆ TĂNG TRƯỞNG VCSH)") || findVal("TỶ LỆ TĂNG TRƯỞNG VCSH") || findVal("TĂNG TRƯỞNG VCSH") || null;
+
             const formatPct = (val) => {
                 if (typeof val !== 'number') return "N/A";
                 let pct = (Math.abs(val) < 2) ? val * 100 : val;
@@ -2722,8 +2727,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 return res || "0 Months";
             };
 
+            const formatBalanceVal = (val) => {
+                if (typeof val !== 'number' || isNaN(val)) return "N/A";
+                const absVal = Math.abs(val);
+                if (absVal >= 1000000000) return (val / 1000000000).toFixed(2) + ' Tỷ';
+                if (absVal >= 1000000) return (val / 1000000).toFixed(1) + ' Tr';
+                return formatNumber(val);
+            };
+
             const goalVal = findVal("MỤC TIÊU") || 0;
             const remainingGoal = goalVal - equityCurr;
+
+            // Tính màu cho tỷ lệ tăng trưởng VCSH
+            let vcshGrowthPct = null;
+            if (typeof vcshGrowth === 'number') {
+                vcshGrowthPct = Math.abs(vcshGrowth) < 2 ? vcshGrowth * 100 : vcshGrowth;
+            }
+            const vcshColor = vcshGrowthPct !== null ? (vcshGrowthPct > 5 ? '#a7f3d0' : '#fca5a5') : 'white';
+            const vcshIcon = vcshGrowthPct !== null ? (vcshGrowthPct > 5 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down') : 'fa-chart-simple';
 
             container.innerHTML = `
                 <div class="ratio-summary-card">
@@ -2745,6 +2766,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="ratio-summary-card highlight-warning">
                     <span class="ratio-label"><i class="fa-solid fa-hourglass-half"></i> Hoàn Vốn</span>
                     <span class="ratio-value">${formatPayback(payback)}</span>
+                </div>
+
+                <!-- Divider Row 2: Chỉ số bảng cân đối kế toán -->
+                <div class="ratio-row2-divider">
+                    <i class="fa-solid fa-building-columns"></i> Chỉ Số Tài Chính
+                </div>
+                <div class="ratio-summary-card ratio-bs-card" style="background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;">
+                    <span class="ratio-label"><i class="fa-solid fa-vault"></i> Tổng Tài Sản</span>
+                    <span class="ratio-value" style="font-size: 1.3rem !important;">${formatBalanceVal(totalAssets)}</span>
+                </div>
+                <div class="ratio-summary-card ratio-bs-card" style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%) !important;">
+                    <span class="ratio-label"><i class="fa-solid fa-file-invoice-dollar"></i> Tổng Nợ Phải Trả</span>
+                    <span class="ratio-value" style="font-size: 1.3rem !important;">${formatBalanceVal(totalDebt)}</span>
+                </div>
+                <div class="ratio-summary-card ratio-bs-card" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;">
+                    <span class="ratio-label"><i class="fa-solid fa-sack-dollar"></i> Lợi Nhuận</span>
+                    <span class="ratio-value" style="font-size: 1.3rem !important; color: ${typeof netProfit === 'number' && netProfit < 0 ? '#fecaca' : '#ffffff'} !important;">${formatBalanceVal(netProfit)}</span>
+                </div>
+                <div class="ratio-summary-card ratio-bs-card" style="background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%) !important;">
+                    <span class="ratio-label"><i class="fa-solid fa-landmark"></i> Vốn Chủ Sở Hữu</span>
+                    <span class="ratio-value" style="font-size: 1.3rem !important;">${formatBalanceVal(equityCurr)}</span>
+                </div>
+                <div class="ratio-summary-card ratio-bs-card" style="background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%) !important;">
+                    <span class="ratio-label"><i class="fa-solid ${vcshIcon}"></i> Tăng Trưởng VCSH</span>
+                    <span class="ratio-value" style="font-size: 1.3rem !important; color: ${vcshColor} !important;">${vcshGrowthPct !== null ? vcshGrowthPct.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%' : 'N/A'}</span>
                 </div>
             `;
         } catch (e) {
