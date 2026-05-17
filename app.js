@@ -2943,9 +2943,17 @@ document.addEventListener("DOMContentLoaded", () => {
             if (type === "total") rowClass += " total-line";
             if (type === "net") rowClass += " net-profit";
 
+            // Define which categories have hover details
+            const detailLabels = ["Doanh thu Farm", "Company", "Vựa", "Expensed", "Vật Tư", "Mua Bông", "Phân bón", "Thuốc", "Lương", "Lãi", "Chi phí khác"];
+            const hasDetails = detailLabels.includes(label);
+            if (hasDetails) rowClass += " has-details";
+
             return `
-                <div class="${rowClass}">
-                    <span class="statement-label">${label}</span>
+                <div class="${rowClass}" ${hasDetails ? `data-detail-type="${label}"` : ''}>
+                    <span class="statement-label">
+                        ${label}
+                        ${hasDetails ? ` <i class="fa-solid fa-circle-info" style="font-size: 0.75rem; opacity: 0.4; margin-left: 4px; transition: opacity 0.2s;"></i>` : ''}
+                    </span>
                     <div class="comparison-col statement-value">${formatVal(v1)}</div>
                     ${isCmp ? `<div class="comparison-col statement-value" style="color: var(--text-light); text-transform:none;">${formatVal(v2)}</div>` : ''}
                     ${getDiffHtml(v1, v2)}
@@ -2995,6 +3003,209 @@ document.addEventListener("DOMContentLoaded", () => {
         html += renderRow("Lợi nhuận ròng", s1.netProfit, isCmp ? s2.netProfit : 0, "net");
 
         container.innerHTML = isCmp ? `<div class="comparison-table-wrapper">${html}</div>` : html;
+        initCashFlowTooltip();
+    }
+
+    function initCashFlowTooltip() {
+        // Create global tooltip element if not exists
+        let tooltip = document.getElementById('cashflow-tooltip');
+        if (!tooltip) {
+            tooltip = document.createElement('div');
+            tooltip.id = 'cashflow-tooltip';
+            tooltip.className = 'cashflow-tooltip-premium';
+            document.body.appendChild(tooltip);
+        }
+
+        const container = document.getElementById('statement-content');
+        if (!container) return;
+
+        // Clean up listeners if any (though delegation handles it, binding once is clean)
+        // To prevent multiple listener bindings if init is called repeatedly
+        if (container.dataset.tooltipBound === 'true') return;
+        container.dataset.tooltipBound = 'true';
+
+        // Use event delegation for hover
+        container.addEventListener('mouseover', (e) => {
+            const row = e.target.closest('.statement-row.has-details');
+            if (!row) return;
+
+            const type = row.getAttribute('data-detail-type');
+            if (!type) return;
+
+            // Fetch dates from filter inputs
+            const yearSelect = document.getElementById('cashflow-year');
+            const monthSelect = document.getElementById('cashflow-month');
+            const selectedYear = yearSelect ? parseInt(yearSelect.value) : new Date().getFullYear();
+            const selectedMonthStr = monthSelect ? monthSelect.value : "all";
+
+            // Filter transactions
+            let filtered = farmData.filter(item => {
+                const d = item.parsedDate;
+                if (!d || isNaN(d.getTime())) return false;
+                if (d.getFullYear() !== selectedYear) return false;
+                if (selectedMonthStr !== "all" && (d.getMonth() + 1) !== parseInt(selectedMonthStr)) return false;
+                return true;
+            });
+
+            // Specific filtering based on category type
+            if (type === "Doanh thu Farm") {
+                filtered = filtered.filter(item => parseFloat(item["Doanh Thu Bông"]) > 0);
+            } else if (type === "Company") {
+                filtered = filtered.filter(item => {
+                    const typeDT = (item["Loại DT"] || "").trim();
+                    return parseFloat(item["Doanh Thu Khác"]) > 0 && (typeDT === "Company" || typeDT === "");
+                });
+            } else if (type === "Vựa") {
+                filtered = filtered.filter(item => {
+                    const typeDT = (item["Loại DT"] || "").trim().toLowerCase();
+                    return parseFloat(item["Doanh Thu Khác"]) > 0 && (typeDT.includes("vựa") || typeDT.includes("vua"));
+                });
+            } else if (type === "Expensed") {
+                filtered = filtered.filter(item => {
+                    const loaiCP = (item["Loại CP"] || "").trim().toLowerCase();
+                    return parseFloat(item["Chi Phí"]) > 0 && loaiCP === "expensed";
+                });
+            } else if (type === "Vật Tư") {
+                filtered = filtered.filter(item => {
+                    const loaiCP = (item["Loại CP"] || "").trim().toLowerCase();
+                    return parseFloat(item["Chi Phí"]) > 0 && (loaiCP === "vật tư" || loaiCP === "vat tu" || loaiCP === "vật tư kd");
+                });
+            } else if (type === "Mua Bông") {
+                filtered = filtered.filter(item => {
+                    const loaiCP = (item["Loại CP"] || "").trim().toLowerCase();
+                    return parseFloat(item["Chi Phí"]) > 0 && loaiCP === "mua bông";
+                });
+            } else if (type === "Phân bón") {
+                filtered = filtered.filter(item => {
+                    const loaiCP = (item["Loại CP"] || "").trim().toLowerCase();
+                    return parseFloat(item["Chi Phí"]) > 0 && (loaiCP === "phân" || loaiCP === "phan");
+                });
+            } else if (type === "Thuốc") {
+                filtered = filtered.filter(item => {
+                    const loaiCP = (item["Loại CP"] || "").trim().toLowerCase();
+                    return parseFloat(item["Chi Phí"]) > 0 && (loaiCP === "thuốc" || loaiCP === "thuoc");
+                });
+            } else if (type === "Lương") {
+                filtered = filtered.filter(item => {
+                    const loaiCP = (item["Loại CP"] || "").trim().toLowerCase();
+                    return parseFloat(item["Chi Phí"]) > 0 && (loaiCP === "công" || loaiCP === "cong");
+                });
+            } else if (type === "Lãi") {
+                filtered = filtered.filter(item => {
+                    const loaiCP = (item["Loại CP"] || "").trim().toLowerCase();
+                    return parseFloat(item["Chi Phí"]) > 0 && (loaiCP === "lãi" || loaiCP === "lai");
+                });
+            } else if (type === "Chi phí khác") {
+                filtered = filtered.filter(item => {
+                    const loaiCP = (item["Loại CP"] || "").trim().toLowerCase();
+                    const specificTypes = ["expensed", "phân", "phan", "thuốc", "thuoc", "công", "cong", "lãi", "lai", "vật tư", "vat tu", "vật tư kd", "mua bông"];
+                    return parseFloat(item["Chi Phí"]) > 0 && !specificTypes.includes(loaiCP);
+                });
+            }
+
+            // Sort by most recent date first
+            filtered.sort((a, b) => b.parsedDate - a.parsedDate);
+
+            // Limit to 5
+            const limit = 5;
+            const displayList = filtered.slice(0, limit);
+
+            // Icon for tooltip header
+            let iconHtml = '<i class="fa-solid fa-receipt"></i>';
+            if (type.includes("Doanh thu")) iconHtml = '<i class="fa-solid fa-arrow-trend-up" style="color: #34d399;"></i>';
+            else iconHtml = '<i class="fa-solid fa-arrow-trend-down" style="color: #fb7185;"></i>';
+
+            let listHtml = '';
+            if (displayList.length === 0) {
+                listHtml = `<div style="text-align: center; color: #94a3b8; padding: 16px 0;">Không có giao dịch nào trong kỳ.</div>`;
+            } else {
+                listHtml = displayList.map(item => {
+                    const dateStr = formatDateVietnamese(item.parsedDate);
+                    let amount = 0;
+                    let note = '';
+                    let isRevenue = false;
+
+                    if (type === "Doanh thu Farm") {
+                        amount = parseFloat(item["Doanh Thu Bông"]) || 0;
+                        note = `${item["Người Mua"] || ''} - ${item["Phân Loại Bông"] || 'Bông'}`;
+                        isRevenue = true;
+                    } else if (type === "Company") {
+                        amount = parseFloat(item["Doanh Thu Khác"]) || 0;
+                        note = item["Người Mua"] ? `${item["Người Mua"]}: ${item["Ghi Chú"] || ''}` : (item["Ghi Chú"] || 'Doanh thu khác');
+                        isRevenue = true;
+                    } else if (type === "Vựa") {
+                        amount = parseFloat(item["Doanh Thu Khác"]) || 0;
+                        note = `${item["Người Mua"] || 'Vựa'}: ${item["Ghi Chú"] || ''}`;
+                        isRevenue = true;
+                    } else if (type === "Chi phí khác") {
+                        amount = parseFloat(item["Chi Phí"]) || 0;
+                        note = `[${item["Loại CP"] || 'Khác'}] ${item["Ghi Chú Chi Phí"] || item["Ghi Chú"] || ''}`;
+                    } else {
+                        amount = parseFloat(item["Chi Phí"]) || 0;
+                        note = item["Ghi Chú Chi Phí"] || item["Ghi Chú"] || type;
+                    }
+
+                    const amountClass = isRevenue ? 'revenue' : 'expense';
+                    const sign = isRevenue ? '+' : '-';
+
+                    return `
+                        <div class="cashflow-tooltip-item">
+                            <div class="cashflow-tooltip-item-left">
+                                <span class="cashflow-tooltip-date">${dateStr}</span>
+                                <span class="cashflow-tooltip-note" title="${note}">${note}</span>
+                            </div>
+                            <span class="cashflow-tooltip-amount ${amountClass}">${sign}${formatCurrency(amount)}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            const periodText = selectedMonthStr === "all" ? `Năm ${selectedYear}` : `Tháng ${selectedMonthStr}/${selectedYear}`;
+            let footerText = `Hiển thị tối đa ${limit} giao dịch gần nhất`;
+            if (filtered.length > limit) {
+                footerText = `Xem thêm ${filtered.length - limit} giao dịch trong bảng`;
+            }
+
+            tooltip.innerHTML = `
+                <div class="cashflow-tooltip-title">
+                    ${iconHtml}
+                    <span>${type} (${periodText})</span>
+                </div>
+                <div class="cashflow-tooltip-list">
+                    ${listHtml}
+                </div>
+                <div class="cashflow-tooltip-footer">
+                    ${footerText}
+                </div>
+            `;
+
+            // Position and show
+            tooltip.style.display = 'block';
+            // Force reflow
+            tooltip.offsetWidth;
+            tooltip.classList.add('show');
+            
+            // Initial positioning
+            positionTooltip(e, tooltip);
+        });
+
+        container.addEventListener('mousemove', (e) => {
+            const tooltip = document.getElementById('cashflow-tooltip');
+            if (tooltip && tooltip.classList.contains('show')) {
+                positionTooltip(e, tooltip);
+            }
+        });
+
+        container.addEventListener('mouseout', (e) => {
+            const row = e.target.closest('.statement-row.has-details');
+            if (row) {
+                // Only hide if we are actually leaving the row element
+                const related = e.relatedTarget;
+                if (!related || !row.contains(related)) {
+                    hideTooltip();
+                }
+            }
+        });
     }
 
     // --- FINANCIAL REPORT LOGIC ---

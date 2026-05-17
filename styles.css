@@ -3377,6 +3377,151 @@ tr.swiping td:first-child::before {
     }
 }
 
+/* Premium Floating Cashflow Tooltip */
+.cashflow-tooltip-premium {
+  position: absolute;
+  display: none;
+  z-index: 10000;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  color: #f8fafc;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  width: 340px;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.cashflow-tooltip-premium.show {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cashflow-tooltip-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #38bdf8;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cashflow-tooltip-title i {
+  color: #38bdf8;
+}
+
+.cashflow-tooltip-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.cashflow-tooltip-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cashflow-tooltip-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.cashflow-tooltip-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.cashflow-tooltip-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.cashflow-tooltip-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.cashflow-tooltip-item-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  padding-right: 8px;
+  min-width: 0;
+}
+
+.cashflow-tooltip-date {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.cashflow-tooltip-note {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.cashflow-tooltip-amount {
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.cashflow-tooltip-amount.expense {
+  color: #fb7185;
+}
+
+.cashflow-tooltip-amount.revenue {
+  color: #34d399;
+}
+
+.cashflow-tooltip-footer {
+  font-size: 0.7rem;
+  color: #64748b;
+  text-align: center;
+  margin-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 8px;
+}
+
+/* Tooltip activation styles for statement rows */
+.statement-row.has-details {
+  cursor: help;
+  position: relative;
+  transition: background-color 0.2s, padding-left 0.2s;
+}
+
+.statement-row.has-details:hover {
+  background-color: rgba(14, 165, 233, 0.08) !important;
+}
+
+.statement-row.has-details:hover .statement-label i {
+  opacity: 1 !important;
+  color: #0ea5e9;
+}
+
 
 
  / *   - - -   F U L L S C R E E N   C H A R T   S T Y L E S   - - -   * / 
