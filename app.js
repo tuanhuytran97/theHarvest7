@@ -2952,7 +2952,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="${rowClass}" ${hasDetails ? `data-detail-type="${label}"` : ''}>
                     <span class="statement-label">
                         ${label}
-                        ${hasDetails ? ` <i class="cashflow-info-btn fa-solid fa-circle-info" title="Xem chi tiết ${label}"></i>` : ''}
+                        ${hasDetails ? ` <i class="cashflow-info-btn fa-solid fa-circle-info" style="cursor: pointer !important; opacity: 0.55; margin-left: 6px; font-size: 0.82rem; transition: all 0.25s;" title="Xem chi tiết ${label}"></i>` : ''}
                     </span>
                     <div class="comparison-col statement-value">${formatVal(v1)}</div>
                     ${isCmp ? `<div class="comparison-col statement-value" style="color: var(--text-light); text-transform:none;">${formatVal(v2)}</div>` : ''}
@@ -3230,14 +3230,11 @@ document.addEventListener("DOMContentLoaded", () => {
             overlay.addEventListener('click', hideDrawer);
         }
 
-        const container = document.getElementById('statement-content');
-        if (!container) return;
+        if (window.cashflowDrawerBound) return;
+        window.cashflowDrawerBound = true;
 
-        if (container.dataset.drawerBound === 'true') return;
-        container.dataset.drawerBound = 'true';
-
-        // Listen for clicks on the statement info buttons
-        container.addEventListener('click', (e) => {
+        // Listen for clicks globally on document for absolute robustness
+        document.addEventListener('click', (e) => {
             const infoBtn = e.target.closest('.cashflow-info-btn');
             if (!infoBtn) return;
 
