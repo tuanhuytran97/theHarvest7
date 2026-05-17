@@ -3025,8 +3025,24 @@ document.addEventListener("DOMContentLoaded", () => {
             }, 300);
         }
     }
-    // Expose hideDrawer to the global scope for the close button click handler in HTML
+    // Expose hideDrawer and showAllDrawerTransactions to the global scope
     window.hideDrawer = hideDrawer;
+    window.showAllDrawerTransactions = function(total) {
+        const extras = document.querySelectorAll('.cashflow-drawer-panel .extra-item');
+        extras.forEach(el => {
+            el.style.setProperty('display', 'flex', 'important');
+            setTimeout(() => {
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            }, 10);
+        });
+        
+        const moreContainer = document.getElementById('cashflow-drawer-more-container');
+        if (moreContainer) moreContainer.style.display = 'none';
+
+        const footer = document.querySelector('.cashflow-drawer-footer');
+        if (footer) footer.textContent = `Hiển thị toàn bộ ${total} giao dịch gần nhất.`;
+    };
 
     function showDrawerForType(type, btn) {
         let overlay = document.getElementById('cashflow-drawer-overlay');
@@ -3120,9 +3136,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // Sort by date descending
         filtered.sort((a, b) => b.parsedDate - a.parsedDate);
 
-        // Limit to 10
+        // Limit initially to 10
         const limit = 10;
-        const displayList = filtered.slice(0, limit);
 
         // Icon for drawer header
         let iconHtml = '';
@@ -3130,10 +3145,10 @@ document.addEventListener("DOMContentLoaded", () => {
         else iconHtml = '<i class="fa-solid fa-arrow-trend-down" style="color: #fb7185; font-size: 1.2rem;"></i>';
 
         let listHtml = '';
-        if (displayList.length === 0) {
+        if (filtered.length === 0) {
             listHtml = `<div style="text-align: center; color: #94a3b8; padding: 32px 0;">Không có giao dịch nào trong kỳ.</div>`;
         } else {
-            listHtml = displayList.map(item => {
+            listHtml = filtered.map((item, index) => {
                 const dateStr = formatDateVietnamese(item.parsedDate);
                 let amount = 0;
                 let note = '';
@@ -3161,9 +3176,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const amountClass = isRevenue ? 'revenue' : 'expense';
                 const sign = isRevenue ? '+' : '-';
+                const isExtra = index >= limit;
+                const itemClass = isExtra ? 'cashflow-drawer-item extra-item' : 'cashflow-drawer-item';
 
                 return `
-                    <div class="cashflow-drawer-item">
+                    <div class="${itemClass}">
                         <div class="cashflow-drawer-item-left">
                             <span class="cashflow-drawer-date">${dateStr}</span>
                             <span class="cashflow-drawer-note" title="${note}">${note}</span>
@@ -3172,10 +3189,21 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 `;
             }).join('');
+
+            // Append a premium "Xem thêm" button if total filtered items is > 10
+            if (filtered.length > limit) {
+                listHtml += `
+                    <div class="cashflow-drawer-more-container" id="cashflow-drawer-more-container" style="text-align: center; margin-top: 16px;">
+                        <button class="cashflow-drawer-more-btn" onclick="showAllDrawerTransactions(${filtered.length})">
+                            Xem thêm (${filtered.length - limit} giao dịch khác) <i class="fa-solid fa-chevron-down" style="margin-left: 4px;"></i>
+                        </button>
+                    </div>
+                `;
+            }
         }
 
         const periodText = selectedMonthStr === "all" ? `Năm ${selectedYear}` : `Tháng ${selectedMonthStr}/${selectedYear}`;
-        let footerText = `Hiển thị tối đa ${limit} giao dịch gần nhất`;
+        let footerText = `Hiển thị toàn bộ ${filtered.length} giao dịch gần nhất.`;
         if (filtered.length > limit) {
             footerText = `Hiển thị ${limit} trên tổng số ${filtered.length} giao dịch gần nhất. Các giao dịch khác xem tại bảng Nhật ký.`;
         }
@@ -3374,6 +3402,45 @@ document.addEventListener("DOMContentLoaded", () => {
 
             .cashflow-drawer-amount.revenue {
               color: #34d399 !important;
+            }
+
+            /* Extra item styling for smooth reveal */
+            .cashflow-drawer-item.extra-item {
+              display: none !important;
+              opacity: 0;
+              transform: translateY(10px);
+              transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            }
+
+            /* Premium Load More Button Styling */
+            .cashflow-drawer-more-btn {
+              background: rgba(14, 165, 233, 0.15) !important;
+              border: 1px dashed rgba(14, 165, 233, 0.4) !important;
+              color: #38bdf8 !important;
+              padding: 10px 20px !important;
+              font-size: 0.82rem !important;
+              font-weight: 700 !important;
+              border-radius: 8px !important;
+              cursor: pointer !important;
+              transition: all 0.25s ease !important;
+              width: 100% !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              gap: 6px !important;
+              margin-top: 4px !important;
+              margin-bottom: 8px !important;
+            }
+
+            .cashflow-drawer-more-btn:hover {
+              background: rgba(14, 165, 233, 0.25) !important;
+              border-color: #38bdf8 !important;
+              transform: translateY(-1px) !important;
+              box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2) !important;
+            }
+
+            .cashflow-drawer-more-btn:active {
+              transform: translateY(0) !important;
             }
 
             /* Footer */
