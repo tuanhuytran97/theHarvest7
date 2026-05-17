@@ -3212,7 +3212,186 @@ document.addEventListener("DOMContentLoaded", () => {
         panel.classList.add('show');
     }
 
+    function injectDrawerStyles() {
+        if (document.getElementById('cashflow-drawer-styles')) return;
+        const style = document.createElement('style');
+        style.id = 'cashflow-drawer-styles';
+        style.textContent = `
+            /* Premium Cashflow Details Side Drawer */
+            .cashflow-drawer-overlay {
+              position: fixed !important;
+              top: 0 !important;
+              left: 0 !important;
+              width: 100vw !important;
+              height: 100vh !important;
+              background: rgba(15, 23, 42, 0.4) !important;
+              backdrop-filter: blur(8px) !important;
+              -webkit-backdrop-filter: blur(8px) !important;
+              z-index: 100000 !important;
+              opacity: 0 !important;
+              visibility: hidden !important;
+              transition: opacity 0.3s ease, visibility 0.3s ease !important;
+              display: none;
+            }
+
+            .cashflow-drawer-overlay.show {
+              opacity: 1 !important;
+              visibility: visible !important;
+            }
+
+            .cashflow-drawer-panel {
+              position: fixed !important;
+              top: 0 !important;
+              right: -420px !important; /* Slide out of view */
+              width: 400px !important;
+              height: 100vh !important;
+              background: rgba(15, 23, 42, 0.96) !important;
+              backdrop-filter: blur(20px) !important;
+              -webkit-backdrop-filter: blur(20px) !important;
+              border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
+              box-shadow: -10px 0 30px rgba(0, 0, 0, 0.4) !important;
+              z-index: 100001 !important;
+              display: none;
+              flex-direction: column !important;
+              color: #f8fafc !important;
+              font-family: 'Inter', sans-serif !important;
+              transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+              box-sizing: border-box !important;
+            }
+
+            @media (max-width: 576px) {
+              .cashflow-drawer-panel {
+                width: 100% !important;
+                right: -100% !important;
+              }
+            }
+
+            .cashflow-drawer-panel.show {
+              right: 0 !important;
+            }
+
+            /* Header */
+            .cashflow-drawer-header {
+              padding: 24px !important;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+              display: flex !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+            }
+
+            .cashflow-drawer-title {
+              font-size: 1.1rem !important;
+              font-weight: 800 !important;
+              color: #38bdf8 !important;
+              display: flex !important;
+              align-items: center !important;
+              gap: 8px !important;
+            }
+
+            .cashflow-drawer-close {
+              background: none !important;
+              border: none !important;
+              color: #94a3b8 !important;
+              font-size: 1.2rem !important;
+              cursor: pointer !important;
+              transition: color 0.2s, transform 0.2s !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              padding: 4px !important;
+            }
+
+            .cashflow-drawer-close:hover {
+              color: #f8fafc !important;
+              transform: rotate(90deg) !important;
+            }
+
+            /* Content Body */
+            .cashflow-drawer-body {
+              padding: 24px !important;
+              flex: 1 !important;
+              overflow-y: auto !important;
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 16px !important;
+            }
+
+            /* Transaction List */
+            .cashflow-drawer-list {
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 12px !important;
+            }
+
+            .cashflow-drawer-item {
+              background: rgba(255, 255, 255, 0.03) !important;
+              border: 1px solid rgba(255, 255, 255, 0.06) !important;
+              border-radius: 8px !important;
+              padding: 14px !important;
+              display: flex !important;
+              justify-content: space-between !important;
+              align-items: flex-start !important;
+              transition: background 0.2s, transform 0.2s !important;
+            }
+
+            .cashflow-drawer-item:hover {
+              background: rgba(255, 255, 255, 0.06) !important;
+              transform: translateY(-2px) !important;
+            }
+
+            .cashflow-drawer-item-left {
+              display: flex !important;
+              flex-direction: column !important;
+              gap: 4px !important;
+              flex: 1 !important;
+              padding-right: 12px !important;
+              min-width: 0 !important;
+            }
+
+            .cashflow-drawer-date {
+              font-size: 0.75rem !important;
+              color: #94a3b8 !important;
+              font-weight: 600 !important;
+            }
+
+            .cashflow-drawer-note {
+              font-size: 0.85rem !important;
+              color: #e2e8f0 !important;
+              line-height: 1.4 !important;
+              word-break: break-word !important;
+            }
+
+            .cashflow-drawer-amount {
+              font-weight: 800 !important;
+              font-family: 'Inter', sans-serif !important;
+              font-size: 0.95rem !important;
+              white-space: nowrap !important;
+            }
+
+            .cashflow-drawer-amount.expense {
+              color: #fb7185 !important;
+            }
+
+            .cashflow-drawer-amount.revenue {
+              color: #34d399 !important;
+            }
+
+            /* Footer */
+            .cashflow-drawer-footer {
+              padding: 20px 24px !important;
+              background: rgba(0, 0, 0, 0.2) !important;
+              border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+              font-size: 0.78rem !important;
+              color: #64748b !important;
+              text-align: center !important;
+              line-height: 1.4 !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     function initCashFlowDrawer() {
+        injectDrawerStyles();
         // Create global drawer elements if not exists
         let overlay = document.getElementById('cashflow-drawer-overlay');
         let panel = document.getElementById('cashflow-drawer-panel');
