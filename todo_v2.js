@@ -95,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Calendar Controls
     document.getElementById('cal-month')?.addEventListener('change', renderCalendar);
     document.getElementById('cal-year')?.addEventListener('change', renderCalendar);
+    document.getElementById('cal-category')?.addEventListener('change', renderCalendar);
 
     // Filter Controls
     document.getElementById('filter-search')?.addEventListener('input', renderTable);
@@ -272,17 +273,27 @@ function renderActiveView() {
 }
 
 function updateCategoryFilterOptions() {
-    const filterCat = document.getElementById('filter-category');
-    if (!filterCat) return;
-
-    const currentVal = filterCat.value;
     const categories = [...new Set(todoCache.map(t => t.category || 'Chung'))].sort();
-    
-    let html = '<option value="">Tất cả phân loại</option>';
-    categories.forEach(c => {
-        html += `<option value="${c}" ${c === currentVal ? 'selected' : ''}>${c}</option>`;
-    });
-    filterCat.innerHTML = html;
+
+    const filterCat = document.getElementById('filter-category');
+    if (filterCat) {
+        const currentVal = filterCat.value;
+        let html = '<option value="">Tất cả phân loại</option>';
+        categories.forEach(c => {
+            html += `<option value="${c}" ${c === currentVal ? 'selected' : ''}>${c}</option>`;
+        });
+        filterCat.innerHTML = html;
+    }
+
+    const calCat = document.getElementById('cal-category');
+    if (calCat) {
+        const currentVal = calCat.value;
+        let html = '<option value="">Tất cả phân loại</option>';
+        categories.forEach(c => {
+            html += `<option value="${c}" ${c === currentVal ? 'selected' : ''}>${c}</option>`;
+        });
+        calCat.innerHTML = html;
+    }
 }
 
 // --- RENDERING: TABLE ---
@@ -334,7 +345,7 @@ function renderTable() {
         }
 
         const matchesPriority = !priorityFilter || t.priority === priorityFilter;
-        const matchesCategory = !categoryFilter || t.category === categoryFilter;
+        const matchesCategory = !categoryFilter || (t.category || 'Chung') === categoryFilter;
 
         let matchesMonthYear = true;
         if (t.deadlineDate) {
@@ -499,6 +510,8 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
     const m = date.getMonth();
     const y = date.getFullYear();
 
+    const categoryFilter = document.getElementById('cal-category')?.value || '';
+
     // Find tasks: Tasks due on this date OR (if cell is today) overdue tasks
     const dayTasks = todoCache.filter(t => {
         if (!t.deadline) return false;
@@ -511,7 +524,11 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
         const isTodayCell = date.getTime() === today.getTime();
         const isOverdue = dl.getTime() < today.getTime() && t.status !== 'Hoàn thành' && t.status !== 'Hủy bỏ';
 
-        return isSameDay || (isTodayCell && isOverdue);
+        if (!(isSameDay || (isTodayCell && isOverdue))) return false;
+
+        // Apply category filter (falsy categories default to 'Chung')
+        const matchesCategory = !categoryFilter || (t.category || 'Chung') === categoryFilter;
+        return matchesCategory;
     });
 
     // Sort tasks by priority

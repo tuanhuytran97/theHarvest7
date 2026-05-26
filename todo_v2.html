@@ -181,7 +181,7 @@
         <div id="view-calendar" class="subview">
             <div class="glass-card calendar-wrapper">
                 <div class="calendar-header">
-                    <div style="display: flex; gap: 1rem;">
+                    <div style="display: flex; gap: 1rem; align-items: center;">
                         <select id="cal-month" class="input-modern" style="width: 150px;">
                             <option value="0">Tháng 1</option>
                             <option value="1">Tháng 2</option>
@@ -197,6 +197,9 @@
                             <option value="11">Tháng 12</option>
                         </select>
                         <input type="number" id="cal-year" class="input-modern" style="width: 100px;" value="2026">
+                        <select id="cal-category" class="input-modern" style="width: 180px;">
+                            <option value="">Tất cả phân loại</option>
+                        </select>
                     </div>
                 </div>
                 <div id="calendar-grid" class="calendar-grid">

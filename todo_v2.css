@@ -522,6 +522,7 @@ tr:hover {
     
     #cal-month { width: 100px !important; }
     #cal-year { width: 80px !important; }
+    #cal-category { width: 110px !important; }
 
     .calendar-grid {
         gap: 0px !important; /* Remove gap to save space */
