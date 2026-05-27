@@ -424,24 +424,92 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- UTILS FOR MONEY INPUTS ---
     document.addEventListener('input', (e) => {
         if (e.target.classList.contains('money-input')) {
-            const val = parseMoney(e.target.value);
-            e.target.value = val === 0 ? "0" : formatMoneyStr(val);
+            const input = e.target;
+            const originalValue = input.value;
+            const selectionStart = input.selectionStart;
+            
+            // Đếm số lượng chữ số nằm trước con trỏ trước khi format
+            const valBeforeCursor = originalValue.substring(0, selectionStart);
+            const digitsBeforeCursor = valBeforeCursor.replace(/[^\d]/g, '').length;
+            
+            const val = parseMoney(originalValue);
+            const formatted = val === 0 ? "0" : formatMoneyStr(val);
+            
+            input.value = formatted;
+            
+            // Định vị lại con trỏ chuột dựa vào số lượng chữ số đã đếm
+            try {
+                if (input.setSelectionRange) {
+                    let newCursorPosition = 0;
+                    let digitCount = 0;
+                    for (let i = 0; i < formatted.length; i++) {
+                        if (/\d/.test(formatted[i])) {
+                            digitCount++;
+                        }
+                        newCursorPosition = i + 1;
+                        if (digitCount === digitsBeforeCursor) {
+                            break;
+                        }
+                    }
+                    if (digitsBeforeCursor === 0) {
+                        newCursorPosition = formatted.startsWith('0') ? 1 : 0;
+                    }
+                    input.setSelectionRange(newCursorPosition, newCursorPosition);
+                }
+            } catch (err) {
+                console.warn("setSelectionRange error:", err);
+            }
         }
+        
         if (e.target.classList.contains('money-input-signed')) {
-            let valStr = e.target.value.trim();
+            const input = e.target;
+            const originalValue = input.value.trim();
+            const selectionStart = input.selectionStart;
+            
+            // Đếm chữ số và ký tự dấu (+/-) trước con trỏ
+            const valBeforeCursor = originalValue.substring(0, selectionStart);
+            const digitsBeforeCursor = valBeforeCursor.replace(/[^\d]/g, '').length;
+            const hasSignBeforeCursor = valBeforeCursor.startsWith('+') || valBeforeCursor.startsWith('-');
+            
             let sign = "";
-            if (valStr.startsWith('+')) sign = "+";
-            else if (valStr.startsWith('-')) sign = "-";
+            if (originalValue.startsWith('+')) sign = "+";
+            else if (originalValue.startsWith('-')) sign = "-";
 
-            const numStr = valStr.replace(/[^\d]/g, '');
+            const numStr = originalValue.replace(/[^\d]/g, '');
             const num = parseFloat(numStr) || 0;
 
+            let formatted = "";
             if (numStr === "" && sign !== "") {
-                e.target.value = sign;
+                formatted = sign;
             } else if (numStr === "" && sign === "") {
-                e.target.value = "";
+                formatted = "";
             } else {
-                e.target.value = sign + new Intl.NumberFormat('vi-VN').format(num);
+                formatted = sign + new Intl.NumberFormat('vi-VN').format(num);
+            }
+            
+            input.value = formatted;
+            
+            // Định vị lại con trỏ chuột
+            try {
+                if (input.setSelectionRange) {
+                    let newCursorPosition = 0;
+                    let digitCount = 0;
+                    for (let i = 0; i < formatted.length; i++) {
+                        if (/\d/.test(formatted[i])) {
+                            digitCount++;
+                        }
+                        newCursorPosition = i + 1;
+                        if (digitCount === digitsBeforeCursor) {
+                            break;
+                        }
+                    }
+                    if (hasSignBeforeCursor && newCursorPosition === 0) {
+                        newCursorPosition = 1;
+                    }
+                    input.setSelectionRange(newCursorPosition, newCursorPosition);
+                }
+            } catch (err) {
+                console.warn("setSelectionRange error:", err);
             }
         }
     });
@@ -1772,13 +1840,31 @@ document.addEventListener("DOMContentLoaded", () => {
         // Sắp xếp ngày từ cũ đến mới (Oldest first)
         const sortedTx = [...buyerObj.transactions].sort((a, b) => a.rawDate - b.rawDate);
 
+        // Tìm ngày có khoản đã thu gần nhất để chặn thao tác lẻ các ngày trước đó
+        let latestPaymentDate = 0;
+        sortedTx.forEach(t => {
+            if (t.paid > 0) {
+                latestPaymentDate = Math.max(latestPaymentDate, t.rawDate);
+            }
+        });
+
         // sortedTx.forEach loop continues...
         sortedTx.forEach((t, idx) => {
             sumQty += (t.totalQty || 0);
             sumExpected += (t.totalExpected || 0);
             sumPaid += (t.paid || 0);
 
-            const remaining = t.totalExpected - t.paid;
+            const isBeforePayment = t.rawDate <= latestPaymentDate;
+
+            let remaining = 0;
+            t.lines.forEach(l => {
+                const status = (l.rawRow["Status"] || "").trim().toLowerCase();
+                if (status !== "xong") {
+                    const lineExpected = l.isVua ? (parseFloat(l.rawRow["Tiền Phải Thu"]) || 0) : (parseFloat(l.rawRow["Doanh Thu Bông"]) || 0);
+                    const linePaid = parseFloat(l.rawRow["Đã Thu"]) || 0;
+                    remaining += Math.max(0, lineExpected - linePaid);
+                }
+            });
             const parts = t.dateStr.split('/');
             let shortDate = t.dateStr;
             if (parts.length === 3) {
@@ -1794,15 +1880,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 .map(l => {
                     const unitPriceLabel = l.price ? ` x ${formatCurrency(l.price)}` : '';
                     return `
-                <div class="line-item-row">
-                    <span style="color: #475569;">${l.qty} ${l.flowerType}${unitPriceLabel}</span>
-                    <span style="font-weight: 600; color: #1e293b;">${formatCurrency(l.isVua ? l.rawRow["Tiền Phải Thu"] : l.dtBong)}</span>
+                <div class="line-item-row" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed #f1f5f9;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="color: #475569; font-size: 0.88rem;">${l.qty} ${l.flowerType}${unitPriceLabel}</span>
+                        <button class="btn-edit-line" data-row="${l.rawRow._sheetRowNumber}" data-qty="${l.qty}" data-price="${l.price}" data-flowertype="${l.flowerType}" data-isvua="${l.isVua}"
+                            style="background: none; border: none; color: #6366f1; cursor: pointer; padding: 2px 6px; font-size: 0.8rem; display: inline-flex; align-items: center; border-radius: 4px; transition: all 0.2s;" title="Chỉnh sửa đơn giá, số lượng">
+                            <i class="fa-solid fa-pen" style="pointer-events: none;"></i>
+                        </button>
+                    </div>
+                    <span style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">${formatCurrency(l.isVua ? l.rawRow["Tiền Phải Thu"] : l.dtBong)}</span>
                 </div>
             `}).join('');
 
             invoiceItem.innerHTML = `
-                <div class="invoice-item-main" style="align-items: center;">
-                    <div class="invoice-item-info">
+                <div class="invoice-item-main" style="align-items: center; display: flex; gap: 8px;">
+                    <div style="display: flex; align-items: center; justify-content: center; padding: 4px 0 4px 6px; width: 18px; height: 18px;">
+                        ${(t.totalExpected === 0 || isBeforePayment) ? 
+                            '' : 
+                            `<input type="checkbox" class="tx-select-checkbox" data-txkey="${t.key}" style="cursor: pointer; width: 18px; height: 18px; accent-color: #6366f1;">`
+                        }
+                    </div>
+                    <div class="invoice-item-info" style="flex: 1;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                             <span style="font-weight: 700; color: #1e293b; font-size: 0.95rem;">
                                 📅 ${shortDate}
@@ -1818,18 +1916,23 @@ document.addEventListener("DOMContentLoaded", () => {
                             </button>
                             ${t.paid > 0 ? `<span class="invoice-badge-paid"><i class="fa-solid fa-circle-check"></i> Đã thu: ${formatCurrency(t.paid)}</span>` : ''}
                         </div>
-                        
-                        <div class="invoice-item-details" id="details-${idx}">
-                            ${linesHtml}
-                        </div>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 110px;">
-                        <button class="btn-pay-row ${t.isVua ? 'vua' : ''}" data-txkey="${t.key}">
-                            <i class="fa-solid fa-money-bill-transfer"></i> Thu tiền
-                        </button>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 100px;">
+                        ${isBeforePayment ? 
+                            `<button class="btn-pay-row disabled-lock" style="background: #e2e8f0; color: #94a3b8; border-color: #cbd5e1; cursor: not-allowed; opacity: 0.7;" disabled title="Toa cũ trước ngày có thanh toán gộp. Hãy dùng chức năng Gạch nợ lũy kế trên sổ nợ.">
+                                <i class="fa-solid fa-lock" style="font-size: 0.75rem;"></i> Khóa
+                             </button>` :
+                            `<button class="btn-pay-row ${t.isVua ? 'vua' : ''}" data-txkey="${t.key}">
+                                <i class="fa-solid fa-money-bill-transfer"></i> Thu tiền
+                             </button>`
+                        }
                         ${remaining > 0 ? `<div style="font-size: 0.7rem; color: var(--danger); font-weight: 700;">Còn phải thu: ${formatCurrency(remaining)}</div>` : ''}
                     </div>
+                </div>
+                
+                <div class="invoice-item-details" id="details-${idx}">
+                    ${linesHtml}
                 </div>
             `;
 
@@ -1852,6 +1955,91 @@ document.addEventListener("DOMContentLoaded", () => {
                 paySingleTransaction(t);
             });
         });
+
+        // Xử lý Checkbox & Chọn Tất Cả
+        const chkSelectAll = document.getElementById('chk-select-all-tx');
+        const selectedCountLabel = document.getElementById('selected-tx-count');
+        const btnPaySelected = document.getElementById('btn-pay-selected');
+        const btnPaySelectedCount = document.getElementById('btn-pay-selected-count');
+
+        if (chkSelectAll) {
+            chkSelectAll.checked = false; // Reset
+        }
+        if (selectedCountLabel) {
+            selectedCountLabel.style.display = 'none';
+        }
+        if (btnPaySelected) {
+            btnPaySelected.style.display = 'none';
+        }
+
+        function updateSelectionState() {
+            const allCheckboxes = txList.querySelectorAll('.tx-select-checkbox:not(:disabled)');
+            const checkedBoxes = Array.from(allCheckboxes).filter(cb => cb.checked);
+            const count = checkedBoxes.length;
+
+            if (selectedCountLabel) {
+                if (count > 0) {
+                    selectedCountLabel.innerText = `Đang chọn: ${count} ngày`;
+                    selectedCountLabel.style.display = 'inline';
+                } else {
+                    selectedCountLabel.style.display = 'none';
+                }
+            }
+
+            if (btnPaySelected) {
+                if (count > 0) {
+                    btnPaySelected.style.display = 'flex';
+                    if (btnPaySelectedCount) btnPaySelectedCount.innerText = count;
+                } else {
+                    btnPaySelected.style.display = 'none';
+                }
+            }
+
+            if (chkSelectAll) {
+                chkSelectAll.checked = count === allCheckboxes.length && allCheckboxes.length > 0;
+            }
+        }
+
+        if (chkSelectAll) {
+            const handleSelectAll = () => {
+                const val = chkSelectAll.checked;
+                const allCheckboxes = txList.querySelectorAll('.tx-select-checkbox:not(:disabled)');
+                allCheckboxes.forEach(cb => {
+                    cb.checked = val;
+                });
+                updateSelectionState();
+            };
+            chkSelectAll.onclick = handleSelectAll;
+            chkSelectAll.onchange = handleSelectAll;
+        }
+
+        // Delegated events for all dynamically loaded checkboxes in the list
+        txList.addEventListener('change', (e) => {
+            if (e.target && e.target.classList.contains('tx-select-checkbox')) {
+                updateSelectionState();
+            }
+        });
+        txList.addEventListener('click', (e) => {
+            if (e.target && e.target.classList.contains('tx-select-checkbox')) {
+                updateSelectionState();
+            }
+        });
+
+        // Delegated click event for edit product line button
+        txList.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-edit-line');
+            if (btn) {
+                const row = parseInt(btn.getAttribute('data-row'));
+                const qty = parseFloat(btn.getAttribute('data-qty'));
+                const price = parseFloat(btn.getAttribute('data-price'));
+                const flowerType = btn.getAttribute('data-flowertype');
+                const isVua = btn.getAttribute('data-isvua') === 'true';
+
+                editTransactionLine({ row, qty, price, flowerType, isVua });
+            }
+        });
+
+
 
         document.getElementById('detail-total-qty').innerText = sumQty.toLocaleString('vi-VN') + ' bông';
         document.getElementById('detail-total-amount').innerText = formatCurrency(sumExpected);
@@ -1910,6 +2098,124 @@ document.addEventListener("DOMContentLoaded", () => {
             btnConfirm.addEventListener('click', onConfirm);
             btnCancel.addEventListener('click', onCancel);
         });
+     }
+
+    // Custom Modal for Editing Transaction line
+    async function editTransactionLine(lineObj) {
+        if (!isAuthorizedForDebt()) {
+            alert("Bạn không có quyền thực hiện chỉnh sửa!");
+            return;
+        }
+
+        const modal = document.getElementById('modal-edit-line');
+        const inputQty = document.getElementById('input-edit-qty');
+        const inputPrice = document.getElementById('input-edit-price');
+        const textTotal = document.getElementById('text-edit-total');
+        const subtitleEl = document.getElementById('modal-edit-line-subtitle');
+        const btnConfirm = document.getElementById('btn-confirm-edit-line');
+        const btnCancel = document.getElementById('btn-cancel-edit-line');
+
+        // Set initial values
+        subtitleEl.innerText = `Đang sửa đơn: ${lineObj.flowerType}`;
+        inputQty.value = lineObj.qty;
+        inputPrice.value = formatMoneyStr(lineObj.price);
+
+        function updateModalTotal() {
+            const q = parseFloat(inputQty.value) || 0;
+            const p = parseMoney(inputPrice.value) || 0;
+            textTotal.innerText = formatCurrency(q * p);
+        }
+
+        updateModalTotal();
+
+        // Show modal
+        modal.style.display = 'flex';
+        setTimeout(() => inputQty.focus(), 100);
+
+        // Listeners for auto-calculation
+        const onQtyInput = () => updateModalTotal();
+        const onPriceInput = (e) => {
+            const val = parseMoney(e.target.value);
+            e.target.value = val === 0 ? "" : formatMoneyStr(val);
+            updateModalTotal();
+        };
+
+        inputQty.addEventListener('input', onQtyInput);
+        inputPrice.addEventListener('input', onPriceInput);
+
+        const closeEditModal = () => {
+            modal.style.display = 'none';
+            inputQty.removeEventListener('input', onQtyInput);
+            inputPrice.removeEventListener('input', onPriceInput);
+        };
+
+        return new Promise((resolve) => {
+            const onConfirm = async () => {
+                const newQty = parseFloat(inputQty.value) || 0;
+                const newPrice = parseMoney(inputPrice.value) || 0;
+
+                if (newQty <= 0 || newPrice <= 0) {
+                    alert("Số lượng và đơn giá phải lớn hơn 0.");
+                    return;
+                }
+
+                closeEditModal();
+                document.body.style.cursor = 'wait';
+
+                try {
+                    showToast(`Đang cập nhật dòng đơn hàng...`, "info");
+                    
+                    const updates = {
+                        "Số lượng": newQty,
+                        "Giá": newPrice
+                    };
+
+                    if (lineObj.isVua) {
+                        updates["Tiền Phải Thu"] = newQty * newPrice;
+                    } else {
+                        updates["Doanh Thu Bông"] = newQty * newPrice;
+                    }
+
+                    const response = await fetch(CONFIG.WEB_APP_URL, {
+                        method: "POST",
+                        body: JSON.stringify({
+                            action: "update",
+                            rowNumber: lineObj.row,
+                            updates: updates,
+                            token: getToken()
+                        }),
+                        headers: { "Content-Type": "text/plain;charset=utf-8" }
+                    });
+
+                    const result = await response.json();
+                    if (result.status !== "success") {
+                        throw new Error(result.message || "Lỗi khi cập nhật Google Sheets");
+                    }
+
+                    showToast("Đã cập nhật dòng đơn hàng thành công!", "success");
+                    renderDebtTable();
+                    
+                    // Trigger sync
+                    const syncBtnGlobal = document.getElementById('sync-gsheet-btn');
+                    if (syncBtnGlobal) syncBtnGlobal.click();
+
+                } catch (err) {
+                    console.error(err);
+                    alert("Lỗi khi cập nhật dòng đơn hàng: " + err.message);
+                } finally {
+                    document.body.style.cursor = 'default';
+                }
+            };
+
+            const onCancel = () => {
+                closeEditModal();
+                btnConfirm.removeEventListener('click', onConfirm);
+                btnCancel.removeEventListener('click', onCancel);
+            };
+
+            btnConfirm.onclick = onConfirm;
+            btnCancel.onclick = onCancel;
+        });
     }
 
     // Process payment calls
@@ -1954,7 +2260,15 @@ document.addEventListener("DOMContentLoaded", () => {
             if (remainingPayment <= 0 && !isFull) break;
 
             const t = sortedTxAsc[i];
-            const currentDebt = t.totalExpected - t.paid;
+            let currentDebt = 0;
+            t.lines.forEach(l => {
+                const status = (l.rawRow["Status"] || "").trim().toLowerCase();
+                if (status !== "xong") {
+                    const lineExpected = l.isVua ? (parseFloat(l.rawRow["Tiền Phải Thu"]) || 0) : (parseFloat(l.rawRow["Doanh Thu Bông"]) || 0);
+                    const linePaid = parseFloat(l.rawRow["Đã Thu"]) || 0;
+                    currentDebt += Math.max(0, lineExpected - linePaid);
+                }
+            });
             // Nếu là Pay All (isFull), chúng ta vẫn xử lý t nếu nó chưa Xong hoàn toàn
             if (!isFull && currentDebt <= 0) continue;
 
@@ -2106,13 +2420,110 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnPayFull) btnPayFull.addEventListener('click', () => processPayment(true));
     if (btnPayPartial) btnPayPartial.addEventListener('click', () => processPayment(false));
 
+    const btnPaySelected = document.getElementById('btn-pay-selected');
+    if (btnPaySelected) {
+        btnPaySelected.addEventListener('click', async () => {
+            if (!isAuthorizedForDebt()) {
+                alert("Bạn không có quyền thực hiện thanh toán!");
+                return;
+            }
+            if (!currentSelectedBuyer) return;
+
+            const checkedBoxes = document.querySelectorAll('.tx-select-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                alert("Vui lòng chọn ít nhất một ngày giao dịch.");
+                return;
+            }
+
+            const selectedTxKeys = Array.from(checkedBoxes).map(cb => cb.getAttribute('data-txkey'));
+            const selectedTxList = currentSelectedBuyer.transactions.filter(t => selectedTxKeys.includes(t.key));
+
+            let selectedDebt = 0;
+            selectedTxList.forEach(t => {
+                let remaining = 0;
+                t.lines.forEach(l => {
+                    const status = (l.rawRow["Status"] || "").trim().toLowerCase();
+                    if (status !== "xong") {
+                        const lineExpected = l.isVua ? (parseFloat(l.rawRow["Tiền Phải Thu"]) || 0) : (parseFloat(l.rawRow["Doanh Thu Bông"]) || 0);
+                        const linePaid = parseFloat(l.rawRow["Đã Thu"]) || 0;
+                        remaining += Math.max(0, lineExpected - linePaid);
+                    }
+                });
+                selectedDebt += remaining;
+            });
+
+            if (selectedDebt <= 0) {
+                alert("Các ngày đã chọn không có nợ cần thanh toán.");
+                return;
+            }
+
+            if (!confirm(`Xác nhận thu HẾT nợ của ${selectedTxList.length} ngày đã chọn? (Tổng tiền: ${formatCurrency(selectedDebt)})`)) return;
+
+            if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+                alert("Vui lòng cấu hình WEB_APP_URL!");
+                return;
+            }
+
+            document.body.style.cursor = 'wait';
+            try {
+                showToast(`Đang thanh toán các ngày đã chọn...`, "info");
+
+                const dateStrList = selectedTxList.map(t => t.dateStr);
+                const shortDates = selectedTxList.map(t => {
+                    const parts = t.dateStr.split('/');
+                    if (parts.length >= 2) {
+                        return `${parts[0]}/${parts[1]}`;
+                    }
+                    return t.dateStr;
+                }).join(', ');
+                const customNote = `Thanh toán cho ngày ${shortDates}`;
+
+                const response = await fetch(CONFIG.WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "bulkPay",
+                        buyerName: currentSelectedBuyer.name,
+                        dateStr: dateStrList,
+                        customNote: customNote,
+                        isAllDates: false,
+                        token: getToken()
+                    }),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                });
+
+                const result = await response.json();
+                if (result.status !== "success") {
+                    throw new Error(result.message || `Lỗi khi xử lý thanh toán.`);
+                }
+
+                showToast(`Thành công! Đã thu nợ của ${selectedTxList.length} ngày đã chọn.`, "success");
+                renderDebtTable();
+                const syncBtnGlobal = document.getElementById('sync-gsheet-btn');
+                if (syncBtnGlobal) syncBtnGlobal.click();
+            } catch (err) {
+                console.error(err);
+                alert("Lỗi khi xử lý thanh toán các ngày đã chọn: " + err.message);
+            } finally {
+                document.body.style.cursor = 'default';
+            }
+        });
+    }
+
     async function paySingleTransaction(t) {
         if (!isAuthorizedForDebt()) {
             alert("Bạn không có quyền thực hiện thanh toán!");
             return;
         }
 
-        const remaining = t.totalExpected - t.paid;
+        let remaining = 0;
+        t.lines.forEach(l => {
+            const status = (l.rawRow["Status"] || "").trim().toLowerCase();
+            if (status !== "xong") {
+                const lineExpected = l.isVua ? (parseFloat(l.rawRow["Tiền Phải Thu"]) || 0) : (parseFloat(l.rawRow["Doanh Thu Bông"]) || 0);
+                const linePaid = parseFloat(l.rawRow["Đã Thu"]) || 0;
+                remaining += Math.max(0, lineExpected - linePaid);
+            }
+        });
         const rawInput = await showPaymentModal(
             `Thanh toán ngày ${t.dateStr}`,
             `Số tiền phải thu còn lại: <b>${formatCurrency(remaining)}</b>\n\nNhập số tiền muốn thu (Mặc định: thu hết):`,
@@ -3044,6 +3455,94 @@ document.addEventListener("DOMContentLoaded", () => {
         if (footer) footer.textContent = `Hiển thị toàn bộ ${total} giao dịch gần nhất.`;
     };
 
+    // --- CASHFLOW EDIT CONTROLLER ---
+    window.openEditCashflow = function(btn) {
+        const rowNumber = btn.getAttribute('data-row');
+        const type = btn.getAttribute('data-type');
+        const amount = btn.getAttribute('data-amount');
+        const note = btn.getAttribute('data-note');
+        const isRevenue = btn.getAttribute('data-isrevenue') === 'true';
+
+        window.currentEditingCashflow = { rowNumber, type, amount, note, isRevenue };
+
+        const amountInput = document.getElementById('input-edit-cashflow-amount');
+        const noteInput = document.getElementById('input-edit-cashflow-note');
+
+        if (amountInput) {
+            amountInput.value = formatMoneyStr(parseFloat(amount) || 0);
+        }
+        if (noteInput) {
+            noteInput.value = note;
+        }
+
+        const modal = document.getElementById('modal-edit-cashflow');
+        if (modal) modal.style.display = 'flex';
+    };
+
+    window.closeEditCashflow = function() {
+        const modal = document.getElementById('modal-edit-cashflow');
+        if (modal) modal.style.display = 'none';
+        window.currentEditingCashflow = null;
+    };
+
+    window.confirmEditCashflow = async function() {
+        const amountInput = document.getElementById('input-edit-cashflow-amount');
+        const noteInput = document.getElementById('input-edit-cashflow-note');
+        if (!amountInput || !noteInput || !window.currentEditingCashflow) return;
+
+        const amountVal = parseMoney(amountInput.value);
+        const noteVal = noteInput.value.trim();
+
+        const btn = document.getElementById('btn-confirm-edit-cashflow');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+        btn.disabled = true;
+
+        try {
+            const updates = {};
+            if (window.currentEditingCashflow.type === "Doanh thu Farm") {
+                updates["Doanh Thu Bông"] = amountVal;
+                updates["Ghi Chú"] = noteVal;
+            } else if (window.currentEditingCashflow.type === "Company" || window.currentEditingCashflow.type === "Vựa") {
+                updates["Doanh Thu Khác"] = amountVal;
+                updates["Ghi Chú"] = noteVal;
+            } else {
+                updates["Chi Phí"] = amountVal;
+                updates["Ghi Chú Chi Phí"] = noteVal;
+            }
+
+            const response = await fetch(CONFIG.WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "update",
+                    rowNumber: parseInt(window.currentEditingCashflow.rowNumber),
+                    updates: updates,
+                    token: getToken()
+                }),
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
+            });
+
+            const result = await response.json();
+            if (result.status !== "success") throw new Error(result.message || "Lỗi cập nhật");
+
+            showToast("Cập nhật Dòng tiền thành công!", "success");
+
+            window.closeEditCashflow();
+            hideDrawer();
+
+            // Trigger sync to fetch updated values
+            const syncBtn = document.getElementById('sync-gsheet-btn');
+            if (syncBtn) syncBtn.click();
+
+        } catch (error) {
+            console.error(error);
+            showToast("Lỗi khi cập nhật Dòng tiền: " + error.message, "error");
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    };
+
     function showDrawerForType(type, btn) {
         let overlay = document.getElementById('cashflow-drawer-overlay');
         let panel = document.getElementById('cashflow-drawer-panel');
@@ -3179,13 +3678,37 @@ document.addEventListener("DOMContentLoaded", () => {
                 const isExtra = index >= limit;
                 const itemClass = isExtra ? 'cashflow-drawer-item extra-item' : 'cashflow-drawer-item';
 
+                const isRevenueStr = isRevenue ? 'true' : 'false';
+                let rawNote = '';
+                if (type === "Doanh thu Farm") {
+                    rawNote = item["Ghi Chú"] || '';
+                } else if (type === "Company" || type === "Vựa") {
+                    rawNote = item["Ghi Chú"] || '';
+                } else {
+                    rawNote = item["Ghi Chú Chi Phí"] || item["Ghi Chú"] || '';
+                }
+
                 return `
                     <div class="${itemClass}">
                         <div class="cashflow-drawer-item-left">
                             <span class="cashflow-drawer-date">${dateStr}</span>
                             <span class="cashflow-drawer-note" title="${note}">${note}</span>
                         </div>
-                        <span class="cashflow-drawer-amount ${amountClass}">${sign}${formatCurrency(amount)}</span>
+                        <div class="cashflow-drawer-item-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                            <span class="cashflow-drawer-amount ${amountClass}">${sign}${formatCurrency(amount)}</span>
+                            <button class="cashflow-drawer-edit-btn" 
+                                    data-row="${item._sheetRowNumber}" 
+                                    data-type="${type}" 
+                                    data-amount="${amount}" 
+                                    data-isrevenue="${isRevenueStr}"
+                                    data-note="${rawNote.replace(/"/g, '&quot;')}" 
+                                    style="background: transparent; border: none; color: #a5b4fc; cursor: pointer; font-size: 0.78rem; display: flex; align-items: center; gap: 4px; opacity: 0.6; transition: all 0.2s;" 
+                                    onmouseover="this.style.opacity=1" 
+                                    onmouseout="this.style.opacity=0.6"
+                                    onclick="openEditCashflow(this)">
+                                <i class="fa-solid fa-pen-to-square"></i>Sửa
+                            </button>
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -4420,11 +4943,14 @@ document.addEventListener("DOMContentLoaded", () => {
     function applyFiltersAndRender() {
         let filtered = [...farmData];
 
-        // Luôn sắp xếp theo Ngày giảm dần, cùng ngày thì đơn mới nhất (số dòng lớn hơn) lên đầu
+        // Luôn sắp xếp theo Ngày giảm dần, cùng ngày thì đơn cũ hơn (số dòng nhỏ hơn) lên đầu, đơn mới nhất xuống cuối nhóm ngày
         filtered.sort((a, b) => {
             const dateDiff = (b.parsedDate?.getTime() || 0) - (a.parsedDate?.getTime() || 0);
             if (dateDiff !== 0) return dateDiff;
-            return (b._sheetRowNumber || 0) - (a._sheetRowNumber || 0); // tie-breaker: đơn mới nhất trên cùng
+            // tie-breaker: cùng ngày → số hàng nhỏ hơn (đơn cũ) lên trước, đơn mới nhất xuống cuối nhóm
+            const rowA = a._sheetRowNumber || Number.MAX_SAFE_INTEGER;
+            const rowB = b._sheetRowNumber || Number.MAX_SAFE_INTEGER;
+            return rowA - rowB;
         });
 
         // Tab Filter
@@ -4503,8 +5029,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 if (valA < valB) return sortState.direction === 'asc' ? -1 : 1;
                 if (valA > valB) return sortState.direction === 'asc' ? 1 : -1;
-                // Tie-breaker: cùng giá trị thì đơn mới nhất (số dòng lớn hơn) lên trên
-                return (b._sheetRowNumber || 0) - (a._sheetRowNumber || 0);
+                // Tie-breaker: cùng giá trị thì đơn cũ hơn (số dòng nhỏ hơn) lên trước, đơn mới nhất xuống cuối
+                const rowA = a._sheetRowNumber || Number.MAX_SAFE_INTEGER;
+                const rowB = b._sheetRowNumber || Number.MAX_SAFE_INTEGER;
+                return rowA - rowB;
             });
         }
 
@@ -4603,9 +5131,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     const parts = item["Ngày"].split(/[-/]/);
                     if (parts.length === 3) {
-                        rowDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                        let yr = parseInt(parts[2], 10);
+                        if (yr < 100) yr += 2000;
+                        rowDate = new Date(yr, parts[1] - 1, parts[0]);
                     } else {
                         rowDate = new Date(item["Ngày"]);
+                        if (rowDate && !isNaN(rowDate.getTime()) && rowDate.getFullYear() < 100) {
+                            rowDate.setFullYear(rowDate.getFullYear() + 2000);
+                        }
                     }
                 }
             }
@@ -5159,7 +5692,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const entryMode = entryTypeSelect ? entryTypeSelect.value : 'farm';
         // Shared fields
-        const dInput = new Date(document.getElementById('date-input').value);
+        // Parse date as LOCAL midnight (not UTC) to match server-side date parsing
+        // Avoid new Date("YYYY-MM-DD") which creates UTC midnight, causing +7h offset vs local dates from server
+        const _rawDateVal = document.getElementById('date-input').value; // "YYYY-MM-DD"
+        const [_yr, _mo, _dd] = _rawDateVal.split('-').map(Number);
+        const dInput = new Date(_yr, _mo - 1, _dd); // Local midnight — consistent với processRawSheetData
         const dateStr = formatDateVietnamese(dInput); // Dùng định dạng chuẩn DD/MM/YYYY để khớp với Sheet
         const statusVal = document.getElementById('status-input').value; // Removed default "Chưa Xong"
         const buyerVal = document.getElementById('buyer-input').value;
@@ -5544,25 +6081,216 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 800);
     }
     // --- RECEIPT EXPORT LOGIC ---
+
+    // Helper: parse "YYYY-MM-DD" date input value to start-of-day timestamp
+    function parseDateInputToTs(val) {
+        if (!val) return null;
+        const [y, m, d] = val.split('-').map(Number);
+        if (!y || !m || !d) return null;
+        return new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+    }
+
+    // Helper: convert dd/mm/yyyy string -> timestamp
+    function parseDdMmYyyyToTs(dateStr) {
+        if (!dateStr) return null;
+        const parts = dateStr.split('/');
+        if (parts.length !== 3) return null;
+        const [dd, mm, yyyy] = parts.map(Number);
+        return new Date(yyyy, mm - 1, dd, 0, 0, 0, 0).getTime();
+    }
+
+    // Update the summary label in the filter panel
+    function updateInvoiceDateFilterSummary() {
+        const summaryEl = document.getElementById('invoice-date-filter-summary');
+        if (!summaryEl) return;
+        const fromVal = (document.getElementById('invoice-date-from') || {}).value;
+        const toVal = (document.getElementById('invoice-date-to') || {}).value;
+        if (!fromVal && !toVal) {
+            summaryEl.innerHTML = '<i class="fa-solid fa-circle-info"></i> Đang hiển thị tất cả các ngày';
+            summaryEl.style.color = '#94a3b8';
+        } else {
+            const fromStr = fromVal ? fromVal.split('-').reverse().join('/') : '...';
+            const toStr = toVal ? toVal.split('-').reverse().join('/') : '...';
+            summaryEl.innerHTML = `<i class="fa-solid fa-filter"></i> Lọc từ <b>${fromStr}</b> đến <b>${toStr}</b>`;
+            summaryEl.style.color = '#6366f1';
+        }
+    }
+
+    async function processSettleCumulative(endDateStr, debtAmount) {
+        if (!isAuthorizedForDebt()) {
+            alert("Bạn không có quyền thực hiện thanh toán!");
+            return;
+        }
+        if (!currentSelectedBuyer) return;
+
+        const rawInput = await showPaymentModal(
+            `Gạch nợ lũy kế đến ngày ${endDateStr}`,
+            `Số tiền nợ lũy kế cần thu: <b>${formatCurrency(debtAmount)}</b>\n\nNhập số tiền thực thu hôm nay:`,
+            formatMoneyStr(debtAmount)
+        );
+
+        if (rawInput === null) return; // Cancel
+
+        const amountToPay = parseMoney(rawInput);
+        if (amountToPay <= 0) {
+            alert("Số tiền không hợp lệ.");
+            return;
+        }
+
+        if (!confirm(`Xác nhận GẠCH TOÀN BỘ toa nợ lũy kế từ trước đến ngày ${endDateStr} của ${currentSelectedBuyer.name}?\nSố tiền thực thu hôm nay sẽ là: ${formatCurrency(amountToPay)}.`)) return;
+
+        if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+            alert("Vui lòng cấu hình WEB_APP_URL!");
+            return;
+        }
+
+        document.body.style.cursor = 'wait';
+        try {
+            showToast(`Đang chốt gạch nợ lũy kế đến ngày ${endDateStr}...`, "info");
+            const response = await fetch(CONFIG.WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "settleCumulative",
+                    buyerName: currentSelectedBuyer.name,
+                    endDateStr: endDateStr,
+                    amount: amountToPay,
+                    token: getToken()
+                }),
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
+            });
+
+            const result = await response.json();
+            if (result.status !== "success") {
+                throw new Error(result.message || "Lỗi khi xử lý gạch nợ.");
+            }
+
+            showToast(`Thành công! Đã chốt gạch nợ lũy kế của ${currentSelectedBuyer.name}.`, "success");
+            
+            // Đóng hóa đơn
+            window.closeReceipt();
+            
+            // Reload & đồng bộ
+            renderDebtTable();
+            const syncBtnGlobal = document.getElementById('sync-gsheet-btn');
+            if (syncBtnGlobal) syncBtnGlobal.click();
+        } catch (err) {
+            console.error(err);
+            alert("Lỗi khi xử lý gạch nợ lũy kế: " + err.message);
+        } finally {
+            document.body.style.cursor = 'default';
+        }
+    }
+
+    // Attach delegated click listener once during DOM setup
+    const receiptItemsBody = document.getElementById('receipt-items-body');
+    if (receiptItemsBody) {
+        receiptItemsBody.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.btn-settle-cumulative');
+            if (btn) {
+                const endDateStr = btn.getAttribute('data-enddate');
+                const debtAmount = parseFloat(btn.getAttribute('data-debt')) || 0;
+                await processSettleCumulative(endDateStr, debtAmount);
+            }
+        });
+    }
+
     window.showReceipt = function () {
         if (!currentSelectedBuyer) return;
 
         const modal = document.getElementById('receipt-modal');
         const itemsBody = document.getElementById('receipt-items-body');
 
+        // Đọc bộ lọc ngày
+        const fromVal = (document.getElementById('invoice-date-from') || {}).value;
+        const toVal = (document.getElementById('invoice-date-to') || {}).value;
+        const fromTs = parseDateInputToTs(fromVal);
+        const toTs = toVal ? parseDateInputToTs(toVal) + 86399999 : null; // end of day
+
+        // Lọc giao dịch theo khoảng ngày
+        const allTx = currentSelectedBuyer.transactions;
+        const filteredTx = allTx.filter(t => {
+            const ts = t.rawDate;
+            if (fromTs !== null && ts < fromTs) return false;
+            if (toTs !== null && ts > toTs) return false;
+            return true;
+        });
+
+        // Tính toán nợ cũ mang sang (các giao dịch diễn ra trước khoảng ngày lọc)
+        let oldDebt = 0;
+        if (fromTs !== null) {
+            allTx.forEach(t => {
+                if (t.rawDate < fromTs) {
+                    oldDebt += ((t.totalExpected || 0) - (t.paid || 0));
+                }
+            });
+        }
+
+        // Tính toán số liệu phát sinh trong kỳ
+        let periodQty = 0;
+        let periodTotal = 0;
+        let periodPaid = 0;
+
+        filteredTx.forEach(t => {
+            periodQty += (t.totalQty || 0);
+            periodTotal += (t.totalExpected || 0);
+            periodPaid += (t.paid || 0);
+        });
+
+        const accumulatedDebt = oldDebt + periodTotal - periodPaid;
+
         // Cập nhật thông tin chung
         document.getElementById('receipt-customer-name').innerText = currentSelectedBuyer.name;
-        document.getElementById('receipt-date').innerText = formatDateVN(new Date());
         document.getElementById('receipt-id').innerText = "Số: INV-" + Date.now().toString().slice(-6);
 
-        // Đổ dữ liệu mặt hàng (Lấy từ các đơn nợ hiện tại)
+        // Hiển thị khoảng ngày trên hóa đơn
+        const receiptDateEl = document.getElementById('receipt-date');
+        if (fromVal || toVal) {
+            const fromStr = fromVal ? fromVal.split('-').reverse().join('/') : '...';
+            const toStr = toVal ? toVal.split('-').reverse().join('/') : '...';
+            receiptDateEl.innerText = `${fromStr} → ${toStr}`;
+        } else {
+            receiptDateEl.innerText = formatDateVN(new Date());
+        }
+
+        if (filteredTx.length === 0) {
+            itemsBody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#94a3b8; padding: 20px; font-style: italic;">Không có giao dịch nào trong khoảng ngày này.</td></tr>`;
+            document.getElementById('receipt-summary-qty').innerText = "0 bông";
+            document.getElementById('receipt-summary-period-total').innerText = formatCurrency(0);
+            document.getElementById('receipt-summary-period-paid').innerText = formatCurrency(0);
+            document.getElementById('receipt-summary-accumulated-debt').innerText = formatCurrency(accumulatedDebt);
+            modal.style.display = 'flex';
+            return;
+        }
+
+        // Đổ dữ liệu mặt hàng, chèn dòng tổng kết khi có giao dịch đã thu (t.paid > 0)
         itemsBody.innerHTML = '';
-        currentSelectedBuyer.transactions.forEach(t => {
+
+        // Sắp xếp theo ngày tăng dần
+        const sortedFilteredTx = [...filteredTx].sort((a, b) => a.rawDate - b.rawDate);
+
+        let runningTotalExpected = 0;
+        let runningPaid = 0;
+
+        // Tìm ngày thanh toán lớn nhất trong danh sách sao kê lọc để chỉ cho phép gạch lũy kế tại ngày đó
+        let latestPaymentTxDate = 0;
+        sortedFilteredTx.forEach(t => {
+            if (t.paid > 0) {
+                latestPaymentTxDate = Math.max(latestPaymentTxDate, t.rawDate);
+            }
+        });
+
+        sortedFilteredTx.forEach(t => {
+            // Tích lũy dồn cộng
+            runningTotalExpected += (t.totalExpected || 0);
+            runningPaid += (t.paid || 0);
+
             const row = document.createElement('tr');
             const summary = t.lines
                 .filter(l => l.qty > 0)
                 .map(l => {
-                    // Định dạng giá kiểu rút gọn (ví dụ 2500 -> 2.5k) cho gọn hóa đơn
+                    if (currentSelectedBuyer && currentSelectedBuyer.isVua) {
+                        return `${l.qty} ${l.flowerType}`;
+                    }
                     const shortPrice = l.price >= 1000 ? (l.price / 1000).toLocaleString('en-US', { maximumFractionDigits: 1 }) + 'k' : l.price;
                     return `${l.qty} ${l.flowerType} x ${shortPrice}`;
                 }).join(', ');
@@ -5579,31 +6307,62 @@ document.addEventListener("DOMContentLoaded", () => {
             row.innerHTML = `
                 <td style="color: #64748b; font-size: 0.8rem;">${shortDateWithYear}</td>
                 <td style="word-break: break-word; white-space: normal;">
-                    <div>${summary}</div>
+                    <div>${summary || '<span style="color:#94a3b8; font-style:italic;">Không mua hoa (Chỉ trả tiền)</span>'}</div>
                     ${t.paid > 0 ? `<div style="font-size: 0.75rem; color: #059669; margin-top: 2px;">✅ Đã thu: ${formatCurrency(t.paid)}</div>` : ''}
                 </td>
                 <td style="text-align: right; font-weight: 700;">${formatCurrency(t.totalExpected)}</td>
             `;
             itemsBody.appendChild(row);
+
+            // Chỉ tổng kết khi có phần đã thu (t.paid > 0)
+            if (t.paid > 0) {
+                const subtotalRow = document.createElement('tr');
+                subtotalRow.style.cssText = 'background: linear-gradient(90deg, #f0f4ff 0%, #e8eeff 100%); border-top: 2px solid #6366f1;';
+                const runningDebt = runningTotalExpected - runningPaid;
+
+                subtotalRow.innerHTML = `
+                    <td colspan="3" style="padding: 6px 10px 5px 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+                            <span style="font-weight: 800; font-size: 0.82rem; color: #4f46e5; display: flex; align-items: center; gap: 5px;">
+                                <i class="fa-solid fa-coins"></i>Cộng dồn đến ngày ${shortDateWithYear}
+                            </span>
+                            <span style="font-weight: 900; font-size: 0.95rem; color: #4f46e5; white-space: nowrap;">
+                                ${formatCurrency(runningTotalExpected)}
+                            </span>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 3px;">
+                            <span style="font-size: 0.75rem; font-weight: 700; color: #059669;">✅ Tổng đã thu: ${formatCurrency(runningPaid)}</span>
+                            ${runningDebt > 0 ? (
+                                t.rawDate === latestPaymentTxDate ? `
+                                    <span class="btn-settle-cumulative" data-enddate="${t.dateStr}" data-debt="${runningDebt}"
+                                        style="font-size: 0.82rem; font-weight: 800; color: #ef4444; cursor: pointer; padding: 2px 6px; border-radius: 4px; border: 1px dashed rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.05); transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px;"
+                                        onmouseover="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.borderColor='rgba(239, 68, 68, 0.8)';"
+                                        onmouseout="this.style.background='rgba(239, 68, 68, 0.05)'; this.style.borderColor='rgba(239, 68, 68, 0.4)';"
+                                        title="Nhấp để gạch nợ lũy kế đến ngày này">
+                                        🔴 Còn nợ: ${formatCurrency(runningDebt)} <i class="fa-solid fa-check-double" style="font-size: 0.75rem; margin-left: 2px;"></i>
+                                    </span>
+                                ` : `
+                                    <span style="font-size: 0.78rem; font-weight: 700; color: #ef4444; display: inline-flex; align-items: center; gap: 4px;">
+                                        🔴 Còn nợ: ${formatCurrency(runningDebt)}
+                                    </span>
+                                `
+                            ) : '<span style="font-size: 0.75rem; font-weight: 700; color: #059669;">✅ Đã thanh toán hết</span>'}
+                        </div>
+                    </td>
+                `;
+                itemsBody.appendChild(subtotalRow);
+
+                // Khoảng trống mỏng sau dòng tổng kết
+                const spacerRow = document.createElement('tr');
+                spacerRow.innerHTML = `<td colspan="3" style="padding: 3px 0; background: transparent;"></td>`;
+                itemsBody.appendChild(spacerRow);
+            }
         });
 
-        // Tính toán tổng kết từ danh sách giao dịch
-        let totalQty = 0;
-        let totalAmount = 0;
-        let totalPaid = 0;
-
-        currentSelectedBuyer.transactions.forEach(t => {
-            totalQty += (t.totalQty || 0);
-            totalAmount += (t.totalExpected || 0);
-            totalPaid += (t.paid || 0);
-        });
-
-        const totalDebt = totalAmount - totalPaid;
-
-        document.getElementById('receipt-summary-qty').innerText = formatNumber(totalQty) + " bông";
-        document.getElementById('receipt-summary-total').innerText = formatCurrency(totalAmount);
-        document.getElementById('receipt-summary-paid').innerText = formatCurrency(totalPaid);
-        document.getElementById('receipt-summary-debt').innerText = formatCurrency(totalDebt);
+        document.getElementById('receipt-summary-qty').innerText = formatNumber(periodQty) + " bông";
+        document.getElementById('receipt-summary-period-total').innerText = formatCurrency(periodTotal);
+        document.getElementById('receipt-summary-period-paid').innerText = formatCurrency(periodPaid);
+        document.getElementById('receipt-summary-accumulated-debt').innerText = formatCurrency(accumulatedDebt);
 
         modal.style.display = 'flex';
     };
@@ -5646,6 +6405,153 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnExportReceipt) {
         btnExportReceipt.addEventListener('click', showReceipt);
     }
+
+    // --- BỘ LỌC NGÀY XUẤT HÓA ĐƠN ---
+    const invoiceDateFrom = document.getElementById('invoice-date-from');
+    const invoiceDateTo = document.getElementById('invoice-date-to');
+
+    // Toggle logic for date filter panel
+    const btnToggleFilter = document.getElementById('btn-toggle-date-filter');
+    const filterContainer = document.getElementById('invoice-date-filter');
+    const iconToggleFilter = document.getElementById('icon-toggle-filter');
+
+    if (btnToggleFilter && filterContainer) {
+        btnToggleFilter.addEventListener('click', () => {
+            const isHidden = filterContainer.style.display === 'none';
+            if (isHidden) {
+                filterContainer.style.display = 'block';
+                if (iconToggleFilter) iconToggleFilter.style.transform = 'rotate(180deg)';
+                btnToggleFilter.style.borderColor = '#6366f1';
+                btnToggleFilter.style.color = '#4f46e5';
+                btnToggleFilter.style.background = '#f5f3ff';
+            } else {
+                filterContainer.style.display = 'none';
+                if (iconToggleFilter) iconToggleFilter.style.transform = 'rotate(0deg)';
+                btnToggleFilter.style.borderColor = '#cbd5e1';
+                btnToggleFilter.style.color = '#475569';
+                btnToggleFilter.style.background = 'white';
+            }
+        });
+    }
+
+    function clearActiveQuickButtons() {
+        document.querySelectorAll('.btn-quick-date').forEach(btn => {
+            btn.classList.remove('active');
+        });
+    }
+
+    function setQuickDateRange(fromYmd, toYmd, activeBtnId) {
+        if (invoiceDateFrom) invoiceDateFrom.value = fromYmd || '';
+        if (invoiceDateTo) invoiceDateTo.value = toYmd || '';
+
+        // Cập nhật class active cho nút tương ứng
+        document.querySelectorAll('.btn-quick-date').forEach(btn => {
+            if (btn.id === activeBtnId) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        updateInvoiceDateFilterSummary();
+    }
+
+    // Khởi tạo summary label khi trang load
+    updateInvoiceDateFilterSummary();
+
+    // Cập nhật summary và xóa trạng thái nút nhanh khi thay đổi ngày thủ công
+    if (invoiceDateFrom) {
+        invoiceDateFrom.addEventListener('change', () => {
+            clearActiveQuickButtons();
+            updateInvoiceDateFilterSummary();
+        });
+    }
+    if (invoiceDateTo) {
+        invoiceDateTo.addEventListener('change', () => {
+            clearActiveQuickButtons();
+            updateInvoiceDateFilterSummary();
+        });
+    }
+
+    // Nút "Hôm nay"
+    const btnQuickToday = document.getElementById('btn-quick-today');
+    if (btnQuickToday) {
+        btnQuickToday.addEventListener('click', () => {
+            const today = new Date();
+            const y = today.getFullYear();
+            const m = String(today.getMonth() + 1).padStart(2, '0');
+            const d = String(today.getDate()).padStart(2, '0');
+            const ymd = `${y}-${m}-${d}`;
+            setQuickDateRange(ymd, ymd, 'btn-quick-today');
+        });
+    }
+
+    // Nút "Gần nhất" (Ngày giao dịch gần nhất của khách)
+    const btnQuickLatest = document.getElementById('btn-quick-latest');
+    if (btnQuickLatest) {
+        btnQuickLatest.addEventListener('click', () => {
+            if (!currentSelectedBuyer || !currentSelectedBuyer.transactions || currentSelectedBuyer.transactions.length === 0) {
+                alert("Hãy chọn một khách hàng trước.");
+                return;
+            }
+            const latestTx = currentSelectedBuyer.transactions.reduce((max, t) => t.rawDate > max.rawDate ? t : max, currentSelectedBuyer.transactions[0]);
+            const date = new Date(latestTx.rawDate);
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            const ymd = `${y}-${m}-${d}`;
+            setQuickDateRange(ymd, ymd, 'btn-quick-latest');
+        });
+    }
+
+    // Nút "Xa nhất" (Ngày giao dịch đầu tiên của khách)
+    const btnQuickEarliest = document.getElementById('btn-quick-earliest');
+    if (btnQuickEarliest) {
+        btnQuickEarliest.addEventListener('click', () => {
+            if (!currentSelectedBuyer || !currentSelectedBuyer.transactions || currentSelectedBuyer.transactions.length === 0) {
+                alert("Hãy chọn một khách hàng trước.");
+                return;
+            }
+            const earliestTx = currentSelectedBuyer.transactions.reduce((min, t) => t.rawDate < min.rawDate ? t : min, currentSelectedBuyer.transactions[0]);
+            const date = new Date(earliestTx.rawDate);
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            const ymd = `${y}-${m}-${d}`;
+            setQuickDateRange(ymd, '', 'btn-quick-earliest');
+        });
+    }
+
+    // Nút "Tháng này"
+    const btnQuickMonth = document.getElementById('btn-quick-month');
+    if (btnQuickMonth) {
+        btnQuickMonth.addEventListener('click', () => {
+            const today = new Date();
+            const y = today.getFullYear();
+            const m = today.getMonth();
+            const firstDay = new Date(y, m, 1);
+            const lastDay = new Date(y, m + 1, 0);
+
+            const fY = firstDay.getFullYear();
+            const fM = String(firstDay.getMonth() + 1).padStart(2, '0');
+            const fD = String(firstDay.getDate()).padStart(2, '0');
+
+            const lY = lastDay.getFullYear();
+            const lM = String(lastDay.getMonth() + 1).padStart(2, '0');
+            const lD = String(lastDay.getDate()).padStart(2, '0');
+
+            setQuickDateRange(`${fY}-${fM}-${fD}`, `${lY}-${lM}-${lD}`, 'btn-quick-month');
+        });
+    }
+
+    // Nút "Tất cả" - xóa bộ lọc ngày
+    const btnClearDateFilter = document.getElementById('btn-clear-date-filter');
+    if (btnClearDateFilter) {
+        btnClearDateFilter.addEventListener('click', () => {
+            setQuickDateRange('', '', null);
+        });
+    }
+
 
     // Fullscreen Chart Logic
     const btnFullscreenMonthly = document.getElementById('btn-fullscreen-monthly-chart');
