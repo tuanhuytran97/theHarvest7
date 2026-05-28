@@ -2608,6 +2608,17 @@ tr.swiping td:first-child::before {
     letter-spacing: 5px;
 }
 
+/* Page break rules for html2pdf and print */
+.receipt-header,
+.receipt-title,
+.receipt-info-grid,
+.receipt-table tr,
+.receipt-summary,
+.receipt-footer {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+}
+
 .receipt-actions-bottom {
     margin-top: 20px;
     text-align: center;
