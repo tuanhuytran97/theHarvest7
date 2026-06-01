@@ -1850,21 +1850,11 @@ document.addEventListener("DOMContentLoaded", () => {
             return true;
         });
 
-        // Tìm ngày có khoản đã thu gần nhất để chặn thao tác lẻ các ngày trước đó
-        let latestPaymentDate = 0;
-        sortedTx.forEach(t => {
-            if (t.paid > 0) {
-                latestPaymentDate = Math.max(latestPaymentDate, t.rawDate);
-            }
-        });
-
         if (filteredTx.length === 0) {
             txList.innerHTML = `<div style="text-align: center; color: var(--text-dark); padding: 20px; font-style: italic;">Không có giao dịch nào trong khoảng ngày này.</div>`;
         }
 
         filteredTx.forEach((t, idx) => {
-            const isBeforePayment = t.rawDate <= latestPaymentDate;
-
             let remaining = 0;
             t.lines.forEach(l => {
                 const status = (l.rawRow["Status"] || "").trim().toLowerCase();
@@ -1904,7 +1894,7 @@ document.addEventListener("DOMContentLoaded", () => {
             invoiceItem.innerHTML = `
                 <div class="invoice-item-main" style="align-items: center; display: flex; gap: 8px;">
                     <div style="display: flex; align-items: center; justify-content: center; padding: 4px 0 4px 6px; width: 18px; height: 18px;">
-                        ${(t.totalExpected === 0 || isBeforePayment) ? 
+                        ${(t.totalExpected === 0) ? 
                             '' : 
                             `<input type="checkbox" class="tx-select-checkbox" data-txkey="${t.key}" style="cursor: pointer; width: 18px; height: 18px; accent-color: #6366f1;">`
                         }
@@ -1928,14 +1918,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
 
                     <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 100px;">
-                        ${isBeforePayment ? 
-                            `<button class="btn-pay-row disabled-lock" style="background: #e2e8f0; color: #94a3b8; border-color: #cbd5e1; cursor: not-allowed; opacity: 0.7;" disabled title="Toa cũ trước ngày có thanh toán gộp. Hãy dùng chức năng Gạch nợ lũy kế trên sổ nợ.">
-                                <i class="fa-solid fa-lock" style="font-size: 0.75rem;"></i> Khóa
-                             </button>` :
-                            `<button class="btn-pay-row ${t.isVua ? 'vua' : ''}" data-txkey="${t.key}">
-                                <i class="fa-solid fa-money-bill-transfer"></i> Thu tiền
-                             </button>`
-                        }
+                        <button class="btn-pay-row ${t.isVua ? 'vua' : ''}" data-txkey="${t.key}">
+                            <i class="fa-solid fa-money-bill-transfer"></i> Thu tiền
+                        </button>
                         ${remaining > 0 ? `<div style="font-size: 0.7rem; color: var(--danger); font-weight: 700;">Còn phải thu: ${formatCurrency(remaining)}</div>` : ''}
                     </div>
                 </div>
