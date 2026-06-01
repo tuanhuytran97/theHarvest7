@@ -579,6 +579,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const flowerListBlock = document.getElementById('flower-items-container');
             const flowerDivider = flowerListBlock ? flowerListBlock.nextElementSibling : null;
 
+            const entryCard = document.querySelector('.entry-card');
+            const entryTitle = entryCard ? entryCard.querySelector('h2') : null;
+            const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+
             const toggleFlowerReq = (isReq) => {
                 if (flowerListBlock) {
                     flowerListBlock.querySelectorAll('input').forEach(i => i.required = isReq);
@@ -603,6 +607,30 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (vuaTotalCollectInput) vuaTotalCollectInput.required = false;
                 toggleFlowerReq(true);
                 toggleExpenseReq(false);
+
+                // Premium visual styling
+                if (entryCard) {
+                    entryCard.style.borderTop = "6px solid #10b981";
+                    entryCard.style.boxShadow = "0 20px 40px -15px rgba(16, 185, 129, 0.15), 0 1px 3px rgba(0, 0, 0, 0.05)";
+                    entryCard.style.transition = "all 0.4s ease";
+                }
+                if (entryTitle) {
+                    entryTitle.innerHTML = `<i class="fa-solid fa-seedling" style="color: #10b981; margin-right: 8px;"></i> Nhập Liệu Nhanh — Bán Buôn (Farm)`;
+                }
+                if (submitBtn) {
+                    submitBtn.innerHTML = `<i class="fa-solid fa-leaf" style="margin-right: 6px;"></i> Lưu Dữ Liệu Farm`;
+                    submitBtn.style.background = "linear-gradient(135deg, #10b981 0%, #059669 100%)";
+                    submitBtn.style.color = "#ffffff";
+                    submitBtn.style.border = "none";
+                    submitBtn.style.boxShadow = "0 4px 12px rgba(16, 185, 129, 0.25)";
+                    submitBtn.style.transition = "all 0.3s ease";
+                }
+                if (entryTypeSelect) {
+                    entryTypeSelect.style.background = "rgba(16, 185, 129, 0.15)";
+                    entryTypeSelect.style.border = "1px solid #10b981";
+                    entryTypeSelect.style.color = "#047857";
+                    entryTypeSelect.style.transition = "all 0.3s ease";
+                }
             } else if (type === "vua") {
                 if (vuaFields) vuaFields.style.display = "grid";
                 if (expenseFields) expenseFields.style.display = "none";
@@ -617,6 +645,30 @@ document.addEventListener("DOMContentLoaded", () => {
                 toggleFlowerReq(true);
                 toggleExpenseReq(false);
                 calculateVuaTotals();
+
+                // Premium visual styling
+                if (entryCard) {
+                    entryCard.style.borderTop = "6px solid #3b82f6";
+                    entryCard.style.boxShadow = "0 20px 40px -15px rgba(59, 130, 246, 0.15), 0 1px 3px rgba(0, 0, 0, 0.05)";
+                    entryCard.style.transition = "all 0.4s ease";
+                }
+                if (entryTitle) {
+                    entryTitle.innerHTML = `<i class="fa-solid fa-truck" style="color: #3b82f6; margin-right: 8px;"></i> Nhập Liệu Nhanh — Đối Soát Vựa`;
+                }
+                if (submitBtn) {
+                    submitBtn.innerHTML = `<i class="fa-solid fa-calculator" style="margin-right: 6px;"></i> Nhập Lợi Nhuận Vựa`;
+                    submitBtn.style.background = "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)";
+                    submitBtn.style.color = "#ffffff";
+                    submitBtn.style.border = "none";
+                    submitBtn.style.boxShadow = "0 4px 12px rgba(59, 130, 246, 0.25)";
+                    submitBtn.style.transition = "all 0.3s ease";
+                }
+                if (entryTypeSelect) {
+                    entryTypeSelect.style.background = "rgba(59, 130, 246, 0.15)";
+                    entryTypeSelect.style.border = "1px solid #3b82f6";
+                    entryTypeSelect.style.color = "#1d4ed8";
+                    entryTypeSelect.style.transition = "all 0.3s ease";
+                }
             } else if (type === "expense") {
                 if (vuaFields) vuaFields.style.display = "none";
                 if (expenseFields) expenseFields.style.display = "flex";
@@ -629,6 +681,30 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (vuaTotalCollectInput) vuaTotalCollectInput.required = false;
                 toggleFlowerReq(false);
                 toggleExpenseReq(true);
+
+                // Premium visual styling
+                if (entryCard) {
+                    entryCard.style.borderTop = "6px solid #ef4444";
+                    entryCard.style.boxShadow = "0 20px 40px -15px rgba(239, 68, 68, 0.15), 0 1px 3px rgba(0, 0, 0, 0.05)";
+                    entryCard.style.transition = "all 0.4s ease";
+                }
+                if (entryTitle) {
+                    entryTitle.innerHTML = `<i class="fa-solid fa-receipt" style="color: #ef4444; margin-right: 8px;"></i> Nhập Liệu Nhanh — Ghi Nhận Chi Phí`;
+                }
+                if (submitBtn) {
+                    submitBtn.innerHTML = `<i class="fa-solid fa-save" style="margin-right: 6px;"></i> Ghi Nhận Chi Phí`;
+                    submitBtn.style.background = "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)";
+                    submitBtn.style.color = "#ffffff";
+                    submitBtn.style.border = "none";
+                    submitBtn.style.boxShadow = "0 4px 12px rgba(239, 68, 68, 0.25)";
+                    submitBtn.style.transition = "all 0.3s ease";
+                }
+                if (entryTypeSelect) {
+                    entryTypeSelect.style.background = "rgba(239, 68, 68, 0.15)";
+                    entryTypeSelect.style.border = "1px solid #ef4444";
+                    entryTypeSelect.style.color = "#b91c1c";
+                    entryTypeSelect.style.transition = "all 0.3s ease";
+                }
             }
 
             // Auto-switch disabled to respect user's "Today" default tab
@@ -5990,8 +6066,10 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error(error);
             alert("Lỗi khi ghi dữ liệu lên Sheets: " + error.message);
         } finally {
-            submitBtn.innerHTML = 'Lưu Dữ Liệu';
             submitBtn.disabled = false;
+            if (entryTypeSelect) {
+                entryTypeSelect.dispatchEvent(new Event('change'));
+            }
         }
     });
 
