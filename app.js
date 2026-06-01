@@ -2017,22 +2017,16 @@ document.addEventListener("DOMContentLoaded", () => {
             if (btnPaySelected) {
                 if (count > 0) {
                     btnPaySelected.style.display = 'flex';
-                    // Tính số tiền còn phải thu của các ngày được chọn
+                    // Tính số tiền còn phải thu của các ngày được chọn (Tổng Tiền Đơn trừ đi Đã Thanh Toán)
                     const checkedKeys = checkedBoxes.map(cb => cb.getAttribute('data-txkey'));
                     const checkedTxList = buyerObj.transactions.filter(t => checkedKeys.includes(t.key));
-                    let checkedDebt = 0;
+                    let checkedExpected = 0;
+                    let checkedPaid = 0;
                     checkedTxList.forEach(t => {
-                        let remaining = 0;
-                        t.lines.forEach(l => {
-                            const status = (l.rawRow["Status"] || "").trim().toLowerCase();
-                            if (status !== "xong") {
-                                const lineExpected = l.isVua ? (parseFloat(l.rawRow["Tiền Phải Thu"]) || 0) : (parseFloat(l.rawRow["Doanh Thu Bông"]) || 0);
-                                const linePaid = parseFloat(l.rawRow["Đã Thu"]) || 0;
-                                remaining += Math.max(0, lineExpected - linePaid);
-                            }
-                        });
-                        checkedDebt += remaining;
+                        checkedExpected += (t.totalExpected || 0);
+                        checkedPaid += (t.paid || 0);
                     });
+                    let checkedDebt = checkedExpected - checkedPaid;
                     if (btnPaySelectedCount) btnPaySelectedCount.innerText = formatCurrency(checkedDebt);
                 } else {
                     btnPaySelected.style.display = 'none';
@@ -2481,19 +2475,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const selectedTxKeys = Array.from(checkedBoxes).map(cb => cb.getAttribute('data-txkey'));
             const selectedTxList = currentSelectedBuyer.transactions.filter(t => selectedTxKeys.includes(t.key));
 
-            let selectedDebt = 0;
+            let selectedExpected = 0;
+            let selectedPaid = 0;
             selectedTxList.forEach(t => {
-                let remaining = 0;
-                t.lines.forEach(l => {
-                    const status = (l.rawRow["Status"] || "").trim().toLowerCase();
-                    if (status !== "xong") {
-                        const lineExpected = l.isVua ? (parseFloat(l.rawRow["Tiền Phải Thu"]) || 0) : (parseFloat(l.rawRow["Doanh Thu Bông"]) || 0);
-                        const linePaid = parseFloat(l.rawRow["Đã Thu"]) || 0;
-                        remaining += Math.max(0, lineExpected - linePaid);
-                    }
-                });
-                selectedDebt += remaining;
+                selectedExpected += (t.totalExpected || 0);
+                selectedPaid += (t.paid || 0);
             });
+            let selectedDebt = selectedExpected - selectedPaid;
 
             if (selectedDebt <= 0) {
                 alert("Các ngày đã chọn không có nợ cần thanh toán.");
