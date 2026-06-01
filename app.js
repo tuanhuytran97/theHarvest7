@@ -1894,10 +1894,7 @@ document.addEventListener("DOMContentLoaded", () => {
             invoiceItem.innerHTML = `
                 <div class="invoice-item-main" style="align-items: center; display: flex; gap: 8px;">
                     <div style="display: flex; align-items: center; justify-content: center; padding: 4px 0 4px 6px; width: 18px; height: 18px;">
-                        ${(t.totalExpected === 0) ? 
-                            '' : 
-                            `<input type="checkbox" class="tx-select-checkbox" data-txkey="${t.key}" style="cursor: pointer; width: 18px; height: 18px; accent-color: #6366f1;">`
-                        }
+                        <input type="checkbox" class="tx-select-checkbox" data-txkey="${t.key}" style="cursor: pointer; width: 18px; height: 18px; accent-color: #6366f1;">
                     </div>
                     <div class="invoice-item-info" style="flex: 1;">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
