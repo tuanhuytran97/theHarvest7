@@ -1833,12 +1833,22 @@ document.addEventListener("DOMContentLoaded", () => {
         const txList = document.getElementById('detail-transaction-list');
         txList.innerHTML = '';
 
-        let sumQty = 0;
-        let sumExpected = 0;
-        let sumPaid = 0;
+        // Đọc bộ lọc ngày
+        const fromVal = (document.getElementById('invoice-date-from') || {}).value;
+        const toVal = (document.getElementById('invoice-date-to') || {}).value;
+        const fromTs = parseDateInputToTs(fromVal);
+        const toTs = toVal ? parseDateInputToTs(toVal) + 86399999 : null; // end of day
 
         // Sắp xếp ngày từ cũ đến mới (Oldest first)
         const sortedTx = [...buyerObj.transactions].sort((a, b) => a.rawDate - b.rawDate);
+
+        // Lọc giao dịch theo bộ lọc ngày nếu có
+        const filteredTx = sortedTx.filter(t => {
+            const ts = t.rawDate;
+            if (fromTs !== null && ts < fromTs) return false;
+            if (toTs !== null && ts > toTs) return false;
+            return true;
+        });
 
         // Tìm ngày có khoản đã thu gần nhất để chặn thao tác lẻ các ngày trước đó
         let latestPaymentDate = 0;
@@ -1848,12 +1858,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // sortedTx.forEach loop continues...
-        sortedTx.forEach((t, idx) => {
-            sumQty += (t.totalQty || 0);
-            sumExpected += (t.totalExpected || 0);
-            sumPaid += (t.paid || 0);
+        if (filteredTx.length === 0) {
+            txList.innerHTML = `<div style="text-align: center; color: var(--text-dark); padding: 20px; font-style: italic;">Không có giao dịch nào trong khoảng ngày này.</div>`;
+        }
 
+        filteredTx.forEach((t, idx) => {
             const isBeforePayment = t.rawDate <= latestPaymentDate;
 
             let remaining = 0;
@@ -1951,9 +1960,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Gắn sự kiện Thanh toán đơn lẻ
             const payRowBtn = invoiceItem.querySelector('.btn-pay-row');
-            payRowBtn.addEventListener('click', () => {
-                paySingleTransaction(t);
-            });
+            if (payRowBtn) {
+                payRowBtn.addEventListener('click', () => {
+                    paySingleTransaction(t);
+                });
+            }
         });
 
         // Xử lý Checkbox & Chọn Tất Cả
@@ -1970,6 +1981,41 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (btnPaySelected) {
             btnPaySelected.style.display = 'none';
+        }
+
+        // Định nghĩa hàm cập nhật động số liệu tổng hợp
+        function updateDetailTotals(checkedBoxes) {
+            let sumQty = 0;
+            let sumExpected = 0;
+            let sumPaid = 0;
+
+            if (checkedBoxes && checkedBoxes.length > 0) {
+                // Tính theo các ngày được chọn bằng checkbox
+                const checkedKeys = checkedBoxes.map(cb => cb.getAttribute('data-txkey'));
+                const checkedTxList = buyerObj.transactions.filter(t => checkedKeys.includes(t.key));
+                checkedTxList.forEach(t => {
+                    sumQty += (t.totalQty || 0);
+                    sumExpected += (t.totalExpected || 0);
+                    sumPaid += (t.paid || 0);
+                });
+            } else {
+                // Tính theo các ngày đang hiển thị trong bộ lọc
+                filteredTx.forEach(t => {
+                    sumQty += (t.totalQty || 0);
+                    sumExpected += (t.totalExpected || 0);
+                    sumPaid += (t.paid || 0);
+                });
+            }
+
+            const detailTotalQty = document.getElementById('detail-total-qty');
+            const detailTotalAmount = document.getElementById('detail-total-amount');
+            const detailPaidAmount = document.getElementById('detail-paid-amount');
+            const detailDebtAmount = document.getElementById('detail-debt-amount');
+
+            if (detailTotalQty) detailTotalQty.innerText = sumQty.toLocaleString('vi-VN') + ' bông';
+            if (detailTotalAmount) detailTotalAmount.innerText = formatCurrency(sumExpected);
+            if (detailPaidAmount) detailPaidAmount.innerText = formatCurrency(sumPaid);
+            if (detailDebtAmount) detailDebtAmount.innerText = formatCurrency(sumExpected - sumPaid);
         }
 
         function updateSelectionState() {
@@ -1998,6 +2044,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (chkSelectAll) {
                 chkSelectAll.checked = count === allCheckboxes.length && allCheckboxes.length > 0;
             }
+
+            // Gọi hàm cập nhật số liệu tổng hợp
+            updateDetailTotals(checkedBoxes);
         }
 
         if (chkSelectAll) {
@@ -2039,12 +2088,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-
-
-        document.getElementById('detail-total-qty').innerText = sumQty.toLocaleString('vi-VN') + ' bông';
-        document.getElementById('detail-total-amount').innerText = formatCurrency(sumExpected);
-        document.getElementById('detail-paid-amount').innerText = formatCurrency(sumPaid);
-        document.getElementById('detail-debt-amount').innerText = formatCurrency(sumExpected - sumPaid);
+        // Cập nhật số liệu tổng hợp ban đầu theo bộ lọc
+        updateSelectionState();
     }
 
 
@@ -6455,6 +6500,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         updateInvoiceDateFilterSummary();
+
+        // Tự động cập nhật danh sách và số liệu tổng hợp nếu đang xem chi tiết hóa đơn
+        if (currentSelectedBuyer) {
+            showDebtDetail(currentSelectedBuyer);
+        }
     }
 
     // Khởi tạo summary label khi trang load
@@ -6465,12 +6515,18 @@ document.addEventListener("DOMContentLoaded", () => {
         invoiceDateFrom.addEventListener('change', () => {
             clearActiveQuickButtons();
             updateInvoiceDateFilterSummary();
+            if (currentSelectedBuyer) {
+                showDebtDetail(currentSelectedBuyer);
+            }
         });
     }
     if (invoiceDateTo) {
         invoiceDateTo.addEventListener('change', () => {
             clearActiveQuickButtons();
             updateInvoiceDateFilterSummary();
+            if (currentSelectedBuyer) {
+                showDebtDetail(currentSelectedBuyer);
+            }
         });
     }
 
