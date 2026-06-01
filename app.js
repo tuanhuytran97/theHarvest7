@@ -2017,7 +2017,23 @@ document.addEventListener("DOMContentLoaded", () => {
             if (btnPaySelected) {
                 if (count > 0) {
                     btnPaySelected.style.display = 'flex';
-                    if (btnPaySelectedCount) btnPaySelectedCount.innerText = count;
+                    // Tính số tiền còn phải thu của các ngày được chọn
+                    const checkedKeys = checkedBoxes.map(cb => cb.getAttribute('data-txkey'));
+                    const checkedTxList = buyerObj.transactions.filter(t => checkedKeys.includes(t.key));
+                    let checkedDebt = 0;
+                    checkedTxList.forEach(t => {
+                        let remaining = 0;
+                        t.lines.forEach(l => {
+                            const status = (l.rawRow["Status"] || "").trim().toLowerCase();
+                            if (status !== "xong") {
+                                const lineExpected = l.isVua ? (parseFloat(l.rawRow["Tiền Phải Thu"]) || 0) : (parseFloat(l.rawRow["Doanh Thu Bông"]) || 0);
+                                const linePaid = parseFloat(l.rawRow["Đã Thu"]) || 0;
+                                remaining += Math.max(0, lineExpected - linePaid);
+                            }
+                        });
+                        checkedDebt += remaining;
+                    });
+                    if (btnPaySelectedCount) btnPaySelectedCount.innerText = formatCurrency(checkedDebt);
                 } else {
                     btnPaySelected.style.display = 'none';
                 }
@@ -2484,7 +2500,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            if (!confirm(`Xác nhận thu HẾT nợ của ${selectedTxList.length} ngày đã chọn? (Tổng tiền: ${formatCurrency(selectedDebt)})`)) return;
+            if (!confirm(`Xác nhận thu HẾT nợ của ${selectedTxList.length} ngày đã chọn? (Tổng nợ còn phải thu: ${formatCurrency(selectedDebt)})`)) return;
 
             if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
                 alert("Vui lòng cấu hình WEB_APP_URL!");
