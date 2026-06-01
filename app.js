@@ -5731,7 +5731,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const dateStr = formatDateVietnamese(dInput); // Dùng định dạng chuẩn DD/MM/YYYY để khớp với Sheet
         const statusVal = document.getElementById('status-input').value; // Removed default "Chưa Xong"
         const buyerVal = document.getElementById('buyer-input').value;
-        const noteVal = ""; // Ghi Chú Cuốc Xe đã bị loại bỏ
+        const noteVal = statusVal === 'Xong' ? `Đã thu tiền ngày ${dateStr}` : "";
 
         const submitBtn = form.querySelector('button[type="submit"]');
 
@@ -5761,13 +5761,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Doanh Thu Bông": dtBong.toString(),
                     "Phân Loại Bông": typeStr,
                     "Ghi Chú": noteVal,
-                    "Đã Thu": "", "Tiền Phải Thu": "", "Ghi Chú Vựa thu": "", "Doanh Thu Khác": "",
+                    "Đã Thu": statusVal === 'Xong' ? dtBong.toString() : "",
+                    "Tiền Phải Thu": "", "Ghi Chú Vựa thu": "", "Doanh Thu Khác": "",
                     "Loại DT": "Farm", "Chi Phí": "", "Loại CP": "", "Ghi Chú Chi Phí": ""
                 });
 
                 payloadRowsParsed.push({
                     "Ngày": dateStr, "Status": statusVal, "Người Mua": buyerVal, "Phân Loại Bông": typeStr, "Ghi Chú": noteVal,
-                    parsedDate: dInput, "Số lượng": qValue, "Giá": pValue, "Doanh Thu Bông": dtBong, "Chi Phí": 0, "Tiền Phải Thu": 0, "Doanh Thu Khác": 0, "Loại DT": "Farm"
+                    parsedDate: dInput, "Số lượng": qValue, "Giá": pValue, "Doanh Thu Bông": dtBong,
+                    "Đã Thu": statusVal === 'Xong' ? dtBong : 0,
+                    "Chi Phí": 0, "Tiền Phải Thu": 0, "Doanh Thu Khác": 0, "Loại DT": "Farm"
                 });
             });
         } else if (entryMode === 'vua') {
@@ -5794,6 +5797,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const tPhaiThuStr = index === 0 ? totalCollect.toString() : "";
                 const dtKhacStr = index === 0 ? expectedRevenue.toString() : "";
+                const daThuStr = (statusVal === 'Xong' && index === 0) ? totalCollect.toString() : "";
 
                 let chiPhiStr = "";
                 let loaiCPStr = "";
@@ -5805,12 +5809,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 payloadRowsStr.push({
                     "Ngày": dateStr, "Status": statusVal, "Người Mua": buyerVal, "Số lượng": qValue.toString(), "Giá": pValue.toString(), "Doanh Thu Bông": dtBong.toString(), "Phân Loại Bông": typeStr, "Ghi Chú": noteVal,
-                    "Đã Thu": "", "Tiền Phải Thu": tPhaiThuStr, "Ghi Chú Vựa thu": "", "Doanh Thu Khác": dtKhacStr, "Loại DT": "Vựa", "Chi Phí": chiPhiStr, "Loại CP": loaiCPStr, "Ghi Chú Chi Phí": ""
+                    "Đã Thu": daThuStr, "Tiền Phải Thu": tPhaiThuStr, "Ghi Chú Vựa thu": "", "Doanh Thu Khác": dtKhacStr, "Loại DT": "Vựa", "Chi Phí": chiPhiStr, "Loại CP": loaiCPStr, "Ghi Chú Chi Phí": ""
                 });
 
                 payloadRowsParsed.push({
                     "Ngày": dateStr, "Status": statusVal, "Người Mua": buyerVal, "Phân Loại Bông": typeStr, "Ghi Chú": noteVal, "Loại DT": "Vựa", "Loại CP": loaiCPStr,
-                    parsedDate: dInput, "Số lượng": qValue, "Giá": pValue, "Doanh Thu Bông": dtBong, "Tiền Phải Thu": index === 0 ? totalCollect : 0, "Chi Phí": index === 0 ? shipCost : 0, "Doanh Thu Khác": index === 0 ? expectedRevenue : 0
+                    parsedDate: dInput, "Số lượng": qValue, "Giá": pValue, "Doanh Thu Bông": dtBong,
+                    "Đã Thu": (statusVal === 'Xong' && index === 0) ? totalCollect : 0,
+                    "Tiền Phải Thu": index === 0 ? totalCollect : 0, "Chi Phí": index === 0 ? shipCost : 0, "Doanh Thu Khác": index === 0 ? expectedRevenue : 0
                 });
             });
         } else if (entryMode === 'expense') {
