@@ -196,6 +196,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
         const debtActionBox = document.querySelector('.invoice-footer-actions');
         const btnAddInv = document.getElementById('btn-add-investment');
+        const menuInvestment = document.getElementById('menu-investment');
+        const mobileInvestment = document.querySelector('.mobile-nav-item[data-view="investment"]');
 
         // EMP_LV2: Readonly, hide sensitive/entry tools
         if (role === 'EMP_LV2') {
@@ -203,6 +205,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (entryCard) entryCard.style.display = 'none';
             if (bulkDeleteBtn) bulkDeleteBtn.style.display = 'none';
             if (debtActionBox) debtActionBox.style.display = 'none';
+            if (menuInvestment) menuInvestment.style.display = 'none';
+            if (mobileInvestment) mobileInvestment.style.display = 'none';
             // chatbotContainer is now allowed to be displayed
         }
     }
@@ -1642,6 +1646,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function switchView(viewId) {
+        if (viewId === 'investment' && getRole() === 'EMP_LV2') {
+            if (window.showToast) window.showToast("Tài khoản bậc 2 không có quyền truy cập mục Đầu Tư.", "error");
+            else alert("Tài khoản bậc 2 không có quyền truy cập mục Đầu Tư.");
+            switchView('todo');
+            return;
+        }
         hideAllViews();
         localStorage.setItem("active_app_view", viewId);
 

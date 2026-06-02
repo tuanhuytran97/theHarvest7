@@ -11,6 +11,13 @@ let invRoiChart = null;
 
 // --- 0. Rendering & Shorthand Logic (Hoisted) ---
 function renderInvestmentPortfolio() {
+    if (window.getRole && window.getRole() === 'EMP_LV2') {
+        const tbody = document.getElementById('inv-portfolio-body');
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #ef4444; font-weight: 700;">Bạn không có quyền truy cập mục này.</td></tr>`;
+        }
+        return;
+    }
     const tbody = document.getElementById('inv-portfolio-body');
     let totalCapital = 0, totalCurrent = 0, totalDivs = 0, totalIntrinsic = 0;
 
@@ -459,6 +466,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 2. Data Sync Logic (Background Fetch)
     window.fetchInvestmentData = async function () {
+        if (window.getRole && window.getRole() === 'EMP_LV2') return;
         const savedView = localStorage.getItem("active_app_view");
         // Chỉ fetch nếu đang ở tab đầu tư để tiết kiệm tài nguyên
         if (savedView !== 'investment') return;
