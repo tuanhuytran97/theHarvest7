@@ -550,7 +550,6 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
         const isDone = t.status === 'Hoàn thành' || t.status === 'Hủy bỏ';
         const tDiv = document.createElement('div');
         tDiv.className = 'calendar-task';
-        if (isDone) tDiv.style.opacity = '0.6';
         
         const dl = parseLocalDate(t.deadline);
         const isOverdue = dl && dl.getTime() < today.getTime() && !isDone;
