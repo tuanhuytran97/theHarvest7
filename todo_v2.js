@@ -8,6 +8,7 @@ let todoCharts = {};
 let currentSort = { key: 'deadline', asc: true };
 let selectedFocusDate = new Date();
 selectedFocusDate.setHours(0,0,0,0);
+let selectedCalCategories = [];
 
 
 // Register Chart.js Plugins
@@ -95,7 +96,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // Calendar Controls
     document.getElementById('cal-month')?.addEventListener('change', renderCalendar);
     document.getElementById('cal-year')?.addEventListener('change', renderCalendar);
-    document.getElementById('cal-category')?.addEventListener('change', renderCalendar);
+
+    // Custom Multi-Select Trigger logic
+    const msContainer = document.getElementById('cal-category-multiselect');
+    if (msContainer) {
+        const trigger = msContainer.querySelector('.multiselect-trigger');
+        const dropdown = msContainer.querySelector('.multiselect-dropdown');
+        if (trigger && dropdown) {
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = dropdown.style.display === 'block';
+                dropdown.style.display = isOpen ? 'none' : 'block';
+            });
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#cal-category-multiselect')) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        }
+    }
 
     // Filter Controls
     document.getElementById('filter-search')?.addEventListener('input', renderTable);
@@ -285,15 +304,8 @@ function updateCategoryFilterOptions() {
         filterCat.innerHTML = html;
     }
 
-    const calCat = document.getElementById('cal-category');
-    if (calCat) {
-        const currentVal = calCat.value;
-        let html = '<option value="">Tất cả phân loại</option>';
-        categories.forEach(c => {
-            html += `<option value="${c}" ${c === currentVal ? 'selected' : ''}>${c}</option>`;
-        });
-        calCat.innerHTML = html;
-    }
+    // Render custom multi-select checkbox component
+    renderCalCategoryMultiSelect(categories);
 }
 
 // --- RENDERING: TABLE ---
@@ -510,8 +522,6 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
     const m = date.getMonth();
     const y = date.getFullYear();
 
-    const categoryFilter = document.getElementById('cal-category')?.value || '';
-
     // Find tasks: Tasks due on this date OR (if cell is today) overdue tasks
     const dayTasks = todoCache.filter(t => {
         if (!t.deadline) return false;
@@ -527,7 +537,8 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
         if (!(isSameDay || (isTodayCell && isOverdue))) return false;
 
         // Apply category filter (falsy categories default to 'Chung')
-        const matchesCategory = !categoryFilter || (t.category || 'Chung') === categoryFilter;
+        const tCategory = t.category || 'Chung';
+        const matchesCategory = selectedCalCategories.length === 0 || selectedCalCategories.includes(tCategory);
         return matchesCategory;
     });
 
@@ -1104,4 +1115,88 @@ function escapeHtml(text) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+// --- MULTI-SELECT CATEGORY HELPERS ---
+window.toggleCalCategory = function(cat, isChecked) {
+    if (isChecked) {
+        if (!selectedCalCategories.includes(cat)) {
+            selectedCalCategories.push(cat);
+        }
+    } else {
+        selectedCalCategories = selectedCalCategories.filter(c => c !== cat);
+    }
+    updateCalCategoryTriggerLabel();
+    renderCalendar();
+};
+
+window.selectAllCalCategories = function(selectBool) {
+    const checkboxes = document.querySelectorAll('#cal-category-multiselect .multiselect-dropdown input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        cb.checked = selectBool;
+    });
+
+    if (selectBool) {
+        const categories = [...new Set(todoCache.map(t => t.category || 'Chung'))].sort();
+        selectedCalCategories = [...categories];
+    } else {
+        selectedCalCategories = [];
+    }
+    updateCalCategoryTriggerLabel();
+    renderCalendar();
+};
+
+function updateCalCategoryTriggerLabel() {
+    const label = document.querySelector('#cal-category-multiselect .multiselect-label');
+    if (label) {
+        if (selectedCalCategories.length === 0) {
+            label.innerText = 'Tất cả phân loại';
+            label.style.color = '#64748b';
+        } else {
+            const categories = [...new Set(todoCache.map(t => t.category || 'Chung'))].sort();
+            if (selectedCalCategories.length === categories.length) {
+                label.innerText = 'Tất cả phân loại';
+                label.style.color = '#1e293b';
+            } else {
+                label.innerText = selectedCalCategories.join(', ');
+                label.style.color = '#1e293b';
+            }
+        }
+    }
+}
+
+function renderCalCategoryMultiSelect(categories) {
+    // Keep only active categories
+    selectedCalCategories = selectedCalCategories.filter(c => categories.includes(c));
+
+    const dropdown = document.querySelector('#cal-category-multiselect .multiselect-dropdown');
+    if (dropdown) {
+        let html = '';
+        // Actions header
+        html += `
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 6px; font-size: 0.8rem; user-select: none;">
+                <span onclick="selectAllCalCategories(true); event.stopPropagation();" style="color: #6366f1; font-weight: 700; cursor: pointer; hover: opacity 0.8;">Chọn tất cả</span>
+                <span onclick="selectAllCalCategories(false); event.stopPropagation();" style="color: #ef4444; font-weight: 700; cursor: pointer; hover: opacity 0.8;">Xóa chọn</span>
+            </div>
+        `;
+        categories.forEach(c => {
+            const isChecked = selectedCalCategories.includes(c);
+            html += `
+                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;" onclick="event.stopPropagation();">
+                    <input type="checkbox" value="${c}" ${isChecked ? 'checked' : ''} onchange="toggleCalCategory('${c}', this.checked)" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                    <span>${c}</span>
+                </label>
+            `;
+        });
+        dropdown.innerHTML = html;
+
+        // Add hover effects on items
+        dropdown.querySelectorAll('.multiselect-item').forEach(item => {
+            item.addEventListener('mouseenter', () => item.style.background = '#f1f5f9');
+            item.addEventListener('mouseleave', () => item.style.background = 'transparent');
+        });
+
+        // Update trigger label
+        updateCalCategoryTriggerLabel();
+    }
 }
