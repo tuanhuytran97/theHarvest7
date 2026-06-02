@@ -97,6 +97,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cal-month')?.addEventListener('change', renderCalendar);
     document.getElementById('cal-year')?.addEventListener('change', renderCalendar);
 
+    // Export Calendar text listener
+    document.getElementById('btn-export-text')?.addEventListener('click', openExportTextModal);
+    document.getElementById('btn-copy-export')?.addEventListener('click', copyExportText);
+
     // Custom Multi-Select Trigger logic
     const msContainer = document.getElementById('cal-category-multiselect');
     if (msContainer) {
@@ -1199,3 +1203,154 @@ function renderCalCategoryMultiSelect(categories) {
         updateCalCategoryTriggerLabel();
     }
 }
+
+/**
+ * Export calendar schedule to plain text bullet-point format grouped by date
+ * and sorted chronologically (lowest date to highest date)
+ */
+function openExportTextModal() {
+    const monthVal = document.getElementById('cal-month')?.value;
+    const yearVal = document.getElementById('cal-year')?.value;
+    if (monthVal === undefined || yearVal === undefined) return;
+
+    const month = parseInt(monthVal);
+    const year = parseInt(yearVal);
+    
+    // Filter tasks based on month and year of deadline
+    const filtered = todoCache.filter(t => {
+        if (!t.deadline) return false;
+        const dl = parseLocalDate(t.deadline);
+        if (!dl) return false;
+        
+        // Match month and year
+        const matchesDate = dl.getMonth() === month && dl.getFullYear() === year;
+        if (!matchesDate) return false;
+        
+        // Match category filter
+        const tCategory = t.category || 'Chung';
+        const matchesCategory = selectedCalCategories.length === 0 || selectedCalCategories.includes(tCategory);
+        return matchesCategory;
+    });
+    
+    // Sort chronologically (lowest date to highest date)
+    filtered.sort((a, b) => {
+        const dlA = parseLocalDate(a.deadline);
+        const dlB = parseLocalDate(b.deadline);
+        return dlA.getTime() - dlB.getTime();
+    });
+    
+    // Group by day of month
+    const groups = {};
+    filtered.forEach(t => {
+        const dl = parseLocalDate(t.deadline);
+        const day = dl.getDate();
+        if (!groups[day]) {
+            groups[day] = [];
+        }
+        groups[day].push(t);
+    });
+    
+    // Priority weights for sorting within same day
+    const priorityWeight = { 'Khẩn cấp': 1, 'Cao': 2, 'Trung bình': 3, 'Thấp': 4 };
+    const pad = (n) => String(n).padStart(2, '0');
+    const displayMonth = pad(month + 1);
+    
+    let textResult = "";
+    
+    // Sort day numbers ascending
+    const sortedDays = Object.keys(groups).map(Number).sort((a, b) => a - b);
+    
+    if (sortedDays.length === 0) {
+        textResult = `Lịch trình tháng ${displayMonth}/${year} không có công việc nào.`;
+    } else {
+        sortedDays.forEach(day => {
+            const dayTasks = groups[day];
+            
+            // Sort by priority within the day
+            dayTasks.sort((a, b) => (priorityWeight[a.priority] || 99) - (priorityWeight[b.priority] || 99));
+            
+            textResult += `ngày ${pad(day)}/${displayMonth}:\n`;
+            dayTasks.forEach(t => {
+                const noteStr = t.note ? ` (${t.note})` : '';
+                textResult += `  - ${t.task}${noteStr}\n`;
+            });
+            textResult += `\n`;
+        });
+        
+        // Trim trailing newlines
+        textResult = textResult.trim();
+    }
+    
+    // Set text to textarea
+    const contentTextarea = document.getElementById('export-text-content');
+    if (contentTextarea) {
+        contentTextarea.value = textResult;
+    }
+    
+    // Open modal
+    const modal = document.getElementById('export-text-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+/**
+ * Copy the exported calendar text to clipboard with micro-interaction feedback
+ */
+async function copyExportText() {
+    const textarea = document.getElementById('export-text-content');
+    if (!textarea) return;
+    
+    const text = textarea.value;
+    
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+            showCopySuccess();
+        } else {
+            textarea.select();
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+            showCopySuccess();
+        }
+    } catch (err) {
+        console.error("Failed to copy text: ", err);
+        try {
+            textarea.select();
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+            showCopySuccess();
+        } catch (fallbackErr) {
+            alert("Không thể tự động sao chép. Vui lòng chọn và sao chép thủ công.");
+        }
+    }
+}
+
+/**
+ * Display premium success state feedback on copy button
+ */
+function showCopySuccess() {
+    const btn = document.getElementById('btn-copy-export');
+    if (!btn) return;
+    
+    const originalBg = btn.style.background;
+    const originalShadow = btn.style.boxShadow;
+    const originalHtml = btn.innerHTML;
+    
+    btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+    btn.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+    btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã sao chép!';
+    btn.disabled = true;
+    
+    setTimeout(() => {
+        btn.style.background = originalBg;
+        btn.style.boxShadow = originalShadow;
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+    }, 2000);
+}
+
+// Expose helper functions globally
+window.openExportTextModal = openExportTextModal;
+window.copyExportText = copyExportText;
+
