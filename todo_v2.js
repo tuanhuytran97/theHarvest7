@@ -1299,15 +1299,17 @@ function openExportTextModal() {
         textResult = textResult.trim();
     }
     
-    // Trigger direct file download
-    const formattedFilename = `Lich_Trinh_Thang_${displayMonth}_${year}.txt`;
-    const element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(textResult));
-    element.setAttribute('download', formattedFilename);
-    element.style.display = 'none';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+    // Set text to textarea
+    const contentTextarea = document.getElementById('export-text-content');
+    if (contentTextarea) {
+        contentTextarea.value = textResult;
+    }
+    
+    // Open modal
+    const modal = document.getElementById('export-text-modal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
 }
 
 /**
