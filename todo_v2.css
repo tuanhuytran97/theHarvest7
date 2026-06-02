@@ -894,6 +894,8 @@ tr:hover {
 .cat-tag-ca-nhan { background: #f3e8ff !important; color: #6b21a8 !important; border: 1px solid #e9d5ff !important; }
 .cat-tag-phat-trien { background: #ffedd5 !important; color: #9a3412 !important; border: 1px solid #fed7aa !important; }
 .cat-tag-khac { background: #f1f5f9 !important; color: #475569 !important; border: 1px solid #e2e8f0 !important; }
+.cat-tag-done { background: #f1f5f9 !important; color: #94a3b8 !important; border: 1px solid #cbd5e1 !important; text-decoration: none !important; opacity: 0.8; }
+
 
 /* --- MULTI-SELECT PREMIUM STYLING --- */
 #cal-category-multiselect .multiselect-trigger {

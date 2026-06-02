@@ -568,6 +568,8 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
             else if (cat.includes('cá nhân')) catClass = 'cat-tag-ca-nhan';
             else if (cat.includes('self-help')) catClass = 'cat-tag-phat-trien';
             
+            if (isDone) catClass = 'cat-tag-done'; // Mute tags on completed tasks
+            
             catTag = ` <span class="cat-tag ${catClass}">${t.category}</span>`;
         }
 
@@ -576,12 +578,28 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
         tDiv.innerHTML = (isOverdue ? '<span style="color: #ef4444; font-weight: 800;">(Trễ)</span> ' : '') + checkIcon + escapeHtml(t.task) + catTag;
         tDiv.title = t.task + (t.category ? ` [${t.category}]` : '');
 
-        // Color by priority
-        if (t.priority === 'Khẩn cấp') tDiv.style.background = '#fee2e2';
-        else if (t.priority === 'Cao') tDiv.style.background = '#ffedd5';
-        else tDiv.style.background = '#f1f5f9';
-
-        if (isDone) tDiv.style.textDecoration = 'line-through';
+        // Color by priority if active, else grey out
+        if (isDone) {
+            tDiv.style.background = '#f1f5f9';
+            tDiv.style.color = '#94a3b8';
+            tDiv.style.textDecoration = 'line-through';
+            tDiv.style.border = '1px solid #cbd5e1';
+        } else {
+            tDiv.style.textDecoration = 'none';
+            if (t.priority === 'Khẩn cấp') {
+                tDiv.style.background = '#fee2e2';
+                tDiv.style.color = '#991b1b';
+                tDiv.style.border = '1px solid #fecaca';
+            } else if (t.priority === 'Cao') {
+                tDiv.style.background = '#ffedd5';
+                tDiv.style.color = '#c2410c';
+                tDiv.style.border = '1px solid #fed7aa';
+            } else {
+                tDiv.style.background = '#ffffff';
+                tDiv.style.color = '#334155';
+                tDiv.style.border = '1px solid #e2e8f0';
+            }
+        }
 
         tDiv.onclick = (e) => {
             e.stopPropagation();
