@@ -234,9 +234,45 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 1000);
     }
 
+    // CHECK LOGIN LOCK
+    const checkLoginBlock = () => {
+        const blockUntil = localStorage.getItem("login-block-until");
+        if (blockUntil) {
+            const remaining = parseInt(blockUntil) - Date.now();
+            if (remaining > 0) {
+                const submitBtn = loginForm.querySelector('button[type="submit"]');
+                if (submitBtn) submitBtn.disabled = true;
+                if (passwordInput) passwordInput.disabled = true;
+                if (loginError) {
+                    loginError.style.display = "block";
+                    const minutes = Math.floor(remaining / 60000);
+                    const seconds = Math.ceil((remaining % 60000) / 1000);
+                    loginError.innerText = `Bạn đã nhập sai quá 5 lần. Thiết bị tạm khóa. Thử lại sau ${minutes} phút ${seconds} giây.`;
+                }
+                setTimeout(checkLoginBlock, 1000);
+                return true;
+            } else {
+                localStorage.removeItem("login-block-until");
+                localStorage.setItem("failed-login-attempts", "0");
+                if (passwordInput) passwordInput.disabled = false;
+                const submitBtn = loginForm.querySelector('button[type="submit"]');
+                if (submitBtn) submitBtn.disabled = false;
+                if (loginError) {
+                    loginError.style.display = "none";
+                    loginError.innerText = "";
+                }
+            }
+        }
+        return false;
+    };
+
     if (!checkAuth()) {
+        checkLoginBlock();
+
         loginForm.addEventListener("submit", async (e) => {
             e.preventDefault();
+            if (checkLoginBlock()) return;
+
             const pw = passwordInput.value;
             if (!pw) return;
 
@@ -256,6 +292,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 const result = await response.json();
 
                 if (result.status === "success") {
+                    localStorage.setItem("failed-login-attempts", "0");
+                    localStorage.removeItem("login-block-until");
+
                     // Lấy thông tin từ danh sách ẩn trong config.js nếu có
                     const userConfig = (typeof CONFIG !== 'undefined' && CONFIG.USERS) ? CONFIG.USERS[pw] : null;
                     const userName = userConfig ? userConfig.name : (result.userName || "Người dùng");
@@ -277,10 +316,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     submitBtn.innerText = originalText;
                     submitBtn.disabled = false;
-                    loginError.style.display = "block";
-                    loginError.innerText = result.message || "Mật khẩu không đúng!";
-                    passwordInput.value = "";
-                    passwordInput.focus();
+
+                    let attempts = parseInt(localStorage.getItem("failed-login-attempts") || "0") + 1;
+                    localStorage.setItem("failed-login-attempts", attempts);
+
+                    if (attempts >= 5) {
+                        const blockTime = Date.now() + 15 * 60 * 1000; // block for 15 minutes
+                        localStorage.setItem("login-block-until", blockTime.toString());
+                        checkLoginBlock();
+                    } else {
+                        loginError.style.display = "block";
+                        loginError.innerText = (result.message || "Mật khẩu không đúng!") + ` (Còn ${5 - attempts} lần thử)`;
+                        passwordInput.value = "";
+                        passwordInput.focus();
+                    }
                 }
             } catch (err) {
                 submitBtn.innerText = originalText;
