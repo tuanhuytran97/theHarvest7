@@ -553,8 +553,8 @@
             <nav>
                 <a href="#" id="menu-todo" class="active"><i class="fa-solid fa-list-check"></i> <span>Công
                         Việc</span></a>
-                <a href="#" id="menu-data"><i class="fa-solid fa-table"></i> <span>Dữ Liệu</span></a>
-                <a href="#" id="menu-report"><i class="fa-solid fa-chart-pie"></i> <span>Báo Cáo</span></a>
+                <a href="#" id="menu-data"><i class="fa-solid fa-table"></i> <span>Nhập Liệu</span></a>
+                <a href="#" id="menu-report"><i class="fa-solid fa-chart-pie"></i> <span>Báo Cáo Chi Tiết</span></a>
                 <a href="#" id="menu-cashflow"><i class="fa-solid fa-money-bill-transfer"></i> <span>Dòng
                         Tiền</span></a>
                 <a href="#" id="menu-debt"><i class="fa-solid fa-book-journal-whills"></i> <span>Các khoản phải
@@ -1101,6 +1101,20 @@
                                     style="background: rgba(16, 185, 129, 0.15); color: var(--success); border: 2px solid var(--success); padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"><i
                                         class="fa-solid fa-circle-plus" style="font-size: 1.2rem;"></i> Thêm
                                     Bông</button>
+                            </div>
+
+                            <!-- Quick selection pills -->
+                            <div id="flower-pills-container" class="span-full">
+                                <span style="font-size: 0.75rem; color: #64748b; font-weight: 700; margin-right: 4px;">Chọn nhanh:</span>
+                                <button type="button" class="flower-pill-btn" data-value="Xô ngoại">Xô ngoại</button>
+                                <button type="button" class="flower-pill-btn" data-value="Xô nội">Xô nội</button>
+                                <button type="button" class="flower-pill-btn" data-value="Ecuador">Ecuador</button>
+                                <button type="button" class="flower-pill-btn" data-value="Pháp">Pháp</button>
+                                <button type="button" class="flower-pill-btn" data-value="Trắng ù">Trắng ù</button>
+                                <button type="button" class="flower-pill-btn" data-value="Simmo">Simmo</button>
+                                <button type="button" class="flower-pill-btn" data-value="Lạc Thần">Lạc Thần</button>
+                                <button type="button" class="flower-pill-btn" data-value="Hỷ Trứng">Hỷ Trứng</button>
+                                <button type="button" class="flower-pill-btn" data-value="Đỏ">Đỏ</button>
                             </div>
 
                             <div id="flower-items-container" class="span-full"
@@ -2208,11 +2222,11 @@
         </a>
         <a href="#" class="mobile-nav-item active" data-view="data">
             <i class="fa-solid fa-table"></i>
-            <span>Dữ Liệu</span>
+            <span>Nhập Liệu</span>
         </a>
         <a href="#" class="mobile-nav-item" data-view="report">
             <i class="fa-solid fa-chart-pie"></i>
-            <span>Báo Cáo</span>
+            <span>Báo Cáo Chi Tiết</span>
         </a>
         <a href="#" class="mobile-nav-item" data-view="cashflow">
             <i class="fa-solid fa-money-bill-transfer"></i>

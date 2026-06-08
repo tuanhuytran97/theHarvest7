@@ -477,6 +477,11 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        if (typeof CONFIG === 'undefined' || !CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL === "NOT_CONFIGURED" || CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+            console.warn("Investment CONFIG.WEB_APP_URL not configured. Skipping sync.");
+            return;
+        }
+
         try {
             const token = window.getToken ? window.getToken() : null;
             if (!token) return;
@@ -624,6 +629,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Luận Điểm Đầu Tư": note,
                     "Ghi Chú": note
                 };
+
+                if (typeof CONFIG === 'undefined' || !CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL === "NOT_CONFIGURED" || CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+                    alert("Chưa cấu hình CONFIG.WEB_APP_URL. Không thể lưu giao dịch.");
+                    btnSaveInv.innerHTML = originalHTML;
+                    btnSaveInv.disabled = false;
+                    return;
+                }
 
                 const response = await fetch(CONFIG.WEB_APP_URL, {
                     method: "POST",
@@ -787,6 +799,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const originalHTML = btnSaveTx.innerHTML;
             btnSaveTx.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
             btnSaveTx.disabled = true;
+
+            if (typeof CONFIG === 'undefined' || !CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL === "NOT_CONFIGURED" || CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+                alert("Chưa cấu hình CONFIG.WEB_APP_URL. Không thể lưu giao dịch.");
+                btnSaveTx.innerHTML = originalHTML;
+                btnSaveTx.disabled = false;
+                return;
+            }
 
             try {
                 const response = await fetch(CONFIG.WEB_APP_URL, {

@@ -2,6 +2,7 @@
 var getRole = () => sessionStorage.getItem("user-role");
 var getUserName = () => sessionStorage.getItem("user-name");
 var getToken = () => sessionStorage.getItem("user-token");
+var isConfigured = () => typeof CONFIG !== 'undefined' && CONFIG.WEB_APP_URL && CONFIG.WEB_APP_URL !== "" && CONFIG.WEB_APP_URL !== "YOUR_WEB_APP_URL_HERE" && CONFIG.WEB_APP_URL !== "NOT_CONFIGURED";
 
 function getTodayStr() {
     const now = new Date();
@@ -282,6 +283,43 @@ document.addEventListener("DOMContentLoaded", () => {
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xác thực...';
             submitBtn.disabled = true;
 
+            // Offline/Local Auth Fallback if WEB_APP_URL is not configured
+            if (!isConfigured()) {
+                const userConfig = (typeof CONFIG !== 'undefined' && CONFIG.USERS) ? CONFIG.USERS[pw] : null;
+                if (userConfig) {
+                    localStorage.setItem("failed-login-attempts", "0");
+                    localStorage.removeItem("login-block-until");
+                    sessionStorage.setItem("user-role", userConfig.role);
+                    sessionStorage.setItem("user-name", userConfig.name);
+                    sessionStorage.setItem("user-token", pw); // Use password as auth token
+                    
+                    loginOverlay.style.display = "none";
+                    appContainer.style.display = "flex";
+                    if (chatbotContainer) chatbotContainer.style.display = "flex";
+                    applyRolePermissions(userConfig.role);
+                    updateUserProfile();
+                    if (typeof initDashboard === "function") initDashboard();
+                    setTimeout(() => location.reload(), 500);
+                    return;
+                } else {
+                    submitBtn.innerText = originalText;
+                    submitBtn.disabled = false;
+                    let attempts = parseInt(localStorage.getItem("failed-login-attempts") || "0") + 1;
+                    localStorage.setItem("failed-login-attempts", attempts);
+                    if (attempts >= 5) {
+                        const blockTime = Date.now() + 15 * 60 * 1000;
+                        localStorage.setItem("login-block-until", blockTime.toString());
+                        checkLoginBlock();
+                    } else {
+                        loginError.style.display = "block";
+                        loginError.innerText = `Mật khẩu không đúng! (Còn ${5 - attempts} lần thử)`;
+                        passwordInput.value = "";
+                        passwordInput.focus();
+                    }
+                    return;
+                }
+            }
+
             try {
                 // Gửi mật khẩu lên Apps Script để kiểm tra
                 const response = await fetch(CONFIG.WEB_APP_URL, {
@@ -364,6 +402,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let monthlyCombinedChartInstance = null;
     let financialGrowthChartInstance = null;
     let currentEditRowData = null; // Track row being edited
+    let activeTypeInput = null; // Track currently focused flower type input
 
     // Convert Excel Serial Date to JS Date Object
     function excelToJsDate(serial) {
@@ -863,6 +902,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function attachFlowerRowEvents(row) {
         const delBtn = row.querySelector('.del-flower-btn');
         const qtyInput = row.querySelector('.fw-qty');
+        const typeInput = row.querySelector('.fw-type');
         const pInput = row.querySelector('.fw-price');
         const totalInput = row.querySelector('.fw-total');
 
@@ -887,6 +927,52 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (qtyInput) qtyInput.addEventListener('input', updateRowTotal);
         if (pInput) pInput.addEventListener('input', updateRowTotal);
+
+        // Keyboard navigation listeners
+        if (qtyInput) {
+            qtyInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (typeInput) typeInput.focus();
+                }
+            });
+        }
+
+        if (typeInput) {
+            typeInput.addEventListener('focus', () => {
+                activeTypeInput = typeInput;
+            });
+            typeInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (pInput) pInput.focus();
+                }
+            });
+        }
+
+        if (pInput) {
+            pInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const nextRow = row.nextElementSibling;
+                    if (nextRow && nextRow.classList.contains('flower-item')) {
+                        const nextQty = nextRow.querySelector('.fw-qty');
+                        if (nextQty) nextQty.focus();
+                    } else {
+                        if (addFlowerBtn) {
+                            addFlowerBtn.click();
+                            const newRow = flowerItemsContainer.lastElementChild;
+                            if (newRow) {
+                                const newQty = newRow.querySelector('.fw-qty');
+                                if (newQty) {
+                                    setTimeout(() => newQty.focus(), 10);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
     }
 
     if (flowerItemsContainer) {
@@ -922,6 +1008,32 @@ document.addEventListener("DOMContentLoaded", () => {
             attachFlowerRowEvents(item);
         });
     }
+
+    // Flower pills quick select click handler
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('flower-pill-btn')) {
+            e.preventDefault();
+            const val = e.target.dataset.value;
+            let targetInput = activeTypeInput;
+            if (!targetInput || !document.body.contains(targetInput)) {
+                const inputs = flowerItemsContainer ? flowerItemsContainer.querySelectorAll('.fw-type') : [];
+                if (inputs.length > 0) {
+                    targetInput = inputs[inputs.length - 1];
+                }
+            }
+            if (targetInput) {
+                targetInput.value = val;
+                targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                
+                // Auto focus Đơn Giá (Price) input in the same row
+                const row = targetInput.closest('.flower-item');
+                if (row) {
+                    const pInput = row.querySelector('.fw-price');
+                    if (pInput) pInput.focus();
+                }
+            }
+        }
+    });
 
     if (vuaShipCostInput) vuaShipCostInput.addEventListener('input', calculateVuaTotals);
     if (vuaVattuCostInput) vuaVattuCostInput.addEventListener('input', calculateVuaTotals);
@@ -1286,7 +1398,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!confirm(`Xóa dòng ${sheetRow} trên Google Sheets?`)) return;
 
         try {
-            if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+            if (!isConfigured()) {
                 farmData.splice(farmData.indexOf(rowData), 1);
                 applyFiltersAndRender();
                 return;
@@ -1528,6 +1640,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const tr = btn.closest('tr');
         const originalData = dataToRenderRef[idx];
         if (!originalData || !tr) return;
+
+        if (!isConfigured()) {
+            alert("Chưa cấu hình Server URL. Không thể cập nhật dòng dữ liệu.");
+            return;
+        }
 
         if (!confirm("Xác nhận cập nhật dòng dữ liệu này?")) return;
 
@@ -2323,6 +2440,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         return new Promise((resolve) => {
             const onConfirm = async () => {
+                if (!isConfigured()) {
+                    alert("Chưa cấu hình Server URL. Không thể cập nhật dòng đơn hàng.");
+                    closeEditModal();
+                    resolve(false);
+                    return;
+                }
                 const newQty = parseFloat(inputQty.value) || 0;
                 const newPrice = parseMoney(inputPrice.value) || 0;
 
@@ -2416,7 +2539,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!confirm(`Xác nhận thu HẾT toàn bộ số tiền phải thu ${formatCurrency(totalDebt)} của ${currentSelectedBuyer.name}?`)) return;
         }
 
-        if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+        if (!isConfigured()) {
             alert("Vui lòng cấu hình WEB_APP_URL!");
             return;
         }
@@ -2625,7 +2748,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!confirm(`Xác nhận thu HẾT nợ của ${selectedTxList.length} ngày đã chọn? (Tổng nợ còn phải thu: ${formatCurrency(selectedDebt)})`)) return;
 
-            if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+            if (!isConfigured()) {
                 alert("Vui lòng cấu hình WEB_APP_URL!");
                 return;
             }
@@ -2707,7 +2830,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!confirm(`Số tiền ${formatCurrency(amountToPay)} lớn hơn số tiền phải thu ${formatCurrency(remaining)}. Bạn vẫn muốn tiếp tục?`)) return;
         }
 
-        if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+        if (!isConfigured()) {
             alert("Vui lòng cấu hình WEB_APP_URL!");
             return;
         }
@@ -3652,6 +3775,10 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     window.confirmEditCashflow = async function() {
+        if (!isConfigured()) {
+            alert("Chưa cấu hình Server URL. Không thể cập nhật Dòng tiền.");
+            return;
+        }
         const amountInput = document.getElementById('input-edit-cashflow-amount');
         const noteInput = document.getElementById('input-edit-cashflow-note');
         if (!amountInput || !noteInput || !window.currentEditingCashflow) return;
@@ -4224,6 +4351,13 @@ document.addEventListener("DOMContentLoaded", () => {
             if (tableContainer) tableContainer.style.opacity = '0.5';
         }
 
+        if (!isConfigured()) {
+            console.warn("Financial report CONFIG.WEB_APP_URL not configured. Skipping sync.");
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (tableContainer) tableContainer.style.opacity = '1';
+            return;
+        }
+
         try {
             const response = await fetch(CONFIG.WEB_APP_URL, {
                 method: "POST",
@@ -4768,6 +4902,34 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function getRichTooltipData(label, tooltipItems = []) {
+        function formatDetailLine(r) {
+            const buyer = (r["Người Mua"] || "").trim();
+            const qty = parseFloat(r["Số lượng"]) || 0;
+            const price = parseFloat(r["Giá"]) || 0;
+            const flowerType = (r["Phân Loại Bông"] || "").trim();
+            const amount = (r["Doanh Thu Bông"] || 0) + (r["Doanh Thu Khác"] || 0);
+            const note = (r["Ghi Chú"] || r["Ghi chú"] || "").trim();
+            const isVua = (r["Loại DT"] || "").trim().toLowerCase() === "vựa" || (r["Loại DT"] || "").trim().toLowerCase() === "vua";
+
+            let lineStr = ` ▸ ${buyer || 'Khách lẻ'}: `;
+            if (qty > 0 && price > 0 && flowerType !== "") {
+                const formattedPrice = formatCurrency(price).replace('₫', '').trim();
+                const formattedAmount = formatCurrency(qty * price).replace('₫', '').trim();
+                lineStr += `${formatNumber(qty)} ${flowerType} x ${formattedPrice} = ${formattedAmount}`;
+                
+                const dtKhac = parseFloat(r["Doanh Thu Khác"]) || 0;
+                if (isVua && dtKhac > 0) {
+                    lineStr += ` (LN: ${formatCurrency(dtKhac).replace('₫', '').trim()})`;
+                }
+            } else {
+                lineStr += `${formatCurrency(amount).replace('₫', '').trim()}`;
+            }
+            if (note) {
+                lineStr += ` - ${note}`;
+            }
+            return lineStr.trim();
+        }
+
         const year = document.getElementById('report-year').value;
         const reportMonth = document.getElementById('report-month').value;
         const range = document.getElementById('report-range').value;
@@ -4840,25 +5002,19 @@ document.addEventListener("DOMContentLoaded", () => {
             if (revItems.length > 0) {
                 lines.push("", "────── 🌾 CHI TIẾT FARM ──────");
                 revItems.forEach(r => {
-                    const buyer = (r["Người Mua"] || "").trim();
-                    const amount = (r["Doanh Thu Bông"] || 0) + (r["Doanh Thu Khác"] || 0);
-                    const note = (r["Ghi Chú"] || r["Ghi chú"] || "").trim();
-                    lines.push(` ▸ ${buyer || 'Khách lẻ'}: ${formatCurrency(amount).replace('₫', '').trim()} ${note ? '- ' + note : ''}`.trim());
+                    lines.push(formatDetailLine(r));
                 });
             }
 
             // ALSO show Vựa details if hovering on Farm
             const vuaItems = filtered.filter(r => {
                 const type = (r["Loại DT"] || "").trim().toLowerCase();
-                return (type === "vựa" || type === "vua") && (r["Doanh Thu Khác"] || 0) > 0;
+                return (type === "vựa" || type === "vua") && (parseFloat(r["Số lượng"]) > 0 || (r["Doanh Thu Khác"] || 0) > 0);
             });
             if (vuaItems.length > 0) {
                 lines.push("", "────── 🏘️ CHI TIẾT VỰA ──────");
                 vuaItems.forEach(r => {
-                    const buyer = (r["Người Mua"] || "").trim();
-                    const amount = r["Doanh Thu Khác"] || 0;
-                    const note = (r["Ghi Chú"] || r["Ghi chú"] || "").trim();
-                    lines.push(` ▸ ${buyer || 'Khách lẻ'}: ${formatCurrency(amount).replace('₫', '').trim()} ${note ? '- ' + note : ''}`.trim());
+                    lines.push(formatDetailLine(r));
                 });
             }
             if (lines.length > 0) return lines;
@@ -4868,15 +5024,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (hoveredLabels.some(l => l && l.includes("Vựa"))) {
             const revItems = filtered.filter(r => {
                 const type = (r["Loại DT"] || "").trim().toLowerCase();
-                return (type === "vựa" || type === "vua") && (r["Doanh Thu Khác"] || 0) > 0;
+                return (type === "vựa" || type === "vua") && (parseFloat(r["Số lượng"]) > 0 || (r["Doanh Thu Khác"] || 0) > 0);
             });
             if (revItems.length > 0) {
                 let lines = ["", "────── 🏘️ CHI TIẾT VỰA ──────"];
                 revItems.forEach(r => {
-                    const buyer = (r["Người Mua"] || "").trim();
-                    const amount = r["Doanh Thu Khác"] || 0;
-                    const note = (r["Ghi Chú"] || r["Ghi chú"] || "").trim();
-                    lines.push(` ▸ ${buyer || 'Khách lẻ'}: ${formatCurrency(amount).replace('₫', '').trim()} ${note ? '- ' + note : ''}`.trim());
+                    lines.push(formatDetailLine(r));
                 });
                 if (lines.length > 2) return lines;
             }
@@ -5756,8 +5909,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!confirm(`Bạn có chắc chắn muốn xoá ${checkedBoxes.length} dòng dữ liệu này khỏi Google Sheets?`)) return;
 
-            if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
-                alert("Vui lòng cấu hình WEB_APP_URL trong app.js!");
+            if (!isConfigured()) {
+                alert("Vui lòng cấu hình WEB_APP_URL!");
                 return;
             }
 
@@ -5991,7 +6144,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }));
         }
 
-        if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+        if (!isConfigured()) {
             alert("Vui lòng cấu hình WEB_APP_URL! Dữ liệu hiện tại chỉ lưu tạm.");
             payloadRowsParsed.forEach(p => farmData.unshift(p));
             applyFiltersAndRender();
@@ -6313,7 +6466,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!confirm(`Xác nhận GẠCH TOÀN BỘ toa nợ lũy kế từ trước đến ngày ${endDateStr} của ${currentSelectedBuyer.name}?\nSố tiền thực thu hôm nay sẽ là: ${formatCurrency(amountToPay)}.`)) return;
 
-        if (CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+        if (!isConfigured()) {
             alert("Vui lòng cấu hình WEB_APP_URL!");
             return;
         }

@@ -411,6 +411,13 @@ document.addEventListener("DOMContentLoaded", () => {
     async function savePendingData(cardDiv) {
         if (!pendingData) return;
         
+        if (typeof CONFIG === 'undefined' || !CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL === "NOT_CONFIGURED" || CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+            cardDiv.innerHTML = "Lỗi: CONFIG.WEB_APP_URL chưa được cấu hình. Không thể lưu dữ liệu lên cloud.";
+            pendingData = null;
+            setBotBusy(false);
+            return;
+        }
+        
         setBotBusy(true);
 
         const originalHtml = cardDiv.innerHTML;

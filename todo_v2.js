@@ -198,8 +198,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- API LAYER ---
 async function callApi(action, extraParams = {}) {
     // Check if CONFIG is available
-    if (typeof CONFIG === 'undefined' || !CONFIG.WEB_APP_URL) {
-        console.error("CONFIG not found. Using fallback URL for demo.");
+    if (typeof CONFIG === 'undefined' || !CONFIG.WEB_APP_URL || CONFIG.WEB_APP_URL === "NOT_CONFIGURED" || CONFIG.WEB_APP_URL === "YOUR_WEB_APP_URL_HERE") {
+        console.warn("CONFIG.WEB_APP_URL not configured. Skipping API call.");
         return { status: "error", message: "Config missing" };
     }
 
@@ -278,7 +278,11 @@ async function loadTodoData() {
         updateCategoryFilterOptions();
         renderActiveView();
     } else {
-        console.error("Failed to load data:", res.message);
+        if (res.message === "Config missing") {
+            console.warn("Skipping todo data load because CONFIG.WEB_APP_URL is not configured.");
+        } else {
+            console.error("Failed to load data:", res.message);
+        }
         if (!todoCache.length && tableBody) {
             tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 3rem; color: var(--danger);">Không thể tải dữ liệu từ máy chủ.</td></tr>';
         }
