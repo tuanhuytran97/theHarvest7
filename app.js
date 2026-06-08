@@ -401,6 +401,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let annualExpenseChartInstance = null;
     let monthlyCombinedChartInstance = null;
     let financialGrowthChartInstance = null;
+    let expenseDistributionChartInstance = null;
     let currentEditRowData = null; // Track row being edited
     let activeTypeInput = null; // Track currently focused flower type input
 
@@ -662,6 +663,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (entryTypeSelect) {
         entryTypeSelect.addEventListener('change', (e) => {
             const type = e.target.value;
+            if (form) {
+                form.dataset.theme = type;
+            }
             const buyerInput = document.getElementById('buyer-input');
             const statusInput = document.getElementById('status-input');
             const statusGroup = statusInput ? statusInput.closest('.form-group') : null;
@@ -670,11 +674,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const flowerContainerBlock = document.querySelector('.span-full:has(#add-flower-btn)');
             const flowerListBlock = document.getElementById('flower-items-container');
             const flowerDivider = flowerListBlock ? flowerListBlock.nextElementSibling : null;
-
+            const flowerPillsContainer = document.getElementById('flower-pills-container');
+ 
             const entryCard = document.querySelector('.entry-card');
             const entryTitle = entryCard ? entryCard.querySelector('h2') : null;
             const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
-
+ 
             const toggleFlowerReq = (isReq) => {
                 if (flowerListBlock) {
                     flowerListBlock.querySelectorAll('input').forEach(i => i.required = isReq);
@@ -685,7 +690,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     expenseItemsContainer.querySelectorAll('input').forEach(i => i.required = isReq);
                 }
             };
-
+ 
             if (type === "farm") {
                 if (vuaFields) vuaFields.style.display = "none";
                 if (expenseFields) expenseFields.style.display = "none";
@@ -694,12 +699,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (flowerContainerBlock) flowerContainerBlock.style.display = "flex";
                 if (flowerListBlock) flowerListBlock.style.display = "flex";
                 if (flowerDivider) flowerDivider.style.display = "block";
+                if (flowerPillsContainer) flowerPillsContainer.style.display = "flex";
                 if (labelBuyerInput) labelBuyerInput.innerText = "Khách Hàng (Tên Khách)";
                 if (buyerInput) { buyerInput.value = ""; buyerInput.required = true; }
                 if (vuaTotalCollectInput) vuaTotalCollectInput.required = false;
                 toggleFlowerReq(true);
                 toggleExpenseReq(false);
-
+ 
                 // Premium visual styling
                 if (entryCard) {
                     entryCard.style.borderTop = "6px solid #10b981";
@@ -731,13 +737,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (flowerContainerBlock) flowerContainerBlock.style.display = "flex";
                 if (flowerListBlock) flowerListBlock.style.display = "flex";
                 if (flowerDivider) flowerDivider.style.display = "block";
+                if (flowerPillsContainer) flowerPillsContainer.style.display = "flex";
                 if (labelBuyerInput) labelBuyerInput.innerText = "Đối Soát Vựa (Tên Vựa)";
                 if (buyerInput) { buyerInput.value = "Đoan CR"; buyerInput.required = true; }
                 if (vuaTotalCollectInput) vuaTotalCollectInput.required = true;
                 toggleFlowerReq(true);
                 toggleExpenseReq(false);
                 calculateVuaTotals();
-
+ 
                 // Premium visual styling
                 if (entryCard) {
                     entryCard.style.borderTop = "6px solid #3b82f6";
@@ -769,6 +776,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (flowerContainerBlock) flowerContainerBlock.style.display = "none";
                 if (flowerListBlock) flowerListBlock.style.display = "none";
                 if (flowerDivider) flowerDivider.style.display = "none";
+                if (flowerPillsContainer) flowerPillsContainer.style.display = "none";
                 if (buyerInput) { buyerInput.value = ""; buyerInput.required = false; }
                 if (vuaTotalCollectInput) vuaTotalCollectInput.required = false;
                 toggleFlowerReq(false);
@@ -933,7 +941,7 @@ document.addEventListener("DOMContentLoaded", () => {
             qtyInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    if (typeInput) typeInput.focus();
+                    if (pInput) pInput.focus();
                 }
             });
         }
@@ -945,7 +953,7 @@ document.addEventListener("DOMContentLoaded", () => {
             typeInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    if (pInput) pInput.focus();
+                    if (qtyInput) qtyInput.focus();
                 }
             });
         }
@@ -1025,11 +1033,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 targetInput.value = val;
                 targetInput.dispatchEvent(new Event('input', { bubbles: true }));
                 
-                // Auto focus Đơn Giá (Price) input in the same row
+                // Auto focus Số lượng (SL) input in the same row
                 const row = targetInput.closest('.flower-item');
                 if (row) {
-                    const pInput = row.querySelector('.fw-price');
-                    if (pInput) pInput.focus();
+                    const qtyInput = row.querySelector('.fw-qty');
+                    if (qtyInput) qtyInput.focus();
                 }
             }
         }
@@ -1395,19 +1403,49 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("Dòng này chưa có số thứ tự Sheet — hãy đồng bộ lại dữ liệu từ Google Sheets.");
             return;
         }
+
+        // Determine context based on current tab
+        const context = currentTableTab === 'adjustment' ? 'adjustment' :
+            (currentTableTab === 'expense' ? 'expense' : 'all');
+
+        // Handle offline-added rows deletion
+        if (typeof sheetRow === 'string' && sheetRow.startsWith('OFFLINE_')) {
+            if (confirm("Xóa dòng lưu tạm offline này?")) {
+                farmData.splice(farmData.indexOf(rowData), 1);
+                let queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+                queue = queue.filter(item => item.clientId !== sheetRow);
+                localStorage.setItem('harvest_sync_queue', JSON.stringify(queue));
+                applyFiltersAndRender();
+                if (typeof updateConnectionStatus === 'function') updateConnectionStatus();
+                showToast("Đã xóa dòng lưu tạm!", "success");
+            }
+            return;
+        }
+
         if (!confirm(`Xóa dòng ${sheetRow} trên Google Sheets?`)) return;
 
+        let isSavedOffline = !navigator.onLine;
+
         try {
+            if (isSavedOffline) {
+                // Queue the deletion offline
+                let queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+                queue.push({ action: 'delete', rowNumber: sheetRow, context: context, clientId: sheetRow });
+                localStorage.setItem('harvest_sync_queue', JSON.stringify(queue));
+                
+                farmData.splice(farmData.indexOf(rowData), 1);
+                applyFiltersAndRender();
+                if (typeof updateConnectionStatus === 'function') updateConnectionStatus();
+                showToast("Đã xếp hàng yêu cầu xóa offline!", "success");
+                return;
+            }
+
             if (!isConfigured()) {
                 farmData.splice(farmData.indexOf(rowData), 1);
                 applyFiltersAndRender();
                 return;
             }
             document.body.style.cursor = 'wait';
-
-            // Determine context based on current tab
-            const context = currentTableTab === 'adjustment' ? 'adjustment' :
-                (currentTableTab === 'expense' ? 'expense' : 'all');
 
             const response = await fetch(CONFIG.WEB_APP_URL, {
                 method: "POST",
@@ -3100,6 +3138,96 @@ document.addEventListener("DOMContentLoaded", () => {
         const filterSelect = document.getElementById('report-filter');
         const rangeSelect = document.getElementById('report-range');
 
+        function getPeriodElapsedRatio(selectedYear, selectedMonth, rangeVal) {
+            const now = new Date();
+            const curYear = now.getFullYear();
+            const curMonth = now.getMonth() + 1;
+            const curDay = now.getDate();
+
+            if (selectedYear < curYear) return 1;
+            if (selectedYear > curYear) return 0;
+
+            if (rangeVal === 'month') {
+                if (selectedMonth < curMonth) return 1;
+                if (selectedMonth > curMonth) return 0;
+                const daysInMonth = new Date(curYear, curMonth, 0).getDate();
+                return Math.max(0.01, Math.min(1, curDay / daysInMonth));
+            } else if (rangeVal.startsWith('q')) {
+                const qNum = parseInt(rangeVal.substring(1));
+                const curQ = Math.ceil(curMonth / 3);
+                if (qNum < curQ) return 1;
+                if (qNum > curQ) return 0;
+                
+                const qStartMonth = (qNum - 1) * 3 + 1;
+                let elapsedDays = 0;
+                let totalDays = 0;
+                for (let m = qStartMonth; m < qStartMonth + 3; m++) {
+                    const daysInM = new Date(curYear, m, 0).getDate();
+                    totalDays += daysInM;
+                    if (m < curMonth) {
+                        elapsedDays += daysInM;
+                    } else if (m === curMonth) {
+                        elapsedDays += curDay;
+                    }
+                }
+                return Math.max(0.01, Math.min(1, elapsedDays / totalDays));
+            } else {
+                const curYearStart = new Date(curYear, 0, 1);
+                const isLeap = (curYear % 4 === 0 && curYear % 100 !== 0) || (curYear % 400 === 0);
+                const totalDays = isLeap ? 366 : 365;
+                const diff = now - curYearStart;
+                const oneDay = 1000 * 60 * 60 * 24;
+                const elapsedDays = Math.floor(diff / oneDay) + 1;
+                return Math.max(0.01, Math.min(1, elapsedDays / totalDays));
+            }
+        }
+
+        function checkIsBeforeOrOnRelativeDay(d, selectedYear, selectedMonth, rangeVal) {
+            const now = new Date();
+            const curYear = now.getFullYear();
+            const curMonth = now.getMonth() + 1;
+            const curDay = now.getDate();
+
+            if (selectedYear < curYear) return true;
+            if (selectedYear > curYear) return false;
+
+            const rowMonth = d.getMonth() + 1;
+            const rowDay = d.getDate();
+
+            if (rangeVal === 'month') {
+                if (selectedMonth < curMonth) return true;
+                if (selectedMonth > curMonth) return false;
+                return rowDay <= curDay;
+            } else if (rangeVal.startsWith('q')) {
+                const qNum = parseInt(rangeVal.substring(1));
+                const curQ = Math.ceil(curMonth / 3);
+                if (qNum < curQ) return true;
+                if (qNum > curQ) return false;
+                
+                function getQuarterDayOffset(date, targetQ) {
+                    const year = date.getFullYear();
+                    const qStartMonth = (targetQ - 1) * 3;
+                    const qStart = new Date(year, qStartMonth, 1);
+                    const diff = date - qStart;
+                    const oneDay = 1000 * 60 * 60 * 24;
+                    return Math.floor(diff / oneDay) + 1;
+                }
+                const rowQ = Math.ceil(rowMonth / 3);
+                return getQuarterDayOffset(d, rowQ) <= getQuarterDayOffset(now, curQ);
+            } else {
+                const curYearStart = new Date(curYear, 0, 1);
+                const diffNow = now - curYearStart;
+                const oneDay = 1000 * 60 * 60 * 24;
+                const elapsedDaysNow = Math.floor(diffNow / oneDay) + 1;
+
+                const rowYearStart = new Date(d.getFullYear(), 0, 1);
+                const diffRow = d - rowYearStart;
+                const elapsedDaysRow = Math.floor(diffRow / oneDay) + 1;
+
+                return elapsedDaysRow <= elapsedDaysNow;
+            }
+        }
+
         if (!yearSelect.options.length) populateYears();
 
         const selectedYear = parseInt(yearSelect.value) || new Date().getFullYear();
@@ -3126,10 +3254,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let totalQty = 0, totalRevenue = 0, totalExpense = 0;
         let prevQty = 0, prevRevenue = 0, prevExpense = 0;
+        let prevQtyToDate = 0, prevRevenueToDate = 0, prevExpenseToDate = 0;
 
         const statement = {
             revFarm: 0, revCompany: 0, revVua: 0,
-            expensed: 0, phanBon: 0, thuoc: 0, luong: 0, lai: 0, vatTu: 0, muaBong: 0, vanHanh: 0,
+            expensed: 0, chiPhiKhac: 0, phanBon: 0, thuoc: 0, luong: 0, lai: 0, vatTu: 0, muaBong: 0,
+            vanChuyen: 0, vanHanh: 0,
             totalRev: 0, totalExp: 0, netProfit: 0
         };
 
@@ -3214,15 +3344,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 statement.revCompany += dtBong + (isCompany ? dtKhac : 0);
                 if (isVua) statement.revVua += dtKhac;
 
-                if (loaiCP === "Expensed") statement.expensed += chiPhi;
-                else if (loaiCP === "Phân") statement.phanBon += chiPhi;
-                else if (loaiCP === "Thuốc") statement.thuoc += chiPhi;
-                else if (loaiCP === "Công") statement.luong += chiPhi;
-                else if (loaiCP === "Lãi") statement.lai += chiPhi;
-                else if (loaiCP === "Vật Tư" || loaiCP === "Vật Tư KD") statement.vatTu += chiPhi;
-                else if (loaiCP === "Mua Bông") statement.muaBong += chiPhi;
-                else if (loaiCP === "Vận Chuyển" || loaiCP === "Chi Phí Khác") statement.vanHanh += chiPhi;
-                else if (chiPhi > 0) statement.vanHanh += chiPhi;
+                // Use lowercase comparison to match actual sheet data values (same as cashflow builder)
+                const loaiCPLow = loaiCP.toLowerCase();
+                if (loaiCPLow === "expensed") statement.expensed += chiPhi;
+                else if (loaiCPLow === "phân" || loaiCPLow === "phan") statement.phanBon += chiPhi;
+                else if (loaiCPLow === "thuốc" || loaiCPLow === "thuoc") statement.thuoc += chiPhi;
+                else if (loaiCPLow === "công" || loaiCPLow === "cong") statement.luong += chiPhi;
+                else if (loaiCPLow === "lãi" || loaiCPLow === "lai") statement.lai += chiPhi;
+                else if (loaiCPLow === "vật tư" || loaiCPLow === "vat tu" || loaiCPLow === "vật tư kd" || loaiCPLow === "vat tu kd") statement.vatTu += chiPhi;
+                else if (loaiCPLow === "mua bông" || loaiCPLow === "mua bong") statement.muaBong += chiPhi;
+                else if (loaiCPLow === "vận chuyển" || loaiCPLow === "van chuyen") statement.vanChuyen += chiPhi;
+                else if (loaiCPLow === "chi phí khác" || loaiCPLow === "chi phi khac") statement.chiPhiKhac += chiPhi;
+                else if (chiPhi > 0) statement.chiPhiKhac += chiPhi; // catch-all → Chi phí khác
 
                 if (!isMonthlyRange && !isQuarterRange) {
                     yearlyMonthlyData[d.getMonth()].qty += q;
@@ -3257,6 +3390,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             } else if (isPrev) {
                 prevQty += q; prevRevenue += rev; prevExpense += exp;
+                if (checkIsBeforeOrOnRelativeDay(d, selectedYear, selectedMonth, rangeVal)) {
+                    prevQtyToDate += q;
+                    prevRevenueToDate += rev;
+                    prevExpenseToDate += exp;
+                }
             }
         });
 
@@ -3268,6 +3406,418 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('kpi-revenue').innerText = formatCurrency(totalRevenue);
         document.getElementById('kpi-expense').innerText = formatCurrency(totalExpense);
         document.getElementById('kpi-profit').innerText = formatCurrency(totalProfit);
+
+        // --- 1. Rankings & Net Profit Estimates ---
+        const flowerRevenues = {};
+        const flowerPrices = {};
+        const buyerPurchases = {};
+        const buyerDebts = {};
+
+        // Calculate historical/global outstanding debts
+        farmData.forEach(row => {
+            const status = (row["Status"] || "").trim().toLowerCase();
+            if (status === "xong") return; // Skip fully paid rows
+
+            const buyer = (row["Người Mua"] || "Khách Lẻ").trim();
+            if (buyer === "Nông Trại") return; // Skip internal farm rows
+
+            const isVua = (row["Loại DT"] || "").trim().toLowerCase().includes("vựa") || (row["Loại DT"] || "").trim().toLowerCase().includes("vua");
+            const dtBong = parseFloat(row["Doanh Thu Bông"]) || 0;
+            const ptVal = parseFloat(row["Tiền Phải Thu"]) || 0;
+            const expected = isVua ? ptVal : dtBong;
+            const daThuStr = row["Đã Thu"];
+            const paid = daThuStr ? parseFloat(String(daThuStr).replace(/[^\d]/g, '')) || 0 : 0;
+            const debt = expected - paid;
+
+            buyerDebts[buyer] = (buyerDebts[buyer] || 0) + debt;
+        });
+
+        // Loop through all data again to calculate flower sales and buyer purchases in CURRENT period
+        farmData.forEach(row => {
+            const d = row.parsedDate;
+            if (!d || isNaN(d.getTime())) return;
+            const rowYear = d.getFullYear();
+            const rowMonth = d.getMonth() + 1;
+
+            let isCurr = false;
+            if (isQuarterRange) {
+                let inCurrQ = false;
+                if (rangeVal === 'q1' && rowMonth >= 1 && rowMonth <= 3) inCurrQ = true;
+                if (rangeVal === 'q2' && rowMonth >= 4 && rowMonth <= 6) inCurrQ = true;
+                if (rangeVal === 'q3' && rowMonth >= 7 && rowMonth <= 9) inCurrQ = true;
+                if (rangeVal === 'q4' && rowMonth >= 10 && rowMonth <= 12) inCurrQ = true;
+                if (inCurrQ && rowYear === selectedYear) isCurr = true;
+            } else if (isMonthlyRange) {
+                if (rowYear === selectedYear && rowMonth === selectedMonth) isCurr = true;
+            } else {
+                if (rowYear === selectedYear) isCurr = true;
+            }
+
+            if (isCurr) {
+                const dtBong = parseFloat(row["Doanh Thu Bông"]) || 0;
+                const dtKhac = parseFloat(row["Doanh Thu Khác"]) || 0;
+                const flower = (row["Phân Loại Bông"] || "").trim();
+                const price = parseFloat(row["Giá"]) || 0;
+
+                if (flower && dtBong > 0) {
+                    flowerRevenues[flower] = (flowerRevenues[flower] || 0) + dtBong;
+                    if (price > 0) {
+                        flowerPrices[flower] = Math.max(flowerPrices[flower] || 0, price);
+                    }
+                }
+
+                const buyer = (row["Người Mua"] || "").trim();
+                if (buyer && buyer !== "Nông Trại" && (dtBong > 0 || dtKhac > 0)) {
+                    buyerPurchases[buyer] = (buyerPurchases[buyer] || 0) + (dtBong + dtKhac);
+                }
+            }
+        });
+
+        // Sort and Render Rankings (Revenue)
+        const topFlowers = Object.entries(flowerRevenues)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3);
+        const rankFlowersEl = document.getElementById('rank-top-flowers');
+        if (rankFlowersEl) {
+            if (topFlowers.length > 0) {
+                rankFlowersEl.innerHTML = topFlowers.map((tf, i) => 
+                    `<li>${tf[0]} <span style="color:var(--secondary-color); font-weight:800; margin-left: 6px;">${formatShorthandCurrency(tf[1])}</span></li>`
+                ).join('');
+            } else {
+                rankFlowersEl.innerHTML = '<li style="color:#64748b; font-weight:500;">Chưa có dữ liệu</li>';
+            }
+        }
+
+        // Sort and Render Rankings (Max Price)
+        const topPriceFlowers = Object.entries(flowerPrices)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3);
+        const rankPriceFlowersEl = document.getElementById('rank-top-price-flowers');
+        if (rankPriceFlowersEl) {
+            if (topPriceFlowers.length > 0) {
+                rankPriceFlowersEl.innerHTML = topPriceFlowers.map((tf, i) => 
+                    `<li>${tf[0]} <span style="color:#f59e0b; font-weight:800; margin-left: 6px;">${formatCurrency(tf[1])}</span></li>`
+                ).join('');
+            } else {
+                rankPriceFlowersEl.innerHTML = '<li style="color:#64748b; font-weight:500;">Chưa có dữ liệu</li>';
+            }
+        }
+
+        const topBuyer = Object.entries(buyerPurchases).sort((a, b) => b[1] - a[1])[0];
+        const rankTopBuyerEl = document.getElementById('rank-top-buyer');
+        if (rankTopBuyerEl) {
+            rankTopBuyerEl.innerText = topBuyer ? `${topBuyer[0]} (${formatShorthandCurrency(topBuyer[1])})` : "Chưa có dữ liệu";
+        }
+
+        const topDebt = Object.entries(buyerDebts)
+            .filter(entry => entry[1] > 0)
+            .sort((a, b) => b[1] - a[1])[0];
+        const rankTopDebtEl = document.getElementById('rank-top-debt-buyer');
+        if (rankTopDebtEl) {
+            rankTopDebtEl.innerText = topDebt ? `${topDebt[0]} (${formatShorthandCurrency(topDebt[1])})` : "Không có dư nợ";
+        }
+
+        // --- 2. Estimated Net Profit & Projections Calculation ---
+        const deprRateInput = document.getElementById('depreciation-rate');
+        
+        // Calculate elapsed ratio and current/previous averages
+        const elapsedRatio = getPeriodElapsedRatio(selectedYear, selectedMonth, rangeVal);
+        const currAvgPrice = totalQty > 0 ? totalRevenue / totalQty : 0;
+        const prevAvgPrice = prevQty > 0 ? prevRevenue / prevQty : 0;
+        
+        // Project current values to full period
+        const projQty = elapsedRatio > 0 ? totalQty / elapsedRatio : 0;
+        const projRevenue = elapsedRatio > 0 ? totalRevenue / elapsedRatio : 0;
+        const projExpense = elapsedRatio > 0 ? totalExpense / elapsedRatio : 0;
+        const projProfit = projRevenue - projExpense;
+        
+        // Save current totals and projections globally to prevent stale closures when the input listener triggers
+        window.currentDashboardTotals = {
+            elapsedRatio: elapsedRatio,
+            totalQty: totalQty,
+            totalRevenue: totalRevenue,
+            totalExpense: totalExpense,
+            totalProfit: totalProfit,
+            projQty: projQty,
+            projRevenue: projRevenue,
+            projExpense: projExpense,
+            projProfit: projProfit,
+            currAvgPrice: currAvgPrice,
+            prevAvgPrice: prevAvgPrice,
+            prevQty: prevQty,
+            prevRevenue: prevRevenue,
+            prevExpense: prevExpense,
+            prevQtyToDate: prevQtyToDate,
+            prevRevenueToDate: prevRevenueToDate,
+            prevExpenseToDate: prevExpenseToDate,
+            prevAvgPriceToDate: prevQtyToDate > 0 ? prevRevenueToDate / prevQtyToDate : 0
+        };
+
+        function calculateNetProfitEstimate() {
+            const deprRate = parseFloat(deprRateInput ? deprRateInput.value : 2) || 0;
+            const totals = window.currentDashboardTotals || {
+                elapsedRatio: 1,
+                totalQty: 0,
+                totalRevenue: 0,
+                totalExpense: 0,
+                totalProfit: 0,
+                projQty: 0,
+                projRevenue: 0,
+                projExpense: 0,
+                projProfit: 0,
+                currAvgPrice: 0,
+                prevAvgPrice: 0,
+                prevQty: 0,
+                prevRevenue: 0,
+                prevExpense: 0,
+                prevQtyToDate: 0,
+                prevRevenueToDate: 0,
+                prevExpenseToDate: 0,
+                prevAvgPriceToDate: 0
+            };
+            
+            // --- Smart Projection Logic ---
+            // Base: Linear run-rate (always reliable: current_pace * full_period)
+            const linearRevenue = totals.elapsedRatio > 0 ? totals.totalRevenue / totals.elapsedRatio : totals.totalRevenue;
+            const linearExpense = totals.elapsedRatio > 0 ? totals.totalExpense / totals.elapsedRatio : totals.totalExpense;
+            const linearQty     = totals.elapsedRatio > 0 ? totals.totalQty     / totals.elapsedRatio : totals.totalQty;
+
+            // YoY growth rates (current-to-date vs same period last year)
+            const revGrowthRate = (totals.prevRevenueToDate > 0 && totals.totalRevenue >= 0)
+                ? totals.totalRevenue / totals.prevRevenueToDate : null;
+            const expGrowthRate = (totals.prevExpenseToDate > 0 && totals.totalExpense >= 0)
+                ? totals.totalExpense / totals.prevExpenseToDate : null;
+            const qtyGrowthRate = (totals.prevQtyToDate > 0 && totals.totalQty >= 0)
+                ? totals.totalQty / totals.prevQtyToDate : null;
+
+            // YoY is only reliable when:
+            // 1. We have enough prior-year data (prevToDate ≥ 5% of prevFull)
+            // 2. The growth rate is within a sane band (0.5x – 3x)
+            // 3. At least 20% of the period has elapsed (avoid day-1 noise)
+            const MIN_YOY = 0.5, MAX_YOY = 3.0, MIN_ELAPSED_FOR_YOY = 0.20;
+
+            function safeYoY(growthRate, prevFull, prevToDate, linear) {
+                if (growthRate === null) return null;
+                if (totals.elapsedRatio < MIN_ELAPSED_FOR_YOY) return null;   // too early
+                if (prevToDate < prevFull * 0.02) return null;                 // prev data too sparse
+                if (growthRate < MIN_YOY || growthRate > MAX_YOY) return null; // growth out of range
+                return prevFull * growthRate;
+            }
+
+            const yoyRevenue = safeYoY(revGrowthRate, totals.prevRevenue, totals.prevRevenueToDate, linearRevenue);
+            const yoyExpense = safeYoY(expGrowthRate, totals.prevExpense, totals.prevExpenseToDate, linearExpense);
+            const yoyQty     = safeYoY(qtyGrowthRate, totals.prevQty,     totals.prevQtyToDate,     linearQty);
+
+            // Blend weight: 0% YoY at elapsed=0, up to 60% YoY when elapsed=100%
+            const yoyW = Math.min(totals.elapsedRatio * 0.8, 0.6);
+            const linW = 1 - yoyW;
+
+            const projRevenue = yoyRevenue !== null ? (yoyRevenue * yoyW + linearRevenue * linW) : linearRevenue;
+            const projExpense = yoyExpense !== null ? (yoyExpense * yoyW + linearExpense * linW) : linearExpense;
+            const projQty     = yoyQty     !== null ? (yoyQty     * yoyW + linearQty     * linW) : linearQty;
+
+            const projProfit = projRevenue - projExpense;
+            const projDepr = projRevenue * (deprRate / 100);
+            const projNetProfit = projProfit - projDepr;
+
+            // Elements
+            const progressBadge = document.getElementById('estimate-progress-badge');
+            const priceCompareEl = document.getElementById('estimate-price-compare');
+            const qtyCompareEl = document.getElementById('estimate-qty-compare');
+            const estRevEl = document.getElementById('estimate-revenue');
+            const estExpEl = document.getElementById('estimate-expense');
+            const estDeprEl = document.getElementById('estimate-depreciation');
+            const estNetProfitEl = document.getElementById('estimate-net-profit');
+            const profitCompareEl = document.getElementById('estimate-profit-compare');
+
+            // 1. Progress Badge
+            if (progressBadge) {
+                if (totals.elapsedRatio >= 1) {
+                    progressBadge.innerText = "100% Hoàn thành";
+                    progressBadge.style.background = "#d1fae5";
+                    progressBadge.style.color = "#065f46";
+                } else if (totals.elapsedRatio <= 0) {
+                    progressBadge.innerText = "Chưa bắt đầu";
+                    progressBadge.style.background = "#f1f5f9";
+                    progressBadge.style.color = "#475569";
+                } else {
+                    progressBadge.innerText = `Tiến độ: ${(totals.elapsedRatio * 100).toFixed(0)}%`;
+                    progressBadge.style.background = "#e0f2fe";
+                    progressBadge.style.color = "#0369a1";
+                }
+            }
+
+            // 2. Average Price Comparison (Current vs previous year same-date)
+            if (priceCompareEl) {
+                const prevPrice = totals.prevAvgPriceToDate || totals.prevAvgPrice || 0;
+                const diff = prevPrice > 0 ? ((totals.currAvgPrice - prevPrice) / prevPrice) * 100 : 0;
+                const sign = diff >= 0 ? "+" : "";
+                const color = diff >= 0 ? "#10b981" : "#ef4444";
+                const icon = diff >= 0 ? "fa-arrow-trend-up" : "fa-arrow-trend-down";
+                priceCompareEl.innerHTML = `${formatCurrency(Math.round(totals.currAvgPrice))} <span style="font-size: 0.72rem; color: ${color}; font-weight: 700; margin-left: 4px;"><i class="fa-solid ${icon}"></i> ${sign}${diff.toFixed(1)}%</span>`;
+            }
+
+            // 3. Volume Comparison (Current quantity vs previous year same-date)
+            if (qtyCompareEl) {
+                const prevQtyToDate = totals.prevQtyToDate || 0;
+                const qDiff = prevQtyToDate > 0 ? ((totals.totalQty - prevQtyToDate) / prevQtyToDate) * 100 : 0;
+                const sign = qDiff >= 0 ? "+" : "";
+                const color = qDiff >= 0 ? "#10b981" : "#ef4444";
+                const icon = qDiff >= 0 ? "fa-arrow-trend-up" : "fa-arrow-trend-down";
+                qtyCompareEl.innerHTML = `${totals.totalQty.toLocaleString('vi-VN')} <span style="font-size: 0.72rem; color: ${color}; font-weight: 700; margin-left: 4px;"><i class="fa-solid ${icon}"></i> ${sign}${qDiff.toFixed(1)}%</span>`;
+            }
+
+            // 4. Projected Income details
+            if (estRevEl) estRevEl.innerText = formatCurrency(projRevenue);
+            if (estExpEl) estExpEl.innerText = formatCurrency(projExpense);
+            if (estDeprEl) estDeprEl.innerText = formatCurrency(projDepr);
+            
+            // 5. Projected Net Profit
+            if (estNetProfitEl) {
+                estNetProfitEl.innerText = formatCurrency(projNetProfit);
+                estNetProfitEl.style.color = projNetProfit < 0 ? 'var(--danger)' : '#10b981';
+            }
+
+            // 6. Net Profit Comparison with Last Year
+            if (profitCompareEl) {
+                const prevDepr = totals.prevRevenue * (deprRate / 100);
+                const prevNetProfit = (totals.prevRevenue - totals.prevExpense) - prevDepr;
+                const profitDiff = prevNetProfit !== 0 ? ((projNetProfit - prevNetProfit) / Math.abs(prevNetProfit)) * 100 : 0;
+                const sign = profitDiff >= 0 ? "+" : "";
+                const color = profitDiff >= 0 ? "#10b981" : "#ef4444";
+                const icon = profitDiff >= 0 ? "fa-caret-up" : "fa-caret-down";
+                profitCompareEl.innerHTML = `Dự kiến: <span style="color: ${color}; font-weight: 800;"><i class="fa-solid ${icon}"></i> ${sign}${profitDiff.toFixed(1)}%</span> so với cùng kỳ năm trước (${formatShorthandCurrency(prevNetProfit)})`;
+            }
+
+            // 7. Store projection metadata for tooltip
+            window._lastProjectionMeta = {
+                elapsedRatio: totals.elapsedRatio,
+                method: (yoyRevenue !== null || yoyExpense !== null) ? 'blend' : 'linear',
+                yoyW: yoyW,
+                linW: linW,
+                linearRevenue, linearExpense,
+                yoyRevenue, yoyExpense,
+                projRevenue, projExpense, projQty,
+                projNetProfit, projDepr,
+                deprRate,
+                revGrowthRate, expGrowthRate,
+                prevRevenue: totals.prevRevenue,
+                prevExpense: totals.prevExpense,
+                prevRevenueToDate: totals.prevRevenueToDate,
+                prevExpenseToDate: totals.prevExpenseToDate,
+                totalRevenue: totals.totalRevenue,
+                totalExpense: totals.totalExpense,
+            };
+        }
+
+        // Tooltip for LN RÒNG DỰ BÁO
+        (function attachEstimateTooltip() {
+            const container = document.getElementById('estimate-net-profit-container');
+            if (!container || container._tooltipAttached) return;
+            container._tooltipAttached = true;
+
+            let tooltipEl = null;
+
+            container.addEventListener('mouseenter', function() {
+                const meta = window._lastProjectionMeta;
+                if (!meta) return;
+
+                const pct = (meta.elapsedRatio * 100).toFixed(0);
+                const isBlend = meta.method === 'blend';
+                const linPct = (meta.linW * 100).toFixed(0);
+                const yoyPct = (meta.yoyW * 100).toFixed(0);
+
+                const methodBadge = isBlend
+                    ? `<span style="background:#d1fae5; color:#065f46; border-radius:4px; padding:1px 6px; font-weight:700;">Kết hợp (${linPct}% Linear + ${yoyPct}% YoY)</span>`
+                    : `<span style="background:#e0f2fe; color:#0369a1; border-radius:4px; padding:1px 6px; font-weight:700;">Linear Run-rate (100%)</span>`;
+
+                const yoyReasonHtml = !isBlend ? `
+                    <div style="color:#94a3b8; font-size:0.75rem; margin-top:2px;">
+                        ⚠️ YoY chưa áp dụng: ${meta.elapsedRatio < 0.20
+                            ? `tiến độ chưa đủ ${(meta.elapsedRatio*100).toFixed(0)}% < 20%`
+                            : meta.revGrowthRate !== null && (meta.revGrowthRate < 0.5 || meta.revGrowthRate > 3.0)
+                                ? `tỷ lệ tăng trưởng ngoài ngưỡng (${meta.revGrowthRate?.toFixed(1)}x)`
+                                : 'không đủ dữ liệu năm trước'}
+                    </div>` : '';
+
+                const revGrowthHtml = meta.revGrowthRate !== null
+                    ? `<span style="color:${meta.revGrowthRate >= 1 ? '#10b981':'#f59e0b'}"> (${(meta.revGrowthRate*100).toFixed(0)}% so YoY)</span>` : '';
+                const expGrowthHtml = meta.expGrowthRate !== null
+                    ? `<span style="color:${meta.expGrowthRate <= 1 ? '#10b981':'#ef4444'}"> (${(meta.expGrowthRate*100).toFixed(0)}% so YoY)</span>` : '';
+
+                tooltipEl = document.createElement('div');
+                tooltipEl.id = 'proj-tooltip';
+                tooltipEl.innerHTML = `
+                    <div style="font-weight:800; color:#1e293b; margin-bottom:8px; font-size:0.88rem; border-bottom:1px solid #e2e8f0; padding-bottom:6px;">
+                        📊 Nguyên Lý Tính Dự Báo
+                    </div>
+
+                    <div style="margin-bottom:6px; font-size:0.78rem;">
+                        <b>Phương pháp:</b> ${methodBadge}
+                        ${yoyReasonHtml}
+                    </div>
+
+                    <div style="background:#f8fafc; border-radius:8px; padding:8px 10px; margin-bottom:6px; font-size:0.78rem; line-height:1.7;">
+                        <div><b>📅 Tiến độ kỳ:</b> ${pct}% thời gian đã trôi qua</div>
+                        <div><b>📈 Doanh thu thực tế:</b> ${formatCurrency(meta.totalRevenue)}${revGrowthHtml}</div>
+                        <div><b>📉 Chi phí thực tế:</b> ${formatCurrency(meta.totalExpense)}${expGrowthHtml}</div>
+                    </div>
+
+                    <div style="background:#f0fdf4; border-radius:8px; padding:8px 10px; margin-bottom:6px; font-size:0.78rem; line-height:1.7;">
+                        <div style="font-weight:700; color:#047857; margin-bottom:3px;">Kết quả chiếu đến cuối kỳ:</div>
+                        <div>DT dự báo = ${formatCurrency(meta.projRevenue)}</div>
+                        <div>CP dự báo = ${formatCurrency(meta.projExpense)}</div>
+                        <div>(-) Khấu Hao ${meta.deprRate}% = ${formatCurrency(meta.projDepr)}</div>
+                        <div style="border-top:1px solid #bbf7d0; margin-top:4px; padding-top:4px; font-weight:800;">
+                            LN Ròng ≈ ${formatCurrency(meta.projNetProfit)}
+                        </div>
+                    </div>
+
+                    <div style="font-size:0.72rem; color:#94a3b8; line-height:1.5; border-top:1px solid #f1f5f9; padding-top:6px;">
+                        <b>Công thức:</b><br>
+                        • <b>Linear:</b> Giá trị thực ÷ % tiến độ<br>
+                        • <b>YoY:</b> Cùng kỳ năm trước × tỷ lệ tăng trưởng<br>
+                        • YoY chỉ áp dụng khi ≥20% kỳ trôi qua &amp; tăng trưởng 0.5×–3×
+                    </div>
+                `;
+
+                Object.assign(tooltipEl.style, {
+                    position: 'absolute',
+                    bottom: 'calc(100% + 10px)',
+                    left: '0',
+                    right: '0',
+                    background: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '14px',
+                    boxShadow: '0 20px 40px -8px rgba(0,0,0,0.18), 0 4px 16px -4px rgba(0,0,0,0.1)',
+                    padding: '14px 16px',
+                    zIndex: '99999',
+                    pointerEvents: 'none',
+                    animation: 'fadeInUp 0.18s ease',
+                    fontFamily: 'inherit',
+                });
+
+                container.appendChild(tooltipEl);
+            });
+
+            container.addEventListener('mouseleave', function() {
+                if (tooltipEl && tooltipEl.parentNode) {
+                    tooltipEl.parentNode.removeChild(tooltipEl);
+                    tooltipEl = null;
+                }
+            });
+        })();
+
+        if (deprRateInput && !deprRateInput.dataset.listenerAttached) {
+            deprRateInput.addEventListener('input', calculateNetProfitEstimate);
+            deprRateInput.dataset.listenerAttached = "true";
+        }
+        calculateNetProfitEstimate();
+
+        // --- 3. Render Expense Distribution Pie Chart ---
+        if (typeof renderExpenseDistributionChart === 'function') {
+            renderExpenseDistributionChart(statement);
+        }
 
         // Update Growth Indicators
         function updateGrowth(id, curr, prev, compYear, unit = '', inverse = false) {
@@ -3556,7 +4106,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const statement = {
                 period: selectedMonthStr === "all" ? `Năm ${selectedYear}` : `Tháng ${selectedMonthStr}/${selectedYear}`,
                 revFarm: 0, revCompany: 0, revVua: 0,
-                expensed: 0, phanBon: 0, thuoc: 0, luong: 0, lai: 0, vatTu: 0, muaBong: 0, vanHanh: 0,
+                expensed: 0, phanBon: 0, thuoc: 0, luong: 0, lai: 0, vatTu: 0, muaBong: 0,
+                vanChuyen: 0, vanHanh: 0,
                 totalRev: 0, totalExp: 0, netProfit: 0
             };
 
@@ -3601,9 +4152,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 else if (loaiCP === "lãi" || loaiCP === "lai") statement.lai += chiPhi;
                 else if (loaiCP === "vật tư" || loaiCP === "vat tu" || loaiCP === "vật tư kd") statement.vatTu += chiPhi;
                 else if (loaiCP === "mua bông") statement.muaBong += chiPhi;
-                else {
-                    statement.vanHanh += chiPhi;
-                }
+                else if (loaiCP === "vận chuyển" || loaiCP === "van chuyen") statement.vanChuyen += chiPhi;
+                else if (loaiCP === "chi phí khác" || loaiCP === "chi phi khac") statement.vanHanh += chiPhi;
+                else if (chiPhi > 0) statement.vanHanh += chiPhi;
             });
 
             statement.netProfit = statement.totalRev - statement.totalExp;
@@ -3644,7 +4195,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (type === "net") rowClass += " net-profit";
 
             // Define which categories have details
-            const detailLabels = ["Doanh thu Farm", "Company", "Vựa", "Expensed", "Vật Tư", "Mua Bông", "Phân bón", "Thuốc", "Lương", "Lãi", "Chi phí khác"];
+            const detailLabels = ["Doanh thu Farm", "Company", "Vựa", "Expensed", "Vật Tư", "Mua Bông", "Phân bón", "Thuốc", "Lương", "Lãi", "Vận Chuyển", "Chi phí khác"];
             const hasDetails = detailLabels.includes(label);
             if (hasDetails) rowClass += " has-details";
 
@@ -3689,14 +4240,15 @@ document.addEventListener("DOMContentLoaded", () => {
         html += renderRow("Mua Bông", s1.muaBong, isCmp ? s2.muaBong : 0, "sub-indented");
 
         // Group 2: Chi Phí Vận Hành
-        const totalOps1 = s1.vanHanh + s1.phanBon + s1.thuoc + s1.luong + s1.lai;
-        const totalOps2 = isCmp ? (s2.vanHanh + s2.phanBon + s2.thuoc + s2.luong + s2.lai) : 0;
+        const totalOps1 = s1.vanChuyen + s1.vanHanh + s1.phanBon + s1.thuoc + s1.luong + s1.lai;
+        const totalOps2 = isCmp ? (s2.vanChuyen + s2.vanHanh + s2.phanBon + s2.thuoc + s2.luong + s2.lai) : 0;
 
         html += renderRow("Chi Phí Vận Hành", totalOps1, totalOps2, "indented");
         html += renderRow("Phân bón", s1.phanBon, isCmp ? s2.phanBon : 0, "sub-indented");
         html += renderRow("Thuốc", s1.thuoc, isCmp ? s2.thuoc : 0, "sub-indented");
         html += renderRow("Lương", s1.luong, isCmp ? s2.luong : 0, "sub-indented");
         html += renderRow("Lãi", s1.lai, isCmp ? s2.lai : 0, "sub-indented");
+        html += renderRow("Vận Chuyển", s1.vanChuyen, isCmp ? s2.vanChuyen : 0, "sub-indented");
         html += renderRow("Chi phí khác", s1.vanHanh, isCmp ? s2.vanHanh : 0, "sub-indented");
 
         html += renderRow("Tổng Chi Phí", s1.totalExp, isCmp ? s2.totalExp : 0, "total");
@@ -3836,7 +4388,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    function showDrawerForType(type, btn) {
+    function showDrawerForType(type, btn, isDashboard = false, themeColor = null) {
         let overlay = document.getElementById('cashflow-drawer-overlay');
         let panel = document.getElementById('cashflow-drawer-panel');
         
@@ -3854,19 +4406,60 @@ document.addEventListener("DOMContentLoaded", () => {
             overlay.addEventListener('click', hideDrawer);
         }
 
+        // Apply theme color styling if provided
+        if (themeColor) {
+            panel.style.borderLeft = `4px solid ${themeColor}`;
+        } else {
+            panel.style.borderLeft = '1px solid rgba(255, 255, 255, 0.15)';
+        }
+
         // Fetch dates from filter inputs
-        const yearSelect = document.getElementById('cashflow-year');
-        const monthSelect = document.getElementById('cashflow-month');
-        const selectedYear = yearSelect ? parseInt(yearSelect.value) : new Date().getFullYear();
-        const selectedMonthStr = monthSelect ? monthSelect.value : "all";
+        let selectedYear = new Date().getFullYear();
+        let selectedMonthStr = "all";
+        let isQuarterRange = false;
+        let rangeVal = "month";
+
+        if (isDashboard) {
+            const rYearSel = document.getElementById('report-year');
+            const rMonthSel = document.getElementById('report-month');
+            const rRangeSel = document.getElementById('report-range');
+            selectedYear = rYearSel ? parseInt(rYearSel.value) : new Date().getFullYear();
+            selectedMonthStr = rMonthSel ? rMonthSel.value : "all";
+            rangeVal = rRangeSel ? rRangeSel.value : 'month';
+            isQuarterRange = rangeVal.startsWith('q');
+        } else {
+            const yearSelect = document.getElementById('cashflow-year');
+            const monthSelect = document.getElementById('cashflow-month');
+            selectedYear = yearSelect ? parseInt(yearSelect.value) : new Date().getFullYear();
+            selectedMonthStr = monthSelect ? monthSelect.value : "all";
+        }
 
         // Filter transactions
         let filtered = farmData.filter(item => {
             const d = item.parsedDate;
             if (!d || isNaN(d.getTime())) return false;
-            if (d.getFullYear() !== selectedYear) return false;
-            if (selectedMonthStr !== "all" && (d.getMonth() + 1) !== parseInt(selectedMonthStr)) return false;
-            return true;
+            
+            if (isDashboard) {
+                const rowYear = d.getFullYear();
+                const rowMonth = d.getMonth() + 1;
+                
+                if (isQuarterRange) {
+                    let inCurrQ = false;
+                    if (rangeVal === 'q1' && rowMonth >= 1 && rowMonth <= 3) inCurrQ = true;
+                    if (rangeVal === 'q2' && rowMonth >= 4 && rowMonth <= 6) inCurrQ = true;
+                    if (rangeVal === 'q3' && rowMonth >= 7 && rowMonth <= 9) inCurrQ = true;
+                    if (rangeVal === 'q4' && rowMonth >= 10 && rowMonth <= 12) inCurrQ = true;
+                    return inCurrQ && rowYear === selectedYear;
+                } else if (rangeVal === 'month') {
+                    return rowYear === selectedYear && rowMonth === parseInt(selectedMonthStr);
+                } else { // Yearly
+                    return rowYear === selectedYear;
+                }
+            } else {
+                if (d.getFullYear() !== selectedYear) return false;
+                if (selectedMonthStr !== "all" && (d.getMonth() + 1) !== parseInt(selectedMonthStr)) return false;
+                return true;
+            }
         });
 
         // Specific filtering based on category type
@@ -3917,10 +4510,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 const loaiCP = (item["Loại CP"] || "").trim().toLowerCase();
                 return parseFloat(item["Chi Phí"]) > 0 && (loaiCP === "lãi" || loaiCP === "lai");
             });
+        } else if (type === "Vận Chuyển") {
+            filtered = filtered.filter(item => {
+                const loaiCP = (item["Loại CP"] || "").trim().toLowerCase();
+                return parseFloat(item["Chi Phí"]) > 0 && (loaiCP === "vận chuyển" || loaiCP === "van chuyen");
+            });
         } else if (type === "Chi phí khác") {
             filtered = filtered.filter(item => {
                 const loaiCP = (item["Loại CP"] || "").trim().toLowerCase();
-                const specificTypes = ["expensed", "phân", "phan", "thuốc", "thuoc", "công", "cong", "lãi", "lai", "vật tư", "vat tu", "vật tư kd", "mua bông"];
+                const specificTypes = ["expensed", "phân", "phan", "thuốc", "thuoc", "công", "cong", "lãi", "lai", "vật tư", "vat tu", "vật tư kd", "mua bông", "vận chuyển", "van chuyen"];
                 return parseFloat(item["Chi Phí"]) > 0 && !specificTypes.includes(loaiCP);
             });
         }
@@ -3933,8 +4531,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Icon for drawer header
         let iconHtml = '';
-        if (type.includes("Doanh thu")) iconHtml = '<i class="fa-solid fa-arrow-trend-up" style="color: #34d399; font-size: 1.2rem;"></i>';
-        else iconHtml = '<i class="fa-solid fa-arrow-trend-down" style="color: #fb7185; font-size: 1.2rem;"></i>';
+        if (themeColor) {
+            iconHtml = `<i class="fa-solid fa-chart-pie" style="color: ${themeColor}; font-size: 1.2rem;"></i>`;
+        } else if (type.includes("Doanh thu")) {
+            iconHtml = '<i class="fa-solid fa-arrow-trend-up" style="color: #34d399; font-size: 1.2rem;"></i>';
+        } else {
+            iconHtml = '<i class="fa-solid fa-arrow-trend-down" style="color: #fb7185; font-size: 1.2rem;"></i>';
+        }
 
         let listHtml = '';
         if (filtered.length === 0) {
@@ -3981,6 +4584,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     rawNote = item["Ghi Chú Chi Phí"] || item["Ghi Chú"] || '';
                 }
 
+                const amountStyle = (!isRevenue && themeColor) ? `style="color: ${themeColor} !important;"` : '';
+                const editBtnStyle = themeColor ? `style="color: ${themeColor} !important; background: transparent; border: none; cursor: pointer; font-size: 0.78rem; display: flex; align-items: center; gap: 4px; opacity: 0.6; transition: all 0.2s;"` : `style="background: transparent; border: none; color: #a5b4fc; cursor: pointer; font-size: 0.78rem; display: flex; align-items: center; gap: 4px; opacity: 0.6; transition: all 0.2s;"`;
+
                 return `
                     <div class="${itemClass}">
                         <div class="cashflow-drawer-item-left">
@@ -3988,14 +4594,14 @@ document.addEventListener("DOMContentLoaded", () => {
                             <span class="cashflow-drawer-note" title="${note}">${note}</span>
                         </div>
                         <div class="cashflow-drawer-item-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
-                            <span class="cashflow-drawer-amount ${amountClass}">${sign}${formatCurrency(amount)}</span>
+                            <span class="cashflow-drawer-amount ${amountClass}" ${amountStyle}>${sign}${formatCurrency(amount)}</span>
                             <button class="cashflow-drawer-edit-btn" 
                                     data-row="${item._sheetRowNumber}" 
                                     data-type="${type}" 
                                     data-amount="${amount}" 
                                     data-isrevenue="${isRevenueStr}"
                                     data-note="${rawNote.replace(/"/g, '&quot;')}" 
-                                    style="background: transparent; border: none; color: #a5b4fc; cursor: pointer; font-size: 0.78rem; display: flex; align-items: center; gap: 4px; opacity: 0.6; transition: all 0.2s;" 
+                                    ${editBtnStyle} 
                                     onmouseover="this.style.opacity=1" 
                                     onmouseout="this.style.opacity=0.6"
                                     onclick="openEditCashflow(this)">
@@ -4018,15 +4624,22 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        const periodText = selectedMonthStr === "all" ? `Năm ${selectedYear}` : `Tháng ${selectedMonthStr}/${selectedYear}`;
+        const periodText = isDashboard ? (
+            rangeVal === 'month' ? `Tháng ${selectedMonthStr}/${selectedYear}` : (
+                rangeVal.startsWith('q') ? `Quý ${rangeVal.substring(1).toUpperCase()} ${selectedYear}` : `Năm ${selectedYear}`
+            )
+        ) : (selectedMonthStr === "all" ? `Năm ${selectedYear}` : `Tháng ${selectedMonthStr}/${selectedYear}`);
+
         let footerText = `Hiển thị toàn bộ ${filtered.length} giao dịch gần nhất.`;
         if (filtered.length > limit) {
             footerText = `Hiển thị ${limit} trên tổng số ${filtered.length} giao dịch gần nhất. Các giao dịch khác xem tại bảng Nhật ký.`;
         }
 
+        const drawerTitleColor = themeColor || (type.includes("Doanh thu") ? '#38bdf8' : '#fb7185');
+
         panel.innerHTML = `
             <div class="cashflow-drawer-header">
-                <div class="cashflow-drawer-title">
+                <div class="cashflow-drawer-title" style="color: ${drawerTitleColor} !important;">
                     ${iconHtml}
                     <span>Chi Tiết ${type}</span>
                 </div>
@@ -4055,6 +4668,23 @@ document.addEventListener("DOMContentLoaded", () => {
         overlay.classList.add('show');
         panel.classList.add('show');
     }
+
+    // Expose window.showDrawerForExpenseCategory mapping function
+    window.showDrawerForExpenseCategory = function(categoryLabel) {
+        let type = "";
+        let color = "#10b981";
+        if (categoryLabel === "Mua Bông") { type = "Mua Bông"; color = "#f43f5e"; }
+        else if (categoryLabel === "Vật Tư KD") { type = "Vật Tư"; color = "#3b82f6"; }
+        else if (categoryLabel === "Vận Chuyển") { type = "Vận Chuyển"; color = "#0ea5e9"; }
+        else if (categoryLabel === "Nhân Công") { type = "Lương"; color = "#10b981"; }
+        else if (categoryLabel === "Phân Bón") { type = "Phân bón"; color = "#f59e0b"; }
+        else if (categoryLabel === "Thuốc BVTV") { type = "Thuốc"; color = "#8b5cf6"; }
+        else if (categoryLabel === "Trả Lãi") { type = "Lãi"; color = "#64748b"; }
+        else if (categoryLabel === "Expensed") { type = "Expensed"; color = "#ec4899"; }
+        else if (categoryLabel === "Chi phí khác" || categoryLabel === "Chi Phí Khác") { type = "Chi phí khác"; color = "#a855f7"; }
+        
+        showDrawerForType(type, null, true, color);
+    };
 
     function injectDrawerStyles() {
         if (document.getElementById('cashflow-drawer-styles')) return;
@@ -4673,6 +5303,220 @@ document.addEventListener("DOMContentLoaded", () => {
     const syncFinancialBtn = document.getElementById('sync-financial-btn');
     if (syncFinancialBtn) {
         syncFinancialBtn.addEventListener('click', () => fetchFinancialReport(true));
+    }
+
+    function renderExpenseDistributionChart(statement) {
+        const ctx = document.getElementById('expenseDistributionChart');
+        if (!ctx) return;
+
+        // --- Hierarchical structure mirroring the cashflow report ---
+        // Standalone: Expensed
+        // Group: Chi Phí Vựa → Vật Tư KD + Mua Bông
+        // Group: Chi Phí Vận Hành → Phân Bón, Thuốc BVTV, Nhân Công, Trả Lãi, Vận Chuyển
+
+        // Expensed standalone = only items with loaiCP === "Expensed" exactly
+        const expensedItem = { label: 'Expensed', val: statement.expensed, color: '#ec4899', type: 'Chi phí khác' };
+
+        const vuaItems = [
+            { label: 'Vật Tư KD', val: statement.vatTu, color: '#3b82f6', type: 'Vật Tư' },
+            { label: 'Mua Bông', val: statement.muaBong, color: '#f43f5e', type: 'Mua Bông' },
+        ];
+
+        const opItems = [
+            { label: 'Phân Bón', val: statement.phanBon, color: '#f59e0b', type: 'Phân bón' },
+            { label: 'Thuốc BVTV', val: statement.thuoc, color: '#8b5cf6', type: 'Thuốc' },
+            { label: 'Nhân Công', val: statement.luong, color: '#10b981', type: 'Lương' },
+            { label: 'Trả Lãi', val: statement.lai, color: '#64748b', type: 'Lãi' },
+            { label: 'Vận Chuyển', val: statement.vanChuyen, color: '#0ea5e9', type: 'Vận Chuyển' },
+            { label: 'Chi phí khác', val: statement.chiPhiKhac, color: '#a855f7', type: 'Chi phí khác' },
+        ];
+
+        // Flat list for donut chart (all items including expensed)
+        const allLeafItems = [expensedItem, ...vuaItems, ...opItems];
+        const activeCategories = allLeafItems.filter(c => c.val > 0);
+
+        // Calculate grand total
+        const sumExpenses = allLeafItems.reduce((sum, c) => sum + c.val, 0);
+
+        // Group totals
+        const vuaTotal = vuaItems.reduce((s, c) => s + c.val, 0);
+        const opTotal = opItems.reduce((s, c) => s + c.val, 0);
+
+        // Populate legend — hierarchical structure mirroring cashflow report
+        const legendEl = document.getElementById('expense-distribution-legend');
+        if (legendEl) {
+            if (sumExpenses > 0 || vuaTotal > 0 || opTotal > 0 || expensedItem.val > 0) {
+
+                // Helper: render a standalone clickable row (for Expensed)
+                function standaloneItemHtml(c) {
+                    const pct = sumExpenses > 0 ? ((c.val / sumExpenses) * 100).toFixed(1) : '0.0';
+                    return `
+                        <div class="legend-standalone legend-item-clickable"
+                             onclick="window.showDrawerForExpenseCategory('${c.label}')"
+                             title="Nhấp để xem chi tiết ${c.label}">
+                            <span class="legend-label" style="font-weight: 700; color: #475569;">
+                                <span class="legend-dot" style="background: ${c.color}; width: 9px; height: 9px;"></span>
+                                ${c.label}
+                            </span>
+                            <div class="legend-values">
+                                <span class="legend-amount">${formatCurrency(c.val)}</span>
+                                <span class="legend-pct">${pct}%</span>
+                            </div>
+                        </div>`;
+                }
+
+                // Helper: render a sub-item row (clickable leaf, indented)
+                function subItemHtml(c) {
+                    const pct = sumExpenses > 0 ? ((c.val / sumExpenses) * 100).toFixed(1) : '0.0';
+                    const clickable = c.val > 0 ? `onclick="window.showDrawerForExpenseCategory('${c.label}')" title="Nhấp để xem chi tiết ${c.label}"` : '';
+                    const clickClass = c.val > 0 ? 'legend-item-clickable' : '';
+                    const amountStyle = c.val === 0 ? 'color: #94a3b8;' : '';
+                    return `
+                        <div class="legend-sub-item ${clickClass}" ${clickable}>
+                            <span class="legend-label" style="padding-left: 18px; ${c.val === 0 ? 'color: #94a3b8;' : ''}">
+                                <span class="legend-branch">└</span>
+                                <span class="legend-dot" style="background: ${c.color}; width: 8px; height: 8px; ${c.val === 0 ? 'opacity:0.4;' : ''}"></span>
+                                ${c.label}
+                            </span>
+                            <div class="legend-values">
+                                <span class="legend-amount" style="${amountStyle}">${formatCurrency(c.val)}</span>
+                                <span class="legend-pct" style="${c.val === 0 ? 'color:#94a3b8; background:#f8fafc;' : ''}">${pct}%</span>
+                            </div>
+                        </div>`;
+                }
+
+                // Helper: group header (not clickable, shows subtotal)
+                function groupHeaderHtml(label, groupTotal) {
+                    const pct = sumExpenses > 0 ? ((groupTotal / sumExpenses) * 100).toFixed(1) : '0.0';
+                    return `
+                        <div class="legend-group-header" style="margin-top: 8px;">
+                            <span class="legend-label" style="font-weight: 800; color: #1e293b;">
+                                <span style="color: #64748b; margin-right: 5px; font-size: 0.75rem;">－</span>
+                                ${label}
+                            </span>
+                            <div class="legend-values">
+                                <span class="legend-amount" style="font-weight: 800;">${formatCurrency(groupTotal)}</span>
+                                <span class="legend-pct">${pct}%</span>
+                            </div>
+                        </div>`;
+                }
+
+                // Build hierarchical HTML
+                let html = '';
+
+                // 1. Expensed (standalone, always show)
+                html += standaloneItemHtml(expensedItem);
+
+                // 2. Group: Chi Phí Vựa (always render the group, show 0đ items too)
+                html += groupHeaderHtml('Chi Phí Vựa', vuaTotal);
+                html += vuaItems.map(subItemHtml).join('');
+
+                // 3. Group: Chi Phí Vận Hành (always render if any op item exists)
+                html += groupHeaderHtml('Chi Phí Vận Hành', opTotal);
+                html += opItems.map(subItemHtml).join('');
+
+                // 4. Total row
+                html += `
+                    <div class="legend-item legend-item-total" style="margin-top: 10px;">
+                        <span class="legend-label" style="font-weight: 900; color: #1e293b;">
+                            <span class="legend-dot" style="background: linear-gradient(135deg, #f43f5e, #ec4899); box-shadow: 0 0 6px rgba(244,63,94,0.4);"></span>
+                            Tổng Chi Phí
+                        </span>
+                        <div class="legend-values">
+                            <span class="legend-amount" style="color: #ef4444; font-size: 1rem;">${formatCurrency(sumExpenses)}</span>
+                            <span class="legend-pct" style="background: #fee2e2; color: #dc2626; font-weight: 900;">100%</span>
+                        </div>
+                    </div>`;
+
+                legendEl.innerHTML = html;
+            } else {
+                legendEl.innerHTML = '<div style="text-align: center; color: #64748b; font-weight: 500; padding: 2rem 0;">Không phát sinh chi phí</div>';
+            }
+        }
+
+
+        if (expenseDistributionChartInstance) {
+            expenseDistributionChartInstance.destroy();
+            expenseDistributionChartInstance = null;
+        }
+
+        if (activeCategories.length === 0) {
+            // Draw empty placeholder or clear canvas
+            const context = ctx.getContext('2d');
+            context.clearRect(0, 0, ctx.width, ctx.height);
+            return;
+        }
+
+        expenseDistributionChartInstance = new Chart(ctx.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: activeCategories.map(c => c.label),
+                datasets: [{
+                    data: activeCategories.map(c => c.val),
+                    backgroundColor: activeCategories.map(c => c.color),
+                    borderWidth: 2,
+                    borderColor: '#ffffff',
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                onClick: (event, activeElements) => {
+                    if (activeElements && activeElements.length > 0) {
+                        const activeEl = activeElements[0];
+                        const idx = activeEl.index;
+                        const categoryLabel = activeCategories[idx].label;
+                        if (typeof window.showDrawerForExpenseCategory === 'function') {
+                            window.showDrawerForExpenseCategory(categoryLabel);
+                        }
+                    }
+                },
+                onHover: (event, chartElement) => {
+                    event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const val = context.raw;
+                                const pct = sumExpenses > 0 ? ((val / sumExpenses) * 100).toFixed(1) : '0.0';
+                                return ` ${context.label}: ${formatCurrency(val)} (${pct}%)`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: function(context) {
+                            const val = context.dataset.data[context.dataIndex];
+                            const pct = sumExpenses > 0 ? (val / sumExpenses) * 100 : 0;
+                            return pct >= 5; // only show label on slices ≥ 5%
+                        },
+                        formatter: function(value, context) {
+                            const label = context.chart.data.labels[context.dataIndex];
+                            const pct = sumExpenses > 0 ? ((value / sumExpenses) * 100).toFixed(1) : '0.0';
+                            // Shorten label if too long
+                            const shortLabel = label.length > 10 ? label.substring(0, 9) + '…' : label;
+                            return `${shortLabel}\n${pct}%`;
+                        },
+                        color: '#ffffff',
+                        font: {
+                            weight: '700',
+                            size: 11,
+                            family: "'Inter', 'Outfit', sans-serif"
+                        },
+                        textShadowColor: 'rgba(0,0,0,0.35)',
+                        textShadowBlur: 4,
+                        textAlign: 'center',
+                        anchor: 'center',
+                        align: 'center',
+                        padding: 2,
+                        borderRadius: 4,
+                    }
+                },
+                cutout: '55%'
+            }
+        });
     }
 
     function renderYearlyCharts(labels, data, year) {
@@ -6154,9 +6998,11 @@ document.addEventListener("DOMContentLoaded", () => {
         submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
         submitBtn.disabled = true;
 
+        let isSavedOffline = !navigator.onLine;
+
         try {
             // IF EDIT MODE: Delete old row first
-            if (currentEditRowData) {
+            if (currentEditRowData && !isSavedOffline) {
                 const sheetRow = currentEditRowData._sheetRowNumber;
                 if (sheetRow) {
                     const delResp = await fetch(CONFIG.WEB_APP_URL, {
@@ -6169,6 +7015,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         throw new Error("Lỗi khi xóa dòng cũ: " + delRes.message);
                     }
                 }
+            }
+
+            if (isSavedOffline) {
+                throw new TypeError("Offline mode enabled");
             }
 
             for (let i = 0; i < payloadRowsStr.length; i++) {
@@ -6187,7 +7037,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (cancelBtn) cancelBtn.remove();
 
             submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu Dữ Liệu';
-            submitBtn.style.backgroundColor = '';
+            submitBtn.disabled = false;
 
             // Re-fetch everything to ensure proper sync if possible
             const syncBtn = document.getElementById('sync-gsheet-btn');
@@ -6199,14 +7049,44 @@ document.addEventListener("DOMContentLoaded", () => {
                 populateYears();
                 if (document.getElementById('view-report').style.display === 'block') updateDashboard();
             }
+        } catch (e) {
+            console.error("Submit error:", e);
+            
+            // Queue offline addition
+            const queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+            const timestampId = "OFFLINE_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+            
+            payloadRowsStr.forEach((p, pIdx) => {
+                const rowClientId = `${timestampId}_${pIdx}`;
+                queue.push({ action: 'add', payload: p, clientId: rowClientId });
+                
+                // Map the clientId to the optimistic parsed row
+                if (payloadRowsParsed[pIdx]) {
+                    payloadRowsParsed[pIdx]._sheetRowNumber = rowClientId;
+                }
+            });
+            localStorage.setItem('harvest_sync_queue', JSON.stringify(queue));
 
+            // Optimistic UI update
+            payloadRowsParsed.forEach(p => farmData.unshift(p));
+            applyFiltersAndRender();
+            populateYears();
+            if (typeof updateConnectionStatus === 'function') updateConnectionStatus();
+
+            if (document.getElementById('view-report').style.display === 'block') updateDashboard();
+
+            showToast("Ngoại tuyến! Giao dịch được lưu tạm trên thiết bị.", "success");
+            currentEditRowData = null;
+            const cancelBtn = document.getElementById('cancel-edit-btn');
+            if (cancelBtn) cancelBtn.remove();
+            
+            submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu Dữ Liệu';
+        } finally {
+            submitBtn.disabled = false;
             form.reset();
             document.getElementById('date-input').value = formatDateInput(new Date());
 
-
-            // Trigger mode toggle later to restore UI state correctly after innerHTML resets
-
-            // Khôi phục lại một dòng chuẩn cho Bông
+            // Reset flower items container to default single row
             if (flowerItemsContainer) {
                 flowerItemsContainer.innerHTML = `
                     <div class="flower-item">
@@ -6235,7 +7115,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (entryTypeSelect && entryTypeSelect.value === 'vua') calculateVuaTotals();
 
-            // Khôi phục lại một dòng chuẩn cho Chi phí
+            // Reset expense items container to default single row
             if (expenseItemsContainer) {
                 expenseItemsContainer.innerHTML = `
                     <div class="expense-item">
@@ -6267,18 +7147,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 attachExpenseRowEvents(expenseItemsContainer.querySelector('.expense-item'));
             }
 
-            // Trigger mode toggle NOW to restore UI state (label, required fields, visibility) on the new items
-            if (entryTypeSelect) {
-                entryTypeSelect.dispatchEvent(new Event('change'));
-            }
-
-            showToast(`✅ Đã lưu thành công ${payloadRowsStr.length} dòng dữ liệu!`, 'success');
-
-        } catch (error) {
-            console.error(error);
-            alert("Lỗi khi ghi dữ liệu lên Sheets: " + error.message);
-        } finally {
-            submitBtn.disabled = false;
             if (entryTypeSelect) {
                 entryTypeSelect.dispatchEvent(new Event('change'));
             }
@@ -7070,5 +7938,125 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Investment logic moved to investment.js
+
+    // Offline Sync Queue & Connection indicator logic
+    function updateConnectionStatus() {
+        const indicator = document.getElementById('conn-status-indicator');
+        if (!indicator) return;
+
+        const queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+        const hasPending = queue.length > 0;
+
+        if (!navigator.onLine) {
+            indicator.className = 'conn-status-badge status-offline';
+            const dot = indicator.querySelector('.status-dot');
+            const text = indicator.querySelector('.status-text');
+            if (dot) dot.style.background = '#ef4444';
+            if (text) text.innerText = `Ngoại tuyến ${hasPending ? `(${queue.length} nợ)` : ''}`;
+            indicator.style.background = '#fef2f2';
+            indicator.style.color = '#991b1b';
+            indicator.style.borderColor = '#fecaca';
+        } else {
+            if (hasPending) {
+                indicator.className = 'conn-status-badge status-syncing';
+                const dot = indicator.querySelector('.status-dot');
+                const text = indicator.querySelector('.status-text');
+                if (dot) dot.style.background = '#f59e0b';
+                if (text) text.innerText = `Chờ đồng bộ (${queue.length})`;
+                indicator.style.background = '#fffbeb';
+                indicator.style.color = '#92400e';
+                indicator.style.borderColor = '#fef3c7';
+            } else {
+                indicator.className = 'conn-status-badge status-online';
+                const dot = indicator.querySelector('.status-dot');
+                const text = indicator.querySelector('.status-text');
+                if (dot) dot.style.background = '#22c55e';
+                if (text) text.innerText = 'Trực tuyến';
+                indicator.style.background = '#f0fdf4';
+                indicator.style.color = '#166534';
+                indicator.style.borderColor = '#bbf7d0';
+            }
+        }
+    }
+
+    async function processSyncQueue() {
+        if (!navigator.onLine) return;
+        const queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+        if (queue.length === 0) return;
+
+        const indicator = document.getElementById('conn-status-indicator');
+        if (indicator) {
+            indicator.className = 'conn-status-badge status-syncing';
+            const dot = indicator.querySelector('.status-dot');
+            const text = indicator.querySelector('.status-text');
+            if (dot) dot.style.background = '#f59e0b';
+            if (text) text.innerText = `Đang đồng bộ ${queue.length} dòng...`;
+        }
+
+        console.log(`Syncing ${queue.length} pending items to Google Sheets...`);
+        showToast(`Bắt đầu đồng bộ ${queue.length} dòng dữ liệu...`, "info");
+
+        let processedCount = 0;
+        try {
+            while (queue.length > 0) {
+                const item = queue[0];
+                let response = null;
+
+                if (item.action === 'add') {
+                    response = await fetch(CONFIG.WEB_APP_URL, {
+                        method: "POST",
+                        body: JSON.stringify({ ...item.payload, token: getToken() }),
+                        headers: { "Content-Type": "text/plain;charset=utf-8" }
+                    });
+                } else if (item.action === 'delete') {
+                    response = await fetch(CONFIG.WEB_APP_URL, {
+                        method: "POST",
+                        body: JSON.stringify({ action: "deleteByRow", rowNumber: item.rowNumber, context: item.context, token: getToken() }),
+                        headers: { "Content-Type": "text/plain;charset=utf-8" }
+                    });
+                }
+
+                if (response) {
+                    const result = await response.json();
+                    if (result.status !== "success") {
+                        throw new Error(result.message || "Lỗi đồng bộ");
+                    }
+                }
+
+                queue.shift();
+                localStorage.setItem('harvest_sync_queue', JSON.stringify(queue));
+                processedCount++;
+            }
+
+            showToast(`Đồng bộ thành công ${processedCount} dòng!`, "success");
+            const syncBtn = document.getElementById('sync-gsheet-btn');
+            if (syncBtn) {
+                syncBtn.click();
+            } else {
+                syncData();
+            }
+        } catch (e) {
+            console.error("Queue sync error:", e);
+            showToast("Đồng bộ gián đoạn. Sẽ tự động thử lại khi mạng ổn định.", "error");
+        } finally {
+            updateConnectionStatus();
+        }
+    }
+
+    // Bind event listeners
+    window.addEventListener('online', () => {
+        updateConnectionStatus();
+        processSyncQueue();
+    });
+    window.addEventListener('offline', updateConnectionStatus);
+    
+    // Check queue on startup
+    setTimeout(() => {
+        updateConnectionStatus();
+        processSyncQueue();
+    }, 1500);
+
+    window.updateConnectionStatus = updateConnectionStatus;
+    window.processSyncQueue = processSyncQueue;
 });
 
