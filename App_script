@@ -1,0 +1,1176 @@
+/* 
+   BACKEND API FOR THEHARVEST7
+   - Quản trị: huytran97
+   - Bậc 1: nth66
+   - Bậc 2: haitran63
+   - Cập nhật 11/04: Quản lý Quỹ Tiền Mặt — Monthly Ledger (Cột Q + R)
+*/
+
+const SHEET_NAME = "Data";
+const CONFIG_SHEET_NAME = "Config";
+const FINANCIAL_REPORT_SHEET = "FinancialReport";
+const TODO_SHEET_NAME = "ToDoTracker";
+
+function doPost(e) {
+    try {
+        const params = JSON.parse(e.postData.contents);
+        const action = params.action;
+
+        // 1. ĐĂNG NHẬP
+        if (action === "login") {
+            var password = params.password;
+            if (password === "huytran97") return returnJson({ "status": "success", "role": "ADMIN" });
+            else if (password === "nth66")   return returnJson({ "status": "success", "role": "EMP_LV1" });
+            else if (password === "haitran63")   return returnJson({ "status": "success", "role": "EMP_LV2" });
+            else return returnJson({ "status": "error", "message": "Mật khẩu không đúng!" });
+        }
+
+        // 2. KIỂM TRA TOKEN
+        const token = params.token;
+        const validTokens = ["huytran97", "nth66", "haitran63"];
+        if (!token || validTokens.indexOf(token) === -1)
+            return returnJson({ "status": "error", "message": "Phiên làm việc hết hạn hoặc không có quyền!" });
+
+        // 3. KẾT NỐI SHEET DATA
+        const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+        if (!sheet) return returnJson({ "status": "error", "message": "Không tìm thấy Sheet: " + SHEET_NAME });
+
+        const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+        const data = params.data;
+
+        // Tự động phân loại "Vật tư KD" nếu dữ liệu có chứa từ khóa này (Không phân biệt hoa thường)
+        const checkTarget = data || params.updates;
+        if (checkTarget && JSON.stringify(checkTarget).toLowerCase().includes("vật tư kd")) {
+            if (data) data["Loại CP"] = "Vật tư KD";
+            if (params.updates) params.updates["Loại CP"] = "Vật tư KD";
+        }
+
+        // 4. CONFIG ACTIONS
+        if (action === "get_config") {
+            return returnJson({ "status": "success", "config": readConfig() });
+
+        } else if (action === "save_config") {
+            if (token !== "huytran97") return returnJson({ "status": "error", "message": "Chỉ ADMIN mới có thể thay đổi cấu hình!" });
+            writeConfig(params.key, params.value);
+            return returnJson({ "status": "success" });
+
+        } else if (action === "save_adjustment") {
+            const displayValues = sheet.getDataRange().getDisplayValues();
+            const colNgay    = getColumnIdx(headers, "Ngày");
+            const colStatus  = getColumnIdx(headers, "Status");
+            const colLoaiDT  = getColumnIdx(headers, "Loại DT");
+            const colDTBong  = getColumnIdx(headers, "Doanh Thu Bông");
+            const colAdjVal  = getColumnIdx(headers, "Khoản Thu Chi Bất Thường");
+            const colAdjNote = getColumnIdx(headers, "Ghi Chú Thu Chi Bất Thường");
+            
+            const idxR = colAdjVal > -1 ? colAdjVal : 17;
+            const idxS = colAdjNote > -1 ? colAdjNote : 18;
+
+            let rowIndexToFill = -1;
+            for (let i = displayValues.length - 1; i >= Math.max(1, displayValues.length - 10); i--) {
+                 if (displayValues[i][colNgay] === data["Ngày"] && 
+                     String(displayValues[i][idxR]) === String(data["amount"]) && 
+                     displayValues[i][idxS] === data["Ghi Chú"]) {
+                     return returnJson({ "status": "success", "message": "Duplicate skipped" });
+                 }
+            }
+
+            for (let i = displayValues.length - 1; i >= 1; i--) {
+                if (displayValues[i][colNgay] === data["Ngày"]) {
+                    if (displayValues[i][idxR] === "" || displayValues[i][idxR] === "0") {
+                        rowIndexToFill = i + 1;
+                        break;
+                    }
+                }
+            }
+
+            if (rowIndexToFill > -1) {
+                sheet.getRange(rowIndexToFill, idxR + 1).setValue(parseFloat(data["amount"]) || 0);
+                sheet.getRange(rowIndexToFill, idxS + 1).setValue(data["Ghi Chú"] || "");
+            } else {
+                const adjRow = new Array(headers.length).fill("");
+                adjRow[colNgay]   = data["Ngày"] || "";
+                if (colStatus > -1) adjRow[colStatus] = "Xong";
+                adjRow[idxR]      = parseFloat(data["amount"]) || 0;
+                adjRow[idxS]      = data["Ghi Chú"] || "";
+                if (colLoaiDT > -1) adjRow[colLoaiDT] = "";
+                if (colDTBong > -1) adjRow[colDTBong] = "";
+                sheet.appendRow(adjRow);
+            }
+
+            const adjDate = parseDisplayDate(data["Ngày"]);
+            if (adjDate) recalculateFromDate(sheet, headers, adjDate);
+
+            return returnJson({ "status": "success" });
+
+
+
+        // 5. MUTATION ACTIONS
+        } else if (action === "add") {
+            const displayValues = sheet.getDataRange().getDisplayValues();
+            let rowIndexToFill = -1;
+            const colNgay   = getColumnIdx(headers, "Ngày");
+            const colLoaiDT = getColumnIdx(headers, "Loại DT");
+            const colSL     = getColumnIdx(headers, "Số lượng");
+
+            const isVuaEntry = String(data["Loại DT"]).trim() === "V\u1ef1a";
+
+            // Nếu KHÔNG phải đơn Vựa, mới tìm dòng trống để điền vào
+            if (!isVuaEntry) {
+                for (let i = displayValues.length - 1; i >= 1; i--) {
+                    if (displayValues[i][colNgay] === String(data["Ngày"]) &&
+                        displayValues[i][colLoaiDT] === "" &&
+                        (displayValues[i][colSL] === "" || displayValues[i][colSL] === "0")) {
+                        rowIndexToFill = i + 1;
+                        break;
+                    }
+                }
+            }
+
+            if (rowIndexToFill > -1) {
+                headers.forEach((h, idx) => {
+                    const normH = normalizeString(h);
+                    if (normH === "status") {
+                        sheet.getRange(rowIndexToFill, idx + 1).setValue(data[h] || data["Status"] || "");
+                    } else {
+                        // Tìm data key khớp với h (không phân biệt hoa thường)
+                        let val = data[h];
+                        if (val === undefined) {
+                           const matchKey = Object.keys(data).find(k => normalizeString(k) === normH);
+                           if (matchKey) val = data[matchKey];
+                        }
+                        if (val !== undefined && val !== null && val !== "") {
+                           sheet.getRange(rowIndexToFill, idx + 1).setValue(val);
+                        }
+                    }
+                });
+            } else {
+                // Tìm vị trí chèn đúng thứ tự ngày trong Sheet
+                // Logic: chèn sau hàng cuối cùng có cùng ngày,
+                //        hoặc trước hàng đầu tiên có ngày lớn hơn (mới hơn),
+                //        hoặc appendRow nếu không có hàng nào phù hợp
+                const targetDate = parseDisplayDate(String(data["Ngày"]));
+                let insertAfterRow = -1; // 1-indexed, chèn sau dòng này
+
+                if (targetDate) {
+                    // Duyệt từ cuối lên để tìm vị trí chèn phù hợp
+                    for (let i = displayValues.length - 1; i >= 1; i--) {
+                        const rowDate = parseDisplayDate(displayValues[i][colNgay]);
+                        if (!rowDate) continue;
+
+                        if (rowDate <= targetDate) {
+                            // Chèn sau dòng này (dòng có ngày <= ngày mới)
+                            insertAfterRow = i + 1; // 1-indexed sheet row
+                            break;
+                        }
+                    }
+                }
+
+                const newRowData = headers.map(h => {
+                    const normH = normalizeString(h);
+                    let val = data[h];
+                    if (val === undefined) {
+                        const matchKey = Object.keys(data).find(k => normalizeString(k) === normH);
+                        if (matchKey) val = data[matchKey];
+                    }
+                    return val || "";
+                });
+
+                if (insertAfterRow > 0 && insertAfterRow < displayValues.length + 1) {
+                    // Insert row sau vị trí tìm được rồi điền dữ liệu
+                    sheet.insertRowAfter(insertAfterRow);
+                    const newRange = sheet.getRange(insertAfterRow + 1, 1, 1, headers.length);
+                    newRange.setValues([newRowData]);
+                } else {
+                    // Fallback: append cuối
+                    sheet.appendRow(newRowData);
+                }
+            }
+
+            const d = parseDisplayDate(data["Ngày"]);
+            if (d) recalculateFromDate(sheet, headers, d);
+            return returnJson({ "status": "success" });
+
+        } else if (action === "deleteByRow") {
+            const rowNumber = parseInt(params.rowNumber);
+            const context = params.context || "all"; // all, adjustment, expense
+            if (!rowNumber || rowNumber < 2) return returnJson({ "status": "error", "message": "Dòng không hợp lệ" });
+
+            const displayBefore = sheet.getDataRange().getDisplayValues();
+            const colNgayD = headers.indexOf("Ngày");
+            const rowDateStr = rowNumber <= displayBefore.length ? displayBefore[rowNumber - 1][colNgayD] : null;
+
+            if (context === "all") {
+                sheet.deleteRow(rowNumber);
+            } else {
+                // Partial delete logic: Clear specific fields instead of whole row if borrowed
+                const colAdjVal  = getColumnIdx(headers, "Khoản Thu Chi Bất Thường");
+                const colAdjNote = getColumnIdx(headers, "Ghi Chú Thu Chi Bất Thường");
+                const colChiPhi  = getColumnIdx(headers, "Chi Phí");
+                const colLoaiCP  = getColumnIdx(headers, "Loại CP");
+                const colNoteCP  = getColumnIdx(headers, "Ghi Chú Chi Phí") > -1 ? getColumnIdx(headers, "Ghi Chú Chi Phí") : getColumnIdx(headers, "Ghi Chú Chi Phí2");
+                const colSL      = getColumnIdx(headers, "Số lượng");
+                const colLoaiDT  = getColumnIdx(headers, "Loại DT");
+
+                if (context === "adjustment") {
+                    if (colAdjVal > -1) sheet.getRange(rowNumber, colAdjVal + 1).clearContent();
+                    if (colAdjNote > -1) sheet.getRange(rowNumber, colAdjNote + 1).clearContent();
+                } else if (context === "expense") {
+                    if (colChiPhi > -1) sheet.getRange(rowNumber, colChiPhi + 1).clearContent();
+                    if (colLoaiCP > -1) sheet.getRange(rowNumber, colLoaiCP + 1).clearContent();
+                    if (colNoteCP > -1) sheet.getRange(rowNumber, colNoteCP + 1).clearContent();
+                }
+
+                // Check if row is now empty of significant data
+                const updatedRow = sheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
+                let hasData = false;
+                if (colSL > -1 && String(updatedRow[colSL]).trim() !== "" && String(updatedRow[colSL]) !== "0") hasData = true;
+                if (colChiPhi > -1 && String(updatedRow[colChiPhi]).trim() !== "" && String(updatedRow[colChiPhi]) !== "0") hasData = true;
+                if (colAdjVal > -1 && String(updatedRow[colAdjVal]).trim() !== "" && String(updatedRow[colAdjVal]) !== "0") hasData = true;
+                if (colLoaiDT > -1 && String(updatedRow[colLoaiDT]).trim() !== "") hasData = true;
+
+
+                if (!hasData) {
+                    sheet.deleteRow(rowNumber);
+                }
+            }
+
+            const d = parseDisplayDate(rowDateStr);
+            if (d) recalculateFromDate(sheet, headers, d);
+            return returnJson({ "status": "success" });
+
+
+        } else if (action === "add_expense") {
+            const displayValues = sheet.getDataRange().getDisplayValues();
+            let rowIndexToFill = -1;
+            const colNgay    = getColumnIdx(headers, "Ngày");
+            const colLoaiDT  = getColumnIdx(headers, "Loại DT");
+            const colChiPhi  = getColumnIdx(headers, "Chi Phí");
+
+            for (let i = displayValues.length - 1; i >= 1; i--) {
+                if (displayValues[i][colNgay] === data["Ngày"] &&
+                    displayValues[i][colLoaiDT] !== "Vựa" &&
+                    (displayValues[i][colChiPhi] === "" || displayValues[i][colChiPhi] === "0")) {
+                    rowIndexToFill = i + 1;
+                    break;
+                }
+            }
+
+            if (rowIndexToFill > -1) {
+                sheet.getRange(rowIndexToFill, colChiPhi + 1).setValue(data["Chi Phí"]);
+                const idxLoaiCP = getColumnIdx(headers, "Loại CP");
+                if (idxLoaiCP > -1) sheet.getRange(rowIndexToFill, idxLoaiCP + 1).setValue(data["Loại CP"]);
+                const idxNote = getColumnIdx(headers, "Ghi Chú Chi Phí");
+                const idxNote2 = getColumnIdx(headers, "Ghi Chú Chi Phí2");
+                const finalIdxNote = idxNote > -1 ? idxNote : idxNote2;
+                if (finalIdxNote > -1) sheet.getRange(rowIndexToFill, finalIdxNote + 1).setValue(data["Ghi Chú Chi Phí"] || data["Ghi Chú Chi Phí2"] || "");
+            } else {
+                const newRow = headers.map(h => {
+                    const normH = normalizeString(h);
+                    if (normH === "status") return "Xong";
+                    if (normH === "ghi chu chi phi" || normH === "ghi chu chi phi2") return data["Ghi Chú Chi Phí"] || data["Ghi Chú Chi Phí2"] || "";
+                    return data[h] || "";
+                });
+                sheet.appendRow(newRow);
+            }
+
+            const d = parseDisplayDate(data["Ngày"]);
+            if (d) recalculateFromDate(sheet, headers, d);
+            return returnJson({ "status": "success" });
+
+        } else if (action === "update") {
+            const rowNumber = parseInt(params.rowNumber);
+            const updates = params.updates;
+            let updatedRowDate = null;
+
+            if (rowNumber && rowNumber >= 2) {
+                for (let key in updates) {
+                    const colIdx = getColumnIdx(headers, key);
+                    if (colIdx > -1) sheet.getRange(rowNumber, colIdx + 1).setValue(updates[key]);
+                }
+                const dispVals = sheet.getDataRange().getDisplayValues();
+                updatedRowDate = dispVals[rowNumber - 1][headers.indexOf("Ngày")];
+            } else {
+                const targetRow = params.targetRow;
+                const values = sheet.getDataRange().getValues();
+                const dispVals = sheet.getDataRange().getDisplayValues();
+                const colNgay = headers.indexOf("Ngày");
+                const colNguoiMua = headers.indexOf("Người Mua");
+                const colLoaiHoa  = headers.indexOf("Loại Hoa");
+
+                for (let i = values.length - 1; i >= 1; i--) {
+                    if (String(values[i][colNgay]) === String(targetRow["Ngày"]) &&
+                        String(values[i][colNguoiMua]) === String(targetRow["Người Mua"] || "") &&
+                        String(values[i][colLoaiHoa]) === String(targetRow["Loại Hoa"] || "")) {
+                        for (let key in updates) {
+                            const colIdx = getColumnIdx(headers, key);
+                            if (colIdx > -1) sheet.getRange(i + 1, colIdx + 1).setValue(updates[key]);
+                        }
+                        updatedRowDate = dispVals[i][colNgay];
+                        break;
+                    }
+                }
+            }
+
+            if (updatedRowDate) {
+                const d = parseDisplayDate(updatedRowDate);
+                if (d) recalculateFromDate(sheet, headers, d);
+                return returnJson({ "status": "success" });
+            }
+            return returnJson({ "status": "error", "message": "Không tìm thấy dòng để cập nhật" });
+
+        } else if (action === "bulkPay") {
+            const buyer = (params.buyerName || "").trim();
+            const dateStr   = params.dateStr;
+            const isAllDates = params.isAllDates;
+            const now = new Date();
+            const fullDateTimeStr = Utilities.formatDate(now, "GMT+7", "dd/MM/yyyy HH:mm:ss");
+            const todayStr = Utilities.formatDate(now, "GMT+7", "dd/MM/yyyy");
+
+            const rawValues  = sheet.getDataRange().getValues();
+            const dispValues = sheet.getDataRange().getDisplayValues();
+
+            const colNgay        = headers.indexOf("Ngày");
+            const colStatus      = headers.indexOf("Status");
+            const colNguoiMua    = headers.indexOf("Người Mua");
+            const colDaThu       = headers.indexOf("Đã Thu");
+            const colGhiChu      = headers.indexOf("Ghi Chú");
+            const colDTBong      = headers.indexOf("Doanh Thu Bông");
+            const colTienPhaiThu = headers.indexOf("Tiền Phải Thu");
+            const colLoaiDT      = headers.indexOf("Loại DT");
+
+            let updateCount = 0;
+            let totalToPay = 0;
+            let lastLoaiDT = "Farm"; 
+            const touchedMonths = new Set();
+
+            for (let i = 1; i < rawValues.length; i++) {
+                if (String(rawValues[i][colNguoiMua]).trim() === buyer &&
+                    String(rawValues[i][colStatus]).trim().toLowerCase() !== "xong") {
+                    
+                    var isMatched = isAllDates || 
+                        (dispValues[i][colNgay] === dateStr) ||
+                        (typeof dateStr === "string" && dateStr.split(",").map(function(s) { return s.trim(); }).indexOf(dispValues[i][colNgay]) > -1) ||
+                        (Array.isArray(dateStr) && dateStr.indexOf(dispValues[i][colNgay]) > -1);
+
+                    if (isMatched) {
+                        // 1. Calculate remaining debt for this row
+                        let revenue = 0;
+                        const loaiDTValue = colLoaiDT > -1 ? String(rawValues[i][colLoaiDT]).trim() : "";
+                        if (loaiDTValue === "Vựa") {
+                            revenue = parseFloat(rawValues[i][colTienPhaiThu]) || 0;
+                            lastLoaiDT = "Vựa";
+                        } else {
+                            revenue = parseFloat(rawValues[i][colDTBong]) || 0;
+                            lastLoaiDT = "Farm";
+                        }
+                        const paid = parseFloat(rawValues[i][colDaThu]) || 0;
+                        totalToPay += (revenue - paid);
+
+                        // 2. Mark old row as "Xong" but DO NOT add money here
+                        sheet.getRange(i + 1, colStatus + 1).setValue("Xong");
+                        if (colGhiChu > -1) {
+                            const oldNote = rawValues[i][colGhiChu] || "";
+                            const noteSuffix = " [Chốt thanh toán ngày " + todayStr + "]";
+                            sheet.getRange(i + 1, colGhiChu + 1).setValue(oldNote + (oldNote ? " | " : "") + noteSuffix);
+                        }
+
+                        const d = parseDisplayDate(dispValues[i][colNgay]);
+                        if (d) touchedMonths.add(`${d.getFullYear()}-${d.getMonth() + 1}`);
+                        updateCount++;
+                    }
+                }
+            }
+
+            // 3. Append NEW row for the actual cash flow in the current month
+            if (totalToPay > 0) {
+                const newRow = new Array(headers.length).fill("");
+                newRow[colNgay] = todayStr;
+                newRow[colNguoiMua] = buyer;
+                newRow[colDaThu] = totalToPay;
+                newRow[colStatus] = "Xong";
+                newRow[colGhiChu] = params.customNote || ("Thanh toán hết ngày " + todayStr);
+                if (colLoaiDT > -1) newRow[colLoaiDT] = lastLoaiDT;
+                
+                sheet.appendRow(newRow);
+                touchedMonths.add(`${now.getFullYear()}-${now.getMonth() + 1}`);
+            }
+
+            // Recalculate from the earliest touched month
+            let earliestDate = null;
+            touchedMonths.forEach(key => {
+                const [yr, mo] = key.split('-').map(Number);
+                const d = new Date(yr, mo - 1, 1);
+                if (!earliestDate || d < earliestDate) earliestDate = d;
+            });
+            if (earliestDate) recalculateFromDate(sheet, headers, earliestDate);
+
+            return returnJson({ "status": "success", "count": updateCount, "amount": totalToPay });
+
+        } else if (action === "settleCumulative") {
+            const buyer = (params.buyerName || "").trim();
+            const endDateStr = params.endDateStr; // e.g. "08/05/2026" or "08/05/26"
+            const amount = parseFloat(params.amount) || 0;
+            const now = new Date();
+            const todayStr = Utilities.formatDate(now, "GMT+7", "dd/MM/yyyy");
+
+            const rawValues  = sheet.getDataRange().getValues();
+            const dispValues = sheet.getDataRange().getDisplayValues();
+
+            const colNgay        = headers.indexOf("Ngày");
+            const colStatus      = headers.indexOf("Status");
+            const colNguoiMua    = headers.indexOf("Người Mua");
+            const colDaThu       = headers.indexOf("Đã Thu");
+            const colGhiChu      = headers.indexOf("Ghi Chú");
+            const colLoaiDT      = headers.indexOf("Loại DT");
+
+            let updateCount = 0;
+            let oldestDateStr = "";
+            let lastLoaiDT = "Farm";
+            const touchedMonths = new Set();
+
+            const endDate = parseDisplayDate(endDateStr);
+            if (!endDate) return returnJson({ "status": "error", "message": "Ngày kết thúc gạch nợ không hợp lệ: " + endDateStr });
+
+            for (let i = 1; i < rawValues.length; i++) {
+                if (String(rawValues[i][colNguoiMua]).trim() === buyer) {
+                    const rowDate = parseDisplayDate(dispValues[i][colNgay]);
+                    if (rowDate && rowDate <= endDate) {
+                        if (String(rawValues[i][colStatus]).trim().toLowerCase() !== "xong") {
+                            sheet.getRange(i + 1, colStatus + 1).setValue("Xong");
+                            if (colGhiChu > -1) {
+                                const oldNote = rawValues[i][colGhiChu] || "";
+                                const noteSuffix = " [Gạch toa lũy kế ngày " + todayStr + "]";
+                                sheet.getRange(i + 1, colGhiChu + 1).setValue(oldNote + (oldNote ? " | " : "") + noteSuffix);
+                            }
+                            updateCount++;
+
+                            if (!oldestDateStr || rowDate < parseDisplayDate(oldestDateStr)) {
+                                oldestDateStr = dispValues[i][colNgay];
+                            }
+                        }
+
+                        if (colLoaiDT > -1 && String(rawValues[i][colLoaiDT]).trim() !== "") {
+                            lastLoaiDT = String(rawValues[i][colLoaiDT]).trim();
+                        }
+                        touchedMonths.add(`${rowDate.getFullYear()}-${rowDate.getMonth() + 1}`);
+                    }
+                }
+            }
+
+            if (amount > 0) {
+                const newRow = new Array(headers.length).fill("");
+                newRow[colNgay] = todayStr;
+                newRow[colNguoiMua] = buyer;
+                newRow[colDaThu] = amount;
+                newRow[colStatus] = "Xong";
+                
+                const cleanOldestStr = oldestDateStr ? oldestDateStr.split('/').slice(0, 2).join('/') : "";
+                const cleanEndStr = endDateStr ? endDateStr.split('/').slice(0, 2).join('/') : "";
+                let customNote = "Gạch nợ lũy kế";
+                if (cleanOldestStr && cleanEndStr) {
+                    customNote += ` từ ${cleanOldestStr} đến ${cleanEndStr}`;
+                } else if (cleanEndStr) {
+                    customNote += ` đến ${cleanEndStr}`;
+                }
+                newRow[colGhiChu] = customNote;
+                if (colLoaiDT > -1) newRow[colLoaiDT] = lastLoaiDT;
+                
+                sheet.appendRow(newRow);
+                touchedMonths.add(`${now.getFullYear()}-${now.getMonth() + 1}`);
+            }
+
+            let earliestDate = null;
+            touchedMonths.forEach(key => {
+                const [yr, mo] = key.split('-').map(Number);
+                const d = new Date(yr, mo - 1, 1);
+                if (!earliestDate || d < earliestDate) earliestDate = d;
+            });
+            if (earliestDate) recalculateFromDate(sheet, headers, earliestDate);
+
+            return returnJson({ "status": "success", "count": updateCount, "amount": amount });
+
+        } else if (action === "recordPayment") {
+            const buyer = (params.buyerName || "").trim();
+            const amount = parseFloat(params.amount) || 0;
+            const dateStr = params.dateStr; // Optional: only pay for specific date
+            const isFull = params.isFull === true;
+            const now = new Date();
+            const todayStr = Utilities.formatDate(now, "GMT+7", "dd/MM/yyyy");
+
+            const rawValues = sheet.getDataRange().getValues();
+            const dispValues = sheet.getDataRange().getDisplayValues();
+            const colNgay = headers.indexOf("Ngày");
+            const colStatus = headers.indexOf("Status");
+            const colNguoiMua = headers.indexOf("Người Mua");
+            const colDaThu = headers.indexOf("Đã Thu");
+            const colGhiChu = headers.indexOf("Ghi Chú");
+            const colDTBong = headers.indexOf("Doanh Thu Bông");
+            const colTienPhaiThu = headers.indexOf("Tiền Phải Thu");
+            const colLoaiDT = headers.indexOf("Loại DT");
+
+            let remainingToDistribute = amount;
+            let lastLoaiDT = "Farm";
+            const touchedMonths = new Set();
+
+            // 1. Mark rows as "Xong" if covered
+            for (let i = 1; i < rawValues.length; i++) {
+                if (String(rawValues[i][colNguoiMua]).trim() === buyer &&
+                    String(rawValues[i][colStatus]).trim().toLowerCase() !== "xong") {
+                    
+                    if (dateStr && dispValues[i][colNgay] !== dateStr) continue;
+
+                    let revenue = 0;
+                    const loaiDTValue = colLoaiDT > -1 ? String(rawValues[i][colLoaiDT]).trim() : "";
+                    if (loaiDTValue === "Vựa") {
+                        revenue = parseFloat(rawValues[i][colTienPhaiThu]) || 0;
+                        lastLoaiDT = "Vựa";
+                    } else {
+                        revenue = parseFloat(rawValues[i][colDTBong]) || 0;
+                        lastLoaiDT = "Farm";
+                    }
+                    const paid = parseFloat(rawValues[i][colDaThu]) || 0;
+                    const debt = revenue - paid;
+
+                    if (isFull || remainingToDistribute >= debt) {
+                        sheet.getRange(i + 1, colStatus + 1).setValue("Xong");
+                        if (colGhiChu > -1) {
+                            const oldNote = rawValues[i][colGhiChu] || "";
+                            sheet.getRange(i + 1, colGhiChu + 1).setValue(oldNote + (oldNote ? " | " : "") + "[Đã chốt thanh toán ngày " + todayStr + "]");
+                        }
+                        remainingToDistribute -= debt;
+                    } else {
+                        // Partial for this row, but we don't update Đã Thu on old rows anymore
+                        // So we just leave it "Chưa Xong"
+                        remainingToDistribute = 0;
+                    }
+
+                    const d = parseDisplayDate(dispValues[i][colNgay]);
+                    if (d) touchedMonths.add(`${d.getFullYear()}-${d.getMonth() + 1}`);
+                }
+            }
+
+            // 2. Add NEW payment row
+            if (amount > 0) {
+                const newRow = new Array(headers.length).fill("");
+                newRow[colNgay] = todayStr;
+                newRow[colNguoiMua] = buyer;
+                newRow[colDaThu] = amount;
+                newRow[colStatus] = "Xong";
+                newRow[colGhiChu] = (isFull ? "Thanh toán hết ngày " : "Thu tiền ngày ") + todayStr;
+                if (colLoaiDT > -1) newRow[colLoaiDT] = lastLoaiDT;
+                sheet.appendRow(newRow);
+                touchedMonths.add(`${now.getFullYear()}-${now.getMonth() + 1}`);
+            }
+
+            // 3. Recalculate
+            let earliestDate = null;
+            touchedMonths.forEach(key => {
+                const [yr, mo] = key.split('-').map(Number);
+                const d = new Date(yr, mo - 1, 1);
+                if (!earliestDate || d < earliestDate) earliestDate = d;
+            });
+            if (earliestDate) recalculateFromDate(sheet, headers, earliestDate);
+
+            return returnJson({ "status": "success", "amount": amount });
+
+        // 6. FINANCIAL REPORT ACTIONS
+        } else if (action === "get_financial_report") {
+            const fSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(FINANCIAL_REPORT_SHEET);
+            if (!fSheet) return returnJson({ "status": "error", "message": "Không tìm thấy Sheet: " + FINANCIAL_REPORT_SHEET });
+            
+            const range = fSheet.getDataRange();
+            const values = range.getValues();
+            const notes = fSheet.getRange(1, 1, 1, values[0].length).getNotes()[0]; // Lấy ghi chú của dòng tiêu đề (Năm)
+            
+            // Trả về kèm ghi chú để xác định trạng thái Lock
+            return returnJson({ "status": "success", "data": values, "notes": notes });
+
+        } else if (action === "save_financial_report") {
+            const fSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(FINANCIAL_REPORT_SHEET);
+            if (!fSheet) return returnJson({ "status": "error", "message": "Không tìm thấy Sheet: " + FINANCIAL_REPORT_SHEET });
+            
+            // params: { yearIndex: 1, rowIndex: 5, value: 500000 }
+            const rIdx = parseInt(params.rowIndex) + 1;
+            const cIdx = parseInt(params.yearIndex) + 1;
+            
+            if (rIdx < 1 || cIdx < 1) return returnJson({ "status": "error", "message": "Vị trí dữ liệu không hợp lệ" });
+            
+            fSheet.getRange(rIdx, cIdx).setValue(params.value);
+            return returnJson({ "status": "success" });
+
+        } else if (action === "lock_financial_year") {
+            if (token !== "huytran97") return returnJson({ "status": "error", "message": "Chỉ ADMIN mới có quyền khóa dữ liệu!" });
+            
+            const fSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(FINANCIAL_REPORT_SHEET);
+            if (!fSheet) return returnJson({ "status": "error", "message": "Không tìm thấy Sheet: " + FINANCIAL_REPORT_SHEET });
+            
+            // Sử dụng Ghi chú (Note) ở dòng 1 để lưu trạng thái Lock, tránh làm hỏng công thức Sum của USER
+            const cIdx = parseInt(params.yearIndex) + 1;
+            const headerCell = fSheet.getRange(1, cIdx);
+            if (params.isLocked) {
+                headerCell.setNote("LOCKED");
+            } else {
+                headerCell.clearNote();
+            }
+            
+            return returnJson({ "status": "success" });
+        } else if (action === "get_investment_data") {
+            const ss = SpreadsheetApp.getActiveSpreadsheet();
+            const sheetHist = ss.getSheetByName("InvestingHistoricalData");
+
+            if (!sheetHist) {
+                return returnJson({ "status": "init_required", "message": "Cần khởi tạo Sheet InvestingHistoricalData." });
+            }
+
+            const dataHist = sheetHist.getDataRange().getValues();
+            return returnJson({ 
+                "status": "success", 
+                "history": dataHist
+            });
+        } else if (action === "save_investment_event") {
+            const ss = SpreadsheetApp.getActiveSpreadsheet();
+            const sheetHist = ss.getSheetByName("InvestingHistoricalData");
+            if (!sheetHist) return returnJson({ "status": "error", "message": "Sheet chưa được khởi tạo!" });
+
+            const headers = sheetHist.getRange(1, 1, 1, sheetHist.getLastColumn()).getValues()[0];
+            const eventData = params.data;
+            const row = headers.map(h => eventData[h] || "");
+            sheetHist.appendRow(row);
+
+            return returnJson({ "status": "success" });
+        } else if (action === "update_investment_prices" || action === "update_external_prices") {
+            const ss = SpreadsheetApp.getActiveSpreadsheet();
+            const sheetHist = ss.getSheetByName("InvestingHistoricalData");
+            if (!sheetHist) return returnJson({ "status": "error", "message": "Không tìm thấy Sheet InvestingHistoricalData." });
+
+            const data = sheetHist.getDataRange().getValues();
+            const headers = data[0];
+            const colSymbol = headers.indexOf("Mã/Tên");
+            const colCurrentPrice = headers.indexOf("Giá Hiện Tại");
+            const colType = headers.findIndex(h => h.toLowerCase().includes("loại") || h.toLowerCase().includes("type"));
+
+            if (colSymbol === -1 || colCurrentPrice === -1) 
+                return returnJson({ "status": "error", "message": "Cấu trúc Sheet không đúng." });
+
+            let updateCount = 0;
+            const newPrices = params.prices || {}; // For external sync
+
+            if (action === "update_investment_prices") {
+                const symbolsToFetch = [];
+                for (let i = 1; i < data.length; i++) {
+                    const symbol = String(data[i][colSymbol] || "").trim().toUpperCase();
+                    if (!symbol) continue;
+                    const type = colType > -1 ? String(data[i][colType] || "").toLowerCase() : "";
+                    if ((type.includes("phiếu") || type.includes("etf") || symbol.length === 3) && !symbolsToFetch.includes(symbol)) { 
+                        symbolsToFetch.push(symbol);
+                    }
+                }
+                
+                if (symbolsToFetch.length > 0) {
+                    const fetched = fetchVnStockPrices(symbolsToFetch);
+                    Object.assign(newPrices, fetched);
+                }
+            }
+
+            // Update all rows for the matching symbols
+            for (let i = 1; i < data.length; i++) {
+                const symbol = String(data[i][colSymbol] || "").trim().toUpperCase();
+                if (newPrices[symbol]) {
+                    sheetHist.getRange(i + 1, colCurrentPrice + 1).setValue(newPrices[symbol]);
+                    updateCount++;
+                }
+            }
+
+            return returnJson({ 
+                "status": "success", 
+                "message": "Đã cập nhật " + updateCount + " dòng.",
+                "history": sheetHist.getDataRange().getValues() 
+            });
+        }
+
+        // --- TODO LIST ACTIONS ---
+        else if (action === "get_todo_data") {
+            const todoSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TODO_SHEET_NAME);
+            if (!todoSheet) return returnJson({ "status": "error", "message": "Sheet ToDoTracker không tồn tại" });
+            const todoData = todoSheet.getDataRange().getValues();
+            
+            // Convert Dates to strings to avoid timezone shift in JSON
+            const formattedData = todoData.map(function(row) {
+                return row.map(function(cell) {
+                    if (Object.prototype.toString.call(cell) === '[object Date]') {
+                        return Utilities.formatDate(cell, "GMT+7", "dd/MM/yyyy");
+                    }
+                    return cell;
+                });
+            });
+            
+            return returnJson({ "status": "success", "data": formattedData });
+
+        } else if (action === "save_todo_task") {
+            const todoSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TODO_SHEET_NAME);
+            if (!todoSheet) return returnJson({ "status": "error", "message": "Sheet ToDoTracker không tồn tại" });
+            const todoData = todoSheet.getDataRange().getValues();
+            const task = params.data;
+            const taskId = task.id;
+            
+            let deadline = task.deadline || "";
+            if (deadline && deadline.indexOf("-") > -1) {
+                var p = deadline.split("-"); // YYYY-MM-DD
+                deadline = p[2] + "/" + p[1] + "/" + p[0];
+            }
+
+            let rowIndex = -1;
+            if (taskId) {
+                for (let i = 1; i < todoData.length; i++) {
+                    if (String(todoData[i][0]) === String(taskId)) {
+                        rowIndex = i + 1;
+                        break;
+                    }
+                }
+            }
+            
+            const now = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
+            const rowData = [
+                taskId || "TD_" + new Date().getTime(),
+                task.task || "",
+                deadline,
+                task.priority || "Trung bình",
+                task.status || "Chưa bắt đầu",
+                task.category || "",
+                task.note || "",
+                rowIndex > -1 ? (todoData[rowIndex-1][7] || now) : now
+            ];
+            
+            if (rowIndex > -1) {
+                todoSheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
+            } else {
+                todoSheet.appendRow(rowData);
+            }
+            return returnJson({ "status": "success" });
+
+        } else if (action === "delete_todo_task") {
+            const todoSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TODO_SHEET_NAME);
+            if (!todoSheet) return returnJson({ "status": "error", "message": "Sheet ToDoTracker không tồn tại" });
+            const todoData = todoSheet.getDataRange().getValues();
+            const taskId = params.id;
+            for (let i = 1; i < todoData.length; i++) {
+                if (String(todoData[i][0]) === String(taskId)) {
+                    todoSheet.deleteRow(i + 1);
+                    return returnJson({ "status": "success" });
+                }
+            }
+            return returnJson({ "status": "error", "message": "Không tìm thấy task" });
+        }
+
+    } catch (err) {
+        return returnJson({ "status": "error", "message": err.toString() });
+    }
+}
+
+// ─── DATE HELPER ──────────────────────────────────────────────────────────────
+function migrateToUnifiedSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheetDM = ss.getSheetByName("DauTu_DanhMuc");
+  const sheetDT = ss.getSheetByName("DauTu_DongTien");
+  
+  initInvestmentSheets();
+  const sheetHist = ss.getSheetByName("InvestingHistoricalData");
+  if (!sheetHist || !sheetDT) return "Missing sheets for migration";
+  
+  const dataDT = sheetDT.getDataRange().getValues();
+  const headersDT = dataDT[0];
+  const dataDM = sheetDM ? sheetDM.getDataRange().getValues() : [];
+  const headersDM = dataDM.length > 0 ? dataDM[0] : [];
+  
+  const headersHist = ["Ngày", "Mã/Tên", "Loại Sự Kiện", "Số Lượng", "Đơn Giá", "Số Tiền", "Phân Loại", "Định Giá Lý Thuyết", "Giá Hiện Tại", "Luận Điểm Đầu Tư", "Ghi Chú"];
+  
+  // Map Portfolio for metadata
+  const metaMap = {};
+  if (dataDM.length > 1) {
+    dataDM.slice(1).forEach(row => {
+      const symbol = row[headersDM.indexOf("Mã/Tên")];
+      metaMap[symbol] = {
+        type: row[headersDM.indexOf("Phân Loại")],
+        intrinsic: row[headersDM.indexOf("Định Giá Lý Thuyết")],
+        price: row[headersDM.indexOf("Giá Hiện Tại")],
+        thesis: row[headersDM.indexOf("Luận Điểm Đầu Tư")]
+      };
+    });
+  }
+  
+  const newRows = [];
+  dataDT.slice(1).forEach(row => {
+    const symbol = row[headersDT.indexOf("Mã/Tên")];
+    const meta = metaMap[symbol] || {};
+    const newRow = [
+      row[headersDT.indexOf("Ngày")],
+      symbol,
+      row[headersDT.indexOf("Loại Giao Dịch")],
+      row[headersDT.indexOf("Số Lượng")],
+      row[headersDT.indexOf("Đơn Giá")],
+      row[headersDT.indexOf("Số Tiền")],
+      meta.type || "",
+      meta.intrinsic || "",
+      meta.price || "",
+      meta.thesis || "",
+      row[headersDT.indexOf("Ghi Chú")]
+    ];
+    newRows.push(newRow);
+  });
+  
+  if (newRows.length > 0) {
+    sheetHist.getRange(2, 1, newRows.length, headersHist.length).setValues(newRows);
+  }
+  return "Migration complete: " + newRows.length + " rows moved.";
+}
+
+// ─── MONTHLY LEDGER RECALCULATION ────────────────────────────────────────────
+
+/**
+ * Normalizes string for robust header comparison (lowercase, trimmed, no accents)
+ */
+function normalizeString(str) {
+  if (!str) return "";
+  return String(str)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // Remove accents
+}
+
+/**
+ * Finds column index by name (case-insensitive, accent-insensitive)
+ */
+function getColumnIdx(headers, name) {
+  const normName = normalizeString(name);
+  for (let i = 0; i < headers.length; i++) {
+    if (normalizeString(headers[i]) === normName) return i;
+  }
+  return -1;
+}
+
+/**
+ * Propagates cash balance from a specific date to the present (or future if date is ahead).
+ * IMPORTANT: Never recalculates months before April 2026 to protect historical data.
+ * PERFORMANCE: Reads sheet data ONCE using getValues() (no getDisplayValues()) and writes Cash column ONCE.
+ * Pre-indexes all row indices by year-month to achieve O(N) performance on large data scales (25k+ rows).
+ */
+function recalculateFromDate(sheet, headers, date) {
+    if (!date) return;
+
+    // Hard cutoff: never touch data before 01/04/2026
+    const CUTOFF_YEAR = 2026;
+    const CUTOFF_MONTH = 4;
+
+    let yr = date.getFullYear();
+    let mo = date.getMonth() + 1;
+
+    // If the changed date is before the cutoff, start from the cutoff instead
+    if (yr < CUTOFF_YEAR || (yr === CUTOFF_YEAR && mo < CUTOFF_MONTH)) {
+        yr = CUTOFF_YEAR;
+        mo = CUTOFF_MONTH;
+    }
+
+    // End = the LATER of (current month) vs (date's month)
+    const now = new Date();
+    let endYr = now.getFullYear();
+    let endMo = now.getMonth() + 1;
+    const inputYr = date.getFullYear();
+    const inputMo = date.getMonth() + 1;
+    if (inputYr > endYr || (inputYr === endYr && inputMo > endMo)) {
+        endYr = inputYr;
+        endMo = inputMo;
+    }
+
+    // ── READ ONCE ──────────────────────────────────────────────────────────────
+    const rawRange  = sheet.getDataRange();
+    const rawValues = rawRange.getValues();
+
+    // Build column map once
+    const colMap = {};
+    ["Cash", "Đã Thu", "Chi Phí", "Loại DT", "Doanh Thu Bông", "Doanh Thu Khác", "Ngày", "Khoản Thu Chi Bất Thường"]
+        .forEach(n => colMap[n] = getColumnIdx(headers, n));
+
+    const colCash = colMap["Cash"];
+    const colNgay = colMap["Ngày"];
+    if (colCash === -1 || colNgay === -1) return;
+
+    // ── PRE-INDEX ALL ROWS BY MONTH ─────────────────────────────────────────────
+    const rowsByMonth = {}; // Key: "YYYY-M", Value: Array of { rowIdx, date, values }
+    const allHistoricalRows = []; // Array of { rowIdx, date, cash }
+
+    for (let i = 1; i < rawValues.length; i++) {
+        const d = parseDisplayDate(rawValues[i][colNgay]);
+        if (!d) continue;
+
+        const rowYr = d.getFullYear();
+        const rowMo = d.getMonth() + 1;
+        const key = `${rowYr}-${rowMo}`;
+
+        if (!rowsByMonth[key]) {
+            rowsByMonth[key] = [];
+        }
+        rowsByMonth[key].push({
+            rowIdx: i,
+            date: d,
+            values: rawValues[i]
+        });
+
+        const cashVal = parseFloat(rawValues[i][colCash]);
+        allHistoricalRows.push({
+            rowIdx: i,
+            date: d,
+            cash: isNaN(cashVal) ? 0 : cashVal
+        });
+    }
+
+    // Sort allHistoricalRows by date then rowIdx to correctly find chronological order
+    allHistoricalRows.sort((a, b) => a.date - b.date || a.rowIdx - b.rowIdx);
+
+    // Collect ALL cash updates across ALL months into one map: rowIndex → newCashValue
+    const allUpdates = {}; // key: 0-based row index in rawValues
+
+    let runningBalance = undefined;
+
+    while (yr < endYr || (yr === endYr && mo <= endMo)) {
+        // Determine opening balance for the start month if runningBalance is not set yet
+        if (runningBalance === undefined) {
+            let openingBalance = 0;
+            const targetStartDate = new Date(yr, mo - 1, 1);
+            // Find latest cash row before the target month
+            for (let i = allHistoricalRows.length - 1; i >= 0; i--) {
+                if (allHistoricalRows[i].date < targetStartDate) {
+                    openingBalance = allHistoricalRows[i].cash;
+                    break;
+                }
+            }
+            runningBalance = openingBalance;
+        }
+
+        const monthRows = rowsByMonth[`${yr}-${mo}`] || [];
+        runningBalance = recalculateMonthCash(
+            monthRows, colMap, runningBalance, allUpdates
+        );
+
+        mo++;
+        if (mo > 12) { mo = 1; yr++; }
+    }
+
+    // ── WRITE ONCE ─────────────────────────────────────────────────────────────
+    if (Object.keys(allUpdates).length === 0) return;
+
+    const cashCol = sheet.getRange(1, colCash + 1, rawValues.length, 1).getValues();
+    for (const rowIdx in allUpdates) {
+        cashCol[rowIdx][0] = allUpdates[rowIdx];
+    }
+    sheet.getRange(1, colCash + 1, rawValues.length, 1).setValues(cashCol);
+}
+
+/**
+ * Calculates Cash balances for a given month rows.
+ * Returns the closing balance of this month.
+ */
+function recalculateMonthCash(monthRows, colMap, openingBalance, allUpdates) {
+    if (monthRows.length === 0) return openingBalance;
+
+    // 1. Sort by date then row order
+    monthRows.sort((a, b) => a.date - b.date || a.rowIdx - b.rowIdx);
+
+    // 2. Calculate and collect updates
+    const cPaid = colMap["Đã Thu"]   > -1 ? colMap["Đã Thu"]   : 8;
+    const cExp  = colMap["Chi Phí"]  > -1 ? colMap["Chi Phí"]  : 13;
+    const cLoai = colMap["Loại DT"];
+    const cOth  = colMap["Doanh Thu Khác"] > -1 ? colMap["Doanh Thu Khác"] : 11;
+    const cAdj  = colMap["Khoản Thu Chi Bất Thường"] > -1 ? colMap["Khoản Thu Chi Bất Thường"] : 17;
+
+    let running = openingBalance;
+    for (const row of monthRows) {
+        const loaiDT = String(row.values[cLoai] || "").trim();
+        const valR   = parseFloat(row.values[cAdj]) || 0;
+
+        if (loaiDT === "ADJ") {
+            running += valR;
+        } else {
+            const valI = parseFloat(row.values[cPaid]) || 0;
+            running += valI;
+            if (loaiDT === "Company") {
+                const valOther = parseFloat(row.values[cOth]) || 0;
+                if (valOther !== valI) running += valOther;
+            }
+            running -= (parseFloat(row.values[cExp]) || 0);
+            running += valR;
+        }
+        allUpdates[row.rowIdx] = running;
+    }
+
+    return running;
+}
+
+
+// ─── CONFIG HELPERS ───────────────────────────────────────────────────────────
+function getOrCreateConfigSheet() {
+    let cs = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG_SHEET_NAME);
+    if (!cs) {
+        cs = SpreadsheetApp.getActiveSpreadsheet().insertSheet(CONFIG_SHEET_NAME);
+        cs.getRange(1, 1, 1, 3).setValues([["key", "value", "note"]]);
+        cs.getRange(2, 1, 1, 3).setValues([["opening_balance", 0, "Số dư tiền mặt ban đầu (tháng gốc đầu tiên)"]]);
+    }
+    return cs;
+}
+
+function readConfig() {
+    const cs = getOrCreateConfigSheet();
+    const rows = cs.getDataRange().getValues();
+    const config = {};
+    for (let i = 1; i < rows.length; i++) {
+        if (rows[i][0]) config[rows[i][0]] = rows[i][1];
+    }
+    return config;
+}
+
+function writeConfig(key, value) {
+    const cs = getOrCreateConfigSheet();
+    const rows = cs.getDataRange().getValues();
+    for (let i = 1; i < rows.length; i++) {
+        if (rows[i][0] === key) { cs.getRange(i + 1, 2).setValue(value); return; }
+    }
+    cs.appendRow([key, value, ""]);
+}
+
+function returnJson(obj) {
+    return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+    return ContentService.createTextOutput("theHarvest7 API is active and secure.");
+}
+
+// ==========================================
+// INITIALIZATION SCRIPT FOR INVESTMENT MODULE
+// Run this ONCE to create the structure
+// ==========================================
+function initInvestmentSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // 1. Create Unified Historical Data Sheet
+  let sheetHist = ss.getSheetByName("InvestingHistoricalData");
+  if (!sheetHist) {
+    sheetHist = ss.insertSheet("InvestingHistoricalData");
+    const headers = [
+      "Ngày", "Mã/Tên", "Loại Sự Kiện", "Số Lượng", "Đơn Giá", "Số Tiền", 
+      "Phân Loại", "Định Giá Lý Thuyết", "Giá Hiện Tại", "Luận Điểm Đầu Tư", "Ghi Chú"
+    ];
+    sheetHist.getRange(1, 1, 1, headers.length).setValues([headers])
+             .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+    
+    // Formatting
+    sheetHist.getRange("D:F").setNumberFormat("#,##0");
+    sheetHist.getRange("H:I").setNumberFormat("#,##0");
+    
+    // Demo Data
+    sheetHist.appendRow(["15/01/2024", "VNM", "Mua", 700, 71428, 50000000, "Cổ Phiếu", 85000, 68000, "Độc quyền sữa, biên an toàn cao.", "Bắt đầu rót vốn"]);
+    sheetHist.getRange("B2").setFontWeight("bold");
+  }
+  
+  Browser.msgBox("Đã khởi tạo xong Sheet: InvestingHistoricalData!");
+}
+
+/**
+ * Fetch Stock Prices from VNDirect API
+ * @param {Array} symbols
+ * @returns {Object} { "VNM": 68000, ... }
+ */
+function fetchVnStockPrices(symbols) {
+  const prices = {};
+  if (!symbols || symbols.length === 0) return prices;
+  
+  // Try TCBS API (Sieu on dinh)
+  symbols.forEach(s => {
+    try {
+      const urlTCBS = "https://api-price.tcbs.com.vn/stock/info?symbol=" + s;
+      const res = UrlFetchApp.fetch(urlTCBS, { "muteHttpExceptions": true });
+      if (res.getResponseCode() === 200) {
+        const json = JSON.parse(res.getContentText());
+        // TCBS returns lastPrice as full value (e.g. 61300) or thousands (61.3)
+        let p = json.lastPrice || json.closePrice || json.price || 0;
+        if (p > 0 && p < 1000) p *= 1000;
+        if (p > 0) prices[s] = p;
+      }
+    } catch(e) {}
+  });
+
+  // Try SSI iBoard API (Fallback 1)
+  if (Object.keys(prices).length < symbols.length) {
+    try {
+      const urlSSI = "https://iboard-query.ssi.com.vn/stock/config/all";
+      const resSSI = UrlFetchApp.fetch(urlSSI, { "muteHttpExceptions": true });
+      if (resSSI.getResponseCode() === 200) {
+        const fullData = JSON.parse(resSSI.getContentText());
+        if (fullData && fullData.data) {
+          symbols.forEach(s => {
+            if (!prices[s]) {
+              const match = fullData.data.find(item => item.s === s);
+              if (match && match.l) { // l is last price
+                 let p = match.l;
+                 if (p < 1000) p *= 1000;
+                 prices[s] = p;
+              }
+            }
+          });
+        }
+      }
+    } catch(e) {}
+  }
+
+  // Final Try: VNDirect V4 (Fallback 2)
+  if (Object.keys(prices).length < symbols.length) {
+    try {
+      const remaining = symbols.filter(s => !prices[s]);
+      const urlVND = "https://finfo-api.vndirect.com.vn/v4/stock_prices?symbols=" + remaining.join(",");
+      const resVND = UrlFetchApp.fetch(urlVND, { "muteHttpExceptions": true });
+      if (resVND.getResponseCode() === 200) {
+        const json = JSON.parse(resVND.getContentText());
+        if (json && json.data) {
+          json.data.forEach(item => {
+            let p = item.lastPrice || item.basicPrice || 0;
+            if (p > 0 && p < 1000) p *= 1000;
+            if (p > 0) prices[item.symbol] = p;
+          });
+        }
+      }
+    } catch(e) {}
+  }
+
+  return prices;
+}
+
+/**
+ * Helper to parse date strings (DD/MM/YYYY) or Date objects from Sheets
+ */
+function parseDisplayDate(val) {
+  if (!val) return null;
+  if (val instanceof Date) return val;
+  const s = String(val).trim();
+  
+  // Handle DD/MM/YYYY or DD-MM-YYYY or YYYY-MM-DD
+  const parts = s.split(/[\/\-]/);
+  if (parts.length === 3) {
+    if (parts[0].length === 4) { // YYYY-MM-DD
+       return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    }
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    let year = parseInt(parts[2], 10);
+    if (year < 100) year += 2000;
+    return new Date(year, month, day);
+  }
+  
+  // Fallback for other formats
+  const d = new Date(s);
+  if (d && !isNaN(d.getTime())) {
+    if (d.getFullYear() < 100) d.setFullYear(d.getFullYear() + 2000);
+    return d;
+  }
+  return null;
+}
