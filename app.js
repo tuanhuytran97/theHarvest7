@@ -292,7 +292,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     sessionStorage.setItem("user-role", userConfig.role);
                     sessionStorage.setItem("user-name", userConfig.name);
                     sessionStorage.setItem("user-token", pw); // Use password as auth token
-                    
+
                     loginOverlay.style.display = "none";
                     appContainer.style.display = "flex";
                     if (chatbotContainer) chatbotContainer.style.display = "flex";
@@ -520,16 +520,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const input = e.target;
             const originalValue = input.value;
             const selectionStart = input.selectionStart;
-            
+
             // Đếm số lượng chữ số nằm trước con trỏ trước khi format
             const valBeforeCursor = originalValue.substring(0, selectionStart);
             const digitsBeforeCursor = valBeforeCursor.replace(/[^\d]/g, '').length;
-            
+
             const val = parseMoney(originalValue);
             const formatted = val === 0 ? "0" : formatMoneyStr(val);
-            
+
             input.value = formatted;
-            
+
             // Định vị lại con trỏ chuột dựa vào số lượng chữ số đã đếm
             try {
                 if (input.setSelectionRange) {
@@ -553,17 +553,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.warn("setSelectionRange error:", err);
             }
         }
-        
+
         if (e.target.classList.contains('money-input-signed')) {
             const input = e.target;
             const originalValue = input.value.trim();
             const selectionStart = input.selectionStart;
-            
+
             // Đếm chữ số và ký tự dấu (+/-) trước con trỏ
             const valBeforeCursor = originalValue.substring(0, selectionStart);
             const digitsBeforeCursor = valBeforeCursor.replace(/[^\d]/g, '').length;
             const hasSignBeforeCursor = valBeforeCursor.startsWith('+') || valBeforeCursor.startsWith('-');
-            
+
             let sign = "";
             if (originalValue.startsWith('+')) sign = "+";
             else if (originalValue.startsWith('-')) sign = "-";
@@ -579,9 +579,9 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 formatted = sign + new Intl.NumberFormat('vi-VN').format(num);
             }
-            
+
             input.value = formatted;
-            
+
             // Định vị lại con trỏ chuột
             try {
                 if (input.setSelectionRange) {
@@ -675,11 +675,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const flowerListBlock = document.getElementById('flower-items-container');
             const flowerDivider = flowerListBlock ? flowerListBlock.nextElementSibling : null;
             const flowerPillsContainer = document.getElementById('flower-pills-container');
- 
+
             const entryCard = document.querySelector('.entry-card');
             const entryTitle = entryCard ? entryCard.querySelector('h2') : null;
             const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
- 
+
             const toggleFlowerReq = (isReq) => {
                 if (flowerListBlock) {
                     flowerListBlock.querySelectorAll('input').forEach(i => i.required = isReq);
@@ -690,7 +690,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     expenseItemsContainer.querySelectorAll('input').forEach(i => i.required = isReq);
                 }
             };
- 
+
             if (type === "farm") {
                 if (vuaFields) vuaFields.style.display = "none";
                 if (expenseFields) expenseFields.style.display = "none";
@@ -705,7 +705,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (vuaTotalCollectInput) vuaTotalCollectInput.required = false;
                 toggleFlowerReq(true);
                 toggleExpenseReq(false);
- 
+
                 // Premium visual styling
                 if (entryCard) {
                     entryCard.style.borderTop = "6px solid #10b981";
@@ -744,7 +744,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 toggleFlowerReq(true);
                 toggleExpenseReq(false);
                 calculateVuaTotals();
- 
+
                 // Premium visual styling
                 if (entryCard) {
                     entryCard.style.borderTop = "6px solid #3b82f6";
@@ -1032,7 +1032,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (targetInput) {
                 targetInput.value = val;
                 targetInput.dispatchEvent(new Event('input', { bubbles: true }));
-                
+
                 // Auto focus Số lượng (SL) input in the same row
                 const row = targetInput.closest('.flower-item');
                 if (row) {
@@ -1432,7 +1432,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 let queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
                 queue.push({ action: 'delete', rowNumber: sheetRow, context: context, clientId: sheetRow });
                 localStorage.setItem('harvest_sync_queue', JSON.stringify(queue));
-                
+
                 farmData.splice(farmData.indexOf(rowData), 1);
                 applyFiltersAndRender();
                 if (typeof updateConnectionStatus === 'function') updateConnectionStatus();
@@ -2425,7 +2425,7 @@ document.addEventListener("DOMContentLoaded", () => {
             btnConfirm.addEventListener('click', onConfirm);
             btnCancel.addEventListener('click', onCancel);
         });
-     }
+    }
 
     // Custom Modal for Editing Transaction line
     async function editTransactionLine(lineObj) {
@@ -2497,7 +2497,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 try {
                     showToast(`Đang cập nhật dòng đơn hàng...`, "info");
-                    
+
                     const updates = {
                         "Số lượng": newQty,
                         "Giá": newPrice
@@ -2527,7 +2527,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     showToast("Đã cập nhật dòng đơn hàng thành công!", "success");
                     renderDebtTable();
-                    
+
                     // Trigger sync
                     const syncBtnGlobal = document.getElementById('sync-gsheet-btn');
                     if (syncBtnGlobal) syncBtnGlobal.click();
@@ -3157,7 +3157,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const curQ = Math.ceil(curMonth / 3);
                 if (qNum < curQ) return 1;
                 if (qNum > curQ) return 0;
-                
+
                 const qStartMonth = (qNum - 1) * 3 + 1;
                 let elapsedDays = 0;
                 let totalDays = 0;
@@ -3203,7 +3203,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const curQ = Math.ceil(curMonth / 3);
                 if (qNum < curQ) return true;
                 if (qNum > curQ) return false;
-                
+
                 function getQuarterDayOffset(date, targetQ) {
                     const year = date.getFullYear();
                     const qStartMonth = (targetQ - 1) * 3;
@@ -3480,7 +3480,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const rankFlowersEl = document.getElementById('rank-top-flowers');
         if (rankFlowersEl) {
             if (topFlowers.length > 0) {
-                rankFlowersEl.innerHTML = topFlowers.map((tf, i) => 
+                rankFlowersEl.innerHTML = topFlowers.map((tf, i) =>
                     `<li>${tf[0]} <span style="color:var(--secondary-color); font-weight:800; margin-left: 6px;">${formatShorthandCurrency(tf[1])}</span></li>`
                 ).join('');
             } else {
@@ -3495,7 +3495,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const rankPriceFlowersEl = document.getElementById('rank-top-price-flowers');
         if (rankPriceFlowersEl) {
             if (topPriceFlowers.length > 0) {
-                rankPriceFlowersEl.innerHTML = topPriceFlowers.map((tf, i) => 
+                rankPriceFlowersEl.innerHTML = topPriceFlowers.map((tf, i) =>
                     `<li>${tf[0]} <span style="color:#f59e0b; font-weight:800; margin-left: 6px;">${formatCurrency(tf[1])}</span></li>`
                 ).join('');
             } else {
@@ -3519,18 +3519,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // --- 2. Estimated Net Profit & Projections Calculation ---
         const deprRateInput = document.getElementById('depreciation-rate');
-        
+
         // Calculate elapsed ratio and current/previous averages
         const elapsedRatio = getPeriodElapsedRatio(selectedYear, selectedMonth, rangeVal);
         const currAvgPrice = totalQty > 0 ? totalRevenue / totalQty : 0;
         const prevAvgPrice = prevQty > 0 ? prevRevenue / prevQty : 0;
-        
+
         // Project current values to full period
         const projQty = elapsedRatio > 0 ? totalQty / elapsedRatio : 0;
         const projRevenue = elapsedRatio > 0 ? totalRevenue / elapsedRatio : 0;
         const projExpense = elapsedRatio > 0 ? totalExpense / elapsedRatio : 0;
         const projProfit = projRevenue - projExpense;
-        
+
         // Save current totals and projections globally to prevent stale closures when the input listener triggers
         window.currentDashboardTotals = {
             elapsedRatio: elapsedRatio,
@@ -3575,12 +3575,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 prevExpenseToDate: 0,
                 prevAvgPriceToDate: 0
             };
-            
+
             // --- Smart Projection Logic ---
             // Base: Linear run-rate (always reliable: current_pace * full_period)
             const linearRevenue = totals.elapsedRatio > 0 ? totals.totalRevenue / totals.elapsedRatio : totals.totalRevenue;
             const linearExpense = totals.elapsedRatio > 0 ? totals.totalExpense / totals.elapsedRatio : totals.totalExpense;
-            const linearQty     = totals.elapsedRatio > 0 ? totals.totalQty     / totals.elapsedRatio : totals.totalQty;
+            const linearQty = totals.elapsedRatio > 0 ? totals.totalQty / totals.elapsedRatio : totals.totalQty;
 
             // YoY growth rates (current-to-date vs same period last year)
             const revGrowthRate = (totals.prevRevenueToDate > 0 && totals.totalRevenue >= 0)
@@ -3606,7 +3606,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const yoyRevenue = safeYoY(revGrowthRate, totals.prevRevenue, totals.prevRevenueToDate, linearRevenue);
             const yoyExpense = safeYoY(expGrowthRate, totals.prevExpense, totals.prevExpenseToDate, linearExpense);
-            const yoyQty     = safeYoY(qtyGrowthRate, totals.prevQty,     totals.prevQtyToDate,     linearQty);
+            const yoyQty = safeYoY(qtyGrowthRate, totals.prevQty, totals.prevQtyToDate, linearQty);
 
             // Blend weight: 0% YoY at elapsed=0, up to 60% YoY when elapsed=100%
             const yoyW = Math.min(totals.elapsedRatio * 0.8, 0.6);
@@ -3614,7 +3614,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const projRevenue = yoyRevenue !== null ? (yoyRevenue * yoyW + linearRevenue * linW) : linearRevenue;
             const projExpense = yoyExpense !== null ? (yoyExpense * yoyW + linearExpense * linW) : linearExpense;
-            const projQty     = yoyQty     !== null ? (yoyQty     * yoyW + linearQty     * linW) : linearQty;
+            const projQty = yoyQty !== null ? (yoyQty * yoyW + linearQty * linW) : linearQty;
 
             const projProfit = projRevenue - projExpense;
             const projDepr = projRevenue * (deprRate / 100);
@@ -3671,7 +3671,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (estRevEl) estRevEl.innerText = formatCurrency(projRevenue);
             if (estExpEl) estExpEl.innerText = formatCurrency(projExpense);
             if (estDeprEl) estDeprEl.innerText = formatCurrency(projDepr);
-            
+
             // 5. Projected Net Profit
             if (estNetProfitEl) {
                 estNetProfitEl.innerText = formatCurrency(projNetProfit);
@@ -3718,7 +3718,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let tooltipEl = null;
 
-            container.addEventListener('mouseenter', function() {
+            container.addEventListener('mouseenter', function () {
                 const meta = window._lastProjectionMeta;
                 if (!meta) return;
 
@@ -3734,16 +3734,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 const yoyReasonHtml = !isBlend ? `
                     <div style="color:#94a3b8; font-size:0.75rem; margin-top:2px;">
                         ⚠️ YoY chưa áp dụng: ${meta.elapsedRatio < 0.20
-                            ? `tiến độ chưa đủ ${(meta.elapsedRatio*100).toFixed(0)}% < 20%`
-                            : meta.revGrowthRate !== null && (meta.revGrowthRate < 0.5 || meta.revGrowthRate > 3.0)
-                                ? `tỷ lệ tăng trưởng ngoài ngưỡng (${meta.revGrowthRate?.toFixed(1)}x)`
-                                : 'không đủ dữ liệu năm trước'}
+                        ? `tiến độ chưa đủ ${(meta.elapsedRatio * 100).toFixed(0)}% < 20%`
+                        : meta.revGrowthRate !== null && (meta.revGrowthRate < 0.5 || meta.revGrowthRate > 3.0)
+                            ? `tỷ lệ tăng trưởng ngoài ngưỡng (${meta.revGrowthRate?.toFixed(1)}x)`
+                            : 'không đủ dữ liệu năm trước'}
                     </div>` : '';
 
                 const revGrowthHtml = meta.revGrowthRate !== null
-                    ? `<span style="color:${meta.revGrowthRate >= 1 ? '#10b981':'#f59e0b'}"> (${(meta.revGrowthRate*100).toFixed(0)}% so YoY)</span>` : '';
+                    ? `<span style="color:${meta.revGrowthRate >= 1 ? '#10b981' : '#f59e0b'}"> (${(meta.revGrowthRate * 100).toFixed(0)}% so YoY)</span>` : '';
                 const expGrowthHtml = meta.expGrowthRate !== null
-                    ? `<span style="color:${meta.expGrowthRate <= 1 ? '#10b981':'#ef4444'}"> (${(meta.expGrowthRate*100).toFixed(0)}% so YoY)</span>` : '';
+                    ? `<span style="color:${meta.expGrowthRate <= 1 ? '#10b981' : '#ef4444'}"> (${(meta.expGrowthRate * 100).toFixed(0)}% so YoY)</span>` : '';
 
                 tooltipEl = document.createElement('div');
                 tooltipEl.id = 'proj-tooltip';
@@ -3800,7 +3800,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 container.appendChild(tooltipEl);
             });
 
-            container.addEventListener('mouseleave', function() {
+            container.addEventListener('mouseleave', function () {
                 if (tooltipEl && tooltipEl.parentNode) {
                     tooltipEl.parentNode.removeChild(tooltipEl);
                     tooltipEl = null;
@@ -4265,10 +4265,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (overlay && panel) {
             overlay.classList.remove('show');
             panel.classList.remove('show');
-            
+
             // Remove active style from any active info buttons
             document.querySelectorAll('.cashflow-info-btn.active').forEach(b => b.classList.remove('active'));
-            
+
             setTimeout(() => {
                 if (!overlay.classList.contains('show')) {
                     overlay.style.display = 'none';
@@ -4279,7 +4279,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     // Expose hideDrawer and showAllDrawerTransactions to the global scope
     window.hideDrawer = hideDrawer;
-    window.showAllDrawerTransactions = function(total) {
+    window.showAllDrawerTransactions = function (total) {
         const extras = document.querySelectorAll('.cashflow-drawer-panel .extra-item');
         extras.forEach(el => {
             el.style.setProperty('display', 'flex', 'important');
@@ -4288,7 +4288,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 el.style.transform = 'translateY(0)';
             }, 10);
         });
-        
+
         const moreContainer = document.getElementById('cashflow-drawer-more-container');
         if (moreContainer) moreContainer.style.display = 'none';
 
@@ -4297,7 +4297,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // --- CASHFLOW EDIT CONTROLLER ---
-    window.openEditCashflow = function(btn) {
+    window.openEditCashflow = function (btn) {
         const rowNumber = btn.getAttribute('data-row');
         const type = btn.getAttribute('data-type');
         const amount = btn.getAttribute('data-amount');
@@ -4320,13 +4320,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (modal) modal.style.display = 'flex';
     };
 
-    window.closeEditCashflow = function() {
+    window.closeEditCashflow = function () {
         const modal = document.getElementById('modal-edit-cashflow');
         if (modal) modal.style.display = 'none';
         window.currentEditingCashflow = null;
     };
 
-    window.confirmEditCashflow = async function() {
+    window.confirmEditCashflow = async function () {
         if (!isConfigured()) {
             alert("Chưa cấu hình Server URL. Không thể cập nhật Dòng tiền.");
             return;
@@ -4391,18 +4391,18 @@ document.addEventListener("DOMContentLoaded", () => {
     function showDrawerForType(type, btn, isDashboard = false, themeColor = null) {
         let overlay = document.getElementById('cashflow-drawer-overlay');
         let panel = document.getElementById('cashflow-drawer-panel');
-        
+
         if (!overlay || !panel) {
             overlay = document.createElement('div');
             overlay.id = 'cashflow-drawer-overlay';
             overlay.className = 'cashflow-drawer-overlay';
             document.body.appendChild(overlay);
-            
+
             panel = document.createElement('div');
             panel.id = 'cashflow-drawer-panel';
             panel.className = 'cashflow-drawer-panel';
             document.body.appendChild(panel);
-            
+
             overlay.addEventListener('click', hideDrawer);
         }
 
@@ -4438,11 +4438,11 @@ document.addEventListener("DOMContentLoaded", () => {
         let filtered = farmData.filter(item => {
             const d = item.parsedDate;
             if (!d || isNaN(d.getTime())) return false;
-            
+
             if (isDashboard) {
                 const rowYear = d.getFullYear();
                 const rowMonth = d.getMonth() + 1;
-                
+
                 if (isQuarterRange) {
                     let inCurrQ = false;
                     if (rangeVal === 'q1' && rowMonth >= 1 && rowMonth <= 3) inCurrQ = true;
@@ -4661,16 +4661,16 @@ document.addEventListener("DOMContentLoaded", () => {
         // Position and show side drawer
         overlay.style.display = 'block';
         panel.style.display = 'flex';
-        
+
         // Force reflow
         overlay.offsetWidth;
-        
+
         overlay.classList.add('show');
         panel.classList.add('show');
     }
 
     // Expose window.showDrawerForExpenseCategory mapping function
-    window.showDrawerForExpenseCategory = function(categoryLabel) {
+    window.showDrawerForExpenseCategory = function (categoryLabel) {
         let type = "";
         let color = "#10b981";
         if (categoryLabel === "Mua Bông") { type = "Mua Bông"; color = "#f43f5e"; }
@@ -4682,7 +4682,7 @@ document.addEventListener("DOMContentLoaded", () => {
         else if (categoryLabel === "Trả Lãi") { type = "Lãi"; color = "#64748b"; }
         else if (categoryLabel === "Expensed") { type = "Expensed"; color = "#ec4899"; }
         else if (categoryLabel === "Chi phí khác" || categoryLabel === "Chi Phí Khác") { type = "Chi phí khác"; color = "#a855f7"; }
-        
+
         showDrawerForType(type, null, true, color);
     };
 
@@ -4913,12 +4913,12 @@ document.addEventListener("DOMContentLoaded", () => {
             overlay.id = 'cashflow-drawer-overlay';
             overlay.className = 'cashflow-drawer-overlay';
             document.body.appendChild(overlay);
-            
+
             panel = document.createElement('div');
             panel.id = 'cashflow-drawer-panel';
             panel.className = 'cashflow-drawer-panel';
             document.body.appendChild(panel);
-            
+
             overlay.addEventListener('click', hideDrawer);
         }
 
@@ -4941,7 +4941,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Highlight button
             document.querySelectorAll('.cashflow-info-btn.active').forEach(b => b.classList.remove('active'));
             infoBtn.classList.add('active');
-            
+
             showDrawerForType(type, infoBtn);
         });
     }
@@ -5479,7 +5479,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 const val = context.raw;
                                 const pct = sumExpenses > 0 ? ((val / sumExpenses) * 100).toFixed(1) : '0.0';
                                 return ` ${context.label}: ${formatCurrency(val)} (${pct}%)`;
@@ -5487,12 +5487,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                     },
                     datalabels: {
-                        display: function(context) {
+                        display: function (context) {
                             const val = context.dataset.data[context.dataIndex];
                             const pct = sumExpenses > 0 ? (val / sumExpenses) * 100 : 0;
                             return pct >= 5; // only show label on slices ≥ 5%
                         },
-                        formatter: function(value, context) {
+                        formatter: function (value, context) {
                             const label = context.chart.data.labels[context.dataIndex];
                             const pct = sumExpenses > 0 ? ((value / sumExpenses) * 100).toFixed(1) : '0.0';
                             // Shorten label if too long
@@ -5570,6 +5570,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const revVuaData = data.map(d => d.revVua);
         const expData = data.map(d => d.expense);
         const qtyData = data.map(d => d.qty);
+        const avgPriceData = data.map(d => d.qty > 0 ? Math.round(d.revFarm / d.qty) : null);
+        const hasPriceData = avgPriceData.some(v => v !== null && v > 0);
 
         const canvas = document.getElementById('monthlyCombinedChart');
         const container = document.getElementById('MONTHLY_CHART_FIX_CONTAINER');
@@ -5611,7 +5613,15 @@ document.addEventListener("DOMContentLoaded", () => {
                         borderColor: 'rgb(249, 115, 22)', backgroundColor: 'rgba(249, 115, 22, 0.1)',
                         borderWidth: 5, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#fff',
                         pointBorderColor: 'rgb(249, 115, 22)', yAxisID: 'y1'
-                    }
+                    },
+                    ...(hasPriceData ? [{
+                        type: 'line', label: 'Giá TB (Bông)', data: avgPriceData,
+                        borderColor: 'rgb(16, 185, 129)', backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 4, tension: 0.4, pointRadius: 4, pointBackgroundColor: '#fff',
+                        pointBorderColor: 'rgb(16, 185, 129)', yAxisID: 'y2',
+                        spanGaps: true,
+                        hidden: true
+                    }] : [])
                 ]
             },
             options: {
@@ -5666,6 +5676,23 @@ document.addEventListener("DOMContentLoaded", () => {
                             color: '#000',
                             callback: (val) => val.toLocaleString('vi-VN')
                         }
+                    },
+                    y2: {
+                        type: 'linear', display: hasPriceData ? 'auto' : false, position: 'right',
+                        grid: { drawOnChartArea: false },
+                        grace: '20%',
+                        title: {
+                            display: true,
+                            text: 'Giá trung bình (VNĐ/Bông)',
+                            font: { weight: 'bold', size: 14 },
+                            color: '#000',
+                            padding: 10
+                        },
+                        ticks: {
+                            font: { weight: 'bold', size: 13 },
+                            color: '#000',
+                            callback: (val) => val.toLocaleString('vi-VN') + ' ₫'
+                        }
                     }
                 },
                 plugins: {
@@ -5679,6 +5706,31 @@ document.addEventListener("DOMContentLoaded", () => {
                         borderColor: '#e2e8f0',
                         borderWidth: 1,
                         callbacks: {
+                            label: (context) => {
+                                let label = context.dataset.label || '';
+                                if (label) label += ': ';
+                                if (context.parsed.y !== null) {
+                                    if (context.dataset.label.includes('Sản Lượng')) {
+                                        label += context.parsed.y.toLocaleString('vi-VN') + ' Bông';
+                                        
+                                        // If price dataset is hidden, show it inside the tooltip of Sản Lượng
+                                        const priceDataset = context.chart.data.datasets.find(ds => ds.label && ds.label.includes('Giá'));
+                                        const isPriceVisible = priceDataset && context.chart.isDatasetVisible(context.chart.data.datasets.indexOf(priceDataset));
+                                        if (!isPriceVisible) {
+                                            const dayData = data[context.dataIndex];
+                                            if (dayData && dayData.qty > 0) {
+                                                const avgPrice = Math.round(dayData.revFarm / dayData.qty);
+                                                label += ` (Giá TB: ${avgPrice.toLocaleString('vi-VN')} ₫/Bông)`;
+                                            }
+                                        }
+                                    } else if (context.dataset.label.includes('Giá')) {
+                                        label += context.parsed.y.toLocaleString('vi-VN') + ' ₫/Bông';
+                                    } else {
+                                        label += context.parsed.y.toLocaleString('vi-VN') + ' ₫';
+                                    }
+                                }
+                                return label;
+                            },
                             afterBody: (tooltipItems) => {
                                 const label = tooltipItems[0].label;
                                 // If multiple items exist (mode: index), we take the first one's dataset label as primary
@@ -5708,7 +5760,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     datalabels: {
                         display: (context) => {
                             const val = context.dataset.data[context.dataIndex];
-                            if (val <= 0) return false;
+                            if (val === null || val <= 0) return false;
 
                             const wrapper = document.getElementById('monthly-chart-wrapper');
                             const isFullscreen = wrapper && wrapper.style.position === 'fixed';
@@ -5721,21 +5773,29 @@ document.addEventListener("DOMContentLoaded", () => {
                             return context.dataset.type === 'line';
                         },
                         formatter: (val, context) => {
-                            if (context.dataset.type === 'line') return val.toLocaleString('vi-VN');
+                            if (context.dataset.label && context.dataset.label.includes('Sản Lượng')) {
+                                return val.toLocaleString('vi-VN');
+                            }
                             return val.toLocaleString('vi-VN') + ' ₫';
                         },
                         font: { size: 10, weight: 'bold' },
                         color: (context) => {
+                            if (context.dataset.label && context.dataset.label.includes('Giá')) return '#fff';
                             return context.dataset.type === 'line' ? '#000' : '#1e293b';
                         },
                         backgroundColor: (context) => {
-                            if (context.dataset.type === 'line') return '#fbbf24';
+                            if (context.dataset.label && context.dataset.label.includes('Giá')) return '#10b981';
+                            if (context.dataset.label && context.dataset.label.includes('Sản Lượng')) return '#fbbf24';
                             return 'rgba(255, 255, 255, 0.65)';
                         },
                         padding: 3,
                         borderRadius: 4,
-                        anchor: 'end',
-                        align: 'top',
+                        anchor: (context) => {
+                            return context.dataset.label && context.dataset.label.includes('Giá') ? 'start' : 'end';
+                        },
+                        align: (context) => {
+                            return context.dataset.label && context.dataset.label.includes('Giá') ? 'bottom' : 'top';
+                        },
                         offset: 4,
                         clip: false
                     }
@@ -5760,7 +5820,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const formattedPrice = formatCurrency(price).replace('₫', '').trim();
                 const formattedAmount = formatCurrency(qty * price).replace('₫', '').trim();
                 lineStr += `${formatNumber(qty)} ${flowerType} x ${formattedPrice} = ${formattedAmount}`;
-                
+
                 const dtKhac = parseFloat(r["Doanh Thu Khác"]) || 0;
                 if (isVua && dtKhac > 0) {
                     lineStr += ` (LN: ${formatCurrency(dtKhac).replace('₫', '').trim()})`;
@@ -5836,7 +5896,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // 2. If hovering over Doanh Thu Farm, show Buyers/Production details
-        if (hoveredLabels.some(l => l && l.includes("Farm"))) {
+        if (hoveredLabels.some(l => l && (l.includes("Farm") || l.includes("Giá")))) {
             const revItems = filtered.filter(r => {
                 const type = (r["Loại DT"] || "").trim().toLowerCase();
                 const isFarm = type === "farm" || type === "" || (r["Doanh Thu Bông"] || 0) > 0;
@@ -7051,15 +7111,15 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         } catch (e) {
             console.error("Submit error:", e);
-            
+
             // Queue offline addition
             const queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
             const timestampId = "OFFLINE_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-            
+
             payloadRowsStr.forEach((p, pIdx) => {
                 const rowClientId = `${timestampId}_${pIdx}`;
                 queue.push({ action: 'add', payload: p, clientId: rowClientId });
-                
+
                 // Map the clientId to the optimistic parsed row
                 if (payloadRowsParsed[pIdx]) {
                     payloadRowsParsed[pIdx]._sheetRowNumber = rowClientId;
@@ -7079,7 +7139,7 @@ document.addEventListener("DOMContentLoaded", () => {
             currentEditRowData = null;
             const cancelBtn = document.getElementById('cancel-edit-btn');
             if (cancelBtn) cancelBtn.remove();
-            
+
             submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu Dữ Liệu';
         } finally {
             submitBtn.disabled = false;
@@ -7360,10 +7420,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             showToast(`Thành công! Đã chốt gạch nợ lũy kế của ${currentSelectedBuyer.name}.`, "success");
-            
+
             // Đóng hóa đơn
             window.closeReceipt();
-            
+
             // Reload & đồng bộ
             renderDebtTable();
             const syncBtnGlobal = document.getElementById('sync-gsheet-btn');
@@ -7528,7 +7588,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 3px;">
                             <span style="font-size: 0.75rem; font-weight: 700; color: #059669;">✅ Tổng đã thu: ${formatCurrency(runningPaid)}</span>
                             ${runningDebt > 0 ? (
-                                t.rawDate === latestPaymentTxDate ? `
+                        t.rawDate === latestPaymentTxDate ? `
                                     <span class="btn-settle-cumulative" data-enddate="${t.dateStr}" data-debt="${runningDebt}"
                                         style="font-size: 0.82rem; font-weight: 800; color: #ef4444; cursor: pointer; padding: 2px 6px; border-radius: 4px; border: 1px dashed rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.05); transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px;"
                                         onmouseover="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.borderColor='rgba(239, 68, 68, 0.8)';"
@@ -7541,7 +7601,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                         🔴 Còn nợ: ${formatCurrency(runningDebt)}
                                     </span>
                                 `
-                            ) : '<span style="font-size: 0.75rem; font-weight: 700; color: #059669;">✅ Đã thanh toán hết</span>'}
+                    ) : '<span style="font-size: 0.75rem; font-weight: 700; color: #059669;">✅ Đã thanh toán hết</span>'}
                         </div>
                     </td>
                 `;
@@ -8049,7 +8109,7 @@ document.addEventListener("DOMContentLoaded", () => {
         processSyncQueue();
     });
     window.addEventListener('offline', updateConnectionStatus);
-    
+
     // Check queue on startup
     setTimeout(() => {
         updateConnectionStatus();

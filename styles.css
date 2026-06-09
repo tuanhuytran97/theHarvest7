@@ -1197,6 +1197,7 @@ tbody tr:hover {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     color: var(--text-light);
     text-decoration: none;
     font-size: 0.6rem; /* Slightly smaller to fit 5 items */
@@ -1206,6 +1207,14 @@ tbody tr:hover {
     flex: 0 0 75px; /* Fixed width for scrolling consistency */
     padding: 5px 0;
     scroll-snap-align: center;
+  }
+
+  .mobile-nav-item span {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 100%;
+    padding: 0 4px;
   }
 
   .mobile-nav-item i {
