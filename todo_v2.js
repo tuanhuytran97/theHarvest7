@@ -1195,10 +1195,15 @@ window.deleteTask = async function (id) {
 
     // Queue synchronization in the background
     let queue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
-    if (typeof id === 'string' && id.startsWith('OFFLINE_TODO_')) {
-        // Filter out of local sync queue
-        queue = queue.filter(item => item.clientId !== id);
+    
+    // Check if there is a pending save for this offline task in the queue
+    const pendingSaveIndex = queue.findIndex(item => item.action === "save_todo_task" && item.clientId === id);
+    
+    if (pendingSaveIndex > -1) {
+        // If there's a pending save that has not synced yet, remove it from the queue
+        queue.splice(pendingSaveIndex, 1);
     } else {
+        // Otherwise, it has already been synced or is a pre-existing task, so delete it from the backend
         queue.push({ action: "delete_todo_task", id: id, clientId: id });
     }
     localStorage.setItem('todo_sync_queue', JSON.stringify(queue));
