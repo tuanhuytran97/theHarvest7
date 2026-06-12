@@ -989,4 +989,49 @@ tr:hover {
 .sticker-tag-phan { background: #fdf8e2 !important; color: #78350f !important; border: 1px solid #fed7aa !important; }
 .sticker-tag-mo { background: #ffe4e6 !important; color: #9f1239 !important; border: 1px solid #fda4af !important; }
 
+/* Connection Status Badge */
+.conn-status-badge {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    user-select: none;
+}
+.conn-status-badge .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    transition: background 0.3s ease;
+}
+.status-online {
+    background: #f0fdf4 !important;
+    color: #166534 !important;
+    border-color: #bbf7d0 !important;
+}
+.status-online .status-dot {
+    background: #22c55e !important;
+}
+.status-syncing {
+    background: #fffbeb !important;
+    color: #92400e !important;
+    border-color: #fef3c7 !important;
+}
+.status-syncing .status-dot {
+    background: #f59e0b !important;
+}
+.status-offline {
+    background: #fef2f2 !important;
+    color: #991b1b !important;
+    border-color: #fecaca !important;
+}
+.status-offline .status-dot {
+    background: #ef4444 !important;
+}
+
+
 

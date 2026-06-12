@@ -263,6 +263,18 @@ document.addEventListener('DOMContentLoaded', () => {
             renderFocus();
         }
     }, 1500);
+
+    // Initial check and listeners on sync queue
+    window.addEventListener('online', () => {
+        updateTodoConnectionStatus();
+        processTodoSyncQueue();
+    });
+    window.addEventListener('offline', updateTodoConnectionStatus);
+
+    setTimeout(() => {
+        updateTodoConnectionStatus();
+        processTodoSyncQueue();
+    }, 1500);
 });
 
 // --- API LAYER ---
@@ -1093,7 +1105,7 @@ window.editTask = function (id) {
 
 async function saveTask() {
     if (isRestricted()) return;
-    const id = document.getElementById('task-id').value;
+    let id = document.getElementById('task-id').value;
     const task = document.getElementById('task-name').value.trim();
     const deadline = document.getElementById('task-deadline').value;
     const category = document.getElementById('task-category').value.trim();
@@ -1109,29 +1121,41 @@ async function saveTask() {
     }
 
     const taskObj = { id, task, deadline, category, note, priority, status, sticker };
+    taskObj.deadlineDate = parseLocalDate(deadline);
 
-    const btn = document.getElementById('save-task-btn');
-    const originalText = btn.innerText;
-
-    try {
-        btn.disabled = true;
-        btn.innerText = "Đang lưu...";
-
-        const res = await callApi("save_todo_task", { data: taskObj });
-
-        if (res.status === "success") {
-            document.getElementById('todo-modal').style.display = 'none';
-            await loadTodoData();
-        } else {
-            alert("Lỗi khi lưu: " + (res.message || "Không rõ nguyên nhân"));
+    // Optimistic UI updates
+    if (!id) {
+        // Create mode
+        id = "OFFLINE_TODO_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+        taskObj.id = id;
+        const now = new Date();
+        const datePart = String(now.getDate()).padStart(2, '0') + '/' + String(now.getMonth() + 1).padStart(2, '0') + '/' + now.getFullYear();
+        const timePart = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ':' + String(now.getSeconds()).padStart(2, '0');
+        taskObj.createdAt = datePart + ' ' + timePart;
+        taskObj.createdDate = now;
+        todoCache.unshift(taskObj);
+    } else {
+        // Edit mode
+        const idx = todoCache.findIndex(x => x.id === id);
+        if (idx > -1) {
+            taskObj.createdAt = todoCache[idx].createdAt;
+            taskObj.createdDate = todoCache[idx].createdDate;
+            todoCache[idx] = taskObj;
         }
-    } catch (err) {
-        console.error("Save error:", err);
-        alert("Có lỗi xảy ra: " + err.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerText = originalText;
     }
+
+    localStorage.setItem('todo_cache_v2', JSON.stringify(todoCache));
+    renderActiveView();
+
+    document.getElementById('todo-modal').style.display = 'none';
+
+    // Queue synchronization in the background
+    let queue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
+    queue.push({ action: "save_todo_task", data: taskObj, clientId: id });
+    localStorage.setItem('todo_sync_queue', JSON.stringify(queue));
+
+    showToast("Đang lưu công việc trong nền...", "success");
+    processTodoSyncQueue();
 }
 
 window.updateTaskStatus = async function (id, newStatus) {
@@ -1147,19 +1171,40 @@ window.updateTaskStatus = async function (id, newStatus) {
     localStorage.setItem('todo_cache_v2', JSON.stringify(todoCache));
     renderActiveView();
 
-    await callApi("save_todo_task", { data: { ...t, status: newStatus } });
+    // Queue synchronization in the background
+    let queue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
+    queue.push({ action: "save_todo_task", data: { ...t }, clientId: id });
+    localStorage.setItem('todo_sync_queue', JSON.stringify(queue));
+
+    showToast("Đang cập nhật trạng thái...", "success");
+    processTodoSyncQueue();
 }
 
 window.deleteTask = async function (id) {
     if (isRestricted()) return;
     if (!confirm("Bạn có chắc chắn muốn xóa công việc này?")) return;
 
-    const res = await callApi("delete_todo_task", { id: id });
-    if (res.status === "success") {
-        loadTodoData();
+    // Optimistic update
+    todoCache = todoCache.filter(x => x.id !== id);
+    localStorage.setItem('todo_cache_v2', JSON.stringify(todoCache));
+    
+    const modal = document.getElementById('todo-modal');
+    if (modal) modal.style.display = 'none';
+    
+    renderActiveView();
+
+    // Queue synchronization in the background
+    let queue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
+    if (typeof id === 'string' && id.startsWith('OFFLINE_TODO_')) {
+        // Filter out of local sync queue
+        queue = queue.filter(item => item.clientId !== id);
     } else {
-        alert("Lỗi: " + res.message);
+        queue.push({ action: "delete_todo_task", id: id, clientId: id });
     }
+    localStorage.setItem('todo_sync_queue', JSON.stringify(queue));
+
+    showToast("Đã xóa công việc!", "success");
+    processTodoSyncQueue();
 }
 
 // --- ACTION HELPERS ---
@@ -1716,4 +1761,171 @@ function updateListStickerTriggerLabel() {
         }
     }
 }
+
+// --- TODO SYNC QUEUE PROCESSING ---
+let isProcessingTodoQueue = false;
+
+function updateTodoConnectionStatus() {
+    const indicator = document.getElementById('todo-conn-status-indicator');
+    if (!indicator) return;
+
+    const queue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
+    const hasPending = queue.length > 0;
+
+    if (!navigator.onLine) {
+        indicator.className = 'conn-status-badge status-offline';
+        const dot = indicator.querySelector('.status-dot');
+        const text = indicator.querySelector('.status-text');
+        if (dot) dot.style.background = '#ef4444';
+        if (text) text.innerText = `Ngoại tuyến ${hasPending ? `(${queue.length} nợ)` : ''}`;
+    } else {
+        if (hasPending) {
+            indicator.className = 'conn-status-badge status-syncing';
+            const dot = indicator.querySelector('.status-dot');
+            const text = indicator.querySelector('.status-text');
+            if (dot) dot.style.background = '#f59e0b';
+            if (text) text.innerText = `Chờ đồng bộ (${queue.length})`;
+        } else {
+            indicator.className = 'conn-status-badge status-online';
+            const dot = indicator.querySelector('.status-dot');
+            const text = indicator.querySelector('.status-text');
+            if (dot) dot.style.background = '#22c55e';
+            if (text) text.innerText = 'Trực tuyến';
+        }
+    }
+}
+
+async function processTodoSyncQueue() {
+    if (!navigator.onLine) {
+        updateTodoConnectionStatus();
+        return;
+    }
+    if (isProcessingTodoQueue) return;
+    isProcessingTodoQueue = true;
+
+    try {
+        updateTodoConnectionStatus();
+        while (navigator.onLine) {
+            let queue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
+            if (queue.length === 0) break;
+
+            const item = queue[0];
+            let success = false;
+            let response = null;
+
+            const indicator = document.getElementById('todo-conn-status-indicator');
+            if (indicator) {
+                indicator.className = 'conn-status-badge status-syncing';
+                const dot = indicator.querySelector('.status-dot');
+                const text = indicator.querySelector('.status-text');
+                if (dot) dot.style.background = '#f59e0b';
+                if (text) text.innerText = `Đang đồng bộ... (${queue.length} dòng)`;
+            }
+
+            try {
+                if (item.action === 'save_todo_task') {
+                    response = await callApi("save_todo_task", { data: item.data });
+                } else if (item.action === 'delete_todo_task') {
+                    response = await callApi("delete_todo_task", { id: item.id });
+                }
+
+                if (response && response.status === "success") {
+                    success = true;
+                }
+            } catch (err) {
+                console.error("Error during todo queue item sync:", err);
+            }
+
+            if (success) {
+                let updatedQueue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
+                if (updatedQueue.length > 0) {
+                    const first = updatedQueue[0];
+                    if (first.clientId === item.clientId) {
+                        updatedQueue.shift();
+                    } else {
+                        updatedQueue = updatedQueue.filter(x => x.clientId !== item.clientId);
+                    }
+                    localStorage.setItem('todo_sync_queue', JSON.stringify(updatedQueue));
+                }
+            } else {
+                break;
+            }
+        }
+
+        let checkQueue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
+        if (checkQueue.length === 0) {
+            showToast("Đồng bộ công việc lên Cloud thành công!", "success");
+            await loadTodoData();
+        }
+    } catch (e) {
+        console.error("Todo queue sync error:", e);
+    } finally {
+        isProcessingTodoQueue = false;
+        updateTodoConnectionStatus();
+    }
+}
+
+// Fallback Toast Support for standalone todo view
+window.showToast = window.showToast || function (message, type = 'info', duration = 3000) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        Object.assign(container.style, {
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: '999999',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px'
+        });
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    
+    const colors = {
+        success: { bg: '#f0fdf4', color: '#166534', border: '#bbf7d0', icon: '✔' },
+        error: { bg: '#fef2f2', color: '#991b1b', border: '#fecaca', icon: '❌' },
+        info: { bg: '#eff6ff', color: '#1e40af', border: '#bfdbfe', icon: 'ℹ' },
+        warning: { bg: '#fffbeb', color: '#92400e', border: '#fef3c7', icon: '⚠' }
+    };
+    const c = colors[type] || colors.info;
+
+    Object.assign(toast.style, {
+        padding: '12px 20px',
+        borderRadius: '8px',
+        background: c.bg,
+        color: c.color,
+        border: `1px solid ${c.border}`,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+        fontWeight: '600',
+        fontSize: '0.9rem',
+        opacity: '0',
+        transform: 'translateY(-10px)',
+        transition: 'all 0.3s ease',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
+    });
+
+    toast.innerHTML = `<span style="font-size: 1.1rem;">${c.icon}</span> <span>${message}</span>`;
+    container.appendChild(toast);
+
+    toast.offsetHeight; // Force reflow
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-10px)';
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+};
+
+window.updateTodoConnectionStatus = updateTodoConnectionStatus;
+window.processTodoSyncQueue = processTodoSyncQueue;
+
 
