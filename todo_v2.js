@@ -1286,6 +1286,7 @@ function getStickerTagClass(sticker) {
         case 'Phấn Trắng': return 'sticker-tag-phan-trang';
         case 'Phân': return 'sticker-tag-phan';
         case 'Mò': return 'sticker-tag-mo';
+        case 'Thợ': return 'sticker-tag-tho';
         default: return '';
     }
 }
@@ -1301,6 +1302,7 @@ function getStickerEmoji(sticker) {
         case 'Phấn Trắng': return '🍃⚪';
         case 'Phân': return '💦';
         case 'Mò': return '🪲';
+        case 'Thợ': return '👷';
         default: return sticker;
     }
 }
@@ -1613,7 +1615,7 @@ window.openExportTextModal = openExportTextModal;
 window.copyExportText = copyExportText;
 
 function renderCalStickerMultiSelect() {
-    const stickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò'];
+    const stickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò', 'Thợ'];
     const dropdown = document.querySelector('#cal-sticker-multiselect .multiselect-dropdown');
     if (dropdown) {
         let html = '';
@@ -1660,7 +1662,7 @@ window.selectAllCalStickers = function(selectBool) {
     });
 
     if (selectBool) {
-        selectedCalStickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò'];
+        selectedCalStickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò', 'Thợ'];
     } else {
         selectedCalStickers = [];
     }
@@ -1675,7 +1677,7 @@ function updateCalStickerTriggerLabel() {
             label.innerText = 'Tất cả sticker';
             label.style.color = '#64748b';
         } else {
-            const stickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò'];
+            const stickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò', 'Thợ'];
             if (selectedCalStickers.length === stickers.length) {
                 label.innerText = 'Tất cả sticker';
                 label.style.color = '#1e293b';
@@ -1688,7 +1690,7 @@ function updateCalStickerTriggerLabel() {
 }
 
 function renderListStickerMultiSelect() {
-    const stickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò'];
+    const stickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò', 'Thợ'];
     const dropdown = document.querySelector('#filter-sticker-multiselect .multiselect-dropdown');
     if (dropdown) {
         let html = '';
@@ -1735,7 +1737,7 @@ window.selectAllListStickers = function(selectBool) {
     });
 
     if (selectBool) {
-        selectedListStickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò'];
+        selectedListStickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò', 'Thợ'];
     } else {
         selectedListStickers = [];
     }
@@ -1750,7 +1752,7 @@ function updateListStickerTriggerLabel() {
             label.innerText = 'Tất cả sticker';
             label.style.color = '#64748b';
         } else {
-            const stickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò'];
+            const stickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò', 'Thợ'];
             if (selectedListStickers.length === stickers.length) {
                 label.innerText = 'Tất cả sticker';
                 label.style.color = '#1e293b';
