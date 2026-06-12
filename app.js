@@ -3011,6 +3011,25 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Scroll to Expense Distribution Chart on KPI Click
+    const kpiExpenseCard = document.getElementById('kpi-card-expense');
+    if (kpiExpenseCard) {
+        kpiExpenseCard.addEventListener('click', () => {
+            const chartCard = document.getElementById('expense-distribution-card');
+            if (chartCard) {
+                chartCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Add highlight effect
+                chartCard.style.transition = 'border-color 0.3s ease, box-shadow 0.3s ease';
+                chartCard.style.borderColor = 'rgba(239, 68, 68, 0.6)';
+                chartCard.style.boxShadow = '0 0 20px rgba(239, 68, 68, 0.2)';
+                setTimeout(() => {
+                    chartCard.style.borderColor = '';
+                    chartCard.style.boxShadow = '';
+                }, 1500);
+            }
+        });
+    }
+
     if (cmpPeriodSelect) {
         cmpPeriodSelect.addEventListener('change', () => {
             const isIndividualMonth = cmpPeriodSelect.value === 'month';
@@ -3647,24 +3666,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
-            // 2. Average Price Comparison (Current vs previous year same-date)
+            // 2. Average Price Comparison (Forecasted vs previous year full period)
             if (priceCompareEl) {
-                const prevPrice = totals.prevAvgPriceToDate || totals.prevAvgPrice || 0;
-                const diff = prevPrice > 0 ? ((totals.currAvgPrice - prevPrice) / prevPrice) * 100 : 0;
+                const projAvgPrice = projQty > 0 ? projRevenue / projQty : (totals.currAvgPrice || 0);
+                const prevPrice = totals.prevAvgPrice || totals.prevAvgPriceToDate || 0;
+                const diff = prevPrice > 0 ? ((projAvgPrice - prevPrice) / prevPrice) * 100 : 0;
                 const sign = diff >= 0 ? "+" : "";
                 const color = diff >= 0 ? "#10b981" : "#ef4444";
                 const icon = diff >= 0 ? "fa-arrow-trend-up" : "fa-arrow-trend-down";
-                priceCompareEl.innerHTML = `${formatCurrency(Math.round(totals.currAvgPrice))} <span style="font-size: 0.72rem; color: ${color}; font-weight: 700; margin-left: 4px;"><i class="fa-solid ${icon}"></i> ${sign}${diff.toFixed(1)}%</span>`;
+                priceCompareEl.innerHTML = `${formatCurrency(Math.round(projAvgPrice))} <span style="font-size: 0.72rem; color: ${color}; font-weight: 700; margin-left: 4px;"><i class="fa-solid ${icon}"></i> ${sign}${diff.toFixed(1)}%</span>`;
             }
 
-            // 3. Volume Comparison (Current quantity vs previous year same-date)
+            // 3. Volume Comparison (Forecasted quantity vs previous year full period)
             if (qtyCompareEl) {
-                const prevQtyToDate = totals.prevQtyToDate || 0;
-                const qDiff = prevQtyToDate > 0 ? ((totals.totalQty - prevQtyToDate) / prevQtyToDate) * 100 : 0;
+                const prevQty = totals.prevQty || totals.prevQtyToDate || 0;
+                const qDiff = prevQty > 0 ? ((projQty - prevQty) / prevQty) * 100 : 0;
                 const sign = qDiff >= 0 ? "+" : "";
                 const color = qDiff >= 0 ? "#10b981" : "#ef4444";
                 const icon = qDiff >= 0 ? "fa-arrow-trend-up" : "fa-arrow-trend-down";
-                qtyCompareEl.innerHTML = `${totals.totalQty.toLocaleString('vi-VN')} <span style="font-size: 0.72rem; color: ${color}; font-weight: 700; margin-left: 4px;"><i class="fa-solid ${icon}"></i> ${sign}${qDiff.toFixed(1)}%</span>`;
+                qtyCompareEl.innerHTML = `${Math.round(projQty).toLocaleString('vi-VN')} <span style="font-size: 0.72rem; color: ${color}; font-weight: 700; margin-left: 4px;"><i class="fa-solid ${icon}"></i> ${sign}${qDiff.toFixed(1)}%</span>`;
             }
 
             // 4. Projected Income details
@@ -7055,162 +7075,126 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
-        submitBtn.disabled = true;
+        let queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
 
-        let isSavedOffline = !navigator.onLine;
-
-        try {
-            // IF EDIT MODE: Delete old row first
-            if (currentEditRowData && !isSavedOffline) {
-                const sheetRow = currentEditRowData._sheetRowNumber;
-                if (sheetRow) {
-                    const delResp = await fetch(CONFIG.WEB_APP_URL, {
-                        method: "POST",
-                        body: JSON.stringify({ action: "deleteByRow", rowNumber: sheetRow, token: getToken() }),
-                        headers: { "Content-Type": "text/plain;charset=utf-8" }
-                    });
-                    const delRes = await delResp.json();
-                    if (delRes.status !== "success") {
-                        throw new Error("Lỗi khi xóa dòng cũ: " + delRes.message);
-                    }
+        // IF EDIT MODE: Delete old row first (or remove from queue if it was offline)
+        if (currentEditRowData) {
+            const sheetRow = currentEditRowData._sheetRowNumber;
+            if (sheetRow) {
+                if (typeof sheetRow === 'string' && sheetRow.startsWith('OFFLINE_')) {
+                    // Just filter it out of the local queue
+                    queue = queue.filter(item => item.clientId !== sheetRow);
+                } else {
+                    // Queue a delete action for the server
+                    const context = currentTableTab === 'adjustment' ? 'adjustment' : (currentTableTab === 'expense' ? 'expense' : 'all');
+                    queue.push({ action: 'delete', rowNumber: sheetRow, context: context, clientId: "DEL_" + sheetRow });
                 }
             }
-
-            if (isSavedOffline) {
-                throw new TypeError("Offline mode enabled");
-            }
-
-            for (let i = 0; i < payloadRowsStr.length; i++) {
-                const response = await fetch(CONFIG.WEB_APP_URL, {
-                    method: "POST",
-                    body: JSON.stringify({ ...payloadRowsStr[i], token: getToken() }),
-                    headers: { "Content-Type": "text/plain;charset=utf-8" }
-                });
-                const result = await response.json();
-                if (result.status !== "success") throw new Error(result.message || "Lỗi cập nhật G-Sheet.");
-            }
-
-            showToast("Lưu dữ liệu thành công!", "success");
-            currentEditRowData = null; // Clear edit mode
-            const cancelBtn = document.getElementById('cancel-edit-btn');
-            if (cancelBtn) cancelBtn.remove();
-
-            submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu Dữ Liệu';
-            submitBtn.disabled = false;
-
-            // Re-fetch everything to ensure proper sync if possible
-            const syncBtn = document.getElementById('sync-gsheet-btn');
-            if (syncBtn) {
-                syncBtn.click();
-            } else {
-                payloadRowsParsed.forEach(p => farmData.unshift(p));
-                applyFiltersAndRender();
-                populateYears();
-                if (document.getElementById('view-report').style.display === 'block') updateDashboard();
-            }
-        } catch (e) {
-            console.error("Submit error:", e);
-
-            // Queue offline addition
-            const queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
-            const timestampId = "OFFLINE_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-
-            payloadRowsStr.forEach((p, pIdx) => {
-                const rowClientId = `${timestampId}_${pIdx}`;
-                queue.push({ action: 'add', payload: p, clientId: rowClientId });
-
-                // Map the clientId to the optimistic parsed row
-                if (payloadRowsParsed[pIdx]) {
-                    payloadRowsParsed[pIdx]._sheetRowNumber = rowClientId;
-                }
-            });
-            localStorage.setItem('harvest_sync_queue', JSON.stringify(queue));
-
-            // Optimistic UI update
-            payloadRowsParsed.forEach(p => farmData.unshift(p));
-            applyFiltersAndRender();
-            populateYears();
-            if (typeof updateConnectionStatus === 'function') updateConnectionStatus();
-
-            if (document.getElementById('view-report').style.display === 'block') updateDashboard();
-
-            showToast("Ngoại tuyến! Giao dịch được lưu tạm trên thiết bị.", "success");
-            currentEditRowData = null;
-            const cancelBtn = document.getElementById('cancel-edit-btn');
-            if (cancelBtn) cancelBtn.remove();
-
-            submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> Lưu Dữ Liệu';
-        } finally {
-            submitBtn.disabled = false;
-            form.reset();
-            document.getElementById('date-input').value = formatDateInput(new Date());
-
-            // Reset flower items container to default single row
-            if (flowerItemsContainer) {
-                flowerItemsContainer.innerHTML = `
-                    <div class="flower-item">
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
-                            <input type="number" placeholder="0" class="fw-qty" min="0" required>
-                        </div>
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Loại mặt hàng</label>
-                            <input type="text" class="fw-type" list="flower-types" placeholder="Tên hoa..." required
-                                style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;">
-                        </div>
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Đơn Giá</label>
-                            <input type="text" placeholder="0" class="fw-price money-input" required>
-                        </div>
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Thành tiền</label>
-                            <input type="text" placeholder="0" class="fw-total" readonly style="background: #f1f5f9; color: #0f172a; font-weight: 800; border: 1.5px solid #cbd5e1 !important;">
-                        </div>
-                        <button type="button" class="del-flower-btn" title="Xoá"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                `;
-                attachFlowerRowEvents(flowerItemsContainer.querySelector('.flower-item'));
-            }
-
-            if (entryTypeSelect && entryTypeSelect.value === 'vua') calculateVuaTotals();
-
-            // Reset expense items container to default single row
-            if (expenseItemsContainer) {
-                expenseItemsContainer.innerHTML = `
-                    <div class="expense-item">
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Hạng mục</label>
-                            <select class="exp-type" style="border-color: #f87171;">
-                                <option value="Chi Phí Khác">Chi Phí Khác</option>
-                                <option value="Thuốc">Thuốc</option>
-                                <option value="Phân">Phân</option>
-                                <option value="Lãi">Lãi</option>
-                                <option value="Công">Công</option>
-                                <option value="Mua Bông">Mua Bông</option>
-                                <option value="Vật Tư KD">Vật Tư KD</option>
-                                <option value="Vận Chuyển">Vận Chuyển</option>
-                                <option value="Expensed">Expensed</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Số tiền</label>
-                            <input type="text" placeholder="0" class="exp-amount money-input" required style="border-color: #f87171; color: #b91c1c; font-weight: bold;">
-                        </div>
-                        <div class="form-group" style="margin: 0;">
-                            <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Ghi chú chi tiết</label>
-                            <input type="text" placeholder="Nhập ghi chú..." class="exp-note" style="border-color: #f87171;">
-                        </div>
-                        <button type="button" class="del-expense-btn" title="Xoá"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                `;
-                attachExpenseRowEvents(expenseItemsContainer.querySelector('.expense-item'));
-            }
-
-            if (entryTypeSelect) {
-                entryTypeSelect.dispatchEvent(new Event('change'));
-            }
+            // Remove old row from local data
+            const fidx = farmData.indexOf(currentEditRowData);
+            if (fidx >= 0) farmData.splice(fidx, 1);
         }
+
+        // Add new rows to queue
+        const timestampId = "OFFLINE_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+        payloadRowsStr.forEach((p, pIdx) => {
+            const rowClientId = `${timestampId}_${pIdx}`;
+            queue.push({ action: 'add', payload: p, clientId: rowClientId });
+
+            // Map the clientId to the optimistic parsed row
+            if (payloadRowsParsed[pIdx]) {
+                payloadRowsParsed[pIdx]._sheetRowNumber = rowClientId;
+            }
+        });
+
+        // Save queue
+        localStorage.setItem('harvest_sync_queue', JSON.stringify(queue));
+
+        // Optimistic UI update
+        payloadRowsParsed.forEach(p => farmData.unshift(p));
+        applyFiltersAndRender();
+        populateYears();
+        if (typeof updateConnectionStatus === 'function') updateConnectionStatus();
+        if (document.getElementById('view-report').style.display === 'block') updateDashboard();
+
+        showToast("Đang lưu giao dịch vào danh sách chờ...", "success");
+
+        currentEditRowData = null; // Clear edit mode
+        const cancelBtn = document.getElementById('cancel-edit-btn');
+        if (cancelBtn) cancelBtn.remove();
+
+        // Immediate reset of form inputs & submit button to allow next input instantly
+        submitBtn.disabled = false;
+        form.reset();
+        document.getElementById('date-input').value = formatDateInput(new Date());
+
+        // Reset flower items container to default single row
+        if (flowerItemsContainer) {
+            flowerItemsContainer.innerHTML = `
+                <div class="flower-item">
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
+                        <input type="number" placeholder="0" class="fw-qty" min="0" required>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Loại mặt hàng</label>
+                        <input type="text" class="fw-type" list="flower-types" placeholder="Tên hoa..." required
+                            style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Đơn Giá</label>
+                        <input type="text" placeholder="0" class="fw-price money-input" required>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Thành tiền</label>
+                        <input type="text" placeholder="0" class="fw-total" readonly style="background: #f1f5f9; color: #0f172a; font-weight: 800; border: 1.5px solid #cbd5e1 !important;">
+                    </div>
+                    <button type="button" class="del-flower-btn" title="Xoá"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            `;
+            attachFlowerRowEvents(flowerItemsContainer.querySelector('.flower-item'));
+        }
+
+        if (entryTypeSelect && entryTypeSelect.value === 'vua') calculateVuaTotals();
+
+        // Reset expense items container to default single row
+        if (expenseItemsContainer) {
+            expenseItemsContainer.innerHTML = `
+                <div class="expense-item">
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Hạng mục</label>
+                        <select class="exp-type" style="border-color: #f87171;">
+                            <option value="Chi Phí Khác">Chi Phí Khác</option>
+                            <option value="Thuốc">Thuốc</option>
+                            <option value="Phân">Phân</option>
+                            <option value="Lãi">Lãi</option>
+                            <option value="Công">Công</option>
+                            <option value="Mua Bông">Mua Bông</option>
+                            <option value="Vật Tư KD">Vật Tư KD</option>
+                            <option value="Vận Chuyển">Vận Chuyển</option>
+                            <option value="Expensed">Expensed</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Số tiền</label>
+                        <input type="text" placeholder="0" class="exp-amount money-input" required style="border-color: #f87171; color: #b91c1c; font-weight: bold;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Ghi chú chi tiết</label>
+                        <input type="text" placeholder="Nhập ghi chú..." class="exp-note" style="border-color: #f87171;">
+                    </div>
+                    <button type="button" class="del-expense-btn" title="Xoá"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            `;
+            attachExpenseRowEvents(expenseItemsContainer.querySelector('.expense-item'));
+        }
+
+        if (entryTypeSelect) {
+            entryTypeSelect.dispatchEvent(new Event('change'));
+        }
+
+        // Asynchronously process the queue in the background
+        processSyncQueue();
     });
 
     // Load More
@@ -8039,66 +8023,101 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    let isProcessingQueue = false;
+
     async function processSyncQueue() {
-        if (!navigator.onLine) return;
-        const queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
-        if (queue.length === 0) return;
-
-        const indicator = document.getElementById('conn-status-indicator');
-        if (indicator) {
-            indicator.className = 'conn-status-badge status-syncing';
-            const dot = indicator.querySelector('.status-dot');
-            const text = indicator.querySelector('.status-text');
-            if (dot) dot.style.background = '#f59e0b';
-            if (text) text.innerText = `Đang đồng bộ ${queue.length} dòng...`;
+        if (!navigator.onLine) {
+            updateConnectionStatus();
+            return;
         }
+        if (isProcessingQueue) return;
+        isProcessingQueue = true;
 
-        console.log(`Syncing ${queue.length} pending items to Google Sheets...`);
-        showToast(`Bắt đầu đồng bộ ${queue.length} dòng dữ liệu...`, "info");
-
-        let processedCount = 0;
         try {
-            while (queue.length > 0) {
+            updateConnectionStatus();
+            while (navigator.onLine) {
+                // Read queue from localStorage at each iteration to ensure we pick up newly added items
+                let queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+                if (queue.length === 0) break;
+
                 const item = queue[0];
+                let success = false;
                 let response = null;
 
-                if (item.action === 'add') {
-                    response = await fetch(CONFIG.WEB_APP_URL, {
-                        method: "POST",
-                        body: JSON.stringify({ ...item.payload, token: getToken() }),
-                        headers: { "Content-Type": "text/plain;charset=utf-8" }
-                    });
-                } else if (item.action === 'delete') {
-                    response = await fetch(CONFIG.WEB_APP_URL, {
-                        method: "POST",
-                        body: JSON.stringify({ action: "deleteByRow", rowNumber: item.rowNumber, context: item.context, token: getToken() }),
-                        headers: { "Content-Type": "text/plain;charset=utf-8" }
-                    });
+                const indicator = document.getElementById('conn-status-indicator');
+                if (indicator) {
+                    indicator.className = 'conn-status-badge status-syncing';
+                    const dot = indicator.querySelector('.status-dot');
+                    const text = indicator.querySelector('.status-text');
+                    if (dot) dot.style.background = '#f59e0b';
+                    if (text) text.innerText = `Đang đồng bộ... (${queue.length} dòng)`;
                 }
 
-                if (response) {
-                    const result = await response.json();
-                    if (result.status !== "success") {
-                        throw new Error(result.message || "Lỗi đồng bộ");
+                try {
+                    if (item.action === 'add') {
+                        response = await fetch(CONFIG.WEB_APP_URL, {
+                            method: "POST",
+                            body: JSON.stringify({ ...item.payload, token: getToken() }),
+                            headers: { "Content-Type": "text/plain;charset=utf-8" }
+                        });
+                    } else if (item.action === 'delete') {
+                        response = await fetch(CONFIG.WEB_APP_URL, {
+                            method: "POST",
+                            body: JSON.stringify({ action: "deleteByRow", rowNumber: item.rowNumber, context: item.context, token: getToken() }),
+                            headers: { "Content-Type": "text/plain;charset=utf-8" }
+                        });
                     }
+
+                    if (response) {
+                        const result = await response.json();
+                        if (result.status === "success") {
+                            success = true;
+                        } else {
+                            console.error("Failed to sync item:", result.message);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Network error during queue sync:", err);
                 }
 
-                queue.shift();
-                localStorage.setItem('harvest_sync_queue', JSON.stringify(queue));
-                processedCount++;
+                if (success) {
+                    let updatedQueue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+                    if (updatedQueue.length > 0) {
+                        const first = updatedQueue[0];
+                        // Double check it's the same item before shifting to avoid any array mutations
+                        if ((item.clientId && first.clientId === item.clientId) || 
+                            (item.rowNumber && first.rowNumber === item.rowNumber)) {
+                            updatedQueue.shift();
+                        } else {
+                            updatedQueue = updatedQueue.filter(x => {
+                                if (item.clientId && x.clientId === item.clientId) return false;
+                                if (item.rowNumber && x.rowNumber === item.rowNumber) return false;
+                                return true;
+                            });
+                        }
+                        localStorage.setItem('harvest_sync_queue', JSON.stringify(updatedQueue));
+                    }
+                } else {
+                    // Break loop on failure to prevent infinite retries of a failing item
+                    break;
+                }
             }
 
-            showToast(`Đồng bộ thành công ${processedCount} dòng!`, "success");
-            const syncBtn = document.getElementById('sync-gsheet-btn');
-            if (syncBtn) {
-                syncBtn.click();
-            } else {
-                syncData();
+            // Once the queue is fully cleared, trigger a sync refresh to get actual Sheet row IDs
+            let checkQueue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+            if (checkQueue.length === 0) {
+                showToast("Đồng bộ dữ liệu lên Cloud thành công!", "success");
+                const syncBtn = document.getElementById('sync-gsheet-btn');
+                if (syncBtn) {
+                    syncBtn.click();
+                } else {
+                    syncData();
+                }
             }
         } catch (e) {
             console.error("Queue sync error:", e);
-            showToast("Đồng bộ gián đoạn. Sẽ tự động thử lại khi mạng ổn định.", "error");
         } finally {
+            isProcessingQueue = false;
             updateConnectionStatus();
         }
     }

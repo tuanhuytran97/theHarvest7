@@ -265,13 +265,42 @@ function doPost(e) {
                 const finalIdxNote = idxNote > -1 ? idxNote : idxNote2;
                 if (finalIdxNote > -1) sheet.getRange(rowIndexToFill, finalIdxNote + 1).setValue(data["Ghi Chú Chi Phí"] || data["Ghi Chú Chi Phí2"] || "");
             } else {
+                const targetDate = parseDisplayDate(String(data["Ngày"]));
+                let insertAfterRow = -1;
+
+                if (targetDate) {
+                    for (let i = displayValues.length - 1; i >= 1; i--) {
+                        const rowDate = parseDisplayDate(displayValues[i][colNgay]);
+                        if (!rowDate) continue;
+
+                        if (rowDate <= targetDate) {
+                            insertAfterRow = i + 1;
+                            break;
+                        }
+                    }
+                }
+
                 const newRow = headers.map(h => {
                     const normH = normalizeString(h);
                     if (normH === "status") return "Xong";
-                    if (normH === "ghi chu chi phi" || normH === "ghi chu chi phi2") return data["Ghi Chú Chi Phí"] || data["Ghi Chú Chi Phí2"] || "";
-                    return data[h] || "";
+                    if (normH === "ghi chu chi phi" || normH === "ghi chu chi phi2") {
+                        return data["Ghi Chú Chi Phí"] || data["Ghi Chú Chi Phí2"] || "";
+                    }
+                    let val = data[h];
+                    if (val === undefined) {
+                        const matchKey = Object.keys(data).find(k => normalizeString(k) === normH);
+                        if (matchKey) val = data[matchKey];
+                    }
+                    return val || "";
                 });
-                sheet.appendRow(newRow);
+
+                if (insertAfterRow > 0 && insertAfterRow < displayValues.length + 1) {
+                    sheet.insertRowAfter(insertAfterRow);
+                    const newRange = sheet.getRange(insertAfterRow + 1, 1, 1, headers.length);
+                    newRange.setValues([newRow]);
+                } else {
+                    sheet.appendRow(newRow);
+                }
             }
 
             const d = parseDisplayDate(data["Ngày"]);
@@ -730,6 +759,10 @@ function doPost(e) {
                 }
             }
             
+            if (todoData[0].length < 9) {
+                todoSheet.getRange(1, 9).setValue("Sticker");
+            }
+            
             const now = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
             const rowData = [
                 taskId || "TD_" + new Date().getTime(),
@@ -739,7 +772,8 @@ function doPost(e) {
                 task.status || "Chưa bắt đầu",
                 task.category || "",
                 task.note || "",
-                rowIndex > -1 ? (todoData[rowIndex-1][7] || now) : now
+                rowIndex > -1 ? (todoData[rowIndex-1][7] || now) : now,
+                task.sticker || ""
             ];
             
             if (rowIndex > -1) {

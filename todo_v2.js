@@ -9,6 +9,8 @@ let currentSort = { key: 'deadline', asc: true };
 let selectedFocusDate = new Date();
 selectedFocusDate.setHours(0,0,0,0);
 let selectedCalCategories = [];
+let selectedCalStickers = [];
+let selectedListStickers = [];
 
 
 // Register Chart.js Plugins
@@ -84,6 +86,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Save Button
     document.getElementById('save-task-btn')?.addEventListener('click', saveTask);
 
+    // Task Category Visibility Trigger
+    document.getElementById('task-category')?.addEventListener('change', toggleStickerFieldVisibility);
+
     // Modal Delete Button
     document.getElementById('delete-task-btn')?.addEventListener('click', async () => {
         const id = document.getElementById('task-id').value;
@@ -96,6 +101,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // Calendar Controls
     document.getElementById('cal-month')?.addEventListener('change', renderCalendar);
     document.getElementById('cal-year')?.addEventListener('change', renderCalendar);
+
+    // Calendar Sticker Multi-Select Trigger logic
+    const calStickerMS = document.getElementById('cal-sticker-multiselect');
+    if (calStickerMS) {
+        const trigger = calStickerMS.querySelector('.multiselect-trigger');
+        const dropdown = calStickerMS.querySelector('.multiselect-dropdown');
+        if (trigger && dropdown) {
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = dropdown.style.display === 'block';
+                dropdown.style.display = isOpen ? 'none' : 'block';
+            });
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#cal-sticker-multiselect')) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        }
+    }
 
     // Export Calendar text listener
     document.getElementById('btn-export-text')?.addEventListener('click', openExportTextModal);
@@ -120,6 +144,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Custom Multi-Select Sticker Trigger logic in modal
+    const modalStickerContainer = document.getElementById('task-sticker-multiselect');
+    if (modalStickerContainer) {
+        const trigger = modalStickerContainer.querySelector('.multiselect-trigger');
+        const dropdown = modalStickerContainer.querySelector('.multiselect-dropdown');
+        if (trigger && dropdown) {
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = dropdown.style.display === 'block';
+                dropdown.style.display = isOpen ? 'none' : 'block';
+            });
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#task-sticker-multiselect')) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        }
+    }
+
+    // Attach change event listener to all sticker checkboxes
+    document.querySelectorAll('.sticker-checkbox').forEach(cb => {
+        cb.addEventListener('change', updateStickerLabel);
+    });
+
     // Filter Controls
     document.getElementById('filter-search')?.addEventListener('input', renderTable);
     document.getElementById('filter-status')?.addEventListener('change', renderTable);
@@ -127,11 +175,33 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filter-category')?.addEventListener('change', renderTable);
     document.getElementById('filter-month')?.addEventListener('change', renderTable);
     document.getElementById('filter-year')?.addEventListener('change', renderTable);
+
+    // List Sticker Multi-Select Trigger logic
+    const filterStickerMS = document.getElementById('filter-sticker-multiselect');
+    if (filterStickerMS) {
+        const trigger = filterStickerMS.querySelector('.multiselect-trigger');
+        const dropdown = filterStickerMS.querySelector('.multiselect-dropdown');
+        if (trigger && dropdown) {
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = dropdown.style.display === 'block';
+                dropdown.style.display = isOpen ? 'none' : 'block';
+            });
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#filter-sticker-multiselect')) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        }
+    }
     document.getElementById('btn-clear-filters')?.addEventListener('click', () => {
         document.getElementById('filter-search').value = '';
         document.getElementById('filter-status').value = '';
         document.getElementById('filter-priority').value = '';
         document.getElementById('filter-category').value = '';
+        selectedListStickers = [];
+        updateListStickerTriggerLabel();
+        renderListStickerMultiSelect();
         document.getElementById('filter-month').value = '';
         document.getElementById('filter-year').value = '';
         renderTable();
@@ -269,13 +339,16 @@ async function loadTodoData() {
                     category: r[5],
                     note: r[6],
                     createdAt: r[7],
-                    createdDate: parseLocalDate(r[7]) // Pre-parse for speed
+                    createdDate: parseLocalDate(r[7]), // Pre-parse for speed
+                    sticker: r[8] || ""
                 });
             }
         }
         todoCache = parsed;
         localStorage.setItem('todo_cache_v2', JSON.stringify(todoCache));
         updateCategoryFilterOptions();
+        renderCalStickerMultiSelect();
+        renderListStickerMultiSelect();
         renderActiveView();
     } else {
         if (res.message === "Config missing") {
@@ -366,6 +439,8 @@ function renderTable() {
 
         const matchesPriority = !priorityFilter || t.priority === priorityFilter;
         const matchesCategory = !categoryFilter || (t.category || 'Chung') === categoryFilter;
+        const taskStickers = t.sticker ? t.sticker.split(',').map(s => s.trim()).filter(Boolean) : [];
+        const matchesSticker = selectedListStickers.length === 0 || taskStickers.some(st => selectedListStickers.includes(st));
 
         let matchesMonthYear = true;
         if (t.deadlineDate) {
@@ -375,7 +450,7 @@ function renderTable() {
             matchesMonthYear = false; // If filter set but no deadline, exclude
         }
 
-        return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesMonthYear;
+        return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesMonthYear && matchesSticker;
     });
 
     if (filtered.length === 0) {
@@ -429,8 +504,17 @@ function renderTable() {
         const isDelayed = dl && dl.getTime() < now.getTime() && !isDone;
         const delayHtml = isDelayed ? `<span class="badge badge-status-delay" style="margin-left: 5px;">delay</span>` : '';
 
+        let stickerTagHtml = '';
+        if (t.sticker) {
+            const stickers = t.sticker.split(',').map(s => s.trim()).filter(Boolean);
+            stickers.forEach(st => {
+                const stickerClass = getStickerTagClass(st);
+                stickerTagHtml += ` <span class="sticker-tag ${stickerClass}">${getStickerEmoji(st)}</span>`;
+            });
+        }
+
         tr.innerHTML = `
-            <td>${isDone ? '<i class="fa-solid fa-check" style="color: var(--secondary-color); margin-right: 8px;"></i>' : ''}${escapeHtml(t.task)}${delayHtml}</td>
+            <td>${isDone ? '<i class="fa-solid fa-check" style="color: var(--secondary-color); margin-right: 8px;"></i>' : ''}${escapeHtml(t.task)}${stickerTagHtml}${delayHtml}</td>
             <td>${t.deadline ? formatDate(t.deadline) : '-'}</td>
             <td>${daysLeftHtml}</td>
             <td><span class="badge ${getPriorityClass(t.priority)}">${t.priority}</span></td>
@@ -547,7 +631,12 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
         // Apply category filter (falsy categories default to 'Chung')
         const tCategory = t.category || 'Chung';
         const matchesCategory = selectedCalCategories.length === 0 || selectedCalCategories.includes(tCategory);
-        return matchesCategory;
+
+        // Apply sticker filter
+        const taskStickers = t.sticker ? t.sticker.split(',').map(s => s.trim()).filter(Boolean) : [];
+        const matchesSticker = selectedCalStickers.length === 0 || taskStickers.some(st => selectedCalStickers.includes(st));
+
+        return matchesCategory && matchesSticker;
     });
 
     // Sort tasks by priority
@@ -561,6 +650,16 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
         
         const dl = parseLocalDate(t.deadline);
         const isOverdue = dl && dl.getTime() < today.getTime() && !isDone;
+        // Sticker Tag Logic
+        let stickerTag = '';
+        if (t.sticker) {
+            const stickers = t.sticker.split(',').map(s => s.trim()).filter(Boolean);
+            stickers.forEach(st => {
+                const stickerClass = getStickerTagClass(st);
+                stickerTag += ` <span class="sticker-tag ${stickerClass}">${getStickerEmoji(st)}</span>`;
+            });
+        }
+
         // Category Tag Logic
         let catTag = '';
         if (t.category) {
@@ -572,22 +671,22 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
             else if (cat.includes('cá nhân')) catClass = 'cat-tag-ca-nhan';
             else if (cat.includes('self-help')) catClass = 'cat-tag-phat-trien';
             
-            if (isDone) catClass = 'cat-tag-done'; // Mute tags on completed tasks
-            
             catTag = ` <span class="cat-tag ${catClass}">${t.category}</span>`;
         }
 
         const checkIcon = t.status === 'Hoàn thành' ? '<i class="fa-solid fa-check" style="font-size: 0.7rem;"></i> ' : '';
+        const taskNameHtml = isDone 
+            ? `<span style="text-decoration: line-through; color: #94a3b8;">${escapeHtml(t.task)}</span>` 
+            : `<span>${escapeHtml(t.task)}</span>`;
         
-        tDiv.innerHTML = (isOverdue ? '<span style="color: #ef4444; font-weight: 800;">(Trễ)</span> ' : '') + checkIcon + escapeHtml(t.task) + catTag;
+        tDiv.innerHTML = (isOverdue ? '<span style="color: #ef4444; font-weight: 800;">(Trễ)</span> ' : '') + checkIcon + taskNameHtml + stickerTag + catTag;
         tDiv.title = t.task + (t.category ? ` [${t.category}]` : '');
 
-        // Color by priority if active, else grey out
+        // Color by priority if active, else grey out background only
         if (isDone) {
-            tDiv.style.background = '#f1f5f9';
-            tDiv.style.color = '#94a3b8';
-            tDiv.style.textDecoration = 'line-through';
+            tDiv.style.background = '#f8fafc';
             tDiv.style.border = '1px solid #cbd5e1';
+            tDiv.style.textDecoration = 'none';
         } else {
             tDiv.style.textDecoration = 'none';
             if (t.priority === 'Khẩn cấp') {
@@ -623,14 +722,14 @@ function renderFocus() {
     now.setHours(0, 0, 0, 0);
 
     const todayList = document.getElementById('focus-today-list');
-    const urgentList = document.getElementById('focus-urgent-list');
+    const upcomingList = document.getElementById('focus-upcoming-list');
 
-    if (!todayList || !urgentList) return;
+    if (!todayList || !upcomingList) return;
 
     const today = new Date();
     today.setHours(0,0,0,0);
 
-    // Filter Selected Date + Overdue (Incomplete tasks from past)
+    // 1. Filter Việc Hôm Nay: tasks of selected day + overdue if today is selected
     const todayTasks = todoCache.filter(t => {
         const dl = t.deadlineDate;
         if (!dl) return false;
@@ -651,24 +750,25 @@ function renderFocus() {
         return (a.deadlineDate || 0) - (b.deadlineDate || 0);
     });
 
-    // Filter Urgent
-    const urgentTasks = todoCache.filter(t => t.priority === 'Khẩn cấp')
-        .sort((a, b) => {
-            // Incomplete first, then by deadline
-            const aDone = a.status === 'Hoàn thành' ? 1 : 0;
-            const bDone = b.status === 'Hoàn thành' ? 1 : 0;
-            if (aDone !== bDone) return aDone - bDone;
+    // 2. Filter Công Việc Sắp Tới: all in-progress & not started tasks
+    const upcomingTasks = todoCache.filter(t => {
+        return t.status === 'Đang thực hiện' || t.status === 'Chưa bắt đầu';
+    }).sort((a, b) => {
+        const dA = a.deadlineDate ? a.deadlineDate.getTime() : 8640000000000000;
+        const dB = b.deadlineDate ? b.deadlineDate.getTime() : 8640000000000000;
+        return dA - dB;
+    });
 
-            const dA = a.deadlineDate ? a.deadlineDate.getTime() : 8640000000000000;
-            const dB = b.deadlineDate ? b.deadlineDate.getTime() : 8640000000000000;
-            return dA - dB;
-        });
-
-    // Update Header Label
+    // Update Header Labels
     const todayHeader = document.querySelector('#view-focus .focus-column:first-child .focus-header');
     if (todayHeader) {
         const isToday = selectedFocusDate.getTime() === today.getTime();
-        todayHeader.innerHTML = `<i class="fa-solid fa-calendar-day"></i> ${isToday ? 'CÔNG VIỆC HÔM NAY' : 'CÔNG VIỆC NGÀY ' + formatDate(selectedFocusDate)}`;
+        todayHeader.innerHTML = `<i class="fa-solid fa-calendar-day"></i> ${isToday ? 'VIỆC HÔM NAY' : 'CÔNG VIỆC NGÀY ' + formatDate(selectedFocusDate)}`;
+    }
+
+    const upcomingHeader = document.querySelector('#view-focus .focus-column:nth-child(2) .focus-header');
+    if (upcomingHeader) {
+        upcomingHeader.innerHTML = `<i class="fa-solid fa-calendar-days"></i> CÔNG VIỆC SẮP TỚI`;
     }
 
     // Render Today
@@ -677,11 +777,11 @@ function renderFocus() {
         : `<div style="text-align:center; color: var(--text-light); padding: 2rem;">Ngày này không có việc.</div>`;
     todayList.innerHTML = todayHtml;
 
-    // Render Urgent
-    const urgentHtml = urgentTasks.length
-        ? urgentTasks.map(t => createFocusItemHTML(t, 'var(--danger)')).join('')
-        : '<div style="text-align:center; color: var(--text-light); padding: 2rem;">Không có việc khẩn cấp.</div>';
-    urgentList.innerHTML = urgentHtml;
+    // Render Upcoming
+    const upcomingHtml = upcomingTasks.length
+        ? upcomingTasks.map(t => createFocusItemHTML(t, 'var(--primary)')).join('')
+        : '<div style="text-align:center; color: var(--text-light); padding: 2rem;">Không có việc sắp tới.</div>';
+    upcomingList.innerHTML = upcomingHtml;
 
     renderWeeklyFilter();
 }
@@ -741,9 +841,19 @@ function createFocusItemHTML(t, borderColor) {
     const isDelayed = dl && dl.getTime() < now.getTime() && !isCompleted;
     const delayHtml = isDelayed ? `<span class="badge badge-status-delay" style="margin-left: 8px;">delay</span>` : '';
 
+    // Sticker Tag Logic
+    let stickerTag = '';
+    if (t.sticker) {
+        const stickers = t.sticker.split(',').map(s => s.trim()).filter(Boolean);
+        stickers.forEach(st => {
+            const stickerClass = getStickerTagClass(st);
+            stickerTag += ` <span class="sticker-tag ${stickerClass}">${getStickerEmoji(st)}</span>`;
+        });
+    }
+
     return `
         <div class="focus-item" style="border-left-color: ${borderColor}; opacity: ${isCompleted ? 0.6 : 1}" onclick="if(!isRestricted()) editTask('${t.id}')">
-            <div class="focus-item-title" style="${titleStyle}">${escapeHtml(t.task)}${delayHtml}</div>
+            <div class="focus-item-title" style="${titleStyle}">${escapeHtml(t.task)}${stickerTag}${delayHtml}</div>
             <div class="focus-item-meta">
                 <span><i class="fa-regular fa-clock"></i> ${t.deadline ? formatDate(t.deadline) : 'Không hạn'}</span>
                 <span class="badge ${getStatusClass(t.status)}">${t.status}</span>
@@ -920,8 +1030,11 @@ function resetModal() {
     document.getElementById('task-deadline').value = todayStr;
     document.getElementById('task-category').value = "Farm";
     document.getElementById('task-note').value = "";
-    document.getElementById('task-priority').value = "Trung bình";
+    document.getElementById('task-priority').value = "Cao";
     document.getElementById('task-status').value = "Chưa bắt đầu";
+    document.querySelectorAll('.sticker-checkbox').forEach(cb => cb.checked = false);
+    updateStickerLabel();
+    toggleStickerFieldVisibility();
     
     // Hide delete button for new tasks
     const delBtn = document.getElementById('delete-task-btn');
@@ -961,6 +1074,15 @@ window.editTask = function (id) {
     document.getElementById('task-note').value = t.note || "";
     document.getElementById('task-priority').value = t.priority || "Trung bình";
     document.getElementById('task-status').value = t.status || "Chưa bắt đầu";
+    document.querySelectorAll('.sticker-checkbox').forEach(cb => cb.checked = false);
+    if (t.sticker) {
+        const list = t.sticker.split(',').map(s => s.trim());
+        document.querySelectorAll('.sticker-checkbox').forEach(cb => {
+            if (list.includes(cb.value)) cb.checked = true;
+        });
+    }
+    updateStickerLabel();
+    toggleStickerFieldVisibility();
 
     // Show delete button for existing tasks
     const delBtn = document.getElementById('delete-task-btn');
@@ -978,13 +1100,15 @@ async function saveTask() {
     const note = document.getElementById('task-note').value.trim();
     const priority = document.getElementById('task-priority').value;
     const status = document.getElementById('task-status').value;
+    const selectedCheckboxes = document.querySelectorAll('.sticker-checkbox:checked');
+    const sticker = Array.from(selectedCheckboxes).map(cb => cb.value).join(', ');
 
     if (!task) {
         alert("Vui lòng nhập tên công việc");
         return;
     }
 
-    const taskObj = { id, task, deadline, category, note, priority, status };
+    const taskObj = { id, task, deadline, category, note, priority, status, sticker };
 
     const btn = document.getElementById('save-task-btn');
     const originalText = btn.innerText;
@@ -1104,6 +1228,68 @@ function getStatusClass(s) {
     if (s === 'Hủy bỏ') return 'badge-status-cancelled';
     if (s === 'Đang chờ duyệt') return 'badge-status-waiting';
     return 'badge-status-notstarted';
+}
+
+function getStickerTagClass(sticker) {
+    if (!sticker) return '';
+    switch(sticker) {
+        case 'Nấm': return 'sticker-tag-nam';
+        case 'Nhện': return 'sticker-tag-nhen';
+        case 'Sâu': return 'sticker-tag-sau';
+        case 'Châm Kim': return 'sticker-tag-cham-kim';
+        case 'Thối Cánh': return 'sticker-tag-thoi-canh';
+        case 'Phấn Trắng': return 'sticker-tag-phan-trang';
+        case 'Phân': return 'sticker-tag-phan';
+        case 'Mò': return 'sticker-tag-mo';
+        default: return '';
+    }
+}
+
+function getStickerEmoji(sticker) {
+    if (!sticker) return '';
+    switch(sticker) {
+        case 'Nấm': return '🍄';
+        case 'Nhện': return '🕷️';
+        case 'Sâu': return '🐛';
+        case 'Châm Kim': return '💮';
+        case 'Thối Cánh': return '🥀';
+        case 'Phấn Trắng': return '🍃⚪';
+        case 'Phân': return '💦';
+        case 'Mò': return '🪲';
+        default: return sticker;
+    }
+}
+
+function toggleStickerFieldVisibility() {
+    const category = document.getElementById('task-category')?.value;
+    const stickerWrapper = document.getElementById('task-sticker-wrapper');
+    if (!stickerWrapper) return;
+    
+    const isFarmCategory = category === "Farm" || category === "Farm I" || category === "Farm II";
+    if (isFarmCategory) {
+        stickerWrapper.style.display = "grid";
+    } else {
+        stickerWrapper.style.display = "none";
+        document.querySelectorAll('.sticker-checkbox').forEach(cb => cb.checked = false);
+        updateStickerLabel();
+    }
+}
+
+function updateStickerLabel() {
+    const selectedCheckboxes = document.querySelectorAll('.sticker-checkbox:checked');
+    const label = document.getElementById('task-sticker-label');
+    if (label) {
+        if (selectedCheckboxes.length === 0) {
+            label.innerText = 'Chọn sticker...';
+            label.style.color = '#64748b';
+        } else {
+            const texts = Array.from(selectedCheckboxes).map(cb => {
+                return getStickerEmoji(cb.value) + ' ' + cb.value;
+            });
+            label.innerText = texts.join(', ');
+            label.style.color = '#1e293b';
+        }
+    }
 }
 
 function formatDate(dateStr) {
@@ -1251,7 +1437,12 @@ function openExportTextModal() {
         // Match category filter
         const tCategory = t.category || 'Chung';
         const matchesCategory = selectedCalCategories.length === 0 || selectedCalCategories.includes(tCategory);
-        return matchesCategory;
+        
+        // Match sticker filter
+        const taskStickers = t.sticker ? t.sticker.split(',').map(s => s.trim()).filter(Boolean) : [];
+        const matchesSticker = selectedCalStickers.length === 0 || taskStickers.some(st => selectedCalStickers.includes(st));
+
+        return matchesCategory && matchesSticker;
     });
     
     // Sort chronologically (lowest date to highest date)
@@ -1375,4 +1566,154 @@ function showCopySuccess() {
 // Expose helper functions globally
 window.openExportTextModal = openExportTextModal;
 window.copyExportText = copyExportText;
+
+function renderCalStickerMultiSelect() {
+    const stickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò'];
+    const dropdown = document.querySelector('#cal-sticker-multiselect .multiselect-dropdown');
+    if (dropdown) {
+        let html = '';
+        html += `
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 6px; font-size: 0.8rem; user-select: none;">
+                <span onclick="selectAllCalStickers(true); event.stopPropagation();" style="color: #6366f1; font-weight: 700; cursor: pointer; hover: opacity 0.8;">Chọn tất cả</span>
+                <span onclick="selectAllCalStickers(false); event.stopPropagation();" style="color: #ef4444; font-weight: 700; cursor: pointer; hover: opacity 0.8;">Xóa chọn</span>
+            </div>
+        `;
+        stickers.forEach(s => {
+            const isChecked = selectedCalStickers.includes(s);
+            html += `
+                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;" onclick="event.stopPropagation();">
+                    <input type="checkbox" value="${s}" ${isChecked ? 'checked' : ''} onchange="toggleCalSticker('${s}', this.checked)" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                    <span>${getStickerEmoji(s)} ${s}</span>
+                </label>
+            `;
+        });
+        dropdown.innerHTML = html;
+        dropdown.querySelectorAll('.multiselect-item').forEach(item => {
+            item.addEventListener('mouseenter', () => item.style.background = '#f1f5f9');
+            item.addEventListener('mouseleave', () => item.style.background = 'transparent');
+        });
+        updateCalStickerTriggerLabel();
+    }
+}
+
+window.toggleCalSticker = function(sticker, isChecked) {
+    if (isChecked) {
+        if (!selectedCalStickers.includes(sticker)) {
+            selectedCalStickers.push(sticker);
+        }
+    } else {
+        selectedCalStickers = selectedCalStickers.filter(s => s !== sticker);
+    }
+    updateCalStickerTriggerLabel();
+    renderCalendar();
+};
+
+window.selectAllCalStickers = function(selectBool) {
+    const checkboxes = document.querySelectorAll('#cal-sticker-multiselect .multiselect-dropdown input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        cb.checked = selectBool;
+    });
+
+    if (selectBool) {
+        selectedCalStickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò'];
+    } else {
+        selectedCalStickers = [];
+    }
+    updateCalStickerTriggerLabel();
+    renderCalendar();
+};
+
+function updateCalStickerTriggerLabel() {
+    const label = document.querySelector('#cal-sticker-multiselect .multiselect-label');
+    if (label) {
+        if (selectedCalStickers.length === 0) {
+            label.innerText = 'Tất cả sticker';
+            label.style.color = '#64748b';
+        } else {
+            const stickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò'];
+            if (selectedCalStickers.length === stickers.length) {
+                label.innerText = 'Tất cả sticker';
+                label.style.color = '#1e293b';
+            } else {
+                label.innerText = selectedCalStickers.join(', ');
+                label.style.color = '#1e293b';
+            }
+        }
+    }
+}
+
+function renderListStickerMultiSelect() {
+    const stickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò'];
+    const dropdown = document.querySelector('#filter-sticker-multiselect .multiselect-dropdown');
+    if (dropdown) {
+        let html = '';
+        html += `
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-bottom: 6px; font-size: 0.8rem; user-select: none;">
+                <span onclick="selectAllListStickers(true); event.stopPropagation();" style="color: #6366f1; font-weight: 700; cursor: pointer; hover: opacity 0.8;">Chọn tất cả</span>
+                <span onclick="selectAllListStickers(false); event.stopPropagation();" style="color: #ef4444; font-weight: 700; cursor: pointer; hover: opacity 0.8;">Xóa chọn</span>
+            </div>
+        `;
+        stickers.forEach(s => {
+            const isChecked = selectedListStickers.includes(s);
+            html += `
+                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;" onclick="event.stopPropagation();">
+                    <input type="checkbox" value="${s}" ${isChecked ? 'checked' : ''} onchange="toggleListSticker('${s}', this.checked)" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                    <span>${getStickerEmoji(s)} ${s}</span>
+                </label>
+            `;
+        });
+        dropdown.innerHTML = html;
+        dropdown.querySelectorAll('.multiselect-item').forEach(item => {
+            item.addEventListener('mouseenter', () => item.style.background = '#f1f5f9');
+            item.addEventListener('mouseleave', () => item.style.background = 'transparent');
+        });
+        updateListStickerTriggerLabel();
+    }
+}
+
+window.toggleListSticker = function(sticker, isChecked) {
+    if (isChecked) {
+        if (!selectedListStickers.includes(sticker)) {
+            selectedListStickers.push(sticker);
+        }
+    } else {
+        selectedListStickers = selectedListStickers.filter(s => s !== sticker);
+    }
+    updateListStickerTriggerLabel();
+    renderTable();
+};
+
+window.selectAllListStickers = function(selectBool) {
+    const checkboxes = document.querySelectorAll('#filter-sticker-multiselect .multiselect-dropdown input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        cb.checked = selectBool;
+    });
+
+    if (selectBool) {
+        selectedListStickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò'];
+    } else {
+        selectedListStickers = [];
+    }
+    updateListStickerTriggerLabel();
+    renderTable();
+};
+
+function updateListStickerTriggerLabel() {
+    const label = document.querySelector('#filter-sticker-multiselect .multiselect-label');
+    if (label) {
+        if (selectedListStickers.length === 0) {
+            label.innerText = 'Tất cả sticker';
+            label.style.color = '#64748b';
+        } else {
+            const stickers = ['Nấm', 'Nhện', 'Sâu', 'Châm Kim', 'Thối Cánh', 'Phấn Trắng', 'Phân', 'Mò'];
+            if (selectedListStickers.length === stickers.length) {
+                label.innerText = 'Tất cả sticker';
+                label.style.color = '#1e293b';
+            } else {
+                label.innerText = selectedListStickers.join(', ');
+                label.style.color = '#1e293b';
+            }
+        }
+    }
+}
 

@@ -692,7 +692,7 @@
                                 style="flex: 1; min-width: 300px; max-height: 750px; overflow-y: auto; background: white; border-radius: 20px; padding: 1.5rem; border: 1px solid var(--border-color);">
                                 <div class="focus-header"
                                     style="font-weight: 800; font-size: 1.1rem; color: #0ea5e9; border-left: 5px solid #0ea5e9; padding-left: 15px; margin-bottom: 1.5rem; position: sticky; top: 0; background: white; z-index: 10; padding-top: 5px; padding-bottom: 10px;">
-                                    <i class="fa-solid fa-calendar-day"></i> CÔNG VIỆC HÔM NAY
+                                    <i class="fa-solid fa-calendar-day"></i> VIỆC HÔM NAY
                                 </div>
                                 <div id="focus-today-list" class="focus-list">
                                     <!-- Today tasks injected by JS -->
@@ -701,11 +701,11 @@
                             <div class="glass-card focus-column"
                                 style="flex: 1; min-width: 300px; max-height: 750px; overflow-y: auto; background: white; border-radius: 20px; padding: 1.5rem; border: 1px solid var(--border-color);">
                                 <div class="focus-header"
-                                    style="font-weight: 800; font-size: 1.1rem; color: #ef4444; border-left: 5px solid #ef4444; padding-left: 15px; margin-bottom: 1.5rem; position: sticky; top: 0; background: white; z-index: 10; padding-top: 5px; padding-bottom: 10px;">
-                                    <i class="fa-solid fa-triangle-exclamation"></i> VIỆC KHẨN CẤP
+                                    style="font-weight: 800; font-size: 1.1rem; color: #6366f1; border-left: 5px solid #6366f1; padding-left: 15px; margin-bottom: 1.5rem; position: sticky; top: 0; background: white; z-index: 10; padding-top: 5px; padding-bottom: 10px;">
+                                    <i class="fa-solid fa-calendar-days"></i> CÔNG VIỆC SẮP TỚI
                                 </div>
-                                <div id="focus-urgent-list" class="focus-list">
-                                    <!-- Urgent tasks injected by JS -->
+                                <div id="focus-upcoming-list" class="focus-list">
+                                    <!-- Upcoming tasks injected by JS -->
                                 </div>
                             </div>
                         </div>
@@ -903,6 +903,15 @@
                                             <!-- Checkbox items dynamically rendered -->
                                         </div>
                                     </div>
+                                    <div class="custom-multiselect" id="cal-sticker-multiselect" style="position: relative; display: inline-block;">
+                                        <button type="button" class="multiselect-trigger input-modern" style="width: 180px; text-align: left; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white;">
+                                            <span class="multiselect-label" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; font-weight: 600; color: #64748b;">Tất cả sticker</span>
+                                            <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; color: #64748b; margin-left: 8px;"></i>
+                                        </button>
+                                        <div class="multiselect-dropdown glassmorphism" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: rgba(255, 255, 255, 0.98); border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); z-index: 1000; padding: 10px; max-height: 250px; overflow-y: auto; min-width: 200px;">
+                                            <!-- Checkbox items dynamically rendered -->
+                                        </div>
+                                    </div>
                                     <button type="button" id="btn-export-text" class="btn-primary"
                                         style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); padding: 10px 16px; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; border-radius: 8px; border: none; font-weight: 700; color: white; cursor: pointer; height: 44px; justify-content: center; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);">
                                         <i class="fa-solid fa-file-export"></i> Export
@@ -949,6 +958,17 @@
                                 <select id="filter-category" class="input-modern" style="width: 100%;">
                                     <option value="">Tất cả phân loại</option>
                                 </select>
+                            </div>
+                            <div style="flex: 1; min-width: 150px;">
+                                <div class="custom-multiselect" id="filter-sticker-multiselect" style="position: relative; display: inline-block; width: 100%;">
+                                    <button type="button" class="multiselect-trigger input-modern" style="width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white;">
+                                        <span class="multiselect-label" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; font-weight: 600; color: #64748b;">Tất cả sticker</span>
+                                        <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; color: #64748b; margin-left: 8px;"></i>
+                                    </button>
+                                    <div class="multiselect-dropdown glassmorphism" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: rgba(255, 255, 255, 0.98); border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); z-index: 1000; padding: 10px; max-height: 250px; overflow-y: auto; min-width: 200px;">
+                                        <!-- Checkbox items dynamically rendered -->
+                                    </div>
+                                </div>
                             </div>
                             <div style="display: flex; gap: 6px; flex: 1; min-width: 200px;">
                                 <select id="filter-month" class="input-modern" style="flex: 1;">
@@ -1460,7 +1480,7 @@
                             <span id="growth-revenue" class="growth-badge"></span>
                         </div>
                     </div>
-                    <div class="card glassmorphism" style="margin-bottom: 0;">
+                    <div id="kpi-card-expense" class="card glassmorphism kpi-card-clickable" style="margin-bottom: 0;">
                         <h3 style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem;">Chi Phí
                             T.Tháng</h3>
                         <div style="display: flex; align-items: baseline; gap: 8px;">
@@ -1561,7 +1581,7 @@
                                     style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 10px; border-radius: 10px; text-align: center;">
                                     <span
                                         style="font-size: 0.7rem; color: #64748b; font-weight: 700; display: block; text-transform: uppercase;">Giá
-                                        Bán TB</span>
+                                        Bán TB Dự Báo</span>
                                     <span id="estimate-price-compare"
                                         style="font-size: 0.88rem; font-weight: 800; color: #1e293b;">-</span>
                                 </div>
@@ -1569,7 +1589,7 @@
                                     style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 10px; border-radius: 10px; text-align: center;">
                                     <span
                                         style="font-size: 0.7rem; color: #64748b; font-weight: 700; display: block; text-transform: uppercase;">Sản
-                                        Lượng (SL)</span>
+                                        Lượng Dự Báo (SL)</span>
                                     <span id="estimate-qty-compare"
                                         style="font-size: 0.88rem; font-weight: 800; color: #1e293b;">-</span>
                                 </div>
@@ -1666,7 +1686,7 @@
 
                 <!-- Common Report Charts (Expense Distribution Pie Chart) -->
                 <section id="common-report-charts" style="margin-bottom: 2rem;">
-                    <div class="card glassmorphism full-width-card" style="margin-bottom: 0;">
+                    <div id="expense-distribution-card" class="card glassmorphism full-width-card" style="margin-bottom: 0;">
                         <h2
                             style="font-size: 1.15rem; font-weight: 800; margin-bottom: 1.5rem; color: var(--text-dark); border-bottom: 2px solid rgba(0,0,0,0.05); padding-bottom: 8px;">
                             <i class="fa-solid fa-chart-pie"></i> Phân Bổ Chi Phí (Cơ Cấu Chi Phí)
@@ -2963,6 +2983,52 @@
                         </select>
                     </div>
                 </div>
+                <div id="task-sticker-wrapper" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+                    <div class="form-group">
+                        <label style="display: block; font-weight: 700; margin-bottom: 6px;">Sticker (Farm)</label>
+                        <div class="custom-multiselect" id="task-sticker-multiselect" style="position: relative; display: inline-block; width: 100%;">
+                            <button type="button" class="multiselect-trigger input-modern" style="width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white; padding: 12px; border-radius: 10px;">
+                                <span class="multiselect-label" id="task-sticker-label" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.95rem; color: #64748b; font-weight: 600;">Chọn sticker...</span>
+                                <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; color: #64748b; margin-left: 8px;"></i>
+                            </button>
+                            <div class="multiselect-dropdown" id="task-sticker-dropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: rgba(255, 255, 255, 0.98); border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); z-index: 1000; padding: 10px; max-height: 200px; overflow-y: auto;">
+                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Nấm" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                    <span>🍄 Nấm</span>
+                                </label>
+                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Nhện" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                    <span>🕷️ Nhện</span>
+                                </label>
+                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Sâu" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                    <span>🐛 Sâu</span>
+                                </label>
+                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Châm Kim" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                    <span>💮 Châm Kim</span>
+                                </label>
+                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Thối Cánh" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                    <span>🥀 Thối Cánh</span>
+                                </label>
+                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Phấn Trắng" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                    <span>🍃⚪ Phấn Trắng</span>
+                                </label>
+                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Phân" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                    <span>💦 Phân</span>
+                                </label>
+                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Mò" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                    <span>🪲 Mò</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group"></div>
+                </div>
                 <div class="form-group" style="margin-bottom: 1.25rem;">
                     <label style="display: block; font-weight: 700; margin-bottom: 6px;">Ghi chú</label>
                     <textarea id="task-note" class="input-modern"
@@ -2975,8 +3041,8 @@
                         <select id="task-priority" class="input-modern"
                             style="width: 100%; padding: 12px; border-radius: 10px;">
                             <option value="Thấp">Thấp</option>
-                            <option value="Trung bình" selected>Trung bình</option>
-                            <option value="Cao">Cao</option>
+                            <option value="Trung bình">Trung bình</option>
+                            <option value="Cao" selected>Cao</option>
                             <option value="Khẩn cấp">Khẩn cấp</option>
                         </select>
                     </div>
