@@ -4357,55 +4357,77 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const amountVal = parseMoney(amountInput.value);
         const noteVal = noteInput.value.trim();
+        const rowNumber = parseInt(window.currentEditingCashflow.rowNumber);
 
-        const btn = document.getElementById('btn-confirm-edit-cashflow');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
-        btn.disabled = true;
-
-        try {
-            const updates = {};
-            if (window.currentEditingCashflow.type === "Doanh thu Farm") {
-                updates["Doanh Thu Bông"] = amountVal;
-                updates["Ghi Chú"] = noteVal;
-            } else if (window.currentEditingCashflow.type === "Company" || window.currentEditingCashflow.type === "Vựa") {
-                updates["Doanh Thu Khác"] = amountVal;
-                updates["Ghi Chú"] = noteVal;
-            } else {
-                updates["Chi Phí"] = amountVal;
-                updates["Ghi Chú Chi Phí"] = noteVal;
-            }
-
-            const response = await fetch(CONFIG.WEB_APP_URL, {
-                method: "POST",
-                body: JSON.stringify({
-                    action: "update",
-                    rowNumber: parseInt(window.currentEditingCashflow.rowNumber),
-                    updates: updates,
-                    token: getToken()
-                }),
-                headers: { "Content-Type": "text/plain;charset=utf-8" }
-            });
-
-            const result = await response.json();
-            if (result.status !== "success") throw new Error(result.message || "Lỗi cập nhật");
-
-            showToast("Cập nhật Dòng tiền thành công!", "success");
-
-            window.closeEditCashflow();
-            hideDrawer();
-
-            // Trigger sync to fetch updated values
-            const syncBtn = document.getElementById('sync-gsheet-btn');
-            if (syncBtn) syncBtn.click();
-
-        } catch (error) {
-            console.error(error);
-            showToast("Lỗi khi cập nhật Dòng tiền: " + error.message, "error");
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+        const updates = {};
+        if (window.currentEditingCashflow.type === "Doanh thu Farm") {
+            updates["Doanh Thu Bông"] = amountVal;
+            updates["Ghi Chú"] = noteVal;
+        } else if (window.currentEditingCashflow.type === "Company" || window.currentEditingCashflow.type === "Vựa") {
+            updates["Doanh Thu Khác"] = amountVal;
+            updates["Ghi Chú"] = noteVal;
+        } else {
+            updates["Chi Phí"] = amountVal;
+            updates["Ghi Chú Chi Phí"] = noteVal;
         }
+
+        // 1. Optimistically update local farmData in-memory
+        const farmItem = farmData.find(item => item._sheetRowNumber === rowNumber);
+        if (farmItem) {
+            for (const key in updates) {
+                farmItem[key] = updates[key];
+            }
+        }
+
+        // 2. Optimistically update localStorage cache
+        const cached = localStorage.getItem('farm_management_data');
+        if (cached) {
+            try {
+                const parsed = JSON.parse(cached);
+                if (parsed && Array.isArray(parsed.data)) {
+                    const rawItem = parsed.data.find(item => item._sheetRowNumber === rowNumber);
+                    if (rawItem) {
+                        for (const key in updates) {
+                            rawItem[key] = String(updates[key]);
+                        }
+                        localStorage.setItem('farm_management_data', JSON.stringify(parsed));
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to update cache: ", e);
+            }
+        }
+
+        // 3. Close modal and hide drawer immediately
+        window.closeEditCashflow();
+        hideDrawer();
+
+        // 4. Force immediate UI rerendering
+        applyFiltersAndRender();
+        populateYears();
+        updateCashInHand();
+        if (document.getElementById('view-report') && document.getElementById('view-report').style.display === 'block') {
+            updateDashboard();
+        }
+        if (document.getElementById('view-cashflow') && document.getElementById('view-cashflow').style.display === 'block') {
+            updateCashFlowReport();
+        }
+        renderDebtTable();
+
+        // 5. Append update action to the background synchronization queue
+        let queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+        queue.push({
+            action: 'update',
+            rowNumber: rowNumber,
+            updates: updates,
+            clientId: "EDIT_CASHFLOW_" + Date.now() + "_" + Math.floor(Math.random() * 1000)
+        });
+        localStorage.setItem('harvest_sync_queue', JSON.stringify(queue));
+
+        showToast("Đang cập nhật dòng tiền...", "success");
+
+        // 6. Process the queue asynchronously
+        processSyncQueue();
     };
 
     function showDrawerForType(type, btn, isDashboard = false, themeColor = null) {
@@ -8064,6 +8086,12 @@ document.addEventListener("DOMContentLoaded", () => {
                         response = await fetch(CONFIG.WEB_APP_URL, {
                             method: "POST",
                             body: JSON.stringify({ action: "deleteByRow", rowNumber: item.rowNumber, context: item.context, token: getToken() }),
+                            headers: { "Content-Type": "text/plain;charset=utf-8" }
+                        });
+                    } else if (item.action === 'update') {
+                        response = await fetch(CONFIG.WEB_APP_URL, {
+                            method: "POST",
+                            body: JSON.stringify({ action: "update", rowNumber: item.rowNumber, updates: item.updates, token: getToken() }),
                             headers: { "Content-Type": "text/plain;charset=utf-8" }
                         });
                     }
