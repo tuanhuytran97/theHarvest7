@@ -560,8 +560,8 @@
                 <a href="#" id="menu-debt"><i class="fa-solid fa-book-journal-whills"></i> <span>Các khoản phải
                         thu</span></a>
                 <a href="#" id="menu-investment"><i class="fa-solid fa-seedling"></i> <span>Đầu Tư</span></a>
-                <a href="#" id="menu-financial"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Báo Cáo Tài
-                        Chính</span></a>
+                <a href="#" id="menu-financial"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Báo Cáo Tài Chính</span></a>
+                <a href="#" id="menu-formulas"><i class="fa-solid fa-calculator"></i> <span>Công Thức</span></a>
             </nav>
         </aside>
 
@@ -2331,6 +2331,53 @@
                 </div>
             </div> <!-- End of VIEW-INVESTMENT -->
 
+            <!-- VIEW: FORMULAS & CALCULATORS -->
+            <div id="view-formulas" class="app-view" style="display: none;">
+                <div class="formulas-layout">
+                    <!-- Left Sidebar for formula selection -->
+                    <div class="card glassmorphism formula-sidebar-card">
+                        <div class="formula-sidebar-title">
+                            <i class="fa-solid fa-calculator" style="color: #6366f1;"></i>
+                            <span>Công Cụ Tính Toán</span>
+                        </div>
+                        
+                        <div class="formula-tab-group-title">Định giá cổ phiếu</div>
+                        <button class="formula-tab-btn active" data-formula="pe">
+                            <i class="fa-solid fa-chart-line"></i> Định giá P/E
+                        </button>
+                        <button class="formula-tab-btn" data-formula="dcf">
+                            <i class="fa-solid fa-money-bill-wave"></i> Chiết khấu dòng tiền (DCF)
+                        </button>
+                        <button class="formula-tab-btn" data-formula="graham">
+                            <i class="fa-solid fa-scale-balanced"></i> Graham (Sửa đổi)
+                        </button>
+                        
+                        <div class="formula-tab-group-title">Tính toán tài chính</div>
+                        <button class="formula-tab-btn" data-formula="compound">
+                            <i class="fa-solid fa-arrow-trend-up"></i> Tính Lãi Kép
+                        </button>
+                        <button class="formula-tab-btn" data-formula="pv">
+                            <i class="fa-solid fa-hourglass-half"></i> Giá trị Hiện tại (PV)
+                        </button>
+                        <button class="formula-tab-btn" data-formula="roi">
+                            <i class="fa-solid fa-percent"></i> Tỷ suất đầu tư (ROI)
+                        </button>
+                        <button class="formula-tab-btn" data-formula="roa">
+                            <i class="fa-solid fa-building-columns"></i> Tỷ suất tài sản (ROA)
+                        </button>
+                        <button class="formula-tab-btn" data-formula="dupont">
+                            <i class="fa-solid fa-diagram-project"></i> Mô hình DuPont (3 bước)
+                        </button>
+                    </div>
+
+                    <!-- Right Panel for interactive calculator -->
+                    <div class="card glassmorphism formula-calculator-card" id="formula-calculator-container">
+                        <!-- Content will be rendered dynamically by formulas.js -->
+                    </div>
+                </div>
+            </div> <!-- End of VIEW-FORMULAS -->
+
+
 
         </main>
     </div> <!-- End of app-container -->
@@ -2480,6 +2527,10 @@
             <i class="fa-solid fa-seedling"></i>
             <span>Đầu Tư</span>
         </a>
+        <a href="#" class="mobile-nav-item" data-view="formulas">
+            <i class="fa-solid fa-calculator"></i>
+            <span>Công Thức</span>
+        </a>
     </nav>
     </div>
 
@@ -2517,13 +2568,16 @@
             <div class="chatbot-header">
                 <i class="fa-solid fa-leaf text-primary"></i>
                 <span class="chat-title">Trợ lý Harvest</span>
+                <button id="help-chatbot-btn" class="btn-close-chat" title="Hướng dẫn sử dụng" style="margin-right: 6px;"><i
+                        class="fa-regular fa-circle-question"></i></button>
                 <button id="close-chatbot" class="btn-close-chat" title="Đóng"><i
                         class="fa-solid fa-chevron-down"></i></button>
             </div>
             <div id="chatbot-messages" class="chatbot-messages">
                 <div class="message ai-message">
-                    <p>Xin chào! Tôi là <strong>Trợ lý Harvest</strong>. Hãy gõ nội dung bạn muốn nhập nhé!</p>
+                    <p>Xin chào! Tôi là <strong>Trợ lý Harvest</strong>. Hãy gõ nội dung bạn muốn nhập hoặc hỏi tôi nhé!</p>
                     <div class="chat-suggestions">
+                        <span class="suggestion-tag" style="background:#e0e7ff; border-color:#c7d2fe; color:#4f46e5; font-weight:700;" title="Xem hướng dẫn sử dụng Trợ lý">"Hướng dẫn sử dụng"</span>
                         <span class="suggestion-tag" title="Nhập đơn cho Farm">"Bán 100 cúc Anh Nam 5k"</span>
                         <span class="suggestion-tag" title="Nhập hàng loạt bằng dấu phẩy">"Thơm 200 ecu 5k, 300 pháp
                             4k"</span>
@@ -3120,6 +3174,7 @@
     <script src="todo_v2.js"></script>
     <script src="app.js"></script>
     <script src="investment.js"></script>
+    <script src="formulas.js"></script>
     <script src="chatbot.js"></script>
 </body>
 

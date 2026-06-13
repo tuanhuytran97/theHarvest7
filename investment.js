@@ -8,6 +8,8 @@ let invHistoryData = [];
 let invPortfolioData = [];
 let invEquityChart = null;
 let invRoiChart = null;
+window.getInvHistoryData = () => invHistoryData;
+window.getInvPortfolioData = () => invPortfolioData;
 
 // --- 0. Rendering & Shorthand Logic (Hoisted) ---
 function renderInvestmentPortfolio() {

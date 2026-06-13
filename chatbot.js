@@ -31,6 +31,14 @@ document.addEventListener("DOMContentLoaded", () => {
     chatbotToggle.addEventListener('click', () => toggleChat());
     closeChatbot.addEventListener('click', () => toggleChat(false));
     
+    const helpBtn = document.getElementById('help-chatbot-btn');
+    if (helpBtn) {
+        helpBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showQueryHelp();
+        });
+    }
+    
     // Bot Status Helper
     const setBotBusy = (busy) => {
         isProcessing = busy;
@@ -83,6 +91,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Processing
         setTimeout(() => {
+            if (processQuery(text)) {
+                setBotBusy(false);
+                return;
+            }
             processInput(text);
             // If parsing didn't result in a pending confirmation, release the lock
             if (!pendingData) setBotBusy(false);
@@ -97,6 +109,545 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+
+    // --- QUERY ASSISTANT LOGIC ---
+    function removeVietnameseTones(str) {
+        if (!str) return "";
+        str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g,"a");
+        str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g,"e");
+        str = str.replace(/ì|í|ị|ỉ|ĩ/g,"i");
+        str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g,"o");
+        str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g,"u");
+        str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g,"y");
+        str = str.replace(/đ/g,"d");
+        str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+        str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+        str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+        str = str.replace(/Ò|Ó|Ọ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+        str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+        str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+        str = str.replace(/Đ/g, "D");
+        str = str.replace(/\u0300|\u0301|\u0303|\u0309|\u0323/g, ""); 
+        str = str.replace(/\u02C6|\u0306|\u031B/g, ""); 
+        return str;
+    }
+
+    function filterDataByPeriod(data, period) {
+        const now = new Date();
+        let startOfPeriod, endOfPeriod;
+        
+        if (period === 'today') {
+            startOfPeriod = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            endOfPeriod = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        } else if (period === 'yesterday') {
+            const yesterday = new Date();
+            yesterday.setDate(now.getDate() - 1);
+            startOfPeriod = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+            endOfPeriod = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate(), 23, 59, 59, 999);
+        } else if (period === 'this-week') {
+            const day = now.getDay() || 7; 
+            const diff = now.getDate() - day + 1;
+            startOfPeriod = new Date(now.getFullYear(), now.getMonth(), diff);
+            endOfPeriod = new Date(now.getFullYear(), now.getMonth(), diff + 6, 23, 59, 59, 999);
+        } else if (period === 'this-month') {
+            startOfPeriod = new Date(now.getFullYear(), now.getMonth(), 1);
+            endOfPeriod = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        } else if (period === 'last-month') {
+            startOfPeriod = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            endOfPeriod = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+        } else if (period === 'this-year') {
+            startOfPeriod = new Date(now.getFullYear(), 0, 1);
+            endOfPeriod = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+        } else if (period.startsWith('month-')) {
+            const m = parseInt(period.split('-')[1]);
+            startOfPeriod = new Date(now.getFullYear(), m - 1, 1);
+            endOfPeriod = new Date(now.getFullYear(), m, 0, 23, 59, 59, 999);
+        }
+        
+        return data.filter(row => {
+            const d = row.parsedDate;
+            if (!d || isNaN(d.getTime())) return false;
+            return d >= startOfPeriod && d <= endOfPeriod;
+        });
+    }
+
+    function processQuery(text) {
+        const lower = text.toLowerCase().trim();
+        
+        // 1. HELP query
+        if (["hướng dẫn", "giúp", "help", "cú pháp", "câu lệnh"].includes(lower)) {
+            showQueryHelp();
+            return true;
+        }
+
+        // 2. INVESTMENT query
+        const portfolioKeywords = ["danh mục", "đầu tư", "portfolio", "tài sản", "cổ phiếu", "mã chứng khoán"];
+        if (portfolioKeywords.some(kw => lower === kw || lower === kw + " đầu tư" || lower === "xem " + kw)) {
+            showInvPortfolioQuery();
+            return true;
+        }
+        
+        const stockMatch = lower.match(/^(?:cổ phiếu|mã|xem mã)\s+([a-z0-9]+)$/i) || 
+                           (lower.length <= 4 && /^[a-z]{3,4}$/i.test(lower) && ["fpt", "hpg", "vcb", "vic", "mwg"].includes(lower));
+        if (stockMatch) {
+            const symbol = stockMatch[1] || lower;
+            showSpecificStockQuery(symbol.toUpperCase());
+            return true;
+        }
+
+        // 3. DEBT query
+        const debtKeywords = ["nợ", "công nợ", "nợ nần"];
+        const isDebtQuery = debtKeywords.some(kw => lower.includes(kw));
+        if (isDebtQuery) {
+            const customerMatch = lower.match(/^(?:nợ|công nợ|xem nợ)(?:\s+của)?\s+([a-zà-ỹ\s]+)$/i);
+            const isGeneralList = ["ai nợ", "danh sách nợ", "xem nợ", "nợ nần", "tổng nợ"].includes(lower);
+            
+            if (customerMatch && !isGeneralList) {
+                const customerName = customerMatch[1].trim();
+                showCustomerDebtQuery(customerName);
+                return true;
+            } else if (isGeneralList || lower === "nợ") {
+                showGeneralDebtQuery();
+                return true;
+            }
+        }
+
+        // 4. FINANCIAL STATS query
+        const statsKeywords = ["doanh thu", "thu", "chi phí", "chi", "lợi nhuận", "lời", "lãi"];
+        const timeKeywords = ["hôm nay", "tháng này", "năm nay", "tuần này", "hôm qua", "tháng trước"];
+        
+        const isStatsQuery = statsKeywords.some(kw => lower.includes(kw));
+        const isTimeQuery = timeKeywords.some(kw => lower.includes(kw)) || lower.match(/tháng\s+\d+/);
+        
+        if (isStatsQuery && isTimeQuery) {
+            let period = "this-month";
+            if (lower.includes("hôm nay")) period = "today";
+            else if (lower.includes("hôm qua")) period = "yesterday";
+            else if (lower.includes("tuần này")) period = "this-week";
+            else if (lower.includes("tháng này")) period = "this-month";
+            else if (lower.includes("tháng trước")) period = "last-month";
+            else if (lower.includes("năm nay")) period = "this-year";
+            else {
+                const monthMatch = lower.match(/tháng\s+(\d+)/);
+                if (monthMatch) {
+                    period = `month-${monthMatch[1]}`;
+                }
+            }
+            showFinancialStatsQuery(period);
+            return true;
+        }
+
+        return false;
+    }
+
+    function showQueryHelp() {
+        const helpHtml = `
+            <div style="background: #f8fafc; border-radius: 8px; padding: 10px; border-left: 4px solid #6366f1; line-height: 1.5;">
+                💡 <b>Trợ lý Truy Vấn Dữ Liệu:</b> Bạn có thể hỏi tôi các câu lệnh dưới đây (nhấp vào thẻ để hỏi nhanh):
+                <br><br>
+                <b>💵 Công nợ:</b><br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">nợ</span> (Danh sách nợ chung)<br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">nợ Vy</span> (Chi tiết nợ của Vy)<br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">nợ Thơm</span>
+                <br><br>
+                <b>📊 Thu chi nông trại:</b><br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">doanh thu hôm nay</span><br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">chi phí tháng này</span><br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">lợi nhuận tháng này</span><br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">lợi nhuận hôm nay</span>
+                <br><br>
+                <b>📈 Đầu tư (Warren Buffett):</b><br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">danh mục đầu tư</span> (Xem tổng quan tài sản)<br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">cổ phiếu FPT</span> (Xem chi tiết mã FPT)<br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">cổ phiếu HPG</span>
+            </div>
+        `;
+        addMessage(helpHtml, "ai");
+    }
+
+    function showInvPortfolioQuery() {
+        const getPortfolio = window.getInvPortfolioData;
+        const portfolio = getPortfolio ? getPortfolio() : [];
+        
+        if (!portfolio || portfolio.length === 0) {
+            addMessage("Không có dữ liệu danh mục đầu tư chứng khoán. Hãy truy cập tab Đầu tư hoặc tải dữ liệu.", "ai");
+            return;
+        }
+        
+        let totalCapital = 0;
+        let totalCurrent = 0;
+        let totalDivs = 0;
+        
+        let rowsHtml = "";
+        portfolio.forEach(item => {
+            const rawPrice = item["Giá Hiện Tại"];
+            const unitPrice = typeof rawPrice === 'number' ? rawPrice :
+                parseFloat(String(rawPrice || 0).replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1')) || 0;
+            const totalQty = item.totalQty || 0;
+            const currentVal = unitPrice * totalQty;
+            const capital = item.capital || 0;
+            const divs = parseFloat(item["Dòng Tiền Đã Nhận"]) || item.divs || 0;
+            
+            totalCapital += capital;
+            totalCurrent += currentVal;
+            totalDivs += divs;
+            
+            const profit = (currentVal + divs) - capital;
+            const roi = capital > 0 ? (profit / capital) * 100 : 0;
+            const roiColor = profit >= 0 ? '#10b981' : '#ef4444';
+            const roiSign = profit >= 0 ? '+' : '';
+            
+            rowsHtml += `
+                <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #e2e8f0; font-size: 0.88em;">
+                    <div><b>${item["Mã/Tên"]}</b> <span style="font-size: 0.8em; color: #64748b;">(${item["Phân Loại"]})</span></div>
+                    <div style="font-weight: 700; color: ${roiColor};">${roiSign}${roi.toFixed(1)}%</div>
+                </div>
+            `;
+        });
+        
+        const totalProfit = totalCurrent + totalDivs - totalCapital;
+        const totalRoi = totalCapital > 0 ? (totalProfit / totalCapital) * 100 : 0;
+        const totalRoiColor = totalProfit >= 0 ? '#10b981' : '#ef4444';
+        const totalRoiSign = totalProfit >= 0 ? '+' : '';
+        
+        const summaryHtml = `
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border-left: 4px solid #6366f1; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="font-weight: 700; color: #1e293b; margin-bottom: 8px; font-size: 1.05em; display:flex; align-items:center; gap:6px;">📈 DANH MỤC ĐẦU TƯ</div>
+                <div style="font-size: 0.9em; margin-bottom: 4px; display:flex; justify-content:space-between;"><span>Vốn đầu tư:</span> <b>${window.utils.formatCurrency(totalCapital)}</b></div>
+                <div style="font-size: 0.9em; margin-bottom: 4px; display:flex; justify-content:space-between;"><span>Giá trị hiện tại:</span> <b>${window.utils.formatCurrency(totalCurrent)}</b></div>
+                <div style="font-size: 0.9em; margin-bottom: 8px; display:flex; justify-content:space-between;"><span>Cổ tức đã nhận:</span> <b style="color:#10b981;">${window.utils.formatCurrency(totalDivs)}</b></div>
+                <div style="font-size: 0.98em; font-weight: 700; border-top: 1px solid #e2e8f0; padding-top: 6px; display:flex; justify-content:space-between; color: ${totalRoiColor};">
+                    <span>Lãi/Lỗ tổng:</span> <span>${totalRoiSign}${window.utils.formatCurrency(totalProfit)} (${totalRoiSign}${totalRoi.toFixed(2)}%)</span>
+                </div>
+                <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 6px; max-height: 120px; overflow-y: auto;">
+                    ${rowsHtml}
+                </div>
+                <button class="btn-confirm-yes" style="width: 100%; border: none; padding: 6px; margin-top: 10px; background: #6366f1;" onclick="if(window.switchView) window.switchView('investment');">Mở trang Đầu Tư 📈</button>
+            </div>
+        `;
+        addMessage(summaryHtml, "ai");
+    }
+
+    function showSpecificStockQuery(symbol) {
+        const getPortfolio = window.getInvPortfolioData;
+        const portfolio = getPortfolio ? getPortfolio() : [];
+        const item = portfolio.find(p => p["Mã/Tên"] === symbol);
+        
+        if (!item) {
+            addMessage(`Không tìm thấy cổ phiếu <b>${symbol}</b> trong danh mục hiện tại.`, "ai");
+            return;
+        }
+        
+        const rawPrice = item["Giá Hiện Tại"];
+        const unitPrice = typeof rawPrice === 'number' ? rawPrice :
+            parseFloat(String(rawPrice || 0).replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1')) || 0;
+        const totalQty = item.totalQty || 0;
+        const currentVal = unitPrice * totalQty;
+        const capital = item.capital || 0;
+        const divs = parseFloat(item["Dòng Tiền Đã Nhận"]) || item.divs || 0;
+        
+        const profit = (currentVal + divs) - capital;
+        const roi = capital > 0 ? (profit / capital) * 100 : 0;
+        const roiColor = profit >= 0 ? '#10b981' : '#ef4444';
+        const roiSign = profit >= 0 ? '+' : '';
+        
+        const rawIntrinsic = item["Định Giá Lý Thuyết"];
+        const unitIntrinsic = typeof rawIntrinsic === 'number' ? rawIntrinsic :
+            parseFloat(String(rawIntrinsic || 0).replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1')) || 0;
+        const mos = unitIntrinsic > 0 ? ((unitIntrinsic - unitPrice) / unitIntrinsic) * 100 : 0;
+        
+        const detailsHtml = `
+            <div style="background: #f8fafc; border-radius: 8px; padding: 12px; border-left: 4px solid #3b82f6; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="font-weight: 700; color: #1e293b; margin-bottom: 8px; font-size: 1.05em; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">🔍 CHI TIẾT MÃ: ${symbol}</div>
+                <div style="font-size: 0.88em; margin-bottom: 4px; display:flex; justify-content:space-between;"><span>Phân loại:</span> <b>${item["Phân Loại"] || "Cổ phiếu"}</b></div>
+                <div style="font-size: 0.88em; margin-bottom: 4px; display:flex; justify-content:space-between;"><span>Số lượng:</span> <b>${new Intl.NumberFormat('vi-VN').format(totalQty)} CP</b></div>
+                <div style="font-size: 0.88em; margin-bottom: 4px; display:flex; justify-content:space-between;"><span>Giá mua trung bình:</span> <b>${window.utils.formatCurrency(totalQty > 0 ? capital / totalQty : 0)}</b></div>
+                <div style="font-size: 0.88em; margin-bottom: 4px; display:flex; justify-content:space-between;"><span>Giá hiện tại:</span> <b>${window.utils.formatCurrency(unitPrice)}</b></div>
+                <div style="font-size: 0.88em; margin-bottom: 4px; display:flex; justify-content:space-between;"><span>Giá trị nội tại:</span> <b>${window.utils.formatCurrency(unitIntrinsic)}</b></div>
+                <div style="font-size: 0.88em; margin-bottom: 6px; display:flex; justify-content:space-between;"><span>Biên an toàn (MoS):</span> <b style="color: ${mos >= 0 ? '#10b981' : '#ef4444'};">${mos.toFixed(1)}%</b></div>
+                <div style="font-size: 0.88em; margin-bottom: 6px; display:flex; justify-content:space-between;"><span>Tổng vốn giải ngân:</span> <b>${window.utils.formatCurrency(capital)}</b></div>
+                <div style="font-size: 0.98em; font-weight: 700; border-top: 1px solid #cbd5e1; padding-top: 6px; display:flex; justify-content:space-between; color: ${roiColor};">
+                    <span>Lãi/Lỗ (ROI):</span> <span>${roiSign}${window.utils.formatCurrency(profit)} (${roiSign}${roi.toFixed(2)}%)</span>
+                </div>
+                ${item["Luận Điểm Đầu Tư"] ? `<div style="margin-top: 8px; font-size: 0.82em; color: #475569; background: #f1f5f9; padding: 8px; border-radius: 4px; border-left: 2px solid #cbd5e1;">💡 <b>Luận điểm:</b> ${item["Luận Điểm Đầu Tư"]}</div>` : ''}
+            </div>
+        `;
+        addMessage(detailsHtml, "ai");
+    }
+
+    function showCustomerDebtQuery(customerName) {
+        const getFarmData = window.getFarmData;
+        const data = getFarmData ? getFarmData() : [];
+        if (!data || data.length === 0) {
+            addMessage("Không có dữ liệu bán hàng. Hãy đồng bộ dữ liệu trước.", "ai");
+            return;
+        }
+        
+        const cleanQuery = removeVietnameseTones(customerName).toLowerCase().trim();
+        if (!cleanQuery) return;
+        
+        const buyersMap = {};
+        data.forEach(row => {
+            const buyer = (row["Người Mua"] || "").trim();
+            if (!buyer || buyer.toLowerCase() === "null") return;
+            
+            const cleanBuyer = removeVietnameseTones(buyer).toLowerCase();
+            if (cleanBuyer.includes(cleanQuery)) {
+                buyersMap[buyer] = true;
+            }
+        });
+        
+        const matchedBuyers = Object.keys(buyersMap);
+        
+        if (matchedBuyers.length === 0) {
+            addMessage(`Không tìm thấy khách hàng nào khớp với tên <b>"${customerName}"</b>.`, "ai");
+            return;
+        }
+        
+        if (matchedBuyers.length > 1) {
+            let suggestions = matchedBuyers.map(b => `<span class="suggestion-tag" style="cursor:pointer; margin:2px; display:inline-block;">nợ ${b}</span>`).join(" ");
+            addMessage(`Tìm thấy nhiều khách hàng khớp. Vui lòng chọn cụ thể:<br>${suggestions}`, "ai");
+            return;
+        }
+        
+        const targetBuyer = matchedBuyers[0];
+        let totalDebt = 0;
+        let orderLines = [];
+        
+        data.forEach(row => {
+            const buyer = (row["Người Mua"] || "").trim();
+            if (buyer.toLowerCase() !== targetBuyer.toLowerCase()) return;
+            
+            const status = (row["Status"] || "").trim().toLowerCase();
+            if (status === "xong") return; 
+            
+            const isVua = (row["Loại DT"] || "") === "Vựa";
+            const expected = isVua ? (row["Tiền Phải Thu"] || 0) : (row["Doanh Thu Bông"] || 0);
+            const paid = row["Đã Thu"] || 0;
+            const remaining = expected - paid;
+            
+            if (remaining > 0) {
+                totalDebt += remaining;
+                orderLines.push({
+                    date: row["Ngày"] || "N/A",
+                    qty: row["Số lượng"] || 0,
+                    flower: row["Phân Loại Bông"] || "Bông",
+                    expected: expected,
+                    paid: paid,
+                    remaining: remaining
+                });
+            }
+        });
+        
+        if (totalDebt === 0) {
+            addMessage(`🎉 Tuyệt vời! Khách hàng <b>${targetBuyer.toUpperCase()}</b> hiện tại <b>không có nợ</b> (hoặc đã hoàn thành tất cả hóa đơn).`, "ai");
+            return;
+        }
+        
+        let linesHtml = "";
+        orderLines.forEach(line => {
+            const formattedDate = typeof line.date === 'string' ? line.date : 
+                (line.date instanceof Date ? window.utils.formatDateVietnamese(line.date) : line.date);
+            linesHtml += `
+                <div style="font-size: 0.85em; padding: 6px 0; border-bottom: 1px dashed #fee2e2;">
+                    📅 <b>${formattedDate}</b>: ${line.qty} ${line.flower}<br>
+                    Cần thu: <b>${window.utils.formatCurrency(line.expected)}</b> | Đã thu: <b>${window.utils.formatCurrency(line.paid)}</b><br>
+                    Nợ: <span style="color:#ef4444; font-weight:700;">${window.utils.formatCurrency(line.remaining)}</span>
+                </div>
+            `;
+        });
+        
+        const cardHtml = `
+            <div style="background: #fff5f5; border-radius: 8px; padding: 12px; border-left: 4px solid #ef4444; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="font-weight: 700; color: #991b1b; margin-bottom: 6px; font-size: 1.05em; border-bottom: 1px solid #fee2e2; padding-bottom: 6px;">👤 CHI TIẾT NỢ: ${targetBuyer.toUpperCase()}</div>
+                <div style="font-size: 1.05em; font-weight: 800; color: #ef4444; margin-bottom: 8px;">
+                    Tổng dư nợ: ${window.utils.formatCurrency(totalDebt)}
+                </div>
+                <div style="max-height: 150px; overflow-y: auto; margin-bottom: 8px; padding-right: 4px;">
+                    ${linesHtml}
+                </div>
+                <button class="btn-confirm-yes" style="width: 100%; border: none; padding: 6px; background: #ef4444;" onclick="if(window.switchView) window.switchView('debt');">Mở trang Chi Tiết Nợ 💳</button>
+            </div>
+        `;
+        addMessage(cardHtml, "ai");
+    }
+
+    function showGeneralDebtQuery() {
+        const getFarmData = window.getFarmData;
+        const data = getFarmData ? getFarmData() : [];
+        if (!data || data.length === 0) {
+            addMessage("Không có dữ liệu bán hàng. Hãy đồng bộ dữ liệu trước.", "ai");
+            return;
+        }
+        
+        const debts = {}; 
+        data.forEach(row => {
+            const buyer = (row["Người Mua"] || "").trim();
+            if (!buyer || buyer.toLowerCase() === "null") return;
+            
+            const status = (row["Status"] || "").trim().toLowerCase();
+            if (status === "xong") return;
+            
+            const isVua = (row["Loại DT"] || "") === "Vựa";
+            const expected = isVua ? (row["Tiền Phải Thu"] || 0) : (row["Doanh Thu Bông"] || 0);
+            const paid = row["Đã Thu"] || 0;
+            const remaining = expected - paid;
+            
+            if (remaining > 0) {
+                debts[buyer] = (debts[buyer] || 0) + remaining;
+            }
+        });
+        
+        const sortedDebts = Object.entries(debts)
+            .filter(([_, amt]) => amt > 100)
+            .sort((a, b) => b[1] - a[1]);
+            
+        if (sortedDebts.length === 0) {
+            addMessage("🎉 Tuyệt vời! Hiện không có khách hàng nào nợ.", "ai");
+            return;
+        }
+        
+        let listHtml = "";
+        let grandTotal = 0;
+        sortedDebts.forEach(([buyer, amt], idx) => {
+            grandTotal += amt;
+            listHtml += `
+                <div style="display:flex; justify-content:space-between; padding: 6px 0; border-bottom: 1px dashed #fee2e2; font-size: 0.88em; align-items:center;">
+                    <div><b>${idx + 1}. ${buyer}</b></div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-weight:700; color:#ef4444;">${window.utils.formatCurrency(amt)}</span>
+                        <span class="suggestion-tag" style="font-size: 0.75em; padding: 2px 6px; cursor:pointer; margin:0;" onclick="document.getElementById('chatbot-input').value='nợ ${buyer}'; document.getElementById('send-chatbot-btn').click();">Chi tiết</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        const cardHtml = `
+            <div style="background: #fff5f5; border-radius: 8px; padding: 12px; border-left: 4px solid #ef4444; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="font-weight: 700; color: #991b1b; margin-bottom: 6px; font-size: 1.05em; border-bottom: 1px solid #fee2e2; padding-bottom: 6px;">💳 DANH SÁCH KHÁCH NỢ</div>
+                <div style="font-size: 1.05em; font-weight: 800; color: #ef4444; margin-bottom: 10px;">
+                    Tổng nợ vựa + farm: ${window.utils.formatCurrency(grandTotal)}
+                </div>
+                <div style="max-height: 180px; overflow-y: auto; margin-bottom: 8px; padding-right: 4px;">
+                    ${listHtml}
+                </div>
+                <button class="btn-confirm-yes" style="width: 100%; border: none; padding: 6px; background: #ef4444;" onclick="if(window.switchView) window.switchView('debt');">Mở trang Chi Tiết Nợ 💳</button>
+            </div>
+        `;
+        addMessage(cardHtml, "ai");
+    }
+
+    function showFinancialStatsQuery(period) {
+        const getFarmData = window.getFarmData;
+        const data = getFarmData ? getFarmData() : [];
+        if (!data || data.length === 0) {
+            addMessage("Không có dữ liệu bán hàng. Hãy đồng bộ dữ liệu trước.", "ai");
+            return;
+        }
+        
+        const filteredData = filterDataByPeriod(data, period);
+        
+        let revFarm = 0;
+        let revCompany = 0;
+        let revVua = 0;
+        let totalRev = 0;
+        
+        let expensed = 0;
+        let phanBon = 0;
+        let thuoc = 0;
+        let luong = 0;
+        let lai = 0;
+        let vatTu = 0;
+        let muaBong = 0;
+        let vanChuyen = 0;
+        let vanHanh = 0;
+        let totalExp = 0;
+        
+        filteredData.forEach(row => {
+            const typeDT = (row["Loại DT"] || "").trim();
+            const isCompany = typeDT === "Company";
+            const isVua = typeDT.toLowerCase().includes("vựa") || typeDT.toLowerCase().includes("vua");
+            const isFarm = typeDT === "Farm" || typeDT === "";
+            
+            const loaiCP = (row["Loại CP"] || "").trim().toLowerCase();
+            
+            const dtBong = row["Doanh Thu Bông"] || 0;
+            const dtKhac = row["Doanh Thu Khác"] || 0;
+            const chiPhi = row["Chi Phí"] || 0;
+            
+            const rowRevenue = (chiPhi > 0 && dtKhac === chiPhi) ? 0 : dtKhac;
+            
+            revFarm += dtBong;
+            if (isCompany) revCompany += rowRevenue;
+            else if (isVua) revVua += rowRevenue;
+            else if (isFarm && rowRevenue > 0) revCompany += rowRevenue;
+            
+            totalRev += (dtBong + rowRevenue);
+            totalExp += chiPhi;
+            
+            if (loaiCP === "expensed") expensed += chiPhi;
+            else if (loaiCP === "phân" || loaiCP === "phan") phanBon += chiPhi;
+            else if (loaiCP === "thuốc" || loaiCP === "thuoc") thuoc += chiPhi;
+            else if (loaiCP === "công" || loaiCP === "cong") luong += chiPhi;
+            else if (loaiCP === "lãi" || loaiCP === "lai") lai += chiPhi;
+            else if (loaiCP === "vật tư" || loaiCP === "vat tu" || loaiCP === "vật tư kd") vatTu += chiPhi;
+            else if (loaiCP === "mua bông") muaBong += chiPhi;
+            else if (loaiCP === "vận chuyển" || loaiCP === "van chuyen") vanChuyen += chiPhi;
+            else if (loaiCP === "chi phí khác" || loaiCP === "chi phi khac") vanHanh += chiPhi;
+            else if (chiPhi > 0) vanHanh += chiPhi;
+        });
+        
+        const netProfit = totalRev - totalExp;
+        
+        const periodNames = {
+            'today': 'HÔM NAY',
+            'yesterday': 'HÔM QUA',
+            'this-week': 'TUẦN NÀY',
+            'this-month': 'THÁNG NÀY',
+            'last-month': 'THÁNG TRƯỚC',
+            'this-year': 'NĂM NAY'
+        };
+        const periodTitle = periodNames[period] || `THÁNG ${period.replace('month-', '')}`;
+        
+        const cardHtml = `
+            <div style="background: #f0fdf4; border-radius: 8px; padding: 12px; border-left: 4px solid #10b981; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="font-weight: 700; color: #166534; margin-bottom: 8px; font-size: 1.05em; border-bottom: 1px solid #dcfce7; padding-bottom: 6px;">📊 BÁO CÁO: ${periodTitle}</div>
+                
+                <div style="font-size: 0.9em; margin-bottom: 4px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>🟢 Doanh thu:</span> 
+                    <b style="color:#10b981;">+${window.utils.formatCurrency(totalRev)}</b>
+                </div>
+                <div style="font-size:0.8em; color: #475569; padding-left: 10px; margin-bottom: 6px; border-left: 1px solid #dcfce7;">
+                    • Farm (Hoa): ${window.utils.formatCurrency(revFarm)}<br>
+                    • Vựa: ${window.utils.formatCurrency(revVua)}<br>
+                    • Khác (Company): ${window.utils.formatCurrency(revCompany)}
+                </div>
+                
+                <div style="font-size: 0.9em; margin-bottom: 4px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>🔴 Chi phí:</span> 
+                    <b style="color:#ef4444;">-${window.utils.formatCurrency(totalExp)}</b>
+                </div>
+                <div style="font-size:0.8em; color: #475569; padding-left: 10px; margin-bottom: 8px; border-left: 1px solid #fee2e2; max-height: 80px; overflow-y: auto;">
+                    ${phanBon > 0 ? `• Phân bón: ${window.utils.formatCurrency(phanBon)}<br>` : ''}
+                    ${thuoc > 0 ? `• Thuốc: ${window.utils.formatCurrency(thuoc)}<br>` : ''}
+                    ${luong > 0 ? `• Nhân công: ${window.utils.formatCurrency(luong)}<br>` : ''}
+                    ${vanChuyen > 0 ? `• Vận chuyển: ${window.utils.formatCurrency(vanChuyen)}<br>` : ''}
+                    ${muaBong > 0 ? `• Mua bông: ${window.utils.formatCurrency(muaBong)}<br>` : ''}
+                    ${lai > 0 ? `• Lãi vay: ${window.utils.formatCurrency(lai)}<br>` : ''}
+                    ${vatTu > 0 ? `• Vật tư KD: ${window.utils.formatCurrency(vatTu)}<br>` : ''}
+                    ${expensed > 0 ? `• Chi tiêu tiêu dùng (Exp): ${window.utils.formatCurrency(expensed)}<br>` : ''}
+                    ${vanHanh > 0 ? `• Khác/Vận hành: ${window.utils.formatCurrency(vanHanh)}<br>` : ''}
+                </div>
+                
+                <div style="font-size: 0.98em; font-weight: 800; border-top: 1px solid #bbf7d0; padding-top: 6px; display:flex; justify-content:space-between; color: ${netProfit >= 0 ? '#10b981' : '#ef4444'};">
+                    <span>Lợi nhuận ròng:</span> 
+                    <span>${netProfit >= 0 ? '+' : ''}${window.utils.formatCurrency(netProfit)}</span>
+                </div>
+                <button class="btn-confirm-yes" style="width: 100%; border: none; padding: 6px; margin-top: 10px; background: #10b981;" onclick="if(window.switchView) window.switchView('cashflow');">Mở Báo Cáo Dòng Tiền 📈</button>
+            </div>
+        `;
+        addMessage(cardHtml, "ai");
+    }
 
     // Handle Suggestions
     document.addEventListener('click', (e) => {

@@ -392,6 +392,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 1. Data Initialization & Utility Functions
     let farmData = window.farmData || [];
+    window.getFarmData = () => farmData;
     let sortState = { column: 'Ngày', direction: 'desc' };
     let currentTableTab = 'today';
     let currentLimit = 20;
@@ -1809,6 +1810,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const menuCashFlow = document.getElementById('menu-cashflow'); // NEW
     const menuFinancial = document.getElementById('menu-financial');
     const menuInvestment = document.getElementById('menu-investment');
+    const menuFormulas = document.getElementById('menu-formulas'); // NEW
     const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
 
     const viewTodo = document.getElementById('view-todo'); // NEW
@@ -1818,6 +1820,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const viewCashFlow = document.getElementById('view-cashflow'); // NEW
     const viewFinancial = document.getElementById('view-financial');
     const viewInvestment = document.getElementById('view-investment');
+    const viewFormulas = document.getElementById('view-formulas'); // NEW
 
     function hideAllViews() {
         if (menuTodo) menuTodo.classList.remove('active');
@@ -1827,6 +1830,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (menuCashFlow) menuCashFlow.classList.remove('active');
         if (menuFinancial) menuFinancial.classList.remove('active');
         if (menuInvestment) menuInvestment.classList.remove('active');
+        if (menuFormulas) menuFormulas.classList.remove('active');
 
         mobileNavItems.forEach(i => i.classList.remove('active'));
 
@@ -1837,6 +1841,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (viewCashFlow) viewCashFlow.style.display = 'none';
         if (viewFinancial) viewFinancial.style.display = 'none';
         if (viewInvestment) viewInvestment.style.display = 'none';
+        if (viewFormulas) viewFormulas.style.display = 'none';
     }
 
     function syncMobileNav(viewId) {
@@ -1894,8 +1899,14 @@ document.addEventListener("DOMContentLoaded", () => {
             syncMobileNav('investment');
             if (viewInvestment) viewInvestment.style.display = 'block';
             if (typeof fetchInvestmentData === 'function') fetchInvestmentData();
+        } else if (viewId === 'formulas') {
+            if (menuFormulas) menuFormulas.classList.add('active');
+            syncMobileNav('formulas');
+            if (viewFormulas) viewFormulas.style.display = 'block';
+            if (typeof initFormulasTab === 'function') initFormulasTab();
         }
     }
+    window.switchView = switchView;
 
     if (menuTodo) {
         menuTodo.addEventListener('click', (e) => {
@@ -1943,6 +1954,13 @@ document.addEventListener("DOMContentLoaded", () => {
         menuFinancial.addEventListener('click', (e) => {
             e.preventDefault();
             switchView('financial');
+        });
+    }
+
+    if (menuFormulas) {
+        menuFormulas.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchView('formulas');
         });
     }
 
