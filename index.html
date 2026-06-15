@@ -660,12 +660,32 @@
                                 style="width: 100%; background: transparent; border: none; padding: 10px 14px; text-align: left; font-size: 0.85rem; font-weight: 700; color: #334155; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;">
                                 <i class="fa-solid fa-user-gear" style="color: #6366f1;"></i> Thay đổi thông tin
                             </button>
+                            <!-- Logout Button inside Dropdown -->
+                            <button id="logout-btn" class="dropdown-item"
+                                style="width: 100%; background: transparent; border: none; padding: 10px 14px; text-align: left; font-size: 0.85rem; font-weight: 700; color: #ef4444; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s; margin-top: 4px; border-top: 1px solid #f1f5f9;">
+                                <i class="fa-solid fa-right-from-bracket" style="color: #ef4444;"></i> Thoát
+                            </button>
                         </div>
                     </div>
  
-                    <!-- Notification Badge for Account Requests (Admin Only) -->
+                    <!-- Connection Status Indicator -->
+                    <div id="conn-status-indicator" class="conn-status-badge status-online"
+                        style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.85rem; padding: 6px 12px; border-radius: 30px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
+                        <span class="status-dot"
+                            style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span>
+                        <i class="fa-solid fa-spinner fa-spin status-loader" style="display: none; font-size: 0.85rem; color: #f59e0b;"></i>
+                        <span class="status-text">Trực tuyến</span>
+                    </div>
+
+                    <!-- Sync Button -->
+                    <button id="sync-gsheet-btn" class="btn-primary"
+                        style="padding: 10px 20px; border-radius: 12px; font-weight: 700; background: #6366f1; border: none; color: white; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-cloud-arrow-down"></i> <span>Đồng bộ</span>
+                    </button>
+
+                    <!-- Notification Badge for Account Requests (Admin Only) - Moved to far right corner -->
                     <div id="admin-notifications-wrapper" style="position: relative; display: none; align-items: center;">
-                        <button id="admin-notifications-btn"
+                        <button id="admin-notifications-btn" title="Yêu cầu phê duyệt tài khoản"
                             style="padding: 10px 14px; border-radius: 12px; font-weight: 700; background: #fffbeb; border: 1.5px solid #fef3c7; color: #d97706; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; font-size: 1rem; width: 42px; height: 42px; box-sizing: border-box; box-shadow: 0 4px 10px rgba(217, 119, 6, 0.08);">
                             <i class="fa-solid fa-bell"></i>
                             <span id="admin-notifications-count" style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; display: none; align-items: center; justify-content: center; font-weight: 800;">0</span>
@@ -682,27 +702,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Connection Status Indicator -->
-                    <div id="conn-status-indicator" class="conn-status-badge status-online"
-                        style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.85rem; padding: 6px 12px; border-radius: 30px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
-                        <span class="status-dot"
-                            style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span>
-                        <i class="fa-solid fa-spinner fa-spin status-loader" style="display: none; font-size: 0.85rem; color: #f59e0b;"></i>
-                        <span class="status-text">Trực tuyến</span>
-                    </div>
-
-                    <!-- Sync Button -->
-                    <button id="sync-gsheet-btn" class="btn-primary"
-                        style="padding: 10px 20px; border-radius: 12px; font-weight: 700; background: #6366f1; border: none; color: white; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-cloud-arrow-down"></i> <span>Đồng bộ</span>
-                    </button>
-
-                    <!-- Logout Button -->
-                    <button id="logout-btn"
-                        style="background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; padding: 10px 18px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-right-from-bracket"></i> <span>Thoát</span>
-                    </button>
                 </div>
             </header>
 
