@@ -88,6 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginOverlay = document.getElementById("login-overlay");
     const loginForm = document.getElementById("login-form");
     const appContainer = document.querySelector(".app-container");
+    const usernameInput = document.getElementById("admin-username");
     const passwordInput = document.getElementById("admin-password");
     const loginError = document.getElementById("login-error");
     const togglePasswordBtn = document.getElementById("toggle-password-btn");
@@ -177,21 +178,82 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    async function fetchSystemConfig() {
+        if (!isConfigured()) return;
+        try {
+            const response = await fetch(CONFIG.WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "get_config", token: getToken() }),
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
+            });
+            const result = await response.json();
+            if (result.status === "success" && result.config) {
+                sessionStorage.setItem("system-config", JSON.stringify(result.config));
+                Object.assign(CONFIG, result.config);
+                const role = getRole();
+                if (role) applyRolePermissions(role);
+            }
+        } catch (e) {
+            console.warn("Failed to fetch dynamic configuration:", e);
+        }
+    }
+
+    function hasPermission(permissionName) {
+        const role = getRole();
+        if (!role) return false;
+        if (role === 'ADMIN') return true;
+        
+        if (CONFIG.role_permissions) {
+            try {
+                const perms = typeof CONFIG.role_permissions === 'string' 
+                    ? JSON.parse(CONFIG.role_permissions) 
+                    : CONFIG.role_permissions;
+                    
+                if (perms[role]) {
+                    if (perms[role] === '*') return true;
+                    if (Array.isArray(perms[role])) {
+                        return perms[role].includes(permissionName);
+                    }
+                }
+            } catch (e) {
+                console.error("Error parsing role_permissions config:", e);
+            }
+        }
+        
+        // Fallback default permissions
+        if (role === 'EMP_LV1') {
+            return ['sync', 'entry', 'delete', 'debt', 'chatbot', 'formulas'].includes(permissionName);
+        }
+        if (role === 'EMP_LV2') {
+            return ['sync', 'chatbot', 'formulas'].includes(permissionName);
+        }
+        return false;
+    }
+    window.hasPermission = hasPermission;
+
     const checkAuth = () => {
         const role = getRole();
         if (role) {
             loginOverlay.style.display = "none";
             appContainer.style.display = "flex";
             if (chatbotContainer) chatbotContainer.style.display = "flex";
+            
+            try {
+                const cachedConfig = sessionStorage.getItem("system-config");
+                if (cachedConfig) {
+                    Object.assign(CONFIG, JSON.parse(cachedConfig));
+                }
+            } catch (e) {}
+            
             applyRolePermissions(role);
             updateUserProfile();
+            fetchSystemConfig();
             return true;
         }
         return false;
     };
 
     function applyRolePermissions(role) {
-        // Elements to hide for specific roles
         const syncBtn = document.getElementById('sync-gsheet-btn');
         const entryCard = document.querySelector('.card:has(#dataEntryForm)');
         const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
@@ -200,27 +262,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const menuInvestment = document.getElementById('menu-investment');
         const mobileInvestment = document.querySelector('.mobile-nav-item[data-view="investment"]');
 
-        // EMP_LV2: Readonly, hide sensitive/entry tools
-        if (role === 'EMP_LV2') {
-            if (syncBtn) syncBtn.style.display = 'none';
-            if (entryCard) entryCard.style.display = 'none';
-            if (bulkDeleteBtn) bulkDeleteBtn.style.display = 'none';
-            if (debtActionBox) debtActionBox.style.display = 'none';
-            if (menuInvestment) menuInvestment.style.display = 'none';
-            if (mobileInvestment) mobileInvestment.style.display = 'none';
-            // chatbotContainer is now allowed to be displayed
-        }
+        if (syncBtn) syncBtn.style.display = hasPermission('sync') ? '' : 'none';
+        if (entryCard) entryCard.style.display = hasPermission('entry') ? '' : 'none';
+        if (bulkDeleteBtn) bulkDeleteBtn.style.display = hasPermission('delete') ? '' : 'none';
+        if (debtActionBox) debtActionBox.style.display = hasPermission('debt') ? '' : 'none';
+        if (menuInvestment) menuInvestment.style.display = hasPermission('investment') ? '' : 'none';
+        if (mobileInvestment) mobileInvestment.style.display = hasPermission('investment') ? '' : 'none';
     }
 
-    // Protection Guards for Mutating Functions
     const canMutate = () => {
-        const r = getRole();
-        return r === 'ADMIN' || r === 'EMP_LV1';
+        return hasPermission('entry');
     };
 
-    const isAuthorizedForSync = () => !!getRole(); // Mọi user đăng nhập đều được sync (đọc) dữ liệu 
-    const isAuthorizedForEntry = () => canMutate();
-    const isAuthorizedForDebt = () => canMutate();
+    const isAuthorizedForSync = () => hasPermission('sync');
+    const isAuthorizedForEntry = () => hasPermission('entry');
+    const isAuthorizedForDebt = () => hasPermission('debt');
 
     // AUTO-SYNC DATA ON STARTUP
     if (checkAuth()) {
@@ -243,6 +299,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (remaining > 0) {
                 const submitBtn = loginForm.querySelector('button[type="submit"]');
                 if (submitBtn) submitBtn.disabled = true;
+                if (usernameInput) usernameInput.disabled = true;
                 if (passwordInput) passwordInput.disabled = true;
                 if (loginError) {
                     loginError.style.display = "block";
@@ -255,6 +312,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 localStorage.removeItem("login-block-until");
                 localStorage.setItem("failed-login-attempts", "0");
+                if (usernameInput) usernameInput.disabled = false;
                 if (passwordInput) passwordInput.disabled = false;
                 const submitBtn = loginForm.querySelector('button[type="submit"]');
                 if (submitBtn) submitBtn.disabled = false;
@@ -274,8 +332,9 @@ document.addEventListener("DOMContentLoaded", () => {
             e.preventDefault();
             if (checkLoginBlock()) return;
 
+            const user = usernameInput ? usernameInput.value.trim() : "";
             const pw = passwordInput.value;
-            if (!pw) return;
+            if (!user || !pw) return;
 
             const submitBtn = loginForm.querySelector('button[type="submit"]');
             if (!submitBtn) return;
@@ -287,25 +346,39 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!isConfigured()) {
                 const customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
                 const defaultUsers = (typeof CONFIG !== 'undefined' && CONFIG.USERS && Object.keys(CONFIG.USERS).length > 0) ? CONFIG.USERS : {
-                    "huytran97": { name: "Huy Trần", role: "ADMIN" },
-                    "nth66": { name: "Nhân viên 1", role: "EMP_LV1" },
-                    "haitran63": { name: "Nhân viên 2", role: "EMP_LV2" }
+                    "admin": { name: "Huy Trần", role: "ADMIN", password: "huytran97" },
+                    "emp1": { name: "Nhân viên 1", role: "EMP_LV1", password: "nth66" },
+                    "emp2": { name: "Nhân viên 2", role: "EMP_LV2", password: "haitran63" }
                 };
                 
                 let userConfig = null;
-                for (const defaultPw in defaultUsers) {
-                    const defaultUser = defaultUsers[defaultPw];
-                    const role = defaultUser.role;
-                    const customUser = customUsers[role];
-                    const activePassword = customUser ? customUser.password : defaultPw;
-                    
-                    if (pw === activePassword) {
+                
+                // 1. Check in customUsers by username (dynamic offline users)
+                if (customUsers[user] && customUsers[user].password === pw) {
+                    userConfig = customUsers[user];
+                }
+                
+                // 2. Check in defaultUsers (config.js users)
+                if (!userConfig) {
+                    const defaultUser = defaultUsers[user];
+                    if (defaultUser && defaultUser.password === pw) {
                         userConfig = {
-                            role: role,
-                            name: customUser ? customUser.name : defaultUser.name,
-                            password: activePassword
+                            role: defaultUser.role,
+                            name: defaultUser.name,
+                            username: user,
+                            password: pw
                         };
-                        break;
+                    }
+                }
+                
+                // 3. Fallback check by matching username within customUsers (legacy compatibility)
+                if (!userConfig) {
+                    for (const key in customUsers) {
+                        const uObj = customUsers[key];
+                        if (uObj && uObj.username === user && uObj.password === pw) {
+                            userConfig = uObj;
+                            break;
+                        }
                     }
                 }
                 
@@ -314,7 +387,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     localStorage.removeItem("login-block-until");
                     sessionStorage.setItem("user-role", userConfig.role);
                     sessionStorage.setItem("user-name", userConfig.name);
-                    sessionStorage.setItem("user-token", pw); // Use password as auth token
+                    sessionStorage.setItem("user-token", userConfig.username + ":" + userConfig.password); // Use username:password as token
  
                     loginOverlay.style.display = "none";
                     appContainer.style.display = "flex";
@@ -335,7 +408,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         checkLoginBlock();
                     } else {
                         loginError.style.display = "block";
-                        loginError.innerText = `Mật khẩu không đúng! (Còn ${5 - attempts} lần thử)`;
+                        loginError.innerText = `Tên đăng nhập hoặc mật khẩu không đúng! (Còn ${5 - attempts} lần thử)`;
                         passwordInput.value = "";
                         passwordInput.focus();
                     }
@@ -347,7 +420,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Gửi mật khẩu lên Apps Script để kiểm tra
                 const response = await fetch(CONFIG.WEB_APP_URL, {
                     method: "POST",
-                    body: JSON.stringify({ action: "login", password: pw }),
+                    body: JSON.stringify({ action: "login", username: user, password: pw }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
                 const result = await response.json();
@@ -360,14 +433,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     sessionStorage.setItem("user-role", result.role);
                     sessionStorage.setItem("user-name", userName);
-                    sessionStorage.setItem("user-token", pw); // Dùng password làm token xác thực
+                    sessionStorage.setItem("user-token", result.userLogin + ":" + pw); // Dùng username:password làm token
 
                     // Cache credentials in local storage for offline fallback use
                     try {
                         const customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
-                        customUsers[result.role] = {
+                        customUsers[result.userLogin] = {
                             name: userName,
                             role: result.role,
+                            username: result.userLogin,
                             password: pw
                         };
                         localStorage.setItem("custom_users", JSON.stringify(customUsers));
@@ -398,7 +472,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         checkLoginBlock();
                     } else {
                         loginError.style.display = "block";
-                        loginError.innerText = (result.message || "Mật khẩu không đúng!") + ` (Còn ${5 - attempts} lần thử)`;
+                        loginError.innerText = (result.message || "Tên đăng nhập hoặc mật khẩu không đúng!") + ` (Còn ${5 - attempts} lần thử)`;
                         passwordInput.value = "";
                         passwordInput.focus();
                     }
@@ -8233,7 +8307,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const payload = item.payload || {};
                 const name = payload.buyerName || payload.name || 'Không rõ';
                 const date = payload.date || payload.ngay || '';
-                const total = payload.totalExpected || payload.total || 0;
+                        const total = payload.totalExpected || payload.total || 0;
                 return `<b>Thêm mới:</b> Khách ${name} (${date}) - ${total.toLocaleString('vi-VN')}đ`;
             } else if (item.action === 'delete') {
                 return `<b>Xóa dòng:</b> Dòng ${item.rowNumber} (Bảng: ${item.context || 'không rõ'})`;
@@ -8366,6 +8440,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnEditProfile = document.getElementById("btn-edit-profile");
     const profileModal = document.getElementById("profile-modal");
     const profileNewName = document.getElementById("profile-new-name");
+    const profileNewUsername = document.getElementById("profile-new-username");
+    const profileCurrentPassword = document.getElementById("profile-current-password");
     const profileNewPassword = document.getElementById("profile-new-password");
     const profileConfirmPassword = document.getElementById("profile-confirm-password");
     const profileErrorMsg = document.getElementById("profile-error-msg");
@@ -8376,8 +8452,14 @@ document.addEventListener("DOMContentLoaded", () => {
             e.stopPropagation();
             if (userDropdown) userDropdown.classList.remove("active");
             
-            // Fill current name
+            // Fill current name & username
             if (profileNewName) profileNewName.value = getUserName() || "";
+            if (profileNewUsername) {
+                const token = getToken() || "";
+                const currentUsername = token.includes(":") ? token.split(":")[0] : "admin";
+                profileNewUsername.value = currentUsername;
+            }
+            if (profileCurrentPassword) profileCurrentPassword.value = "";
             if (profileNewPassword) profileNewPassword.value = "";
             if (profileConfirmPassword) profileConfirmPassword.value = "";
             if (profileErrorMsg) profileErrorMsg.style.display = "none";
@@ -8389,22 +8471,50 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnSaveProfile) {
         btnSaveProfile.addEventListener("click", async () => {
             const newName = profileNewName ? profileNewName.value.trim() : "";
+            const newUsername = profileNewUsername ? profileNewUsername.value.trim() : "";
+            const currentPasswordInput = profileCurrentPassword ? profileCurrentPassword.value : "";
             const newPassword = profileNewPassword ? profileNewPassword.value.trim() : "";
             const confirmPassword = profileConfirmPassword ? profileConfirmPassword.value.trim() : "";
 
             if (!newName) {
-                showProfileError("Tên hiển thị không được bỏ trống!");
+                showProfileError("T\u00ean hi\u1ec3n th\u1ecb kh\u00f4ng \u0111\u01b0\u1ee3c b\u1ecf tr\u1ed1ng!");
+                return;
+            }
+
+            if (!newUsername) {
+                showProfileError("T\u00ean \u0111\u0103ng nh\u1eadp kh\u00f4ng \u0111\u01b0\u1ee3c b\u1ecf tr\u1ed1ng!");
+                return;
+            }
+
+            // Extract current password and current username from token
+            const token = getToken() || "";
+            let currUsername = "admin";
+            let currPassword = "";
+            if (token.includes(":")) {
+                const parts = token.split(":");
+                currUsername = parts[0];
+                currPassword = parts[1];
+            } else {
+                currPassword = token;
+                const role = getRole();
+                if (role === "EMP_LV1") currUsername = "emp1";
+                else if (role === "EMP_LV2") currUsername = "emp2";
+            }
+
+            // Validate current password
+            if (currentPasswordInput !== currPassword) {
+                showProfileError("M\u1eadt kh\u1ea9u hi\u1ec7n t\u1ea1i kh\u00f4ng ch\u00ednh x\u00e1c!");
                 return;
             }
 
             if (newPassword && newPassword !== confirmPassword) {
-                showProfileError("Mật khẩu mới và xác nhận mật khẩu không khớp!");
+                showProfileError("M\u1eadt kh\u1ea9u m\u1edbi v\u00e0 x\u00e1c nh\u1eadn m\u1eadt kh\u1ea9u kh\u00f4ng kh\u1edbp!");
                 return;
             }
 
             btnSaveProfile.disabled = true;
             const originalBtnText = btnSaveProfile.innerHTML;
-            btnSaveProfile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+            btnSaveProfile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> \u0110ang l\u01b0u...';
 
             if (profileErrorMsg) profileErrorMsg.style.display = "none";
 
@@ -8413,26 +8523,33 @@ document.addEventListener("DOMContentLoaded", () => {
                 try {
                     let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
                     const currentRole = getRole();
+                    const oldUsername = getToken() ? getToken().split(":")[0] : newUsername;
                     
-                    customUsers[currentRole] = {
+                    if (oldUsername && customUsers[oldUsername]) {
+                        delete customUsers[oldUsername];
+                    }
+                    if (customUsers[currentRole]) {
+                        delete customUsers[currentRole];
+                    }
+                    
+                    customUsers[newUsername] = {
                         name: newName,
                         role: currentRole,
-                        password: newPassword || getToken()
+                        username: newUsername,
+                        password: newPassword || currPassword
                     };
 
                     localStorage.setItem("custom_users", JSON.stringify(customUsers));
 
                     sessionStorage.setItem("user-name", newName);
-                    if (newPassword) {
-                        sessionStorage.setItem("user-token", newPassword);
-                    }
+                    sessionStorage.setItem("user-token", newUsername + ":" + (newPassword || currPassword));
 
-                    showToast("Đã lưu thông tin cục bộ thành công!", "success");
+                    showToast("\u0110\u00e3 l\u01b0u th\u00f4ng tin c\u1ee5c b\u1ed9 th\u00e0nh c\u00f4ng!", "success");
                     if (profileModal) profileModal.style.display = "none";
                     updateUserProfile();
                     setTimeout(() => location.reload(), 500);
                 } catch (err) {
-                    showProfileError("Lỗi lưu thông tin: " + err.message);
+                    showProfileError("L\u1ed7i l\u01b0u th\u00f4ng tin: " + err.message);
                 } finally {
                     btnSaveProfile.disabled = false;
                     btnSaveProfile.innerHTML = originalBtnText;
@@ -8447,7 +8564,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     body: JSON.stringify({
                         action: "update_profile",
                         token: getToken(),
+                        oldPassword: currPassword,
                         newName: newName,
+                        newUsername: newUsername,
                         newPassword: newPassword || undefined
                     }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
@@ -8455,43 +8574,74 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const result = await response.json();
                 if (result.status === "success") {
+                    const finalPassword = newPassword || currPassword;
                     sessionStorage.setItem("user-name", newName);
-                    if (newPassword) {
-                        sessionStorage.setItem("user-token", newPassword);
+                    sessionStorage.setItem("user-token", newUsername + ":" + finalPassword);
+
+                    // Update cached credentials for offline use
+                    try {
+                        let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
+                        const currentRole = getRole();
+                        const oldUsername = getToken() ? getToken().split(":")[0] : newUsername;
+                        
+                        if (oldUsername && customUsers[oldUsername]) {
+                            delete customUsers[oldUsername];
+                        }
+                        if (customUsers[currentRole]) {
+                            delete customUsers[currentRole];
+                        }
+
+                        customUsers[newUsername] = {
+                            name: newName,
+                            role: currentRole,
+                            username: newUsername,
+                            password: finalPassword
+                        };
+                        localStorage.setItem("custom_users", JSON.stringify(customUsers));
+                    } catch (e) {
+                        console.error("Failed to update cached credentials offline:", e);
                     }
 
-                    showToast("Cập nhật thông tin thành công!", "success");
+                    showToast("C\u1eadp nh\u1eadt th\u00f4ng tin th\u00e0nh c\u00f4ng!", "success");
                     if (profileModal) profileModal.style.display = "none";
                     updateUserProfile();
                     setTimeout(() => location.reload(), 500);
                 } else {
-                    showProfileError(result.message || "Lỗi khi cập nhật thông tin.");
+                    showProfileError(result.message || "L\u1ed7i khi c\u1eadp nh\u1eadt th\u00f4ng tin.");
                 }
             } catch (err) {
                 console.warn("Server update failed, attempting local fallback save:", err);
                 try {
                     let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
                     const currentRole = getRole();
+                    const finalPassword = newPassword || currPassword;
+                    const oldUsername = getToken() ? getToken().split(":")[0] : newUsername;
                     
-                    customUsers[currentRole] = {
+                    if (oldUsername && customUsers[oldUsername]) {
+                        delete customUsers[oldUsername];
+                    }
+                    if (customUsers[currentRole]) {
+                        delete customUsers[currentRole];
+                    }
+                    
+                    customUsers[newUsername] = {
                         name: newName,
                         role: currentRole,
-                        password: newPassword || getToken()
+                        username: newUsername,
+                        password: finalPassword
                     };
 
                     localStorage.setItem("custom_users", JSON.stringify(customUsers));
 
                     sessionStorage.setItem("user-name", newName);
-                    if (newPassword) {
-                        sessionStorage.setItem("user-token", newPassword);
-                    }
+                    sessionStorage.setItem("user-token", newUsername + ":" + finalPassword);
 
-                    showToast("Lưu cục bộ thành công (Không kết nối được Server)!", "warning");
+                    showToast("L\u01b0u c\u1ee5c b\u1ed9 th\u00e0nh c\u00f4ng (Kh\u00f4ng k\u1ebft n\u1ed1i \u0111\u01b0\u1ee3c Server)!", "warning");
                     if (profileModal) profileModal.style.display = "none";
                     updateUserProfile();
                     setTimeout(() => location.reload(), 500);
                 } catch (localErr) {
-                    showProfileError("Lỗi lưu thông tin cục bộ: " + localErr.message);
+                    showProfileError("L\u1ed7i l\u01b0u th\u00f4ng tin c\u1ee5c b\u1ed9: " + localErr.message);
                 }
             } finally {
                 btnSaveProfile.disabled = false;

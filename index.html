@@ -535,7 +535,11 @@
             <!-- Privacy: Login hints removed -->
 
             <form id="login-form">
-                <div class="form-group" style="margin-bottom: 0.5rem;">
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                    <input type="text" id="admin-username" placeholder="Tên đăng nhập" required
+                        style="width: 100%; height: 50px; text-align: center; font-size: 1.1rem; border-radius: 0.75rem; border: 1px solid var(--border-color); box-sizing: border-box;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0.75rem;">
                     <div class="password-input-wrapper">
                         <input type="password" id="admin-password" placeholder="Mật khẩu" required
                             style="text-align: center; font-size: 1.2rem;">
@@ -3255,6 +3259,14 @@
                 <div class="form-group" style="margin-bottom: 0;">
                     <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Tên hiển thị mới</label>
                     <input type="text" id="profile-new-name" class="input-modern" placeholder="Nhập tên hiển thị mới" style="width: 100%; padding: 12px; border-radius: 10px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Tên đăng nhập mới</label>
+                    <input type="text" id="profile-new-username" class="input-modern" placeholder="Nhập tên đăng nhập mới" style="width: 100%; padding: 12px; border-radius: 10px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Mật khẩu hiện tại (để xác nhận thay đổi)</label>
+                    <input type="password" id="profile-current-password" class="input-modern" placeholder="Nhập mật khẩu hiện tại" style="width: 100%; padding: 12px; border-radius: 10px;">
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
                     <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Mật khẩu mới (Bỏ trống nếu giữ nguyên)</label>
