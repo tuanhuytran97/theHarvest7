@@ -462,24 +462,40 @@ document.addEventListener("DOMContentLoaded", () => {
             return "";
         }
 
+        // Helper: extract todo task id from notification id
+        function extractTaskId(notifId) {
+            const prefixes = ["task_overdue_", "task_today_", "task_upcoming_", "task_inprogress_"];
+            for (const p of prefixes) {
+                if (notifId.startsWith(p)) return notifId.slice(p.length);
+            }
+            return null;
+        }
+
         list.innerHTML = filtered.map(n => {
             const meta = categoryMeta[n.category] || {};
             const unreadClass = n.unread ? "unread" : "";
             const subtype = n.category === "task" ? getTaskSubtype(n.id) : "";
             const subtypeClass = subtype ? `task-${subtype}` : "";
+            const taskId = n.category === "task" ? extractTaskId(n.id) : null;
+            // clickable class for cursor + hover-lift if it has a linked task
+            const clickableClass = taskId ? "notif-card-clickable" : "";
 
             const actionBtns = (n.category === "task" && n.username) ? `
                 <div class="notif-card-actions">
-                    <button class="btn-notif-approve" onclick="approveUser('${n.username}'); this.closest('.notif-card').remove(); updateNotifBadgesGlobal();">
+                    <button class="btn-notif-approve" onclick="event.stopPropagation(); approveUser('${n.username}'); this.closest('.notif-card').remove(); updateNotifBadgesGlobal();">
                         <i class="fa-solid fa-check"></i> Duyệt
                     </button>
-                    <button class="btn-notif-reject" onclick="rejectUser('${n.username}'); this.closest('.notif-card').remove(); updateNotifBadgesGlobal();">
+                    <button class="btn-notif-reject" onclick="event.stopPropagation(); rejectUser('${n.username}'); this.closest('.notif-card').remove(); updateNotifBadgesGlobal();">
                         <i class="fa-solid fa-xmark"></i> Từ chối
                     </button>
                 </div>` : "";
 
+            const openHint = taskId
+                ? `<span class="notif-open-hint"><i class="fa-solid fa-arrow-up-right-from-square"></i> Nhấn để mở</span>`
+                : "";
+
             return `
-                <div class="notif-card ${n.category} ${subtypeClass} ${unreadClass}" data-id="${n.id}">
+                <div class="notif-card ${n.category} ${subtypeClass} ${unreadClass} ${clickableClass}" data-id="${n.id}" data-task-id="${taskId || ""}">
                     <div class="notif-card-icon">
                         <i class="${n.icon || meta.icon}"></i>
                     </div>
@@ -489,21 +505,48 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                         <p class="notif-card-text">${n.text}</p>
                         <span class="notif-card-time">${n.time}</span>
+                        ${openHint}
                         ${actionBtns}
                     </div>
                 </div>`;
         }).join("");
 
-        // Mark as read on click
+        // Click handler: mark as read + navigate to task if applicable
         list.querySelectorAll(".notif-card").forEach(card => {
             card.addEventListener("click", () => {
-                const id = card.dataset.id;
-                const notif = notificationsStore.find(n => n.id === id);
+                const notifId = card.dataset.id;
+                const taskId  = card.dataset.taskId;
+
+                // Mark as read
+                const notif = notificationsStore.find(n => n.id === notifId);
                 if (notif) notif.unread = false;
                 card.classList.remove("unread");
                 updateNotifBadges();
+
+                // Navigate to todo view and open edit modal
+                if (taskId) {
+                    // Close the notification dropdown
+                    if (notifDropdown) notifDropdown.style.display = "none";
+
+                    // Switch to todo view (calls renderFocus internally)
+                    if (typeof window.switchView === "function") {
+                        window.switchView("todo");
+                    } else {
+                        // Fallback: click menu-todo
+                        const menuTodoBtn = document.getElementById("menu-todo");
+                        if (menuTodoBtn) menuTodoBtn.click();
+                    }
+
+                    // Open edit modal after view transition settles
+                    setTimeout(() => {
+                        if (typeof window.editTask === "function") {
+                            window.editTask(taskId);
+                        }
+                    }, 250);
+                }
             });
         });
+
     }
 
     // ── Update all tab badge counts + main bell badge ──

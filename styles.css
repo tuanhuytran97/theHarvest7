@@ -4523,3 +4523,35 @@ tr.swiping td:first-child::before {
     color: #4338ca;
 }
 
+/* ── Clickable task notification cards ───────────────── */
+.notif-card.notif-card-clickable {
+    cursor: pointer;
+}
+.notif-card.notif-card-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.09);
+}
+.notif-card.notif-card-clickable:active {
+    transform: translateY(0);
+    box-shadow: none;
+    opacity: 0.85;
+}
+
+/* "Nhấn để mở" hint — appears on hover */
+.notif-open-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #6366f1;
+    opacity: 0;
+    transition: opacity 0.18s;
+    margin-top: 4px;
+}
+.notif-card.notif-card-clickable:hover .notif-open-hint {
+    opacity: 1;
+}
+.notif-card.task-overdue .notif-open-hint  { color: #ef4444; }
+.notif-card.task-today .notif-open-hint    { color: #d97706; }
+.notif-card.task-upcoming .notif-open-hint { color: #6366f1; }
