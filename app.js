@@ -184,37 +184,223 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Admin Notifications Dropdown Logic
-    const notifBtn = document.getElementById("admin-notifications-btn");
+    // ── STACKED NOTIFICATIONS PANEL ────────────────────────────────
+    const notifBtn      = document.getElementById("admin-notifications-btn");
     const notifDropdown = document.getElementById("admin-notifications-dropdown");
-    const refreshBtn = document.getElementById("btn-refresh-requests");
-    
+    const refreshBtn    = document.getElementById("btn-refresh-requests");
+    const markAllBtn    = document.getElementById("btn-notif-mark-all");
+
+    // In-memory notification store  { id, category, icon, label, text, time, unread }
+    let notificationsStore = [];
+    let activeTab = "all";
+
+    // ── Toggle panel open/close ──
     if (notifBtn && notifDropdown) {
         notifBtn.addEventListener("click", (e) => {
             e.stopPropagation();
-            const isOpen = notifDropdown.style.display === "block";
-            notifDropdown.style.display = isOpen ? "none" : "block";
-            if (!isOpen) {
-                loadPendingUsers();
-            }
+            const isOpen = notifDropdown.style.display === "flex";
+            notifDropdown.style.display = isOpen ? "none" : "flex";
+            notifDropdown.style.flexDirection = "column";
+            if (!isOpen) loadAllNotifications();
             if (userDropdown) userDropdown.classList.remove("active");
         });
-        
+
         document.addEventListener("click", (e) => {
             if (!notifDropdown.contains(e.target) && e.target !== notifBtn && !notifBtn.contains(e.target)) {
                 notifDropdown.style.display = "none";
             }
         });
     }
-    
+
     if (refreshBtn) {
         refreshBtn.addEventListener("click", (e) => {
             e.stopPropagation();
-            loadPendingUsers();
+            loadAllNotifications();
         });
     }
 
+    if (markAllBtn) {
+        markAllBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            notificationsStore.forEach(n => n.unread = false);
+            renderNotifications();
+            updateNotifBadges();
+        });
+    }
+
+    // ── Tab switching ──
+    const notifTabBtns = document.querySelectorAll(".notif-tab-btn");
+    notifTabBtns.forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            activeTab = btn.dataset.tab;
+            notifTabBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            renderNotifications();
+        });
+    });
+
+    // ── Load all notifications (pending users + placeholder system notifs) ──
+    async function loadAllNotifications() {
+        const list = document.getElementById("admin-requests-list");
+        if (list) list.innerHTML = `<div class="notif-empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Đang tải...</p></div>`;
+
+        // Reset store but keep any previously synthesized non-task notifs
+        notificationsStore = notificationsStore.filter(n => n.category !== "task");
+
+        // --- Load pending user requests → task category ---
+        if (!isConfigured()) {
+            const customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
+            const pending = [];
+            for (let k in customUsers) {
+                if (customUsers[k] && customUsers[k].status === "PENDING") pending.push(customUsers[k]);
+            }
+            injectTaskNotifications(pending);
+        } else {
+            try {
+                const response = await fetch(CONFIG.WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({ action: "get_pending_users", token: getToken() }),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                });
+                const result = await response.json();
+                if (result.status === "success" && result.pending) {
+                    injectTaskNotifications(result.pending);
+                }
+            } catch (e) {
+                console.warn("Failed to load pending users for notifications:", e);
+            }
+        }
+
+        renderNotifications();
+        updateNotifBadges();
+    }
+
+    // ── Build task-category notifications from pending users ──
+    function injectTaskNotifications(pendingUsers) {
+        const existing = new Set(notificationsStore.filter(n => n.category === "task").map(n => n.id));
+        pendingUsers.forEach(req => {
+            const id = "task_user_" + req.username;
+            if (!existing.has(id)) {
+                notificationsStore.push({
+                    id,
+                    category: "task",
+                    icon: "fa-solid fa-user-clock",
+                    label: "Công việc",
+                    text: `Yêu cầu đăng ký tài khoản của <strong>${req.username}</strong> (${req.name}) đang chờ phê duyệt.`,
+                    time: "Vừa xong",
+                    unread: true,
+                    username: req.username   // keep for approve/reject
+                });
+            }
+        });
+    }
+
+    // ── Render cards for current active tab ──
+    function renderNotifications() {
+        const list = document.getElementById("admin-requests-list");
+        if (!list) return;
+
+        const filtered = activeTab === "all"
+            ? notificationsStore
+            : notificationsStore.filter(n => n.category === activeTab);
+
+        if (filtered.length === 0) {
+            const labels = { all: "thông báo", payment: "thanh toán", entry: "nhập đơn", task: "công việc" };
+            list.innerHTML = `
+                <div class="notif-empty-state">
+                    <i class="fa-regular fa-bell-slash"></i>
+                    <p>Không có ${labels[activeTab] || "thông báo"} nào.</p>
+                </div>`;
+            return;
+        }
+
+        const categoryMeta = {
+            payment: { icon: "fa-solid fa-money-bill-transfer", label: "Thanh toán" },
+            entry:   { icon: "fa-solid fa-file-circle-plus",   label: "Nhập đơn" },
+            task:    { icon: "fa-solid fa-list-check",          label: "Công việc" }
+        };
+
+        list.innerHTML = filtered.map(n => {
+            const meta = categoryMeta[n.category] || {};
+            const unreadClass = n.unread ? "unread" : "";
+            const actionBtns = (n.category === "task" && n.username) ? `
+                <div class="notif-card-actions">
+                    <button class="btn-notif-approve" onclick="approveUser('${n.username}'); this.closest('.notif-card').remove(); updateNotifBadgesGlobal();">
+                        <i class="fa-solid fa-check"></i> Duyệt
+                    </button>
+                    <button class="btn-notif-reject" onclick="rejectUser('${n.username}'); this.closest('.notif-card').remove(); updateNotifBadgesGlobal();">
+                        <i class="fa-solid fa-xmark"></i> Từ chối
+                    </button>
+                </div>` : "";
+
+            return `
+                <div class="notif-card ${n.category} ${unreadClass}" data-id="${n.id}">
+                    <div class="notif-card-icon">
+                        <i class="${n.icon || meta.icon}"></i>
+                    </div>
+                    <div class="notif-card-body">
+                        <div class="notif-card-label">
+                            <i class="${meta.icon}"></i> ${n.label || meta.label}
+                        </div>
+                        <p class="notif-card-text">${n.text}</p>
+                        <span class="notif-card-time">${n.time}</span>
+                        ${actionBtns}
+                    </div>
+                </div>`;
+        }).join("");
+
+        // Mark as read on click
+        list.querySelectorAll(".notif-card").forEach(card => {
+            card.addEventListener("click", () => {
+                const id = card.dataset.id;
+                const notif = notificationsStore.find(n => n.id === id);
+                if (notif) notif.unread = false;
+                card.classList.remove("unread");
+                updateNotifBadges();
+            });
+        });
+    }
+
+    // ── Update all tab badge counts + main bell badge ──
+    function updateNotifBadges() {
+        const countEl = document.getElementById("admin-notifications-count");
+        const counts = { all: 0, payment: 0, entry: 0, task: 0 };
+
+        notificationsStore.forEach(n => {
+            if (n.unread) {
+                counts.all++;
+                if (counts[n.category] !== undefined) counts[n.category]++;
+            }
+        });
+
+        ["all", "payment", "entry", "task"].forEach(cat => {
+            const badge = document.getElementById("badge-" + cat);
+            if (badge) badge.textContent = counts[cat];
+        });
+
+        if (countEl) {
+            if (counts.all > 0) {
+                countEl.textContent = counts.all;
+                countEl.style.display = "flex";
+            } else {
+                countEl.style.display = "none";
+            }
+        }
+    }
+
+    // Expose globally so inline onclick handlers can call it
+    window.updateNotifBadgesGlobal = () => {
+        notificationsStore = notificationsStore.filter(n => {
+            // re-check if removed via approve/reject
+            return document.querySelector(`[data-id="${n.id}"]`) !== null || true;
+        });
+        updateNotifBadges();
+        renderNotifications();
+    };
+
     async function fetchSystemConfig() {
+
         if (!isConfigured()) return;
         try {
             const response = await fetch(CONFIG.WEB_APP_URL, {
@@ -267,70 +453,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     window.hasPermission = hasPermission;
 
-    async function loadPendingUsers() {
-        const listContainer = document.getElementById("admin-requests-list");
-        const badgeCount = document.getElementById("admin-notifications-count");
-        
-        if (!listContainer) return;
-        
-        if (!isConfigured()) {
-            const customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
-            const pending = [];
-            for (let k in customUsers) {
-                if (customUsers[k] && customUsers[k].status === "PENDING") {
-                    pending.push(customUsers[k]);
-                }
-            }
-            renderPendingUsersList(pending);
-            return;
-        }
-        
-        try {
-            const response = await fetch(CONFIG.WEB_APP_URL, {
-                method: "POST",
-                body: JSON.stringify({ action: "get_pending_users", token: getToken() }),
-                headers: { "Content-Type": "text/plain;charset=utf-8" }
-            });
-            const result = await response.json();
-            if (result.status === "success" && result.pending) {
-                renderPendingUsersList(result.pending);
-            } else {
-                listContainer.innerHTML = `<p style="font-size: 0.8rem; color: #ef4444; text-align: center; margin: 20px 0;">${result.message || 'Lỗi tải yêu cầu'}</p>`;
-            }
-        } catch (e) {
-            listContainer.innerHTML = `<p style="font-size: 0.8rem; color: #ef4444; text-align: center; margin: 20px 0;">Lỗi kết nối máy chủ</p>`;
-        }
-    }
-
-    function renderPendingUsersList(pending) {
-        const listContainer = document.getElementById("admin-requests-list");
-        const badgeCount = document.getElementById("admin-notifications-count");
-        if (!listContainer || !badgeCount) return;
-        
-        if (pending.length === 0) {
-            listContainer.innerHTML = `<p style="font-size: 0.8rem; color: #64748b; text-align: center; margin: 20px 0;">Không có yêu cầu nào.</p>`;
-            badgeCount.style.display = "none";
-            badgeCount.innerText = "0";
-            return;
-        }
-        
-        badgeCount.innerText = pending.length;
-        badgeCount.style.display = "flex";
-        
-        listContainer.innerHTML = pending.map(req => `
-            <div class="request-item" style="border: 1px solid #f1f5f9; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; background: #fafafa; margin-bottom: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="font-size: 0.85rem; color: #1e293b;">${req.username}</strong>
-                    <span style="font-size: 0.7rem; font-weight: 700; color: #6366f1; background: #eff6ff; padding: 2px 6px; border-radius: 4px;">${req.role}</span>
-                </div>
-                <div style="font-size: 0.8rem; color: #64748b; text-align: left;">Họ tên: ${req.name}</div>
-                <div style="display: flex; gap: 8px; margin-top: 4px;">
-                    <button onclick="approveUser('${req.username}')" style="flex: 1; padding: 6px; font-size: 0.75rem; border-radius: 6px; background: #10b981; border: none; color: white; cursor: pointer; font-weight: 700;">Duyệt</button>
-                    <button onclick="rejectUser('${req.username}')" style="flex: 1; padding: 6px; font-size: 0.75rem; border-radius: 6px; background: #ef4444; border: none; color: white; cursor: pointer; font-weight: 700;">Từ chối</button>
-                </div>
-            </div>
-        `).join("");
-    }
 
     async function approveUser(username) {
         if (!confirm(`Bạn có chắc chắn muốn DUYỆT tài khoản "${username}" không?`)) return;
@@ -341,7 +463,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 customUsers[username].status = "ACTIVE";
                 localStorage.setItem("custom_users", JSON.stringify(customUsers));
                 showToast(`Đã duyệt tài khoản "${username}" thành công!`, "success");
-                loadPendingUsers();
+                loadAllNotifications();
             }
             return;
         }
@@ -355,7 +477,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const result = await response.json();
             if (result.status === "success") {
                 showToast(`Đã duyệt tài khoản "${username}" thành công!`, "success");
-                loadPendingUsers();
+                loadAllNotifications();
             } else {
                 alert(result.message || "Lỗi phê duyệt tài khoản");
             }
@@ -373,7 +495,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 delete customUsers[username];
                 localStorage.setItem("custom_users", JSON.stringify(customUsers));
                 showToast(`Đã từ chối/xóa tài khoản "${username}"!`, "warning");
-                loadPendingUsers();
+                loadAllNotifications();
             }
             return;
         }
@@ -387,7 +509,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const result = await response.json();
             if (result.status === "success") {
                 showToast(`Đã từ chối yêu cầu của "${username}"!`, "warning");
-                loadPendingUsers();
+                loadAllNotifications();
             } else {
                 alert(result.message || "Lỗi từ chối tài khoản");
             }
@@ -421,7 +543,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (notifWrapper) {
                 if (role === 'ADMIN') {
                     notifWrapper.style.display = "flex";
-                    loadPendingUsers();
+                    loadAllNotifications();
                 } else {
                     notifWrapper.style.display = "none";
                 }

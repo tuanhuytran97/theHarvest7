@@ -652,25 +652,64 @@
                         <i class="fa-solid fa-cloud-arrow-down"></i> <span>Đồng bộ</span>
                     </button>
 
-                    <!-- Notification Badge for Account Requests (Admin Only) -->
+                    <!-- Notification Badge (All users see their own, Admin also sees account approvals) -->
                     <div id="admin-notifications-wrapper" style="position: relative; display: none; align-items: center;">
-                        <button id="admin-notifications-btn" title="Yêu cầu phê duyệt tài khoản"
+                        <button id="admin-notifications-btn" title="Thông báo"
                             style="padding: 10px 14px; border-radius: 12px; font-weight: 700; background: #fffbeb; border: 1.5px solid #fef3c7; color: #d97706; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; font-size: 1rem; width: 42px; height: 42px; box-sizing: border-box; box-shadow: 0 4px 10px rgba(217, 119, 6, 0.08);">
                             <i class="fa-solid fa-bell"></i>
                             <span id="admin-notifications-count" style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; display: none; align-items: center; justify-content: center; font-weight: 800;">0</span>
                         </button>
-                        <!-- Dropdown panel for notifications -->
-                        <div id="admin-notifications-dropdown"
-                            style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); width: 330px; z-index: 2000; padding: 12px; max-height: 400px; overflow-y: auto;">
-                            <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-weight: 800;">
-                                <span>Phê duyệt tài khoản</span>
-                                <button id="btn-refresh-requests" style="background:none; border:none; color:#6366f1; cursor:pointer;" title="Làm mới"><i class="fa-solid fa-arrows-rotate"></i></button>
-                            </h4>
-                            <div id="admin-requests-list" style="display: flex; flex-direction: column; gap: 8px;">
-                                <p style="font-size: 0.8rem; color: #64748b; text-align: center; margin: 20px 0;">Đang tải yêu cầu...</p>
+
+                        <!-- Stacked Notifications Panel -->
+                        <div id="admin-notifications-dropdown" class="notifications-panel" style="display: none;">
+
+                            <!-- Panel Header -->
+                            <div class="notif-panel-header">
+                                <h3><i class="fa-solid fa-bell"></i> Thông báo</h3>
+                                <button class="btn-mark-all-read" id="btn-notif-mark-all">Đánh dấu tất cả đã đọc</button>
+                            </div>
+
+                            <!-- Category Tabs -->
+                            <div class="notif-tabs">
+                                <button class="notif-tab-btn tab-all active" data-tab="all">
+                                    <i class="fa-solid fa-layer-group"></i>
+                                    Tất cả
+                                    <span class="notif-tab-badge" id="badge-all">0</span>
+                                </button>
+                                <button class="notif-tab-btn tab-payment" data-tab="payment">
+                                    <i class="fa-solid fa-wallet"></i>
+                                    Thanh toán
+                                    <span class="notif-tab-badge" id="badge-payment">0</span>
+                                </button>
+                                <button class="notif-tab-btn tab-entry" data-tab="entry">
+                                    <i class="fa-solid fa-file-invoice"></i>
+                                    Nhập đơn
+                                    <span class="notif-tab-badge" id="badge-entry">0</span>
+                                </button>
+                                <button class="notif-tab-btn tab-task" data-tab="task">
+                                    <i class="fa-solid fa-list-check"></i>
+                                    Công việc
+                                    <span class="notif-tab-badge" id="badge-task">0</span>
+                                </button>
+                            </div>
+
+                            <!-- Notification Cards List -->
+                            <div class="notif-list" id="admin-requests-list">
+                                <div class="notif-empty-state">
+                                    <i class="fa-regular fa-bell-slash"></i>
+                                    <p>Đang tải thông báo...</p>
+                                </div>
+                            </div>
+
+                            <!-- Footer -->
+                            <div class="notif-panel-footer">
+                                <button class="btn-notif-refresh" id="btn-refresh-requests">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Làm mới
+                                </button>
                             </div>
                         </div>
                     </div>
+
 
                     <!-- User Info & Dropdown Wrapper - Moved to the far right outermost corner -->
                     <div style="position: relative;">
