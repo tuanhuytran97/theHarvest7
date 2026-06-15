@@ -654,15 +654,15 @@
                         </div>
 
                         <!-- User Profile Dropdown Menu -->
-                        <div id="user-dropdown" class="user-dropdown-menu glassmorphism"
-                            style="display: none; position: absolute; top: 100%; left: 0; margin-top: 8px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: var(--shadow-lg); width: 220px; z-index: 1000; padding: 6px;">
+                        <div id="user-dropdown" class="user-dropdown-menu"
+                            style="display: none; position: absolute; top: 100%; left: 0; margin-top: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); width: 220px; z-index: 1000; padding: 6px;">
                             <button id="btn-edit-profile" class="dropdown-item"
                                 style="width: 100%; background: transparent; border: none; padding: 10px 14px; text-align: left; font-size: 0.85rem; font-weight: 700; color: #334155; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;">
                                 <i class="fa-solid fa-user-gear" style="color: #6366f1;"></i> Thay đổi thông tin
                             </button>
                         </div>
                     </div>
-
+ 
                     <!-- Notification Badge for Account Requests (Admin Only) -->
                     <div id="admin-notifications-wrapper" style="position: relative; display: none; align-items: center;">
                         <button id="admin-notifications-btn"
@@ -671,8 +671,8 @@
                             <span id="admin-notifications-count" style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; display: none; align-items: center; justify-content: center; font-weight: 800;">0</span>
                         </button>
                         <!-- Dropdown panel for notifications -->
-                        <div id="admin-notifications-dropdown" class="glassmorphism"
-                            style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: white; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: var(--shadow-xl); width: 330px; z-index: 2000; padding: 12px; max-height: 400px; overflow-y: auto;">
+                        <div id="admin-notifications-dropdown"
+                            style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); width: 330px; z-index: 2000; padding: 12px; max-height: 400px; overflow-y: auto;">
                             <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-weight: 800;">
                                 <span>Phê duyệt tài khoản</span>
                                 <button id="btn-refresh-requests" style="background:none; border:none; color:#6366f1; cursor:pointer;" title="Làm mới"><i class="fa-solid fa-arrows-rotate"></i></button>
