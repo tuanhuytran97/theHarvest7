@@ -637,37 +637,6 @@
 
                 <div class="header-actions-group"
                     style="display: flex; align-items: center; gap: 1rem; margin-left: auto;">
-                    <!-- User Info & Dropdown Wrapper -->
-                    <div style="position: relative;">
-                        <!-- User Info -->
-                        <div id="user-avatar-trigger" class="user-info-chip"
-                            style="display: flex; align-items: center; gap: 10px; background: white; padding: 5px 15px; border-radius: 50px; border: 1px solid #e2e8f0; cursor: pointer; user-select: none;">
-                            <img id="user-avatar" src="" alt="User"
-                                style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid #6366f1;">
-                            <div style="display: flex; flex-direction: column; line-height: 1.2;">
-                                <span id="user-display-name"
-                                    style="font-weight: 800; color: #1e293b; font-size: 0.85rem;"></span>
-                                <span id="user-role-badge"
-                                    style="font-size: 0.65rem; font-weight: 700; color: #6366f1;"></span>
-                            </div>
-                            <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; color: #64748b; margin-left: 2px;"></i>
-                        </div>
-
-                        <!-- User Profile Dropdown Menu -->
-                        <div id="user-dropdown" class="user-dropdown-menu"
-                            style="display: none; position: absolute; top: 100%; left: 0; margin-top: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); width: 220px; z-index: 1000; padding: 6px;">
-                            <button id="btn-edit-profile" class="dropdown-item"
-                                style="width: 100%; background: transparent; border: none; padding: 10px 14px; text-align: left; font-size: 0.85rem; font-weight: 700; color: #334155; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;">
-                                <i class="fa-solid fa-user-gear" style="color: #6366f1;"></i> Thay đổi thông tin
-                            </button>
-                            <!-- Logout Button inside Dropdown -->
-                            <button id="logout-btn" class="dropdown-item"
-                                style="width: 100%; background: transparent; border: none; padding: 10px 14px; text-align: left; font-size: 0.85rem; font-weight: 700; color: #ef4444; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s; margin-top: 4px; border-top: 1px solid #f1f5f9;">
-                                <i class="fa-solid fa-right-from-bracket" style="color: #ef4444;"></i> Thoát
-                            </button>
-                        </div>
-                    </div>
- 
                     <!-- Connection Status Indicator -->
                     <div id="conn-status-indicator" class="conn-status-badge status-online"
                         style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.85rem; padding: 6px 12px; border-radius: 30px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
@@ -683,7 +652,7 @@
                         <i class="fa-solid fa-cloud-arrow-down"></i> <span>Đồng bộ</span>
                     </button>
 
-                    <!-- Notification Badge for Account Requests (Admin Only) - Moved to far right corner -->
+                    <!-- Notification Badge for Account Requests (Admin Only) -->
                     <div id="admin-notifications-wrapper" style="position: relative; display: none; align-items: center;">
                         <button id="admin-notifications-btn" title="Yêu cầu phê duyệt tài khoản"
                             style="padding: 10px 14px; border-radius: 12px; font-weight: 700; background: #fffbeb; border: 1.5px solid #fef3c7; color: #d97706; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; font-size: 1rem; width: 42px; height: 42px; box-sizing: border-box; box-shadow: 0 4px 10px rgba(217, 119, 6, 0.08);">
@@ -700,6 +669,37 @@
                             <div id="admin-requests-list" style="display: flex; flex-direction: column; gap: 8px;">
                                 <p style="font-size: 0.8rem; color: #64748b; text-align: center; margin: 20px 0;">Đang tải yêu cầu...</p>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- User Info & Dropdown Wrapper - Moved to the far right outermost corner -->
+                    <div style="position: relative;">
+                        <!-- User Info -->
+                        <div id="user-avatar-trigger" class="user-info-chip"
+                            style="display: flex; align-items: center; gap: 10px; background: white; padding: 5px 15px; border-radius: 50px; border: 1px solid #e2e8f0; cursor: pointer; user-select: none;">
+                            <img id="user-avatar" src="" alt="User"
+                                style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid #6366f1;">
+                            <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                                <span id="user-display-name"
+                                    style="font-weight: 800; color: #1e293b; font-size: 0.85rem;"></span>
+                                <span id="user-role-badge"
+                                    style="font-size: 0.65rem; font-weight: 700; color: #6366f1;"></span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; color: #64748b; margin-left: 2px;"></i>
+                        </div>
+
+                        <!-- User Profile Dropdown Menu - Aligned to right: 0 -->
+                        <div id="user-dropdown" class="user-dropdown-menu"
+                            style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); width: 220px; z-index: 1000; padding: 6px;">
+                            <button id="btn-edit-profile" class="dropdown-item"
+                                style="width: 100%; background: transparent; border: none; padding: 10px 14px; text-align: left; font-size: 0.85rem; font-weight: 700; color: #334155; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;">
+                                <i class="fa-solid fa-user-gear" style="color: #6366f1;"></i> Thay đổi thông tin
+                            </button>
+                            <!-- Logout Button inside Dropdown -->
+                            <button id="logout-btn" class="dropdown-item"
+                                style="width: 100%; background: transparent; border: none; padding: 10px 14px; text-align: left; font-size: 0.85rem; font-weight: 700; color: #ef4444; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s; margin-top: 4px; border-top: 1px solid #f1f5f9;">
+                                <i class="fa-solid fa-right-from-bracket" style="color: #ef4444;"></i> Thoát
+                            </button>
                         </div>
                     </div>
                 </div>
