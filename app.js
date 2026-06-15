@@ -276,25 +276,156 @@ document.addEventListener("DOMContentLoaded", () => {
         updateNotifBadges();
     }
 
-    // ── Build task-category notifications from pending users ──
+    // ── Build task-category notifications from BOTH pending users AND todo reminders ──
     function injectTaskNotifications(pendingUsers) {
-        const existing = new Set(notificationsStore.filter(n => n.category === "task").map(n => n.id));
+        const existingIds = new Set(notificationsStore.filter(n => n.category === "task").map(n => n.id));
+
+        // 1. Pending account-approval cards (for ADMIN)
         pendingUsers.forEach(req => {
             const id = "task_user_" + req.username;
-            if (!existing.has(id)) {
+            if (!existingIds.has(id)) {
                 notificationsStore.push({
                     id,
                     category: "task",
                     icon: "fa-solid fa-user-clock",
-                    label: "Công việc",
-                    text: `Yêu cầu đăng ký tài khoản của <strong>${req.username}</strong> (${req.name}) đang chờ phê duyệt.`,
+                    label: "Phê duyệt tài khoản",
+                    text: `Yêu cầu đăng ký của <strong>${req.username}</strong> (${req.name}) đang chờ phê duyệt.`,
                     time: "Vừa xong",
                     unread: true,
-                    username: req.username   // keep for approve/reject
+                    username: req.username
                 });
             }
         });
+
+        // 2. Pull from todoCache (the global from todo_v2.js)
+        if (typeof todoCache === "undefined" || !Array.isArray(todoCache)) return;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const priorityIcon = {
+            "Khẩn cấp": "fa-solid fa-fire",
+            "Cao":       "fa-solid fa-circle-exclamation",
+            "Trung bình":"fa-solid fa-circle-dot",
+            "Thấp":      "fa-regular fa-circle"
+        };
+        const priorityLabel = {
+            "Khẩn cấp": "🔴 Khẩn cấp",
+            "Cao":       "🟠 Ưu tiên cao",
+            "Trung bình":"🟡 Trung bình",
+            "Thấp":      "⚪ Thấp"
+        };
+
+        function parseDate(d) {
+            if (!d) return null;
+            if (d instanceof Date) return d;
+            const p = String(d).split(/[-/]/);
+            if (p.length === 3) {
+                const y = parseInt(p[0]), m = parseInt(p[1]) - 1, day = parseInt(p[2]);
+                if (!isNaN(y) && !isNaN(m) && !isNaN(day)) return new Date(y, m, day);
+            }
+            return new Date(d);
+        }
+
+        function daysDiff(dl) {
+            return Math.round((dl.getTime() - today.getTime()) / 86400000);
+        }
+
+        // Priority sort weight
+        const pw = { "Khẩn cấp": 1, "Cao": 2, "Trung bình": 3, "Thấp": 4 };
+
+        // Gather tasks by urgency bucket
+        const overdueList   = [];
+        const todayList     = [];
+        const upcomingList  = []; // 1–3 days
+        const inProgressList = [];
+
+        todoCache.forEach(t => {
+            const isDone = t.status === "Hoàn thành" || t.status === "Hủy bỏ";
+            if (isDone) return;
+
+            const dl = parseDate(t.deadlineDate || t.deadline);
+            const diff = dl ? daysDiff(dl) : null;
+
+            if (dl && diff < 0)      overdueList.push({ ...t, _diff: diff });
+            else if (dl && diff === 0) todayList.push({ ...t, _diff: 0 });
+            else if (dl && diff > 0 && diff <= 3) upcomingList.push({ ...t, _diff: diff });
+
+            if (t.status === "Đang thực hiện") inProgressList.push({ ...t, _diff: diff });
+        });
+
+        // Sort each list by priority then deadline
+        const sortTasks = arr => arr.sort((a, b) =>
+            (pw[a.priority] || 9) - (pw[b.priority] || 9) || (a._diff ?? 99) - (b._diff ?? 99)
+        );
+
+        // ── Overdue tasks ──
+        sortTasks(overdueList).forEach(t => {
+            const id = "task_overdue_" + t.id;
+            if (existingIds.has(id)) return;
+            const days = Math.abs(t._diff);
+            notificationsStore.push({
+                id, category: "task",
+                icon: "fa-solid fa-triangle-exclamation",
+                label: `Trễ hạn — ${priorityLabel[t.priority] || t.priority}`,
+                text: `<strong>${t.task}</strong> đã quá hạn <strong>${days} ngày</strong>${t.category ? ` · ${t.category}` : ""}.`,
+                time: `Hạn: ${t.deadline || "?"}`,
+                unread: true, priority: t.priority
+            });
+        });
+
+        // ── Today's tasks ──
+        sortTasks(todayList).forEach(t => {
+            const id = "task_today_" + t.id;
+            if (existingIds.has(id)) return;
+            notificationsStore.push({
+                id, category: "task",
+                icon: priorityIcon[t.priority] || "fa-solid fa-calendar-day",
+                label: `Hôm nay — ${priorityLabel[t.priority] || t.priority}`,
+                text: `<strong>${t.task}</strong> đến hạn hôm nay${t.note ? `<br><span style="color:#94a3b8;font-size:0.75rem">${t.note}</span>` : ""}.`,
+                time: `Trạng thái: ${t.status}`,
+                unread: true, priority: t.priority
+            });
+        });
+
+        // ── Upcoming 1–3 days ──
+        sortTasks(upcomingList).forEach(t => {
+            const id = "task_upcoming_" + t.id;
+            if (existingIds.has(id)) return;
+            // Skip if already listed as today
+            if (todayList.some(x => x.id === t.id)) return;
+            notificationsStore.push({
+                id, category: "task",
+                icon: "fa-solid fa-clock",
+                label: `Sắp đến hạn — ${priorityLabel[t.priority] || t.priority}`,
+                text: `<strong>${t.task}</strong> còn <strong>${t._diff} ngày</strong> nữa đến hạn${t.category ? ` · ${t.category}` : ""}.`,
+                time: `Hạn: ${t.deadline}`,
+                unread: t.priority === "Khẩn cấp" || t.priority === "Cao",
+                priority: t.priority
+            });
+        });
+
+        // ── In-progress (not yet captured above) ──
+        sortTasks(inProgressList).slice(0, 5).forEach(t => {
+            // only inject if not already covered by today/overdue/upcoming
+            const alreadyCovered =
+                overdueList.some(x => x.id === t.id) ||
+                todayList.some(x => x.id === t.id)   ||
+                upcomingList.some(x => x.id === t.id);
+            if (alreadyCovered) return;
+            const id = "task_inprogress_" + t.id;
+            if (existingIds.has(id)) return;
+            notificationsStore.push({
+                id, category: "task",
+                icon: "fa-solid fa-spinner",
+                label: "Đang thực hiện",
+                text: `<strong>${t.task}</strong>${t.category ? ` · ${t.category}` : ""}${t._diff !== null && t._diff !== undefined ? ` · còn ${t._diff} ngày` : ""}.`,
+                time: t.deadline ? `Hạn: ${t.deadline}` : "Không có hạn",
+                unread: false, priority: t.priority
+            });
+        });
     }
+
 
     // ── Render cards for current active tab ──
     function renderNotifications() {
@@ -321,9 +452,22 @@ document.addEventListener("DOMContentLoaded", () => {
             task:    { icon: "fa-solid fa-list-check",          label: "Công việc" }
         };
 
+        // Urgency subtype derived from notification id prefix
+        function getTaskSubtype(id) {
+            if (id.startsWith("task_overdue_"))    return "overdue";
+            if (id.startsWith("task_today_"))      return "today";
+            if (id.startsWith("task_upcoming_"))   return "upcoming";
+            if (id.startsWith("task_inprogress_")) return "inprogress";
+            if (id.startsWith("task_user_"))       return "approval";
+            return "";
+        }
+
         list.innerHTML = filtered.map(n => {
             const meta = categoryMeta[n.category] || {};
             const unreadClass = n.unread ? "unread" : "";
+            const subtype = n.category === "task" ? getTaskSubtype(n.id) : "";
+            const subtypeClass = subtype ? `task-${subtype}` : "";
+
             const actionBtns = (n.category === "task" && n.username) ? `
                 <div class="notif-card-actions">
                     <button class="btn-notif-approve" onclick="approveUser('${n.username}'); this.closest('.notif-card').remove(); updateNotifBadgesGlobal();">
@@ -335,13 +479,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>` : "";
 
             return `
-                <div class="notif-card ${n.category} ${unreadClass}" data-id="${n.id}">
+                <div class="notif-card ${n.category} ${subtypeClass} ${unreadClass}" data-id="${n.id}">
                     <div class="notif-card-icon">
                         <i class="${n.icon || meta.icon}"></i>
                     </div>
                     <div class="notif-card-body">
                         <div class="notif-card-label">
-                            <i class="${meta.icon}"></i> ${n.label || meta.label}
+                            <i class="${n.icon || meta.icon}"></i> ${n.label || meta.label}
                         </div>
                         <p class="notif-card-text">${n.text}</p>
                         <span class="notif-card-time">${n.time}</span>
@@ -541,12 +685,10 @@ document.addEventListener("DOMContentLoaded", () => {
             
             const notifWrapper = document.getElementById("admin-notifications-wrapper");
             if (notifWrapper) {
-                if (role === 'ADMIN') {
-                    notifWrapper.style.display = "flex";
-                    loadAllNotifications();
-                } else {
-                    notifWrapper.style.display = "none";
-                }
+                // Show bell for all roles — todos show for everyone, pending approvals only come back for ADMIN
+                notifWrapper.style.display = "flex";
+                // Delay so todoCache has time to load from localStorage
+                setTimeout(() => loadAllNotifications(), 800);
             }
             return true;
         }
