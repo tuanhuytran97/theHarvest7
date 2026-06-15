@@ -593,28 +593,31 @@
                 </div>
 
                 <div class="header-actions-group"
-                    style="display: flex; align-items: center; gap: 1rem; margin-left: auto; position: relative;">
-                    <!-- User Info -->
-                    <div id="user-avatar-trigger" class="user-info-chip"
-                        style="display: flex; align-items: center; gap: 10px; background: white; padding: 5px 15px; border-radius: 50px; border: 1px solid #e2e8f0; cursor: pointer; user-select: none;">
-                        <img id="user-avatar" src="" alt="User"
-                            style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid #6366f1;">
-                        <div style="display: flex; flex-direction: column; line-height: 1.2;">
-                            <span id="user-display-name"
-                                style="font-weight: 800; color: #1e293b; font-size: 0.85rem;"></span>
-                            <span id="user-role-badge"
-                                style="font-size: 0.65rem; font-weight: 700; color: #6366f1;"></span>
+                    style="display: flex; align-items: center; gap: 1rem; margin-left: auto;">
+                    <!-- User Info & Dropdown Wrapper -->
+                    <div style="position: relative;">
+                        <!-- User Info -->
+                        <div id="user-avatar-trigger" class="user-info-chip"
+                            style="display: flex; align-items: center; gap: 10px; background: white; padding: 5px 15px; border-radius: 50px; border: 1px solid #e2e8f0; cursor: pointer; user-select: none;">
+                            <img id="user-avatar" src="" alt="User"
+                                style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid #6366f1;">
+                            <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                                <span id="user-display-name"
+                                    style="font-weight: 800; color: #1e293b; font-size: 0.85rem;"></span>
+                                <span id="user-role-badge"
+                                    style="font-size: 0.65rem; font-weight: 700; color: #6366f1;"></span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; color: #64748b; margin-left: 2px;"></i>
                         </div>
-                        <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; color: #64748b; margin-left: 2px;"></i>
-                    </div>
 
-                    <!-- User Profile Dropdown Menu -->
-                    <div id="user-dropdown" class="user-dropdown-menu glassmorphism"
-                        style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: var(--shadow-lg); width: 220px; z-index: 1000; padding: 6px;">
-                        <button id="btn-edit-profile" class="dropdown-item"
-                            style="width: 100%; background: transparent; border: none; padding: 10px 14px; text-align: left; font-size: 0.85rem; font-weight: 700; color: #334155; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;">
-                            <i class="fa-solid fa-user-gear" style="color: #6366f1;"></i> Thay đổi thông tin
-                        </button>
+                        <!-- User Profile Dropdown Menu -->
+                        <div id="user-dropdown" class="user-dropdown-menu glassmorphism"
+                            style="display: none; position: absolute; top: 100%; left: 0; margin-top: 8px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: var(--shadow-lg); width: 220px; z-index: 1000; padding: 6px;">
+                            <button id="btn-edit-profile" class="dropdown-item"
+                                style="width: 100%; background: transparent; border: none; padding: 10px 14px; text-align: left; font-size: 0.85rem; font-weight: 700; color: #334155; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;">
+                                <i class="fa-solid fa-user-gear" style="color: #6366f1;"></i> Thay đổi thông tin
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Connection Status Indicator -->
