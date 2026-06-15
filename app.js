@@ -286,7 +286,11 @@ document.addEventListener("DOMContentLoaded", () => {
             // Offline/Local Auth Fallback if WEB_APP_URL is not configured
             if (!isConfigured()) {
                 const customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
-                const defaultUsers = (typeof CONFIG !== 'undefined' && CONFIG.USERS) ? CONFIG.USERS : {};
+                const defaultUsers = (typeof CONFIG !== 'undefined' && CONFIG.USERS && Object.keys(CONFIG.USERS).length > 0) ? CONFIG.USERS : {
+                    "huytran97": { name: "Huy Trần", role: "ADMIN" },
+                    "nth66": { name: "Nhân viên 1", role: "EMP_LV1" },
+                    "haitran63": { name: "Nhân viên 2", role: "EMP_LV2" }
+                };
                 
                 let userConfig = null;
                 for (const defaultPw in defaultUsers) {
@@ -352,13 +356,24 @@ document.addEventListener("DOMContentLoaded", () => {
                     localStorage.setItem("failed-login-attempts", "0");
                     localStorage.removeItem("login-block-until");
 
-                    // Lấy thông tin từ danh sách ẩn trong config.js nếu có
-                    const userConfig = (typeof CONFIG !== 'undefined' && CONFIG.USERS) ? CONFIG.USERS[pw] : null;
-                    const userName = userConfig ? userConfig.name : (result.userName || "Người dùng");
+                    const userName = result.userName || "Người dùng";
 
                     sessionStorage.setItem("user-role", result.role);
                     sessionStorage.setItem("user-name", userName);
                     sessionStorage.setItem("user-token", pw); // Dùng password làm token xác thực
+
+                    // Cache credentials in local storage for offline fallback use
+                    try {
+                        const customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
+                        customUsers[result.role] = {
+                            name: userName,
+                            role: result.role,
+                            password: pw
+                        };
+                        localStorage.setItem("custom_users", JSON.stringify(customUsers));
+                    } catch (e) {
+                        console.error("Failed to cache credentials for offline use:", e);
+                    }
 
                     loginOverlay.style.display = "none";
                     appContainer.style.display = "flex";
@@ -8453,8 +8468,31 @@ document.addEventListener("DOMContentLoaded", () => {
                     showProfileError(result.message || "Lỗi khi cập nhật thông tin.");
                 }
             } catch (err) {
-                console.error(err);
-                showProfileError("Lỗi kết nối máy chủ: " + err.message);
+                console.warn("Server update failed, attempting local fallback save:", err);
+                try {
+                    let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
+                    const currentRole = getRole();
+                    
+                    customUsers[currentRole] = {
+                        name: newName,
+                        role: currentRole,
+                        password: newPassword || getToken()
+                    };
+
+                    localStorage.setItem("custom_users", JSON.stringify(customUsers));
+
+                    sessionStorage.setItem("user-name", newName);
+                    if (newPassword) {
+                        sessionStorage.setItem("user-token", newPassword);
+                    }
+
+                    showToast("Lưu cục bộ thành công (Không kết nối được Server)!", "warning");
+                    if (profileModal) profileModal.style.display = "none";
+                    updateUserProfile();
+                    setTimeout(() => location.reload(), 500);
+                } catch (localErr) {
+                    showProfileError("Lỗi lưu thông tin cục bộ: " + localErr.message);
+                }
             } finally {
                 btnSaveProfile.disabled = false;
                 btnSaveProfile.innerHTML = originalBtnText;
