@@ -1,8 +1,11 @@
 // CONFIGURATION UTILITIES
-var getRole = () => sessionStorage.getItem("user-role");
-var getUserName = () => sessionStorage.getItem("user-name");
-var getToken = () => sessionStorage.getItem("user-token");
-var isConfigured = () => typeof CONFIG !== 'undefined' && CONFIG.WEB_APP_URL && CONFIG.WEB_APP_URL !== "" && CONFIG.WEB_APP_URL !== "YOUR_WEB_APP_URL_HERE" && CONFIG.WEB_APP_URL !== "NOT_CONFIGURED";
+var getRole = () => sessionStorage.getItem("user-role") || "ADMIN";
+var getUserName = () => sessionStorage.getItem("user-name") || "Admin Local";
+var getToken = () => sessionStorage.getItem("user-token") || "local-token";
+var isConfigured = () => {
+    if (window.location.protocol === "file:") return false;
+    return typeof CONFIG !== 'undefined' && CONFIG.WEB_APP_URL && CONFIG.WEB_APP_URL !== "" && CONFIG.WEB_APP_URL !== "YOUR_WEB_APP_URL_HERE" && CONFIG.WEB_APP_URL !== "NOT_CONFIGURED";
+};
 
 function getTodayStr() {
     const now = new Date();
@@ -7137,7 +7140,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Handle network errors for script loading
         script.onerror = function () {
-            alert("Không thể kết nối đến Google Sheets. Hãy kiểm tra kết nối mạng của bạn.");
+            if (window.showToast) {
+                window.showToast("Không thể kết nối đến Google Sheets. Đang chạy offline.", "warning");
+            } else {
+                alert("Không thể kết nối đến Google Sheets. Hãy kiểm tra kết nối mạng của bạn.");
+            }
             if (syncBtn) syncBtn.innerHTML = '<i class="fa-solid fa-sync"></i> Đồng bộ dữ liệu mới';
             script.remove();
         };
