@@ -500,6 +500,21 @@
                 height: 320px !important;
             }
         }
+        /* User Profile Dropdown */
+        .user-dropdown-menu {
+            display: none !important;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .user-dropdown-menu.active {
+            display: block !important;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .user-dropdown-menu .dropdown-item:hover {
+            background: #f1f5f9 !important;
+        }
     </style>
 </head>
 
@@ -578,10 +593,10 @@
                 </div>
 
                 <div class="header-actions-group"
-                    style="display: flex; align-items: center; gap: 1rem; margin-left: auto;">
+                    style="display: flex; align-items: center; gap: 1rem; margin-left: auto; position: relative;">
                     <!-- User Info -->
-                    <div class="user-info-chip"
-                        style="display: flex; align-items: center; gap: 10px; background: white; padding: 5px 15px; border-radius: 50px; border: 1px solid #e2e8f0;">
+                    <div id="user-avatar-trigger" class="user-info-chip"
+                        style="display: flex; align-items: center; gap: 10px; background: white; padding: 5px 15px; border-radius: 50px; border: 1px solid #e2e8f0; cursor: pointer; user-select: none;">
                         <img id="user-avatar" src="" alt="User"
                             style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid #6366f1;">
                         <div style="display: flex; flex-direction: column; line-height: 1.2;">
@@ -590,6 +605,16 @@
                             <span id="user-role-badge"
                                 style="font-size: 0.65rem; font-weight: 700; color: #6366f1;"></span>
                         </div>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; color: #64748b; margin-left: 2px;"></i>
+                    </div>
+
+                    <!-- User Profile Dropdown Menu -->
+                    <div id="user-dropdown" class="user-dropdown-menu glassmorphism"
+                        style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: var(--shadow-lg); width: 220px; z-index: 1000; padding: 6px;">
+                        <button id="btn-edit-profile" class="dropdown-item"
+                            style="width: 100%; background: transparent; border: none; padding: 10px 14px; text-align: left; font-size: 0.85rem; font-weight: 700; color: #334155; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;">
+                            <i class="fa-solid fa-user-gear" style="color: #6366f1;"></i> Thay đổi thông tin
+                        </button>
                     </div>
 
                     <!-- Connection Status Indicator -->
@@ -3202,6 +3227,51 @@
                     class="btn-primary"
                     style="flex: 1; padding: 12px; border-radius: 12px; font-weight: 800; background: #f1f5f9; color: #475569; border: none; cursor: pointer; box-shadow: none;">
                     Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Edit Profile -->
+    <div id="profile-modal" class="modal-overlay"
+        style="display: none; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); z-index: 10002;">
+        <div class="modal-content glassmorphism"
+            style="max-width: 450px !important; background: white; width: 90%; border-radius: 16px; padding: 2rem; box-shadow: var(--shadow-lg); display: flex; flex-direction: column;">
+            <div class="modal-header"
+                style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="font-size: 1.4rem; font-weight: 800; color: #6366f1; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-user-gear"></i> Thay đổi thông tin
+                </h2>
+                <button type="button" onclick="document.getElementById('profile-modal').style.display='none'"
+                    class="btn-icon"
+                    style="background: rgba(0,0,0,0.05); border-radius: 50%; width: 32px; height: 32px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Tên hiển thị mới</label>
+                    <input type="text" id="profile-new-name" class="input-modern" placeholder="Nhập tên hiển thị mới" style="width: 100%; padding: 12px; border-radius: 10px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Mật khẩu mới (Bỏ trống nếu giữ nguyên)</label>
+                    <input type="password" id="profile-new-password" class="input-modern" placeholder="Nhập mật khẩu mới" style="width: 100%; padding: 12px; border-radius: 10px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Xác nhận mật khẩu mới</label>
+                    <input type="password" id="profile-confirm-password" class="input-modern" placeholder="Xác nhận mật khẩu mới" style="width: 100%; padding: 12px; border-radius: 10px;">
+                </div>
+                <p id="profile-error-msg" style="color: #ef4444; font-size: 0.8rem; font-weight: 600; margin: 0; display: none;"></p>
+            </div>
+            <div style="display: flex; gap: 1rem; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1.25rem; margin-top: 1.25rem;">
+                <button type="button" id="btn-save-profile" class="btn-primary"
+                    style="flex: 2; padding: 12px; border-radius: 12px; font-weight: 800; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); display: flex; align-items: center; justify-content: center; gap: 8px; border: none; color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(99,102,241,0.3);">
+                    Lưu thay đổi
+                </button>
+                <button type="button" onclick="document.getElementById('profile-modal').style.display='none'"
+                    class="btn-primary"
+                    style="flex: 1; padding: 12px; border-radius: 12px; font-weight: 800; background: #f1f5f9; color: #475569; border: none; cursor: pointer;">
+                    Hủy
                 </button>
             </div>
         </div>

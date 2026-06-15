@@ -285,14 +285,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Offline/Local Auth Fallback if WEB_APP_URL is not configured
             if (!isConfigured()) {
-                const userConfig = (typeof CONFIG !== 'undefined' && CONFIG.USERS) ? CONFIG.USERS[pw] : null;
+                const customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
+                const defaultUsers = (typeof CONFIG !== 'undefined' && CONFIG.USERS) ? CONFIG.USERS : {};
+                
+                let userConfig = null;
+                for (const defaultPw in defaultUsers) {
+                    const defaultUser = defaultUsers[defaultPw];
+                    const role = defaultUser.role;
+                    const customUser = customUsers[role];
+                    const activePassword = customUser ? customUser.password : defaultPw;
+                    
+                    if (pw === activePassword) {
+                        userConfig = {
+                            role: role,
+                            name: customUser ? customUser.name : defaultUser.name,
+                            password: activePassword
+                        };
+                        break;
+                    }
+                }
+                
                 if (userConfig) {
                     localStorage.setItem("failed-login-attempts", "0");
                     localStorage.removeItem("login-block-until");
                     sessionStorage.setItem("user-role", userConfig.role);
                     sessionStorage.setItem("user-name", userConfig.name);
                     sessionStorage.setItem("user-token", pw); // Use password as auth token
-
+ 
                     loginOverlay.style.display = "none";
                     appContainer.style.display = "flex";
                     if (chatbotContainer) chatbotContainer.style.display = "flex";
@@ -8326,6 +8345,128 @@ document.addEventListener("DOMContentLoaded", () => {
                 window.processTodoSyncQueue();
             }
         });
+    }
+
+    // --- PROFILE MODIFICATION LOGIC ---
+    const btnEditProfile = document.getElementById("btn-edit-profile");
+    const profileModal = document.getElementById("profile-modal");
+    const profileNewName = document.getElementById("profile-new-name");
+    const profileNewPassword = document.getElementById("profile-new-password");
+    const profileConfirmPassword = document.getElementById("profile-confirm-password");
+    const profileErrorMsg = document.getElementById("profile-error-msg");
+    const btnSaveProfile = document.getElementById("btn-save-profile");
+
+    if (btnEditProfile && profileModal) {
+        btnEditProfile.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (userDropdown) userDropdown.classList.remove("active");
+            
+            // Fill current name
+            if (profileNewName) profileNewName.value = getUserName() || "";
+            if (profileNewPassword) profileNewPassword.value = "";
+            if (profileConfirmPassword) profileConfirmPassword.value = "";
+            if (profileErrorMsg) profileErrorMsg.style.display = "none";
+            
+            profileModal.style.display = "flex";
+        });
+    }
+
+    if (btnSaveProfile) {
+        btnSaveProfile.addEventListener("click", async () => {
+            const newName = profileNewName ? profileNewName.value.trim() : "";
+            const newPassword = profileNewPassword ? profileNewPassword.value.trim() : "";
+            const confirmPassword = profileConfirmPassword ? profileConfirmPassword.value.trim() : "";
+
+            if (!newName) {
+                showProfileError("Tên hiển thị không được bỏ trống!");
+                return;
+            }
+
+            if (newPassword && newPassword !== confirmPassword) {
+                showProfileError("Mật khẩu mới và xác nhận mật khẩu không khớp!");
+                return;
+            }
+
+            btnSaveProfile.disabled = true;
+            const originalBtnText = btnSaveProfile.innerHTML;
+            btnSaveProfile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+
+            if (profileErrorMsg) profileErrorMsg.style.display = "none";
+
+            // Check if backend is configured
+            if (!isConfigured()) {
+                try {
+                    let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
+                    const currentRole = getRole();
+                    
+                    customUsers[currentRole] = {
+                        name: newName,
+                        role: currentRole,
+                        password: newPassword || getToken()
+                    };
+
+                    localStorage.setItem("custom_users", JSON.stringify(customUsers));
+
+                    sessionStorage.setItem("user-name", newName);
+                    if (newPassword) {
+                        sessionStorage.setItem("user-token", newPassword);
+                    }
+
+                    showToast("Đã lưu thông tin cục bộ thành công!", "success");
+                    if (profileModal) profileModal.style.display = "none";
+                    updateUserProfile();
+                    setTimeout(() => location.reload(), 500);
+                } catch (err) {
+                    showProfileError("Lỗi lưu thông tin: " + err.message);
+                } finally {
+                    btnSaveProfile.disabled = false;
+                    btnSaveProfile.innerHTML = originalBtnText;
+                }
+                return;
+            }
+
+            // Online saving via Apps Script
+            try {
+                const response = await fetch(CONFIG.WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "update_profile",
+                        token: getToken(),
+                        newName: newName,
+                        newPassword: newPassword || undefined
+                    }),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                });
+
+                const result = await response.json();
+                if (result.status === "success") {
+                    sessionStorage.setItem("user-name", newName);
+                    if (newPassword) {
+                        sessionStorage.setItem("user-token", newPassword);
+                    }
+
+                    showToast("Cập nhật thông tin thành công!", "success");
+                    if (profileModal) profileModal.style.display = "none";
+                    updateUserProfile();
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    showProfileError(result.message || "Lỗi khi cập nhật thông tin.");
+                }
+            } catch (err) {
+                console.error(err);
+                showProfileError("Lỗi kết nối máy chủ: " + err.message);
+            } finally {
+                btnSaveProfile.disabled = false;
+                btnSaveProfile.innerHTML = originalBtnText;
+            }
+        });
+    }
+
+    function showProfileError(msg) {
+        if (profileErrorMsg) {
+            profileErrorMsg.innerText = msg;
+            profileErrorMsg.style.display = "block";
+        }
     }
 
     // Bind event listeners

@@ -18,16 +18,35 @@ function doPost(e) {
 
         // 1. ĐĂNG NHẬP
         if (action === "login") {
-            var password = params.password;
-            if (password === "huytran97") return returnJson({ "status": "success", "role": "ADMIN" });
-            else if (password === "nth66")   return returnJson({ "status": "success", "role": "EMP_LV1" });
-            else if (password === "haitran63")   return returnJson({ "status": "success", "role": "EMP_LV2" });
-            else return returnJson({ "status": "error", "message": "Mật khẩu không đúng!" });
+            const password = params.password;
+            const config = readConfig();
+            
+            const adminPw = config["user_admin_password"] || "huytran97";
+            const adminName = config["user_admin_name"] || "Huy Trần";
+            const emp1Pw = config["user_emp1_password"] || "nth66";
+            const emp1Name = config["user_emp1_name"] || "Nhân viên 1";
+            const emp2Pw = config["user_emp2_password"] || "haitran63";
+            const emp2Name = config["user_emp2_name"] || "Nhân viên 2";
+            
+            if (password === adminPw) {
+                return returnJson({ "status": "success", "role": "ADMIN", "userName": adminName });
+            } else if (password === emp1Pw) {
+                return returnJson({ "status": "success", "role": "EMP_LV1", "userName": emp1Name });
+            } else if (password === emp2Pw) {
+                return returnJson({ "status": "success", "role": "EMP_LV2", "userName": emp2Name });
+            } else {
+                return returnJson({ "status": "error", "message": "Mật khẩu không đúng!" });
+            }
         }
 
         // 2. KIỂM TRA TOKEN
         const token = params.token;
-        const validTokens = ["huytran97", "nth66", "haitran63"];
+        const configForToken = readConfig();
+        const adminPw = configForToken["user_admin_password"] || "huytran97";
+        const emp1Pw = configForToken["user_emp1_password"] || "nth66";
+        const emp2Pw = configForToken["user_emp2_password"] || "haitran63";
+        
+        const validTokens = ["huytran97", "nth66", "haitran63", adminPw, emp1Pw, emp2Pw];
         if (!token || validTokens.indexOf(token) === -1)
             return returnJson({ "status": "error", "message": "Phiên làm việc hết hạn hoặc không có quyền!" });
 
@@ -50,8 +69,27 @@ function doPost(e) {
             return returnJson({ "status": "success", "config": readConfig() });
 
         } else if (action === "save_config") {
-            if (token !== "huytran97") return returnJson({ "status": "error", "message": "Chỉ ADMIN mới có thể thay đổi cấu hình!" });
+            if (token !== adminPw) return returnJson({ "status": "error", "message": "Chỉ ADMIN mới có thể thay đổi cấu hình!" });
             writeConfig(params.key, params.value);
+            return returnJson({ "status": "success" });
+
+        } else if (action === "update_profile") {
+            let userRoleKey = null;
+            if (token === adminPw) userRoleKey = "admin";
+            else if (token === emp1Pw) userRoleKey = "emp1";
+            else if (token === emp2Pw) userRoleKey = "emp2";
+            
+            if (!userRoleKey) {
+                return returnJson({ "status": "error", "message": "Xác thực không hợp lệ!" });
+            }
+            
+            if (params.newName) {
+                writeConfig("user_" + userRoleKey + "_name", params.newName.trim());
+            }
+            if (params.newPassword) {
+                writeConfig("user_" + userRoleKey + "_password", params.newPassword.trim());
+            }
+            
             return returnJson({ "status": "success" });
 
         } else if (action === "save_adjustment") {
