@@ -103,6 +103,31 @@ function doPost(e) {
             } else {
                 return returnJson({ "status": "error", "message": "Tên đăng nhập hoặc mật khẩu không đúng!" });
             }
+        } else if (action === "register") {
+            const username = params.username ? params.username.trim() : "";
+            const password = params.password ? String(params.password).trim() : "";
+            const name = params.name ? params.name.trim() : "";
+            const role = params.role ? params.role.trim() : "EMP_LV2";
+            
+            if (!username || !password || !name) {
+                return returnJson({ "status": "error", "message": "Vui lòng nhập đầy đủ thông tin!" });
+            }
+            
+            if (users[username]) {
+                return returnJson({ "status": "error", "message": "Tên đăng nhập đã tồn tại trên hệ thống!" });
+            }
+            
+            if (config["request_" + username + "_status"] === "PENDING") {
+                return returnJson({ "status": "error", "message": "Yêu cầu đăng ký tài khoản này đang chờ Admin phê duyệt!" });
+            }
+            
+            writeConfig("request_" + username + "_username", username);
+            writeConfig("request_" + username + "_password", password);
+            writeConfig("request_" + username + "_name", name);
+            writeConfig("request_" + username + "_role", role);
+            writeConfig("request_" + username + "_status", "PENDING");
+            
+            return returnJson({ "status": "success", "message": "Đã gửi yêu cầu đăng ký. Vui lòng đợi Admin phê duyệt!" });
         }
 
         // 2. KIỂM TRA TOKEN
@@ -165,6 +190,58 @@ function doPost(e) {
         } else if (action === "save_config") {
             if (userRole !== "ADMIN") return returnJson({ "status": "error", "message": "Chỉ ADMIN mới có thể thay đổi cấu hình!" });
             writeConfig(params.key, params.value);
+            return returnJson({ "status": "success" });
+
+        } else if (action === "get_pending_users") {
+            if (userRole !== "ADMIN") return returnJson({ "status": "error", "message": "Chỉ ADMIN mới có quyền duyệt tài khoản!" });
+            
+            const pending = [];
+            for (let key in config) {
+                if (key.indexOf("request_") === 0 && key.indexOf("_username") > 0) {
+                    const reqUsername = config[key];
+                    const status = config["request_" + reqUsername + "_status"];
+                    if (status === "PENDING") {
+                        pending.push({
+                            username: reqUsername,
+                            name: config["request_" + reqUsername + "_name"] || reqUsername,
+                            role: config["request_" + reqUsername + "_role"] || "EMP_LV2"
+                        });
+                    }
+                }
+            }
+            return returnJson({ "status": "success", "pending": pending });
+
+        } else if (action === "approve_user") {
+            if (userRole !== "ADMIN") return returnJson({ "status": "error", "message": "Chỉ ADMIN mới có quyền duyệt tài khoản!" });
+            
+            const reqUsername = params.username ? params.username.trim() : "";
+            const isApproved = params.approve === true;
+            
+            if (!reqUsername) return returnJson({ "status": "error", "message": "Thiếu tên tài khoản phê duyệt!" });
+            
+            if (isApproved) {
+                const reqPassword = config["request_" + reqUsername + "_password"] || "";
+                const reqName = config["request_" + reqUsername + "_name"] || reqUsername;
+                const reqRole = config["request_" + reqUsername + "_role"] || "EMP_LV2";
+                
+                writeConfig("user_" + reqUsername + "_username", reqUsername);
+                writeConfig("user_" + reqUsername + "_password", reqPassword);
+                writeConfig("user_" + reqUsername + "_name", reqName);
+                writeConfig("user_" + reqUsername + "_role", reqRole);
+                
+                writeConfig("request_" + reqUsername + "_username", "");
+                writeConfig("request_" + reqUsername + "_password", "");
+                writeConfig("request_" + reqUsername + "_name", "");
+                writeConfig("request_" + reqUsername + "_role", "");
+                writeConfig("request_" + reqUsername + "_status", "");
+            } else {
+                writeConfig("request_" + reqUsername + "_username", "");
+                writeConfig("request_" + reqUsername + "_password", "");
+                writeConfig("request_" + reqUsername + "_name", "");
+                writeConfig("request_" + reqUsername + "_role", "");
+                writeConfig("request_" + reqUsername + "_status", "");
+            }
+            
             return returnJson({ "status": "success" });
 
         } else if (action === "update_profile") {

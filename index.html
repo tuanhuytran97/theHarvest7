@@ -523,16 +523,13 @@
     <div id="toast-container"></div>
     <!-- Simple Login Overlay -->
     <div id="login-overlay" class="login-overlay">
-        <div class="login-card glassmorphism">
+        <!-- Login Card -->
+        <div id="login-card" class="login-card glassmorphism">
             <div class="logo" style="justify-content: center; margin-bottom: 2rem;">
                 <i class="fa-solid fa-leaf"></i>
                 <span>theHarvest7 Admin</span>
             </div>
-            <p style="text-align: center; margin-bottom: 1rem; color: var(--text-light);">Vui lòng nhập mật khẩu truy
-                cập nội bộ</p>
-
-            <!-- Login Info Hint -->
-            <!-- Privacy: Login hints removed -->
+            <p style="text-align: center; margin-bottom: 1rem; color: var(--text-light);">Vui lòng nhập mật khẩu truy cập nội bộ</p>
 
             <form id="login-form">
                 <div class="form-group" style="margin-bottom: 0.75rem;">
@@ -550,9 +547,51 @@
                     </div>
                 </div>
                 <button type="submit" class="btn-primary" style="width: 100%;">Truy Cập Hệ Thống</button>
+                <div style="text-align: center; margin-top: 1rem;">
+                    <a href="#" id="go-to-register" style="color: #6366f1; font-weight: 700; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;">Đăng ký tài khoản mới</a>
+                </div>
                 <p id="login-error"
                     style="color: var(--danger); font-size: 0.85rem; text-align: center; margin-top: 1rem; display: none;">
                     Mật khẩu không đúng!</p>
+            </form>
+        </div>
+
+        <!-- Registration Card -->
+        <div id="register-card" class="login-card glassmorphism" style="display: none;">
+            <div class="logo" style="justify-content: center; margin-bottom: 2rem;">
+                <i class="fa-solid fa-leaf"></i>
+                <span>theHarvest7 Đăng Ký</span>
+            </div>
+            <p style="text-align: center; margin-bottom: 1rem; color: var(--text-light);">Yêu cầu tạo tài khoản mới (Chờ phê duyệt)</p>
+
+            <form id="register-form">
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                    <input type="text" id="register-username" placeholder="Tên đăng nhập" required
+                        style="width: 100%; height: 50px; text-align: center; font-size: 1.1rem; border-radius: 0.75rem; border: 1px solid var(--border-color); box-sizing: border-box;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                    <input type="text" id="register-name" placeholder="Tên hiển thị (Họ tên)" required
+                        style="width: 100%; height: 50px; text-align: center; font-size: 1.1rem; border-radius: 0.75rem; border: 1px solid var(--border-color); box-sizing: border-box;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                    <input type="password" id="register-password" placeholder="Mật khẩu" required
+                        style="width: 100%; height: 50px; text-align: center; font-size: 1.1rem; border-radius: 0.75rem; border: 1px solid var(--border-color); box-sizing: border-box;">
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <select id="register-role" required
+                        style="width: 100%; height: 50px; text-align: center; font-size: 1.05rem; border-radius: 0.75rem; border: 1px solid var(--border-color); box-sizing: border-box; background: white; font-weight: 700; color: #475569;">
+                        <option value="EMP_LV2">Nhân viên Bậc 2 (Chỉ đọc)</option>
+                        <option value="EMP_LV1">Nhân viên Bậc 1 (Nhập liệu & Đọc)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">Gửi Yêu Cầu Đăng Ký</button>
+                <div style="text-align: center; margin-top: 1rem;">
+                    <a href="#" id="go-to-login" style="color: #64748b; font-weight: 700; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;">Quay lại đăng nhập</a>
+                </div>
+                <p id="register-error"
+                    style="color: var(--danger); font-size: 0.85rem; text-align: center; margin-top: 1rem; display: none;"></p>
+                <p id="register-success"
+                    style="color: var(--success); font-size: 0.85rem; text-align: center; margin-top: 1rem; display: none; font-weight: 700;"></p>
             </form>
         </div>
     </div>
@@ -621,6 +660,26 @@
                                 style="width: 100%; background: transparent; border: none; padding: 10px 14px; text-align: left; font-size: 0.85rem; font-weight: 700; color: #334155; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 0.2s;">
                                 <i class="fa-solid fa-user-gear" style="color: #6366f1;"></i> Thay đổi thông tin
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- Notification Badge for Account Requests (Admin Only) -->
+                    <div id="admin-notifications-wrapper" style="position: relative; display: none; align-items: center;">
+                        <button id="admin-notifications-btn"
+                            style="padding: 10px 14px; border-radius: 12px; font-weight: 700; background: #fffbeb; border: 1.5px solid #fef3c7; color: #d97706; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; font-size: 1rem; width: 42px; height: 42px; box-sizing: border-box; box-shadow: 0 4px 10px rgba(217, 119, 6, 0.08);">
+                            <i class="fa-solid fa-bell"></i>
+                            <span id="admin-notifications-count" style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; display: none; align-items: center; justify-content: center; font-weight: 800;">0</span>
+                        </button>
+                        <!-- Dropdown panel for notifications -->
+                        <div id="admin-notifications-dropdown" class="glassmorphism"
+                            style="display: none; position: absolute; top: 100%; right: 0; margin-top: 8px; background: white; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: var(--shadow-xl); width: 330px; z-index: 2000; padding: 12px; max-height: 400px; overflow-y: auto;">
+                            <h4 style="margin: 0 0 10px 0; font-size: 0.9rem; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-weight: 800;">
+                                <span>Phê duyệt tài khoản</span>
+                                <button id="btn-refresh-requests" style="background:none; border:none; color:#6366f1; cursor:pointer;" title="Làm mới"><i class="fa-solid fa-arrows-rotate"></i></button>
+                            </h4>
+                            <div id="admin-requests-list" style="display: flex; flex-direction: column; gap: 8px;">
+                                <p style="font-size: 0.8rem; color: #64748b; text-align: center; margin: 20px 0;">Đang tải yêu cầu...</p>
+                            </div>
                         </div>
                     </div>
 

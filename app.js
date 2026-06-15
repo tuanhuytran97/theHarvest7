@@ -171,10 +171,43 @@ document.addEventListener("DOMContentLoaded", () => {
         userTrigger.addEventListener("click", (e) => {
             e.stopPropagation();
             userDropdown.classList.toggle("active");
+            
+            const notifDropdown = document.getElementById("admin-notifications-dropdown");
+            if (notifDropdown) notifDropdown.style.display = "none";
         });
 
         document.addEventListener("click", () => {
             userDropdown.classList.remove("active");
+        });
+    }
+
+    // Admin Notifications Dropdown Logic
+    const notifBtn = document.getElementById("admin-notifications-btn");
+    const notifDropdown = document.getElementById("admin-notifications-dropdown");
+    const refreshBtn = document.getElementById("btn-refresh-requests");
+    
+    if (notifBtn && notifDropdown) {
+        notifBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const isOpen = notifDropdown.style.display === "block";
+            notifDropdown.style.display = isOpen ? "none" : "block";
+            if (!isOpen) {
+                loadPendingUsers();
+            }
+            if (userDropdown) userDropdown.classList.remove("active");
+        });
+        
+        document.addEventListener("click", (e) => {
+            if (!notifDropdown.contains(e.target) && e.target !== notifBtn && !notifBtn.contains(e.target)) {
+                notifDropdown.style.display = "none";
+            }
+        });
+    }
+    
+    if (refreshBtn) {
+        refreshBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            loadPendingUsers();
         });
     }
 
@@ -231,6 +264,138 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     window.hasPermission = hasPermission;
 
+    async function loadPendingUsers() {
+        const listContainer = document.getElementById("admin-requests-list");
+        const badgeCount = document.getElementById("admin-notifications-count");
+        
+        if (!listContainer) return;
+        
+        if (!isConfigured()) {
+            const customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
+            const pending = [];
+            for (let k in customUsers) {
+                if (customUsers[k] && customUsers[k].status === "PENDING") {
+                    pending.push(customUsers[k]);
+                }
+            }
+            renderPendingUsersList(pending);
+            return;
+        }
+        
+        try {
+            const response = await fetch(CONFIG.WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "get_pending_users", token: getToken() }),
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
+            });
+            const result = await response.json();
+            if (result.status === "success" && result.pending) {
+                renderPendingUsersList(result.pending);
+            } else {
+                listContainer.innerHTML = `<p style="font-size: 0.8rem; color: #ef4444; text-align: center; margin: 20px 0;">${result.message || 'Lỗi tải yêu cầu'}</p>`;
+            }
+        } catch (e) {
+            listContainer.innerHTML = `<p style="font-size: 0.8rem; color: #ef4444; text-align: center; margin: 20px 0;">Lỗi kết nối máy chủ</p>`;
+        }
+    }
+
+    function renderPendingUsersList(pending) {
+        const listContainer = document.getElementById("admin-requests-list");
+        const badgeCount = document.getElementById("admin-notifications-count");
+        if (!listContainer || !badgeCount) return;
+        
+        if (pending.length === 0) {
+            listContainer.innerHTML = `<p style="font-size: 0.8rem; color: #64748b; text-align: center; margin: 20px 0;">Không có yêu cầu nào.</p>`;
+            badgeCount.style.display = "none";
+            badgeCount.innerText = "0";
+            return;
+        }
+        
+        badgeCount.innerText = pending.length;
+        badgeCount.style.display = "flex";
+        
+        listContainer.innerHTML = pending.map(req => `
+            <div class="request-item" style="border: 1px solid #f1f5f9; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 6px; background: #fafafa; margin-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="font-size: 0.85rem; color: #1e293b;">${req.username}</strong>
+                    <span style="font-size: 0.7rem; font-weight: 700; color: #6366f1; background: #eff6ff; padding: 2px 6px; border-radius: 4px;">${req.role}</span>
+                </div>
+                <div style="font-size: 0.8rem; color: #64748b; text-align: left;">Họ tên: ${req.name}</div>
+                <div style="display: flex; gap: 8px; margin-top: 4px;">
+                    <button onclick="approveUser('${req.username}')" style="flex: 1; padding: 6px; font-size: 0.75rem; border-radius: 6px; background: #10b981; border: none; color: white; cursor: pointer; font-weight: 700;">Duyệt</button>
+                    <button onclick="rejectUser('${req.username}')" style="flex: 1; padding: 6px; font-size: 0.75rem; border-radius: 6px; background: #ef4444; border: none; color: white; cursor: pointer; font-weight: 700;">Từ chối</button>
+                </div>
+            </div>
+        `).join("");
+    }
+
+    async function approveUser(username) {
+        if (!confirm(`Bạn có chắc chắn muốn DUYỆT tài khoản "${username}" không?`)) return;
+        
+        if (!isConfigured()) {
+            let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
+            if (customUsers[username]) {
+                customUsers[username].status = "ACTIVE";
+                localStorage.setItem("custom_users", JSON.stringify(customUsers));
+                showToast(`Đã duyệt tài khoản "${username}" thành công!`, "success");
+                loadPendingUsers();
+            }
+            return;
+        }
+        
+        try {
+            const response = await fetch(CONFIG.WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "approve_user", username: username, approve: true, token: getToken() }),
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
+            });
+            const result = await response.json();
+            if (result.status === "success") {
+                showToast(`Đã duyệt tài khoản "${username}" thành công!`, "success");
+                loadPendingUsers();
+            } else {
+                alert(result.message || "Lỗi phê duyệt tài khoản");
+            }
+        } catch (e) {
+            alert("Lỗi kết nối máy chủ");
+        }
+    }
+
+    async function rejectUser(username) {
+        if (!confirm(`Bạn có chắc chắn muốn TỪ CHỐI/XÓA yêu cầu của "${username}" không?`)) return;
+        
+        if (!isConfigured()) {
+            let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
+            if (customUsers[username]) {
+                delete customUsers[username];
+                localStorage.setItem("custom_users", JSON.stringify(customUsers));
+                showToast(`Đã từ chối/xóa tài khoản "${username}"!`, "warning");
+                loadPendingUsers();
+            }
+            return;
+        }
+        
+        try {
+            const response = await fetch(CONFIG.WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "approve_user", username: username, approve: false, token: getToken() }),
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
+            });
+            const result = await response.json();
+            if (result.status === "success") {
+                showToast(`Đã từ chối yêu cầu của "${username}"!`, "warning");
+                loadPendingUsers();
+            } else {
+                alert(result.message || "Lỗi từ chối tài khoản");
+            }
+        } catch (e) {
+            alert("Lỗi kết nối máy chủ");
+        }
+    }
+
+    window.approveUser = approveUser;
+    window.rejectUser = rejectUser;
+
     const checkAuth = () => {
         const role = getRole();
         if (role) {
@@ -248,6 +413,16 @@ document.addEventListener("DOMContentLoaded", () => {
             applyRolePermissions(role);
             updateUserProfile();
             fetchSystemConfig();
+            
+            const notifWrapper = document.getElementById("admin-notifications-wrapper");
+            if (notifWrapper) {
+                if (role === 'ADMIN') {
+                    notifWrapper.style.display = "flex";
+                    loadPendingUsers();
+                } else {
+                    notifWrapper.style.display = "none";
+                }
+            }
             return true;
         }
         return false;
@@ -324,6 +499,118 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         return false;
     };
+
+    // Registration Toggle Logic
+    const loginCard = document.getElementById("login-card");
+    const registerCard = document.getElementById("register-card");
+    const goToRegisterBtn = document.getElementById("go-to-register");
+    const goToLoginBtn = document.getElementById("go-to-login");
+    const registerForm = document.getElementById("register-form");
+    const registerErrorMsg = document.getElementById("register-error");
+    const registerSuccessMsg = document.getElementById("register-success");
+
+    if (goToRegisterBtn && loginCard && registerCard) {
+        goToRegisterBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            loginCard.style.display = "none";
+            registerCard.style.display = "block";
+            if (registerErrorMsg) registerErrorMsg.style.display = "none";
+            if (registerSuccessMsg) registerSuccessMsg.style.display = "none";
+        });
+    }
+
+    if (goToLoginBtn && loginCard && registerCard) {
+        goToLoginBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            registerCard.style.display = "none";
+            loginCard.style.display = "block";
+        });
+    }
+
+    if (registerForm) {
+        registerForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const username = document.getElementById("register-username").value.trim();
+            const name = document.getElementById("register-name").value.trim();
+            const password = document.getElementById("register-password").value;
+            const role = document.getElementById("register-role").value;
+            
+            const submitBtn = registerForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerText;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...';
+            submitBtn.disabled = true;
+            
+            if (registerErrorMsg) registerErrorMsg.style.display = "none";
+            if (registerSuccessMsg) registerSuccessMsg.style.display = "none";
+            
+            if (!isConfigured()) {
+                try {
+                    let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
+                    if (customUsers[username]) {
+                        throw new Error("Tài khoản đã tồn tại ngoại tuyến!");
+                    }
+                    customUsers[username] = {
+                        name: name,
+                        role: role,
+                        username: username,
+                        password: password,
+                        status: "PENDING"
+                    };
+                    localStorage.setItem("custom_users", JSON.stringify(customUsers));
+                    if (registerSuccessMsg) {
+                        registerSuccessMsg.innerText = "Đã gửi yêu cầu đăng ký (Ngoại tuyến). Vui lòng đợi Admin phê duyệt!";
+                        registerSuccessMsg.style.display = "block";
+                        registerForm.reset();
+                    }
+                } catch(err) {
+                    if (registerErrorMsg) {
+                        registerErrorMsg.innerText = err.message;
+                        registerErrorMsg.style.display = "block";
+                    }
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = originalText;
+                }
+                return;
+            }
+            
+            try {
+                const response = await fetch(CONFIG.WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "register",
+                        username: username,
+                        name: name,
+                        password: password,
+                        role: role
+                    }),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                });
+                
+                const result = await response.json();
+                if (result.status === "success") {
+                    if (registerSuccessMsg) {
+                        registerSuccessMsg.innerText = result.message || "Đăng ký thành công!";
+                        registerSuccessMsg.style.display = "block";
+                        registerForm.reset();
+                    }
+                } else {
+                    if (registerErrorMsg) {
+                        registerErrorMsg.innerText = result.message || "Đã xảy ra lỗi!";
+                        registerErrorMsg.style.display = "block";
+                    }
+                }
+            } catch (err) {
+                if (registerErrorMsg) {
+                    registerErrorMsg.innerText = "Lỗi kết nối server!";
+                    registerErrorMsg.style.display = "block";
+                }
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalText;
+            }
+        });
+    }
 
     if (!checkAuth()) {
         checkLoginBlock();
