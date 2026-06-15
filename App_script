@@ -229,17 +229,9 @@ function doPost(e) {
                 writeConfig("user_" + reqUsername + "_name", reqName);
                 writeConfig("user_" + reqUsername + "_role", reqRole);
                 
-                writeConfig("request_" + reqUsername + "_username", "");
-                writeConfig("request_" + reqUsername + "_password", "");
-                writeConfig("request_" + reqUsername + "_name", "");
-                writeConfig("request_" + reqUsername + "_role", "");
-                writeConfig("request_" + reqUsername + "_status", "");
+                deleteConfigPrefix("request_" + reqUsername + "_");
             } else {
-                writeConfig("request_" + reqUsername + "_username", "");
-                writeConfig("request_" + reqUsername + "_password", "");
-                writeConfig("request_" + reqUsername + "_name", "");
-                writeConfig("request_" + reqUsername + "_role", "");
-                writeConfig("request_" + reqUsername + "_status", "");
+                deleteConfigPrefix("request_" + reqUsername + "_");
             }
             
             return returnJson({ "status": "success" });
@@ -1285,6 +1277,18 @@ function writeConfig(key, value) {
         if (rows[i][0] === key) { cs.getRange(i + 1, 2).setValue(value); return; }
     }
     cs.appendRow([key, value, ""]);
+}
+
+function deleteConfigPrefix(prefix) {
+    const cs = getOrCreateConfigSheet();
+    const lastRow = cs.getLastRow();
+    if (lastRow < 2) return;
+    const keys = cs.getRange(1, 1, lastRow, 1).getValues();
+    for (let i = keys.length - 1; i >= 1; i--) {
+        if (keys[i][0] && keys[i][0].indexOf(prefix) === 0) {
+            cs.deleteRow(i + 1);
+        }
+    }
 }
 
 function returnJson(obj) {
