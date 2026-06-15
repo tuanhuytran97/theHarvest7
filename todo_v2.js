@@ -1773,31 +1773,57 @@ function updateListStickerTriggerLabel() {
 let isProcessingTodoQueue = false;
 
 function updateTodoConnectionStatus() {
-    const indicator = document.getElementById('todo-conn-status-indicator');
+    const indicator = document.getElementById('todo-conn-status-indicator') || document.getElementById('conn-status-indicator');
     if (!indicator) return;
 
+    const isGlobal = indicator.id === 'conn-status-indicator';
     const queue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
     const hasPending = queue.length > 0;
 
+    const dot = indicator.querySelector('.status-dot');
+    const loader = indicator.querySelector('.status-loader');
+    const text = indicator.querySelector('.status-text');
+
     if (!navigator.onLine) {
         indicator.className = 'conn-status-badge status-offline';
-        const dot = indicator.querySelector('.status-dot');
-        const text = indicator.querySelector('.status-text');
-        if (dot) dot.style.background = '#ef4444';
+        if (dot) {
+            dot.style.display = 'inline-block';
+            dot.style.background = '#ef4444';
+        }
+        if (loader) loader.style.display = 'none';
         if (text) text.innerText = `Ngoại tuyến ${hasPending ? `(${queue.length} nợ)` : ''}`;
+        if (isGlobal) {
+            indicator.style.background = '#fef2f2';
+            indicator.style.color = '#991b1b';
+            indicator.style.borderColor = '#fecaca';
+        }
     } else {
         if (hasPending) {
             indicator.className = 'conn-status-badge status-syncing';
-            const dot = indicator.querySelector('.status-dot');
-            const text = indicator.querySelector('.status-text');
-            if (dot) dot.style.background = '#f59e0b';
+            if (dot) dot.style.display = 'none';
+            if (loader) {
+                loader.style.display = 'inline-block';
+                loader.style.color = '#f59e0b';
+            }
             if (text) text.innerText = `Chờ đồng bộ (${queue.length})`;
+            if (isGlobal) {
+                indicator.style.background = '#fffbeb';
+                indicator.style.color = '#92400e';
+                indicator.style.borderColor = '#fef3c7';
+            }
         } else {
             indicator.className = 'conn-status-badge status-online';
-            const dot = indicator.querySelector('.status-dot');
-            const text = indicator.querySelector('.status-text');
-            if (dot) dot.style.background = '#22c55e';
+            if (dot) {
+                dot.style.display = 'inline-block';
+                dot.style.background = '#22c55e';
+            }
+            if (loader) loader.style.display = 'none';
             if (text) text.innerText = 'Trực tuyến';
+            if (isGlobal) {
+                indicator.style.background = '#f0fdf4';
+                indicator.style.color = '#166534';
+                indicator.style.borderColor = '#bbf7d0';
+            }
         }
     }
 }
@@ -1820,13 +1846,24 @@ async function processTodoSyncQueue() {
             let success = false;
             let response = null;
 
-            const indicator = document.getElementById('todo-conn-status-indicator');
+            const indicator = document.getElementById('todo-conn-status-indicator') || document.getElementById('conn-status-indicator');
             if (indicator) {
+                const isGlobal = indicator.id === 'conn-status-indicator';
                 indicator.className = 'conn-status-badge status-syncing';
                 const dot = indicator.querySelector('.status-dot');
+                const loader = indicator.querySelector('.status-loader');
                 const text = indicator.querySelector('.status-text');
-                if (dot) dot.style.background = '#f59e0b';
+                if (dot) dot.style.display = 'none';
+                if (loader) {
+                    loader.style.display = 'inline-block';
+                    loader.style.color = '#f59e0b';
+                }
                 if (text) text.innerText = `Đang đồng bộ... (${queue.length} dòng)`;
+                if (isGlobal) {
+                    indicator.style.background = '#fffbeb';
+                    indicator.style.color = '#92400e';
+                    indicator.style.borderColor = '#fef3c7';
+                }
             }
 
             try {
@@ -1934,5 +1971,151 @@ window.showToast = window.showToast || function (message, type = 'info', duratio
 
 window.updateTodoConnectionStatus = updateTodoConnectionStatus;
 window.processTodoSyncQueue = processTodoSyncQueue;
+
+// --- STANDALONE/INTEGRATED QUEUE MANAGER SUPPORT IN TODO_V2.JS ---
+if (typeof window.renderQueueItems !== 'function') {
+    function getQueueItemDescription(item, source) {
+        if (source === 'todo') {
+            if (item.action === 'save_todo_task') {
+                const taskName = item.data ? (item.data.task || 'Không tên') : 'Không tên';
+                const status = item.data ? (item.data.status || 'Chưa bắt đầu') : 'Chưa bắt đầu';
+                return `<b>Công việc:</b> ${taskName} [Trạng thái: ${status}]`;
+            } else if (item.action === 'delete_todo_task') {
+                return `<b>Xóa công việc:</b> ID ${item.id}`;
+            }
+            return `Hành động: ${item.action}`;
+        } else {
+            if (item.action === 'add') {
+                const payload = item.payload || {};
+                const name = payload.buyerName || payload.name || 'Không rõ';
+                const date = payload.date || payload.ngay || '';
+                const total = payload.totalExpected || payload.total || 0;
+                return `<b>Thêm mới:</b> Khách ${name} (${date}) - ${total.toLocaleString('vi-VN')}đ`;
+            } else if (item.action === 'delete') {
+                return `<b>Xóa dòng:</b> Dòng ${item.rowNumber} (Bảng: ${item.context || 'không rõ'})`;
+            } else if (item.action === 'update') {
+                return `<b>Sửa dòng:</b> Dòng ${item.rowNumber} (Thay đổi: ${JSON.stringify(item.updates)})`;
+            }
+            return `Hành động: ${item.action}`;
+        }
+    }
+
+    window.renderQueueItems = function() {
+        const listContainer = document.getElementById('queue-items-list');
+        if (!listContainer) return;
+
+        const harvestQueue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+        const todoQueue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
+
+        if (harvestQueue.length === 0 && todoQueue.length === 0) {
+            listContainer.innerHTML = `<div style="text-align: center; padding: 2rem; color: #94a3b8; font-style: italic; font-weight: 600;">Hàng chờ đồng bộ đang trống!</div>`;
+            return;
+        }
+
+        let html = '';
+
+        harvestQueue.forEach((item, index) => {
+            const desc = getQueueItemDescription(item, 'harvest');
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(99, 102, 241, 0.05); border-left: 4px solid #6366f1; border-radius: 8px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div>
+                            <span style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; background: #6366f1; color: white; padding: 2px 6px; border-radius: 4px; margin-right: 6px;">Dữ liệu Farm</span>
+                        </div>
+                        <span style="font-size: 0.85rem; color: #334155;">${desc}</span>
+                    </div>
+                    <button type="button" onclick="window.removeQueueItem('harvest', ${index})" style="background: transparent; border: none; color: #ef4444; cursor: pointer; padding: 4px; font-size: 1rem;" title="Xóa bỏ mục này">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            `;
+        });
+
+        todoQueue.forEach((item, index) => {
+            const desc = getQueueItemDescription(item, 'todo');
+            html += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(16, 185, 129, 0.05); border-left: 4px solid #10b981; border-radius: 8px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div>
+                            <span style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; margin-right: 6px;">Công Việc</span>
+                        </div>
+                        <span style="font-size: 0.85rem; color: #334155;">${desc}</span>
+                    </div>
+                    <button type="button" onclick="window.removeQueueItem('todo', ${index})" style="background: transparent; border: none; color: #ef4444; cursor: pointer; padding: 4px; font-size: 1rem;" title="Xóa bỏ mục này">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            `;
+        });
+
+        listContainer.innerHTML = html;
+    };
+
+    window.removeQueueItem = function(source, index) {
+        if (!confirm('Bạn có chắc muốn xóa mục này khỏi hàng chờ? Giao dịch/công việc này sẽ không được đồng bộ lên Cloud.')) return;
+        
+        if (source === 'harvest') {
+            let queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+            queue.splice(index, 1);
+            localStorage.setItem('harvest_sync_queue', JSON.stringify(queue));
+            if (window.updateConnectionStatus) window.updateConnectionStatus();
+        } else {
+            let queue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
+            queue.splice(index, 1);
+            localStorage.setItem('todo_sync_queue', JSON.stringify(queue));
+            if (window.updateTodoConnectionStatus) {
+                window.updateTodoConnectionStatus();
+            } else if (window.updateConnectionStatus) {
+                window.updateConnectionStatus();
+            }
+        }
+        window.renderQueueItems();
+    };
+
+    // Bind event listeners for standalone view buttons
+    const btnClearQueue = document.getElementById('btn-clear-queue');
+    if (btnClearQueue) {
+        btnClearQueue.addEventListener('click', () => {
+            if (!confirm('Cảnh báo: Bạn có chắc chắn muốn xóa TOÀN BỘ hàng chờ đồng bộ của cả Dữ liệu Farm và Công Việc? Tất cả thay đổi chưa lưu lên Cloud sẽ bị hủy bỏ.')) return;
+            
+            localStorage.setItem('harvest_sync_queue', '[]');
+            localStorage.setItem('todo_sync_queue', '[]');
+            
+            showToast('Đã xóa toàn bộ hàng chờ đồng bộ!', 'info');
+            document.getElementById('queue-manager-modal').style.display = 'none';
+            
+            if (window.updateConnectionStatus) window.updateConnectionStatus();
+            if (window.updateTodoConnectionStatus) window.updateTodoConnectionStatus();
+        });
+    }
+
+    const btnRetryQueue = document.getElementById('btn-retry-queue');
+    if (btnRetryQueue) {
+        btnRetryQueue.addEventListener('click', () => {
+            showToast('Đang thực hiện đồng bộ lại...', 'info');
+            document.getElementById('queue-manager-modal').style.display = 'none';
+            
+            if (window.processSyncQueue) window.processSyncQueue();
+            if (window.processTodoSyncQueue) window.processTodoSyncQueue();
+        });
+    }
+}
+
+// Bind connection badge click events for both integrated and standalone scenarios
+const todoConnBadge = document.getElementById('todo-conn-status-indicator');
+if (todoConnBadge) {
+    todoConnBadge.style.cursor = 'pointer';
+    todoConnBadge.title = 'Nhấp để quản lý hàng chờ đồng bộ (Queue)';
+    todoConnBadge.addEventListener('click', () => {
+        const modal = document.getElementById('queue-manager-modal');
+        if (modal) {
+            modal.style.display = 'flex';
+            if (typeof window.renderQueueItems === 'function') {
+                window.renderQueueItems();
+            }
+        }
+    });
+}
+
 
 
