@@ -1,7 +1,7 @@
 // CONFIGURATION UTILITIES
-var getRole = () => sessionStorage.getItem("user-role") || "ADMIN";
-var getUserName = () => sessionStorage.getItem("user-name") || "Admin Local";
-var getToken = () => sessionStorage.getItem("user-token") || "local-token";
+var getRole = () => sessionStorage.getItem("user-role");
+var getUserName = () => sessionStorage.getItem("user-name");
+var getToken = () => sessionStorage.getItem("user-token");
 var isConfigured = () => {
     if (window.location.protocol === "file:") return false;
     return typeof CONFIG !== 'undefined' && CONFIG.WEB_APP_URL && CONFIG.WEB_APP_URL !== "" && CONFIG.WEB_APP_URL !== "YOUR_WEB_APP_URL_HERE" && CONFIG.WEB_APP_URL !== "NOT_CONFIGURED";
@@ -784,6 +784,7 @@ document.addEventListener("DOMContentLoaded", () => {
         logoutBtn.addEventListener("click", () => {
             sessionStorage.removeItem("user-role");
             sessionStorage.removeItem("user-name");
+            sessionStorage.removeItem("user-token");
             location.reload();
         });
     }
@@ -8736,8 +8737,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const profileNewName = document.getElementById("profile-new-name");
     const profileNewUsername = document.getElementById("profile-new-username");
     const profileCurrentPassword = document.getElementById("profile-current-password");
-    const profileNewPassword = document.getElementById("profile-new-password");
-    const profileConfirmPassword = document.getElementById("profile-confirm-password");
     const profileErrorMsg = document.getElementById("profile-error-msg");
     const btnSaveProfile = document.getElementById("btn-save-profile");
 
@@ -8754,8 +8753,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 profileNewUsername.value = currentUsername;
             }
             if (profileCurrentPassword) profileCurrentPassword.value = "";
-            if (profileNewPassword) profileNewPassword.value = "";
-            if (profileConfirmPassword) profileConfirmPassword.value = "";
             if (profileErrorMsg) profileErrorMsg.style.display = "none";
             
             profileModal.style.display = "flex";
@@ -8767,16 +8764,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const newName = profileNewName ? profileNewName.value.trim() : "";
             const newUsername = profileNewUsername ? profileNewUsername.value.trim() : "";
             const currentPasswordInput = profileCurrentPassword ? profileCurrentPassword.value : "";
-            const newPassword = profileNewPassword ? profileNewPassword.value.trim() : "";
-            const confirmPassword = profileConfirmPassword ? profileConfirmPassword.value.trim() : "";
 
             if (!newName) {
-                showProfileError("T\u00ean hi\u1ec3n th\u1ecb kh\u00f4ng \u0111\u01b0\u1ee3c b\u1ecf tr\u1ed1ng!");
+                showProfileError("Tên hiển thị không được bỏ trống!");
                 return;
             }
 
             if (!newUsername) {
-                showProfileError("T\u00ean \u0111\u0103ng nh\u1eadp kh\u00f4ng \u0111\u01b0\u1ee3c b\u1ecf tr\u1ed1ng!");
+                showProfileError("Tên đăng nhập không được bỏ trống!");
                 return;
             }
 
@@ -8797,18 +8792,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Validate current password
             if (currentPasswordInput !== currPassword) {
-                showProfileError("M\u1eadt kh\u1ea9u hi\u1ec7n t\u1ea1i kh\u00f4ng ch\u00ednh x\u00e1c!");
-                return;
-            }
-
-            if (newPassword && newPassword !== confirmPassword) {
-                showProfileError("M\u1eadt kh\u1ea9u m\u1edbi v\u00e0 x\u00e1c nh\u1eadn m\u1eadt kh\u1ea9u kh\u00f4ng kh\u1edbp!");
+                showProfileError("Mật khẩu hiện tại không chính xác!");
                 return;
             }
 
             btnSaveProfile.disabled = true;
             const originalBtnText = btnSaveProfile.innerHTML;
-            btnSaveProfile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> \u0110ang l\u01b0u...';
+            btnSaveProfile.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
 
             if (profileErrorMsg) profileErrorMsg.style.display = "none";
 
@@ -8830,20 +8820,20 @@ document.addEventListener("DOMContentLoaded", () => {
                         name: newName,
                         role: currentRole,
                         username: newUsername,
-                        password: newPassword || currPassword
+                        password: currPassword
                     };
 
                     localStorage.setItem("custom_users", JSON.stringify(customUsers));
 
                     sessionStorage.setItem("user-name", newName);
-                    sessionStorage.setItem("user-token", newUsername + ":" + (newPassword || currPassword));
+                    sessionStorage.setItem("user-token", newUsername + ":" + currPassword);
 
-                    showToast("\u0110\u00e3 l\u01b0u th\u00f4ng tin c\u1ee5c b\u1ed9 th\u00e0nh c\u00f4ng!", "success");
+                    showToast("Đã lưu thông tin cục bộ thành công!", "success");
                     if (profileModal) profileModal.style.display = "none";
                     updateUserProfile();
                     setTimeout(() => location.reload(), 500);
                 } catch (err) {
-                    showProfileError("L\u1ed7i l\u01b0u th\u00f4ng tin: " + err.message);
+                    showProfileError("Lỗi lưu thông tin: " + err.message);
                 } finally {
                     btnSaveProfile.disabled = false;
                     btnSaveProfile.innerHTML = originalBtnText;
@@ -8860,17 +8850,15 @@ document.addEventListener("DOMContentLoaded", () => {
                         token: getToken(),
                         oldPassword: currPassword,
                         newName: newName,
-                        newUsername: newUsername,
-                        newPassword: newPassword || undefined
+                        newUsername: newUsername
                     }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
 
                 const result = await response.json();
                 if (result.status === "success") {
-                    const finalPassword = newPassword || currPassword;
                     sessionStorage.setItem("user-name", newName);
-                    sessionStorage.setItem("user-token", newUsername + ":" + finalPassword);
+                    sessionStorage.setItem("user-token", newUsername + ":" + currPassword);
 
                     // Update cached credentials for offline use
                     try {
@@ -8889,26 +8877,25 @@ document.addEventListener("DOMContentLoaded", () => {
                             name: newName,
                             role: currentRole,
                             username: newUsername,
-                            password: finalPassword
+                            password: currPassword
                         };
                         localStorage.setItem("custom_users", JSON.stringify(customUsers));
                     } catch (e) {
                         console.error("Failed to update cached credentials offline:", e);
                     }
 
-                    showToast("C\u1eadp nh\u1eadt th\u00f4ng tin th\u00e0nh c\u00f4ng!", "success");
+                    showToast("Cập nhật thông tin thành công!", "success");
                     if (profileModal) profileModal.style.display = "none";
                     updateUserProfile();
                     setTimeout(() => location.reload(), 500);
                 } else {
-                    showProfileError(result.message || "L\u1ed7i khi c\u1eadp nh\u1eadt th\u00f4ng tin.");
+                    showProfileError(result.message || "Lỗi khi cập nhật thông tin.");
                 }
             } catch (err) {
                 console.warn("Server update failed, attempting local fallback save:", err);
                 try {
                     let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
                     const currentRole = getRole();
-                    const finalPassword = newPassword || currPassword;
                     const oldUsername = getToken() ? getToken().split(":")[0] : newUsername;
                     
                     if (oldUsername && customUsers[oldUsername]) {
@@ -8922,20 +8909,20 @@ document.addEventListener("DOMContentLoaded", () => {
                         name: newName,
                         role: currentRole,
                         username: newUsername,
-                        password: finalPassword
+                        password: currPassword
                     };
 
                     localStorage.setItem("custom_users", JSON.stringify(customUsers));
 
                     sessionStorage.setItem("user-name", newName);
-                    sessionStorage.setItem("user-token", newUsername + ":" + finalPassword);
+                    sessionStorage.setItem("user-token", newUsername + ":" + currPassword);
 
-                    showToast("L\u01b0u c\u1ee5c b\u1ed9 th\u00e0nh c\u00f4ng (Kh\u00f4ng k\u1ebft n\u1ed1i \u0111\u01b0\u1ee3c Server)!", "warning");
+                    showToast("Lưu cục bộ thành công (Không kết nối được Server)!", "warning");
                     if (profileModal) profileModal.style.display = "none";
                     updateUserProfile();
                     setTimeout(() => location.reload(), 500);
                 } catch (localErr) {
-                    showProfileError("L\u1ed7i l\u01b0u th\u00f4ng tin c\u1ee5c b\u1ed9: " + localErr.message);
+                    showProfileError("Lỗi lưu thông tin cục bộ: " + localErr.message);
                 }
             } finally {
                 btnSaveProfile.disabled = false;
@@ -8948,6 +8935,185 @@ document.addEventListener("DOMContentLoaded", () => {
         if (profileErrorMsg) {
             profileErrorMsg.innerText = msg;
             profileErrorMsg.style.display = "block";
+        }
+    }
+
+    // --- PASSWORD MODIFICATION LOGIC ---
+    const btnChangePassword = document.getElementById("btn-change-password");
+    const passwordModal = document.getElementById("password-modal");
+    const pwCurrentPassword = document.getElementById("pw-current-password");
+    const pwNewPassword = document.getElementById("pw-new-password");
+    const pwConfirmPassword = document.getElementById("pw-confirm-password");
+    const pwErrorMsg = document.getElementById("pw-error-msg");
+    const btnSavePassword = document.getElementById("btn-save-password");
+
+    if (btnChangePassword && passwordModal) {
+        btnChangePassword.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (userDropdown) userDropdown.classList.remove("active");
+            
+            if (pwCurrentPassword) pwCurrentPassword.value = "";
+            if (pwNewPassword) pwNewPassword.value = "";
+            if (pwConfirmPassword) pwConfirmPassword.value = "";
+            if (pwErrorMsg) pwErrorMsg.style.display = "none";
+            
+            passwordModal.style.display = "flex";
+        });
+    }
+
+    if (btnSavePassword) {
+        btnSavePassword.addEventListener("click", async () => {
+            const currentPasswordInput = pwCurrentPassword ? pwCurrentPassword.value : "";
+            const newPassword = pwNewPassword ? pwNewPassword.value.trim() : "";
+            const confirmPassword = pwConfirmPassword ? pwConfirmPassword.value.trim() : "";
+
+            if (!currentPasswordInput) {
+                showPasswordError("Mật khẩu hiện tại không được bỏ trống!");
+                return;
+            }
+
+            if (!newPassword) {
+                showPasswordError("Mật khẩu mới không được bỏ trống!");
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showPasswordError("Mật khẩu mới và xác nhận mật khẩu không khớp!");
+                return;
+            }
+
+            // Extract current password and username from token
+            const token = getToken() || "";
+            let currUsername = "admin";
+            let currPassword = "";
+            if (token.includes(":")) {
+                const parts = token.split(":");
+                currUsername = parts[0];
+                currPassword = parts[1];
+            } else {
+                currPassword = token;
+                const role = getRole();
+                if (role === "EMP_LV1") currUsername = "emp1";
+                else if (role === "EMP_LV2") currUsername = "emp2";
+            }
+
+            // Validate current password
+            if (currentPasswordInput !== currPassword) {
+                showPasswordError("Mật khẩu hiện tại không chính xác!");
+                return;
+            }
+
+            btnSavePassword.disabled = true;
+            const originalBtnText = btnSavePassword.innerHTML;
+            btnSavePassword.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+
+            if (pwErrorMsg) pwErrorMsg.style.display = "none";
+
+            // Check if backend is configured
+            if (!isConfigured()) {
+                try {
+                    let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
+                    const currentRole = getRole();
+                    const currentName = getUserName() || "Người dùng";
+                    
+                    customUsers[currUsername] = {
+                        name: currentName,
+                        role: currentRole,
+                        username: currUsername,
+                        password: newPassword
+                    };
+
+                    localStorage.setItem("custom_users", JSON.stringify(customUsers));
+
+                    sessionStorage.setItem("user-token", currUsername + ":" + newPassword);
+
+                    showToast("Đã đổi mật khẩu cục bộ thành công!", "success");
+                    if (passwordModal) passwordModal.style.display = "none";
+                    setTimeout(() => location.reload(), 500);
+                } catch (err) {
+                    showPasswordError("Lỗi đổi mật khẩu: " + err.message);
+                } finally {
+                    btnSavePassword.disabled = false;
+                    btnSavePassword.innerHTML = originalBtnText;
+                }
+                return;
+            }
+
+            // Online saving via Apps Script
+            try {
+                const response = await fetch(CONFIG.WEB_APP_URL, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        action: "update_profile",
+                        token: getToken(),
+                        oldPassword: currPassword,
+                        newPassword: newPassword
+                    }),
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }
+                });
+
+                const result = await response.json();
+                if (result.status === "success") {
+                    sessionStorage.setItem("user-token", currUsername + ":" + newPassword);
+
+                    // Update cached credentials for offline use
+                    try {
+                        let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
+                        const currentRole = getRole();
+                        const currentName = getUserName() || "Người dùng";
+
+                        customUsers[currUsername] = {
+                            name: currentName,
+                            role: currentRole,
+                            username: currUsername,
+                            password: newPassword
+                        };
+                        localStorage.setItem("custom_users", JSON.stringify(customUsers));
+                    } catch (e) {
+                        console.error("Failed to update cached credentials offline:", e);
+                    }
+
+                    showToast("Đổi mật khẩu thành công!", "success");
+                    if (passwordModal) passwordModal.style.display = "none";
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    showPasswordError(result.message || "Lỗi khi đổi mật khẩu.");
+                }
+            } catch (err) {
+                console.warn("Server update failed, attempting local fallback save:", err);
+                try {
+                    let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
+                    const currentRole = getRole();
+                    const currentName = getUserName() || "Người dùng";
+
+                    customUsers[currUsername] = {
+                        name: currentName,
+                        role: currentRole,
+                        username: currUsername,
+                        password: newPassword
+                    };
+
+                    localStorage.setItem("custom_users", JSON.stringify(customUsers));
+
+                    sessionStorage.setItem("user-token", currUsername + ":" + newPassword);
+
+                    showToast("Đổi mật khẩu cục bộ thành công (Không kết nối được Server)!", "warning");
+                    if (passwordModal) passwordModal.style.display = "none";
+                    setTimeout(() => location.reload(), 500);
+                } catch (localErr) {
+                    showPasswordError("Lỗi đổi mật khẩu cục bộ: " + localErr.message);
+                }
+            } finally {
+                btnSavePassword.disabled = false;
+                btnSavePassword.innerHTML = originalBtnText;
+            }
+        });
+    }
+
+    function showPasswordError(msg) {
+        if (pwErrorMsg) {
+            pwErrorMsg.innerText = msg;
+            pwErrorMsg.style.display = "block";
         }
     }
 
