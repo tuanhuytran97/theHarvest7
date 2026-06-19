@@ -5084,17 +5084,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const fixedCostsFromStatement = s.luong + s.lai + s.vatTu + s.expensed + s.vanHanh;
         const totalFixedCosts = fixedCostsFromStatement + additionalFixedCost;
         
-        // 3. Contribution Margin
-        const contributionMargin = s.totalRev - variableCosts;
-        const contributionMarginRatio = s.totalRev > 0 ? (contributionMargin / s.totalRev) : 0;
+        // 3. Break-even Revenue (Option 2: Cash-Outflow Recovery)
+        const breakEvenRevenue = totalFixedCosts + variableCosts;
         
-        // 4. Break-even Revenue
-        const breakEvenRevenue = contributionMarginRatio > 0 ? (totalFixedCosts / contributionMarginRatio) : 0;
-        
-        // 5. Gap / Difference
+        // 4. Gap / Difference
         const diff = s.totalRev - breakEvenRevenue;
         
-        // 6. Calculate Average Price of Flowers for selected period
+        // 5. Calculate Average Price of Flowers for selected period
         let flowerQty = 0;
         let flowerRev = 0;
 
@@ -5141,7 +5137,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const resultsEl = document.getElementById('cashflow-be-results');
         if (resultsEl) {
-            const formattedCMR = (contributionMarginRatio * 100).toFixed(1);
             const statusColor = diff >= 0 ? '#10b981' : '#ef4444';
             const statusSign = diff >= 0 ? '+' : '';
             const statusText = diff >= 0 ? 'Đã vượt điểm hòa vốn (Có lãi)' : 'Chưa đạt điểm hòa vốn (Thâm hụt)';
@@ -5183,12 +5178,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span style="color: var(--text-light); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Tổng chi phí biến đổi (VC) = Phân bón + Thuốc + Mua bông + Vận chuyển">Tổng CP biến đổi (VC):</span>
                     <strong style="color: var(--text-dark);">${formatCurrency(variableCosts)}</strong>
                 </div>
-                <div style="font-size: 0.88rem; display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.05);">
-                    <span style="color: var(--text-light); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Tỷ suất số dư đảm phí (CMR) = (Doanh thu thực tế - Tổng chi phí biến đổi) / Doanh thu thực tế">Tỷ suất số dư đảm phí:</span>
-                    <strong style="color: var(--text-dark);">${formattedCMR}%</strong>
-                </div>
                 <div style="font-size: 0.95rem; display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.1); margin-top: 4px;">
-                    <span style="font-weight: 700; color: var(--text-dark); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Doanh thu Hòa vốn = Tổng chi phí cố định (FC) / Tỷ suất số dư đảm phí (CMR)">Doanh thu Hòa vốn:</span>
+                    <span style="font-weight: 700; color: var(--text-dark); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Doanh thu Hòa vốn = Tổng chi phí cố định (FC) + Tổng chi phí biến đổi (VC)">Doanh thu Hòa vốn:</span>
                     <strong style="color: #4f46e5; font-size: 1.05rem;">${formatCurrency(breakEvenRevenue)}</strong>
                 </div>
                 <div style="font-size: 0.95rem; display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
