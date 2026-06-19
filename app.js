@@ -5161,7 +5161,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                     <div style="font-size: 0.95rem; display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.1); margin-top: 4px;">
                         <span style="font-weight: 700; color: var(--text-dark); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Tổng số lượng hoa thực tế bán ra ghi nhận trong báo cáo dòng tiền">SL hoa thực tế:</span>
-                        <strong style="color: var(--text-dark); font-size: 1.05rem;">${Math.round(flowerQty).toLocaleString('vi-VN')} bông</strong>
+                        <strong style="color: ${statusColor}; font-size: 1.05rem;">${Math.round(flowerQty).toLocaleString('vi-VN')} bông</strong>
                     </div>
                 `;
             }
@@ -5193,7 +5193,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 <div style="font-size: 0.95rem; display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
                     <span style="font-weight: 700; color: var(--text-dark); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Tổng doanh thu thực tế ghi nhận trong kỳ (Doanh thu bông + Doanh thu khác)">Doanh thu thực tế:</span>
-                    <strong style="color: var(--text-dark); font-size: 1.05rem;">${formatCurrency(s.totalRev)}</strong>
+                    <strong style="color: ${statusColor}; font-size: 1.05rem;">${formatCurrency(s.totalRev)}</strong>
                 </div>
                 ${flowerBeHtml}
                 <div style="margin-top: 8px; padding: 10px; border-radius: 10px; background-color: ${statusBg}; color: ${statusColor}; text-align: center; font-weight: 700; font-size: 0.85rem; display: flex; flex-direction: column; gap: 4px; cursor: help;" title="Chênh lệch so với điểm hòa vốn = Doanh thu thực tế - Doanh thu hòa vốn">
