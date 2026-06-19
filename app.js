@@ -5152,7 +5152,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const beFlowers = breakEvenRevenue / avgPrice;
                 flowerBeHtml = `
                     <div style="font-size: 0.88rem; display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.05);">
-                        <span style="color: var(--text-light); border-bottom: 1px dotted #94a3b8; cursor: help;" title="${isForecastPrice ? 'Giá bán trung bình dự báo từ mô hình dự phóng YoY/Linear của trang Dự báo' : 'Giá bán trung bình thực tế tính từ báo cáo dòng tiền'}">Giá bán TB ${isForecastPrice ? '(Dự báo)' : '(Thực tế)'}:</span>
+                        <span style="color: var(--text-light); border-bottom: 1px dotted #94a3b8; cursor: help;" title="${isForecastPrice ? 'Giá bán trung bình dự báo từ mô hình dự phóng YoY/Linear của trang Dự báo' : 'Giá bán trung bình thực tế = Tổng doanh thu bông / Tổng số lượng hoa thực tế trong kỳ'}">Giá bán TB ${isForecastPrice ? '(Dự báo)' : '(Thực tế)'}:</span>
                         <strong style="color: var(--text-dark);">${formatCurrency(Math.round(avgPrice))} / bông</strong>
                     </div>
                     <div style="font-size: 0.95rem; display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.1); margin-top: 4px;">
