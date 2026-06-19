@@ -5159,6 +5159,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         <span style="font-weight: 700; color: var(--text-dark); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Số lượng hoa cần bán = Doanh thu hòa vốn / Giá bán trung bình">SL hoa hòa vốn:</span>
                         <strong style="color: #6366f1; font-size: 1.05rem;">${Math.ceil(beFlowers).toLocaleString('vi-VN')} bông</strong>
                     </div>
+                    <div style="font-size: 0.95rem; display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.1); margin-top: 4px;">
+                        <span style="font-weight: 700; color: var(--text-dark); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Tổng số lượng hoa thực tế bán ra ghi nhận trong báo cáo dòng tiền">SL hoa thực tế:</span>
+                        <strong style="color: var(--text-dark); font-size: 1.05rem;">${Math.round(flowerQty).toLocaleString('vi-VN')} bông</strong>
+                    </div>
                 `;
             }
 
