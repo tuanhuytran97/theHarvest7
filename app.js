@@ -1741,11 +1741,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 targetInput.value = val;
                 targetInput.dispatchEvent(new Event('input', { bubbles: true }));
 
-                // Auto focus Số lượng (SL) input in the same row
+                // Auto focus nearest empty input in the same row (SL or Đơn giá)
                 const row = targetInput.closest('.flower-item');
                 if (row) {
                     const qtyInput = row.querySelector('.fw-qty');
-                    if (qtyInput) qtyInput.focus();
+                    const priceInput = row.querySelector('.fw-price');
+                    if (qtyInput && (!qtyInput.value || qtyInput.value.trim() === '')) {
+                        qtyInput.focus();
+                    } else if (priceInput) {
+                        priceInput.focus();
+                    }
                 }
             }
         }
