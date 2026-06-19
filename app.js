@@ -5087,8 +5087,9 @@ document.addEventListener("DOMContentLoaded", () => {
         // 3. Break-even Revenue (Option 2: Cash-Outflow Recovery)
         const breakEvenRevenue = totalFixedCosts + variableCosts;
         
-        // 4. Gap / Difference
-        const diff = s.totalRev - breakEvenRevenue;
+        // 4. Gap / Difference (excluding Company revenue)
+        const actualRevenueForBE = s.totalRev - (s.revCompany || 0);
+        const diff = actualRevenueForBE - breakEvenRevenue;
         
         // 5. Calculate Average Price of Flowers for selected period
         let flowerQty = 0;
@@ -5183,8 +5184,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     <strong style="color: #4f46e5; font-size: 1.05rem;">${formatCurrency(breakEvenRevenue)}</strong>
                 </div>
                 <div style="font-size: 0.95rem; display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
-                    <span style="font-weight: 700; color: var(--text-dark); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Tổng doanh thu thực tế ghi nhận trong kỳ (Doanh thu bông + Doanh thu khác)">Doanh thu thực tế:</span>
-                    <strong style="color: ${statusColor}; font-size: 1.05rem;">${formatCurrency(s.totalRev)}</strong>
+                    <span style="font-weight: 700; color: var(--text-dark); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Tổng doanh thu thực tế ghi nhận trong kỳ không bao gồm doanh thu Company (chỉ tính Farm và Vựa)">Doanh thu thực tế:</span>
+                    <strong style="color: ${statusColor}; font-size: 1.05rem;">${formatCurrency(actualRevenueForBE)}</strong>
                 </div>
                 ${flowerBeHtml}
                 <div style="margin-top: 8px; padding: 10px; border-radius: 10px; background-color: ${statusBg}; color: ${statusColor}; text-align: center; font-weight: 700; font-size: 0.85rem; display: flex; flex-direction: column; gap: 4px; cursor: help;" title="Chênh lệch so với điểm hòa vốn = Doanh thu thực tế - Doanh thu hòa vốn">
