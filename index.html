@@ -1156,69 +1156,7 @@
             <!-- VIEW 1: DATA MANAGEMENT -->
             <div id="view-data" class="app-view">
 
-                <!-- CASH STATUS BAR — Monthly Ledger -->
-                <div class="cash-status-bar-container" style="margin-bottom: 1.5rem;">
-                    <div class="cash-card-premium">
-                        <!-- Left: Current Balance + Period Selector -->
-                        <div class="cash-info-group">
-                            <div class="cash-icon-wrapper">
-                                <i class="fa-solid fa-wallet"></i>
-                            </div>
-                            <div class="cash-labels">
-                                <span class="cash-label">TỒN QUỸ TIỀN MẶT</span>
-                                <h2 id="kpi-cash-hand" class="cash-value">0 ₫</h2>
-                                <!-- Month/Year Selector -->
-                                <div style="display:flex; gap:6px; margin-top:6px;">
-                                    <select id="cash-month-select" class="cash-period-select">
-                                        <option value="1">T.1</option>
-                                        <option value="2">T.2</option>
-                                        <option value="3">T.3</option>
-                                        <option value="4">T.4</option>
-                                        <option value="5">T.5</option>
-                                        <option value="6">T.6</option>
-                                        <option value="7">T.7</option>
-                                        <option value="8">T.8</option>
-                                        <option value="9">T.9</option>
-                                        <option value="10">T.10</option>
-                                        <option value="11">T.11</option>
-                                        <option value="12">T.12</option>
-                                    </select>
-                                    <select id="cash-year-select" class="cash-period-select"></select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Middle: Breakdown -->
-                        <div class="cash-breakdown">
-                            <div class="cash-break-row">
-                                <span class="cash-break-label">💰 Đầu tháng:</span>
-                                <span id="cash-opening" class="cash-break-val" style="color:#94a3b8;">0 ₫</span>
-                            </div>
-                            <div class="cash-break-row">
-                                <span class="cash-break-label">⬆ Đã thu:</span>
-                                <span id="cash-in-total" class="cash-break-val" style="color:#10b981;">0 ₫</span>
-                            </div>
-                            <div class="cash-break-row">
-                                <span class="cash-break-label">⬇ Đã chi:</span>
-                                <span id="cash-out-total" class="cash-break-val" style="color:#ef4444;">0 ₫</span>
-                            </div>
-                            <div class="cash-break-row" id="cash-adj-row" style="display:none;">
-                                <span class="cash-break-label">⚖ Thu/chi bất thường:</span>
-                                <span id="cash-adj-total" class="cash-break-val" style="color:#f59e0b;">0 ₫</span>
-                            </div>
-                        </div>
-
-                        <!-- Right: Actions (ADMIN only) -->
-                        <div class="cash-actions" id="cash-admin-actions">
-                            <!-- Button removed per user request -->
-
-                            <button id="btn-adjust-cash" class="cash-action-btn cash-action-btn--warn"
-                                title="Ghi chú khoản thu/chi bất thường">
-                                <i class="fa-solid fa-scale-balanced"></i> Khoản thu bất thường
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <!-- CASH STATUS BAR moved to cashflow tab -->
 
 
 
@@ -1843,7 +1781,7 @@
             <div id="view-cashflow" class="app-view" style="display: none;">
                 <div class="todo-content-wrapper" style="max-width: 95%; margin: 0 auto; padding: 1.5rem 1rem;">
                     <div class="report-controls glassmorphism"
-                        style="padding: 1.5rem; margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; border-radius: 20px;">
+                        style="max-width: 1082px; margin: 0 auto 1.5rem auto; padding: 1.5rem; display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center; border-radius: 20px;">
                         <div style="flex: 1; min-width: 250px;">
                             <h2 style="margin: 0; font-size: 1.25rem; color: var(--text-dark); font-weight: 800;"><i
                                     class="fa-solid fa-money-bill-transfer"></i> Báo Cáo Dòng Tiền</h2>
@@ -1923,16 +1861,64 @@
                         </div>
                     </div>
 
-                    <!-- Detailed report container centered and limited width -->
-                    <div style="display: flex; justify-content: center; width: 100%;">
+                    <!-- CASH STATUS BAR — Monthly Ledger (Shared Selectors) -->
+                    <div class="cash-status-bar-container" style="max-width: 1082px; margin: 0 auto 1.5rem auto;">
+                        <div class="cash-card-premium">
+                            <!-- Left: Current Balance -->
+                            <div class="cash-info-group">
+                                <div class="cash-icon-wrapper">
+                                    <i class="fa-solid fa-wallet"></i>
+                                </div>
+                                <div class="cash-labels">
+                                    <span class="cash-label">TỒN QUỸ TIỀN MẶT</span>
+                                    <h2 id="kpi-cash-hand" class="cash-value">0 ₫</h2>
+                                </div>
+                            </div>
+
+                            <!-- Middle: Breakdown -->
+                            <div class="cash-breakdown">
+                                <div class="cash-break-row">
+                                    <span id="cash-opening-label" class="cash-break-label">💰 Đầu tháng:</span>
+                                    <span id="cash-opening" class="cash-break-val" style="color:#94a3b8;">0 ₫</span>
+                                </div>
+                                <div class="cash-break-row">
+                                    <span class="cash-break-label">⬆ Đã thu:</span>
+                                    <span id="cash-in-total" class="cash-break-val" style="color:#10b981;">0 ₫</span>
+                                </div>
+                                <div class="cash-break-row">
+                                    <span class="cash-break-label">⬇ Đã chi:</span>
+                                    <span id="cash-out-total" class="cash-break-val" style="color:#ef4444;">0 ₫</span>
+                                </div>
+                                <div class="cash-break-row" id="cash-adj-row" style="display:none;">
+                                    <span class="cash-break-label">⚖ Thu/chi bất thường:</span>
+                                    <span id="cash-adj-total" class="cash-break-val" style="color:#f59e0b;">0 ₫</span>
+                                </div>
+                                <div class="cash-break-row">
+                                    <span class="cash-break-label">↕ Chênh lệch:</span>
+                                    <span id="cash-diff-total" class="cash-break-val" style="color:#10b981;">0 ₫</span>
+                                </div>
+                            </div>
+
+                            <!-- Right: Actions (ADMIN only) -->
+                            <div class="cash-actions" id="cash-admin-actions">
+                                <button id="btn-adjust-cash" class="cash-action-btn cash-action-btn--warn"
+                                    title="Ghi chú khoản thu/chi bất thường">
+                                    <i class="fa-solid fa-scale-balanced"></i> Khoản thu bất thường
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed report container split layout -->
+                    <div class="cashflow-grid-container" style="display: flex; gap: 2rem; justify-content: center; width: 100%; max-width: 1082px; margin: 0 auto 2rem auto; flex-wrap: wrap;">
                         <section id="detailed-statement-section"
-                            style="margin-bottom: 2rem; width: 100%; max-width: 800px;">
+                            style="flex: 1.2; min-width: 320px; max-width: 600px; width: 100%;">
                             <div class="card glassmorphism"
                                 style="padding: 2rem; border-radius: 20px; border: 1px solid #e2e8f0; overflow: hidden;">
                                 <div class="statement-header"
-                                    style="background: #0ea5e9; color: white; padding: 1.25rem; border-radius: 12px; margin-bottom: 2rem; text-align: center; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);">
+                                    style="background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); color: white; padding: 1.25rem; border-radius: 12px; margin-bottom: 2rem; text-align: center; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);">
                                     <h2
-                                        style="margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800;">
+                                        style="margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; color: white !important;">
                                         BÁO CÁO DÒNG TIỀN CHI TIẾT
                                     </h2>
                                 </div>
@@ -1943,6 +1929,54 @@
                                         <i class="fa-solid fa-circle-notch fa-spin"></i> Đang tổng hợp dữ liệu chi
                                         tiết...
                                     </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="cashflow-chart-section"
+                            style="flex: 0.8; min-width: 320px; max-width: 450px; width: 100%;">
+                            <div class="card glassmorphism"
+                                style="padding: 2rem; border-radius: 20px; border: 1px solid #e2e8f0; display: flex; flex-direction: column;">
+                                <div class="statement-header"
+                                    style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 1.25rem; border-radius: 12px; margin-bottom: 2rem; text-align: center; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
+                                    <h2
+                                        style="margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; color: white !important;">
+                                        PHÂN BỔ CHI PHÍ
+                                    </h2>
+                                </div>
+                                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 250px; position: relative;">
+                                    <canvas id="cashflowExpenseChart" style="width: 100%; height: 250px;"></canvas>
+                                </div>
+                                <div id="cashflow-expense-legend" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                                    <!-- Dynamic legend content -->
+                                </div>
+                            </div>
+
+                            <!-- NEW BREAK-EVEN CARD -->
+                            <div class="card glassmorphism" id="cashflow-breakeven-card"
+                                style="padding: 2rem; border-radius: 20px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; margin-top: 1.5rem;">
+                                <div class="statement-header"
+                                    style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: white; padding: 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; text-align: center; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);">
+                                    <h2
+                                        style="margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; color: white !important;">
+                                        PHÂN TÍCH ĐIỂM HÒA VỐN
+                                    </h2>
+                                </div>
+                                
+                                <div class="form-group" style="margin-bottom: 1.2rem;">
+                                    <label for="cashflow-be-depr-input" style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; display: block;">
+                                        Khấu hao mỗi tháng:
+                                    </label>
+                                    <div style="position: relative;">
+                                        <input type="text" id="cashflow-be-depr-input" value="45.000.000" data-currency="true"
+                                            style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; outline: none; font-weight: 700; color: #4f46e5; box-sizing: border-box;"
+                                            placeholder="Ví dụ: 45.000.000">
+                                        <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b;">đ</span>
+                                    </div>
+                                </div>
+
+                                <div id="cashflow-be-results" style="display: flex; flex-direction: column; gap: 10px;">
+                                    <!-- Results will be dynamically populated here -->
                                 </div>
                             </div>
                         </section>

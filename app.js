@@ -3,7 +3,6 @@ var getRole = () => sessionStorage.getItem("user-role");
 var getUserName = () => sessionStorage.getItem("user-name");
 var getToken = () => sessionStorage.getItem("user-token");
 var isConfigured = () => {
-    if (window.location.protocol === "file:") return false;
     return typeof CONFIG !== 'undefined' && CONFIG.WEB_APP_URL && CONFIG.WEB_APP_URL !== "" && CONFIG.WEB_APP_URL !== "YOUR_WEB_APP_URL_HERE" && CONFIG.WEB_APP_URL !== "NOT_CONFIGURED";
 };
 
@@ -1109,6 +1108,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let monthlyCombinedChartInstance = null;
     let financialGrowthChartInstance = null;
     let expenseDistributionChartInstance = null;
+    let cashflowExpenseChartInstance = null;
+    let currentCashflowStatement = null;
     let currentEditRowData = null; // Track row being edited
     let activeTypeInput = null; // Track currently focused flower type input
 
@@ -2594,6 +2595,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (menuCashFlow) menuCashFlow.classList.add('active');
             syncMobileNav('cashflow');
             if (viewCashFlow) viewCashFlow.style.display = 'block';
+            updateCashInHand();
             updateCashFlowReport();
         } else if (viewId === 'financial') {
             if (menuFinancial) menuFinancial.classList.add('active');
@@ -4452,6 +4454,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 totalRevenue: totals.totalRevenue,
                 totalExpense: totals.totalExpense,
             };
+            if (typeof recalcBreakEven === 'function') {
+                recalcBreakEven();
+            }
         }
 
         // Tooltip for LN RÒNG DỰ BÁO
@@ -4811,10 +4816,45 @@ document.addEventListener("DOMContentLoaded", () => {
     const cfCompareToggle = document.getElementById('cashflow-compare-toggle');
     const cfComparisonPicker = document.getElementById('cashflow-comparison-picker');
 
-    if (cfMonth) cfMonth.addEventListener('change', updateCashFlowReport);
-    if (cfYear) cfYear.addEventListener('change', updateCashFlowReport);
+    if (cfMonth) {
+        cfMonth.addEventListener('change', () => {
+            updateCashFlowReport();
+            updateCashInHand();
+        });
+    }
+    if (cfYear) {
+        cfYear.addEventListener('change', () => {
+            updateCashFlowReport();
+            updateCashInHand();
+        });
+    }
     if (cfMonth2) cfMonth2.addEventListener('change', updateCashFlowReport);
     if (cfYear2) cfYear2.addEventListener('change', updateCashFlowReport);
+
+    const cfBeDeprInput = document.getElementById('cashflow-be-depr-input');
+    if (cfBeDeprInput) {
+        cfBeDeprInput.addEventListener('input', (e) => {
+            let originalValue = e.target.value;
+            let selectionEnd = e.target.selectionEnd;
+            let offsetFromEnd = originalValue.length - selectionEnd;
+            
+            let digits = originalValue.replace(/[^\d]/g, '');
+            if (!digits) {
+                e.target.value = "";
+                recalcBreakEven();
+                return;
+            }
+            
+            let num = parseInt(digits, 10) || 0;
+            let formatted = new Intl.NumberFormat('vi-VN').format(num);
+            e.target.value = formatted;
+            
+            let newPos = Math.max(0, formatted.length - offsetFromEnd);
+            e.target.setSelectionRange(newPos, newPos);
+            
+            recalcBreakEven();
+        });
+    }
 
     if (cfCompareToggle) {
         cfCompareToggle.addEventListener('change', (e) => {
@@ -4957,7 +4997,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         let html = `
-            <div class="statement-title-main">Báo Cáo Dòng Tiền Chi Tiết</div>
             <div class="statement-header-row">
                 <span class="statement-label">Diễn giải hạng mục</span>
                 <div class="comparison-col" style="text-align: right;">${s1.period}</div>
@@ -4999,8 +5038,271 @@ document.addEventListener("DOMContentLoaded", () => {
         html += renderRow("Lợi nhuận ròng", s1.netProfit, isCmp ? s2.netProfit : 0, "net");
 
         container.innerHTML = isCmp ? `<div class="comparison-table-wrapper">${html}</div>` : html;
-        container.innerHTML = isCmp ? `<div class="comparison-table-wrapper">${html}</div>` : html;
         initCashFlowDrawer();
+        renderCashflowExpenseChart(s1);
+        renderCashflowBreakEven(s1);
+    }
+
+    function recalcBreakEven() {
+        if (!currentCashflowStatement) return;
+        
+        const monthSelect = document.getElementById('cashflow-month');
+        const yearSelect = document.getElementById('cashflow-year');
+        const selectedMonthStr = monthSelect ? monthSelect.value : "all";
+        const selectedYear = yearSelect ? parseInt(yearSelect.value) : new Date().getFullYear();
+
+        let numMonths = 1;
+        if (selectedMonthStr === "all") {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            if (selectedYear < currentYear) {
+                numMonths = 12;
+            } else if (selectedYear === currentYear) {
+                numMonths = now.getMonth() + 1; // e.g. June = 6
+            } else {
+                numMonths = 12;
+            }
+        }
+
+        const inputEl = document.getElementById('cashflow-be-depr-input');
+        let monthlyDepr = 45000000; // default
+        if (inputEl) {
+            const val = parseMoney(inputEl.value);
+            if (!isNaN(val) && val >= 0) {
+                monthlyDepr = val;
+            }
+        }
+        
+        const additionalFixedCost = monthlyDepr * numMonths;
+
+        const s = currentCashflowStatement;
+        
+        // 1. Variable Costs
+        const variableCosts = s.phanBon + s.thuoc + s.muaBong + s.vanChuyen;
+        
+        // 2. Fixed Costs
+        const fixedCostsFromStatement = s.luong + s.lai + s.vatTu + s.expensed + s.vanHanh;
+        const totalFixedCosts = fixedCostsFromStatement + additionalFixedCost;
+        
+        // 3. Contribution Margin
+        const contributionMargin = s.totalRev - variableCosts;
+        const contributionMarginRatio = s.totalRev > 0 ? (contributionMargin / s.totalRev) : 0;
+        
+        // 4. Break-even Revenue
+        const breakEvenRevenue = contributionMarginRatio > 0 ? (totalFixedCosts / contributionMarginRatio) : 0;
+        
+        // 5. Gap / Difference
+        const diff = s.totalRev - breakEvenRevenue;
+        
+        // 6. Calculate Average Price of Flowers for selected period
+        let flowerQty = 0;
+        let flowerRev = 0;
+
+        if (farmData && farmData.length > 0) {
+            farmData.forEach(row => {
+                const d = row.parsedDate;
+                if (!d || isNaN(d.getTime())) return;
+                const rowYear = d.getFullYear();
+                const rowMonth = d.getMonth() + 1;
+
+                if (rowYear !== selectedYear) return;
+                if (selectedMonthStr !== "all" && rowMonth !== parseInt(selectedMonthStr)) return;
+
+                const qty = parseFloat(String(row["Số lượng"]).replace(/\./g, '').replace(/,/g, '.')) || 0;
+                const rev = parseFloat(String(row["Doanh Thu Bông"]).replace(/\./g, '').replace(/,/g, '.')) || 0;
+
+                flowerQty += qty;
+                flowerRev += rev;
+            });
+        }
+
+        const actualAvgPrice = flowerQty > 0 ? (flowerRev / flowerQty) : 0;
+
+        // Check if forecast matches the Cash Flow selected period
+        const reportMonth = document.getElementById('report-month')?.value;
+        const reportYear = document.getElementById('report-year')?.value;
+        const reportFilter = document.getElementById('report-filter')?.value || 'month';
+        const reportRange = document.getElementById('report-range')?.value || 'month';
+
+        let avgPrice = 0;
+        let isForecastPrice = false;
+
+        const isMatch = (selectedYear.toString() === reportYear) && (
+            (selectedMonthStr === "all" && reportFilter === "year") ||
+            (selectedMonthStr === reportMonth && reportFilter === "month" && reportRange === "month")
+        );
+
+        if (isMatch && window._lastProjectionMeta && window._lastProjectionMeta.projQty > 0) {
+            avgPrice = window._lastProjectionMeta.projRevenue / window._lastProjectionMeta.projQty;
+            isForecastPrice = true;
+        } else {
+            avgPrice = actualAvgPrice;
+        }
+
+        const resultsEl = document.getElementById('cashflow-be-results');
+        if (resultsEl) {
+            const formattedCMR = (contributionMarginRatio * 100).toFixed(1);
+            const statusColor = diff >= 0 ? '#10b981' : '#ef4444';
+            const statusSign = diff >= 0 ? '+' : '';
+            const statusText = diff >= 0 ? 'Đã vượt điểm hòa vốn (Có lãi)' : 'Chưa đạt điểm hòa vốn (Thâm hụt)';
+            const statusBg = diff >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)';
+
+            let flowerBeHtml = '';
+            if (avgPrice > 0) {
+                const beFlowers = breakEvenRevenue / avgPrice;
+                flowerBeHtml = `
+                    <div style="font-size: 0.88rem; display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.05);">
+                        <span style="color: var(--text-light); border-bottom: 1px dotted #94a3b8; cursor: help;" title="${isForecastPrice ? 'Giá bán trung bình dự báo từ mô hình dự phóng YoY/Linear của trang Dự báo' : 'Giá bán trung bình thực tế tính từ báo cáo dòng tiền'}">Giá bán TB ${isForecastPrice ? '(Dự báo)' : '(Thực tế)'}:</span>
+                        <strong style="color: var(--text-dark);">${formatCurrency(Math.round(avgPrice))} / bông</strong>
+                    </div>
+                    <div style="font-size: 0.95rem; display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.1); margin-top: 4px;">
+                        <span style="font-weight: 700; color: var(--text-dark); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Số lượng hoa cần bán = Doanh thu hòa vốn / Giá bán trung bình">SL hoa hòa vốn:</span>
+                        <strong style="color: #6366f1; font-size: 1.05rem;">${Math.ceil(beFlowers).toLocaleString('vi-VN')} bông</strong>
+                    </div>
+                `;
+            }
+
+            resultsEl.innerHTML = `
+                <div style="font-size: 0.88rem; display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.05);">
+                    <span style="color: var(--text-light); border-bottom: 1px dotted #94a3b8; cursor: help;" title="CP cố định vận hành = Lương + Lãi vay + Vật tư KD + Tiêu dùng (Expensed) + Vận hành khác">CP cố định vận hành:</span>
+                    <strong style="color: var(--text-dark);">${formatCurrency(fixedCostsFromStatement)}</strong>
+                </div>
+                <div style="font-size: 0.88rem; display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.05);">
+                    <span style="color: var(--text-light); border-bottom: 1px dotted #94a3b8; cursor: help;" title="${selectedMonthStr === 'all' ? 'Khấu hao bổ sung = Khấu hao mỗi tháng (' + formatCurrency(monthlyDepr) + ') × ' + numMonths + ' tháng' : 'Khấu hao bổ sung do người dùng nhập ở ô phía trên'}">Khấu hao bổ sung${selectedMonthStr === 'all' ? ' (' + numMonths + 'T)' : ''}:</span>
+                    <strong style="color: var(--text-dark);">${formatCurrency(additionalFixedCost)}</strong>
+                </div>
+                <div style="font-size: 0.88rem; display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.05);">
+                    <span style="color: var(--text-light); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Tổng chi phí cố định (FC) = Chi phí cố định vận hành + Khấu hao bổ sung">Tổng CP cố định (FC):</span>
+                    <strong style="color: var(--text-dark);">${formatCurrency(totalFixedCosts)}</strong>
+                </div>
+                <div style="font-size: 0.88rem; display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.05);">
+                    <span style="color: var(--text-light); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Tổng chi phí biến đổi (VC) = Phân bón + Thuốc + Mua bông + Vận chuyển">Tổng CP biến đổi (VC):</span>
+                    <strong style="color: var(--text-dark);">${formatCurrency(variableCosts)}</strong>
+                </div>
+                <div style="font-size: 0.88rem; display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.05);">
+                    <span style="color: var(--text-light); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Tỷ suất số dư đảm phí (CMR) = (Doanh thu thực tế - Tổng chi phí biến đổi) / Doanh thu thực tế">Tỷ suất số dư đảm phí:</span>
+                    <strong style="color: var(--text-dark);">${formattedCMR}%</strong>
+                </div>
+                <div style="font-size: 0.95rem; display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.1); margin-top: 4px;">
+                    <span style="font-weight: 700; color: var(--text-dark); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Doanh thu Hòa vốn = Tổng chi phí cố định (FC) / Tỷ suất số dư đảm phí (CMR)">Doanh thu Hòa vốn:</span>
+                    <strong style="color: #4f46e5; font-size: 1.05rem;">${formatCurrency(breakEvenRevenue)}</strong>
+                </div>
+                <div style="font-size: 0.95rem; display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.1);">
+                    <span style="font-weight: 700; color: var(--text-dark); border-bottom: 1px dotted #94a3b8; cursor: help;" title="Tổng doanh thu thực tế ghi nhận trong kỳ (Doanh thu bông + Doanh thu khác)">Doanh thu thực tế:</span>
+                    <strong style="color: var(--text-dark); font-size: 1.05rem;">${formatCurrency(s.totalRev)}</strong>
+                </div>
+                ${flowerBeHtml}
+                <div style="margin-top: 8px; padding: 10px; border-radius: 10px; background-color: ${statusBg}; color: ${statusColor}; text-align: center; font-weight: 700; font-size: 0.85rem; display: flex; flex-direction: column; gap: 4px; cursor: help;" title="Chênh lệch so với điểm hòa vốn = Doanh thu thực tế - Doanh thu hòa vốn">
+                    <div>${statusText}</div>
+                    <div style="font-size: 1rem; font-weight: 800;">
+                        ${statusSign}${formatCurrency(diff)}
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    function renderCashflowBreakEven(s) {
+        currentCashflowStatement = s;
+        recalcBreakEven();
+    }
+
+    function renderCashflowExpenseChart(s) {
+        const canvas = document.getElementById('cashflowExpenseChart');
+        const legendEl = document.getElementById('cashflow-expense-legend');
+        if (!canvas) return;
+
+        if (cashflowExpenseChartInstance) {
+            cashflowExpenseChartInstance.destroy();
+            cashflowExpenseChartInstance = null;
+        }
+
+        const categories = [
+            { label: "Expensed", val: s.expensed, color: "#64748b" },
+            { label: "Vật Tư", val: s.vatTu, color: "#ec4899" },
+            { label: "Mua Bông", val: s.muaBong, color: "#ef4444" },
+            { label: "Phân bón", val: s.phanBon, color: "#10b981" },
+            { label: "Thuốc", val: s.thuoc, color: "#0ea5e9" },
+            { label: "Lương", val: s.luong, color: "#8b5cf6" },
+            { label: "Lãi", val: s.lai, color: "#f59e0b" },
+            { label: "Vận Chuyển", val: s.vanChuyen, color: "#3b82f6" },
+            { label: "Chi phí khác", val: s.vanHanh, color: "#14b8a6" }
+        ];
+
+        const activeCategories = categories.filter(c => c.val > 0);
+        const sumExpenses = activeCategories.reduce((acc, curr) => acc + curr.val, 0);
+
+        if (activeCategories.length === 0) {
+            if (legendEl) legendEl.innerHTML = '<div style="text-align: center; color: #64748b; font-weight: 500; padding: 2rem 0;">Không phát sinh chi phí</div>';
+            const context = canvas.getContext('2d');
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            return;
+        }
+
+        // Draw the Chart
+        cashflowExpenseChartInstance = new Chart(canvas.getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: activeCategories.map(c => c.label),
+                datasets: [{
+                    data: activeCategories.map(c => c.val),
+                    backgroundColor: activeCategories.map(c => c.color),
+                    borderWidth: 2,
+                    borderColor: '#ffffff',
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                const val = context.raw;
+                                const pct = sumExpenses > 0 ? ((val / sumExpenses) * 100).toFixed(1) : '0.0';
+                                return ` ${context.label}: ${formatCurrency(val)} (${pct}%)`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: function (context) {
+                            const val = context.dataset.data[context.dataIndex];
+                            const pct = sumExpenses > 0 ? (val / sumExpenses) * 100 : 0;
+                            return pct >= 5; // only show label on slices >= 5% to avoid clutter
+                        },
+                        formatter: function (value) {
+                            return formatCurrency(value);
+                        },
+                        color: '#ffffff',
+                        font: {
+                            weight: 'bold',
+                            size: 10
+                        }
+                    }
+                }
+            }
+        });
+
+        // Build Custom Legend
+        if (legendEl) {
+            legendEl.innerHTML = activeCategories.map(c => {
+                const pct = sumExpenses > 0 ? ((c.val / sumExpenses) * 100).toFixed(1) : '0.0';
+                return `
+                    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; padding: 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.05);">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="display: inline-block; width: 12px; height: 12px; border-radius: 3px; background-color: ${c.color};"></span>
+                            <span style="font-weight: 600; color: #475569;">${c.label}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="font-weight: 700; color: #1e293b;">${formatCurrency(c.val)}</span>
+                            <span style="font-size: 0.75rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; background-color: rgba(0,0,0,0.05); color: #64748b;">${pct}%</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
     }
 
     function hideDrawer() {
@@ -7169,43 +7471,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Populate year selector and default to current month/year
     function initCashSelectors() {
-        const yearSel = document.getElementById('cash-year-select');
-        const monthSel = document.getElementById('cash-month-select');
-        if (!yearSel || !farmData) return;
-
-        const years = new Set();
-        const now = new Date();
-        years.add(now.getFullYear());
-        farmData.forEach(r => { if (r.parsedDate) years.add(r.parsedDate.getFullYear()); });
-
-        yearSel.innerHTML = '';
-        Array.from(years).sort((a, b) => b - a).forEach(y => {
-            const o = document.createElement('option'); o.value = y; o.textContent = y; yearSel.appendChild(o);
-        });
-
-        yearSel.value = now.getFullYear();
-        monthSel.value = now.getMonth() + 1;
-
-        yearSel.addEventListener('change', () => updateCashInHand());
-        monthSel.addEventListener('change', () => updateCashInHand());
+        // No-op: shared selectors are used instead.
     }
 
     async function updateCashInHand() {
         if (!farmData || farmData.length === 0) return;
 
-        const monthSel = document.getElementById('cash-month-select');
-        const yearSel = document.getElementById('cash-year-select');
-        const selMonth = parseInt(monthSel?.value) || (new Date().getMonth() + 1);
+        const monthSel = document.getElementById('cashflow-month');
+        const yearSel = document.getElementById('cashflow-year');
+        const selMonthVal = monthSel?.value || "all";
         const selYear = parseInt(yearSel?.value) || new Date().getFullYear();
 
-        // 1. Opening balance = Cash (Q) của dòng cuối cùng TRƯỚC tháng được chọn
+        // 1. Opening balance = Cash (Q) của dòng cuối cùng TRƯỚC thời kỳ được chọn
         let openingBalance = 0;
         let lastPrevDate = null;
 
         farmData.forEach(row => {
             if (!row.parsedDate) return;
             const ry = row.parsedDate.getFullYear(), rm = row.parsedDate.getMonth() + 1;
-            const isBefore = ry < selYear || (ry === selYear && rm < selMonth);
+            let isBefore;
+            if (selMonthVal === "all") {
+                isBefore = ry < selYear;
+            } else {
+                const selMonth = parseInt(selMonthVal);
+                isBefore = ry < selYear || (ry === selYear && rm < selMonth);
+            }
             if (isBefore && (!lastPrevDate || row.parsedDate >= lastPrevDate)) {
                 lastPrevDate = row.parsedDate;
                 const cashVal = parseFloat(row["Cash"]);
@@ -7213,15 +7503,21 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // 2. Số dư cuối kỳ = Cash (Q) của dòng cuối cùng TRONG tháng được chọn
-        //    Đây là giá trị backend đã tính và lưu vào sheet — không tính lại tránh cộng kép
-        let currentCash = openingBalance; // fallback nếu tháng chưa có dữ liệu
+        // 2. Số dư cuối kỳ = Cash (Q) của dòng cuối cùng TRONG thời kỳ được chọn
+        let currentCash = openingBalance; // fallback nếu chưa có dữ liệu
         let lastInMonthDate = null;
 
         farmData.forEach(row => {
             if (!row.parsedDate) return;
             const ry = row.parsedDate.getFullYear(), rm = row.parsedDate.getMonth() + 1;
-            if (ry === selYear && rm === selMonth) {
+            let isInPeriod;
+            if (selMonthVal === "all") {
+                isInPeriod = ry === selYear;
+            } else {
+                const selMonth = parseInt(selMonthVal);
+                isInPeriod = ry === selYear && rm === selMonth;
+            }
+            if (isInPeriod) {
                 if (!lastInMonthDate || row.parsedDate >= lastInMonthDate) {
                     lastInMonthDate = row.parsedDate;
                     const cashVal = parseFloat(row["Cash"]);
@@ -7234,7 +7530,10 @@ document.addEventListener("DOMContentLoaded", () => {
         let cashIn = 0, cashOut = 0, adjTotal = 0;
         farmData.forEach(row => {
             if (!row.parsedDate) return;
-            if (row.parsedDate.getFullYear() !== selYear || row.parsedDate.getMonth() + 1 !== selMonth) return;
+            const ry = row.parsedDate.getFullYear(), rm = row.parsedDate.getMonth() + 1;
+            if (ry !== selYear) return;
+            if (selMonthVal !== "all" && rm !== parseInt(selMonthVal)) return;
+
             const loaiDT = (row["Loại DT"] || "").trim();
             const valI = parseFloat(row["Đã Thu"]) || 0;
             const valExp = parseFloat(row["Chi Phí"]) || 0;
@@ -7256,6 +7555,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const outEl = document.getElementById('cash-out-total');
         const adjEl = document.getElementById('cash-adj-total');
         const adjRow = document.getElementById('cash-adj-row');
+        const openLabelEl = document.getElementById('cash-opening-label');
+
+        if (openLabelEl) {
+            openLabelEl.innerText = selMonthVal === "all" ? "💰 Đầu năm:" : "💰 Đầu tháng:";
+        }
 
         if (cashEl) {
             cashEl.innerText = formatCurrency(currentCash);
@@ -7269,6 +7573,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 adjEl.innerText = (adjTotal > 0 ? '+' : '') + formatCurrency(adjTotal);
                 adjRow.style.display = '';
             } else { adjRow.style.display = 'none'; }
+        }
+
+        const diffEl = document.getElementById('cash-diff-total');
+        if (diffEl) {
+            const cashDiff = cashIn - cashOut + adjTotal;
+            if (cashDiff > 0) {
+                diffEl.innerText = '+' + formatCurrency(cashDiff);
+                diffEl.style.color = '#10b981';
+            } else if (cashDiff < 0) {
+                diffEl.innerText = formatCurrency(cashDiff);
+                diffEl.style.color = '#ef4444';
+            } else {
+                diffEl.innerText = '0 ₫';
+                diffEl.style.color = '#94a3b8';
+            }
         }
 
         // Show/hide admin buttons
