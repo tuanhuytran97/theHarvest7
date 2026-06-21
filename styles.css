@@ -732,6 +732,100 @@ select:focus {
     }
 }
 
+/* ─── AI Schedule Saved Table: Card Layout on Mobile ─── */
+@media (max-width: 640px) {
+    .sched-saved-table-wrapper {
+        overflow-x: visible !important;
+    }
+
+    .sched-saved-table {
+        min-width: unset !important;
+        border-collapse: separate !important;
+        border-spacing: 0 0.5rem !important;
+    }
+
+    .sched-saved-table thead {
+        display: none !important;
+    }
+
+    .sched-saved-table tbody,
+    .sched-saved-table tr,
+    .sched-saved-table td {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    .sched-saved-table tr {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-left: 4px solid #6366f1 !important;
+        border-radius: 14px !important;
+        margin-bottom: 0.75rem !important;
+        padding: 0.75rem 1rem !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+
+    .sched-saved-table td {
+        border: none !important;
+        padding: 5px 0 !important;
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+        font-size: 0.88rem !important;
+        line-height: 1.4 !important;
+    }
+
+    .sched-saved-table td::before {
+        content: attr(data-label) ": " !important;
+        font-weight: 700 !important;
+        color: #94a3b8 !important;
+        font-size: 0.75rem !important;
+        white-space: nowrap !important;
+        min-width: 100px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.3px !important;
+        padding-top: 1px !important;
+    }
+
+    /* Tên giống hoa — tiêu đề nổi bật */
+    .sched-saved-table td[data-label="Giống hoa"] {
+        font-size: 1.05rem !important;
+        font-weight: 800 !important;
+        color: #1e293b !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        padding-bottom: 10px !important;
+        margin-bottom: 6px !important;
+    }
+    .sched-saved-table td[data-label="Giống hoa"]::before {
+        display: none !important;
+    }
+
+    /* Ngày cắt cành — highlight màu tím */
+    .sched-saved-table td[data-label="Ngày cắt cành"] {
+        color: #6366f1 !important;
+        font-weight: 700 !important;
+    }
+    /* Ngày rộ — highlight màu xanh */
+    .sched-saved-table td[data-label="Ngày rộ hoa"] {
+        color: #10b981 !important;
+        font-weight: 700 !important;
+    }
+
+    /* Cột thao tác — nằm góc phải trên */
+    .sched-saved-table td[data-label="Thao tác"] {
+        position: absolute !important;
+        top: 0.75rem !important;
+        right: 0.75rem !important;
+        width: auto !important;
+        padding: 0 !important;
+    }
+    .sched-saved-table td[data-label="Thao tác"]::before {
+        display: none !important;
+    }
+}
+
 .table-header {
   display: flex;
   justify-content: space-between;

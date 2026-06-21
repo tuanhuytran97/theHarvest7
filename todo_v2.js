@@ -2844,17 +2844,17 @@ window.renderAIScheduler = function () {
 
         html += `
             <tr id="sched-row-${t.id}" data-id="${t.id}" data-variety="${variety}" data-basecycle="${baseCycle}" data-seasonmodifier="${seasonModifier}" data-peakdate="${peakDateStr}" data-holidaydate="${holidayDateStr}" data-holidaylabel="${holidayLabel}" style="border-bottom: 1px solid #e2e8f0; font-size: 0.9rem;">
-                <td style="padding: 12px 10px; font-weight: 700; color: #1e293b;">${variety}</td>
-                <td style="padding: 12px 10px; color: #475569;">${holidayLabel}</td>
-                <td style="padding: 12px 10px; color: #475569;">${holidayDateStr}</td>
-                <td class="sched-cut-date-col" style="padding: 12px 10px; font-weight: 700; color: #6366f1;">${cutDateStr}</td>
-                <td style="padding: 12px 10px; font-weight: 700; color: #10b981;">${peakDateStr}</td>
-                <td class="sched-cycle-col" style="padding: 12px 10px; color: #475569;">
+                <td data-label="Giống hoa" style="padding: 12px 10px; font-weight: 700; color: #1e293b;">${variety}</td>
+                <td data-label="Dịp lễ" style="padding: 12px 10px; color: #475569;">${holidayLabel}</td>
+                <td data-label="Ngày lễ" style="padding: 12px 10px; color: #475569;">${holidayDateStr}</td>
+                <td class="sched-cut-date-col" data-label="Ngày cắt cành" style="padding: 12px 10px; font-weight: 700; color: #6366f1;">${cutDateStr}</td>
+                <td data-label="Ngày rộ hoa" style="padding: 12px 10px; font-weight: 700; color: #10b981;">${peakDateStr}</td>
+                <td class="sched-cycle-col" data-label="Chu kỳ" style="padding: 12px 10px; color: #475569;">
                     <span class="cycle-display">
                         ${baseCycle} ngày <span style="font-size:0.75rem; color:#94a3b8; font-style:italic;">(thực tế: ${totalCycle} ngày)</span>
                     </span>
                 </td>
-                <td style="padding: 12px 10px; text-align: right; white-space: nowrap;">
+                <td data-label="Thao tác" style="padding: 12px 10px; text-align: right; white-space: nowrap;">
                     <div style="display: flex; gap: 8px; justify-content: flex-end;">
                         <button class="btn-action btn-edit-inline" onclick="window.inlineEditAISchedule('${t.id}')" title="Sửa chu kỳ sinh trưởng tiêu chuẩn" style="background: rgba(99, 102, 241, 0.1); color: #4f46e5; border: none; padding: 6px; border-radius: 6px; cursor: pointer;">
                             <i class="fa-solid fa-pencil"></i>
@@ -2866,6 +2866,7 @@ window.renderAIScheduler = function () {
                 </td>
             </tr>
         `;
+
     });
 
     tableBody.innerHTML = html;
