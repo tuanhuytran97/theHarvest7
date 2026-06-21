@@ -748,7 +748,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (syncBtn) syncBtn.style.display = hasPermission('sync') ? '' : 'none';
         if (entryCard) entryCard.style.display = hasPermission('entry') ? '' : 'none';
-        if (bulkDeleteBtn) bulkDeleteBtn.style.display = hasPermission('delete') ? '' : 'none';
+        // Không tự hiện bulk-delete-btn ở đây — updateBulkDeleteUI quản lý việc hiện/ẩn
+        // Chỉ ẩn hẳn nếu không có quyền delete
+        if (bulkDeleteBtn) {
+            if (!hasPermission('delete')) {
+                bulkDeleteBtn.style.display = 'none';
+                bulkDeleteBtn.dataset.noPermission = 'true';
+            } else {
+                bulkDeleteBtn.dataset.noPermission = 'false';
+                // Giữ ẩn — updateBulkDeleteUI sẽ hiện khi có hàng được chọn
+            }
+        }
         if (debtActionBox) debtActionBox.style.display = hasPermission('debt') ? '' : 'none';
         if (menuInvestment) menuInvestment.style.display = hasPermission('investment') ? '' : 'none';
         if (mobileInvestment) mobileInvestment.style.display = hasPermission('investment') ? '' : 'none';
@@ -7866,12 +7876,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const checkedBoxes = tableBody.querySelectorAll('.row-checkbox:checked');
         const count = checkedBoxes.length;
         const bulkHint = document.getElementById('bulk-hint');
-        if (count > 0) {
+        const noPermission = bulkDeleteBtn && bulkDeleteBtn.dataset.noPermission === 'true';
+        if (count > 0 && !noPermission) {
             bulkDeleteBtn.style.display = 'block';
             if (bulkDeleteCount) bulkDeleteCount.innerText = count;
             if (bulkHint) bulkHint.style.display = 'block';
         } else {
-            bulkDeleteBtn.style.display = 'none';
+            if (bulkDeleteBtn) bulkDeleteBtn.style.display = 'none';
             if (bulkHint) bulkHint.style.display = 'none';
         }
 
