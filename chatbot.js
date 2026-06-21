@@ -180,6 +180,12 @@ document.addEventListener("DOMContentLoaded", () => {
             return true;
         }
 
+        // 1.5. AGRICULTURAL SCHEDULER query
+        const schedKeywords = ["cắt cành", "cắt bông", "ngày cắt", "lập lịch", "rộ"];
+        if (schedKeywords.some(kw => lower.includes(kw))) {
+            return showCropSchedulerQuery(lower);
+        }
+
         // 2. INVESTMENT query
         const portfolioKeywords = ["danh mục", "đầu tư", "portfolio", "tài sản", "cổ phiếu", "mã chứng khoán"];
         if (portfolioKeywords.some(kw => lower === kw || lower === kw + " đầu tư" || lower === "xem " + kw)) {
@@ -245,21 +251,25 @@ document.addEventListener("DOMContentLoaded", () => {
             <div style="background: #f8fafc; border-radius: 8px; padding: 10px; border-left: 4px solid #6366f1; line-height: 1.5;">
                 💡 <b>Trợ lý Truy Vấn Dữ Liệu:</b> Bạn có thể hỏi tôi các câu lệnh dưới đây (nhấp vào thẻ để hỏi nhanh):
                 <br><br>
+                <b>🌸 Lập Lịch Cắt Cành AI:</b><br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;" onclick="document.getElementById('chatbot-input').value='ngày cắt cành đỏ ecuador và đỏ pháp cho lễ 20/10'; document.getElementById('send-chatbot-btn').click();">ngày cắt cành đỏ ecuador lễ 20/10</span><br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;" onclick="document.getElementById('chatbot-input').value='lập lịch tết giống pháp'; document.getElementById('send-chatbot-btn').click();">lập lịch tết giống pháp</span>
+                <br><br>
                 <b>💵 Công nợ:</b><br>
-                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">nợ</span> (Danh sách nợ chung)<br>
-                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">nợ Vy</span> (Chi tiết nợ của Vy)<br>
-                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">nợ Thơm</span>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;" onclick="document.getElementById('chatbot-input').value='nợ'; document.getElementById('send-chatbot-btn').click();">nợ</span> (Danh sách nợ chung)<br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;" onclick="document.getElementById('chatbot-input').value='nợ Vy'; document.getElementById('send-chatbot-btn').click();">nợ Vy</span> (Chi tiết nợ của Vy)<br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;" onclick="document.getElementById('chatbot-input').value='nợ Thơm'; document.getElementById('send-chatbot-btn').click();">nợ Thơm</span>
                 <br><br>
                 <b>📊 Thu chi nông trại:</b><br>
-                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">doanh thu hôm nay</span><br>
-                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">chi phí tháng này</span><br>
-                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">lợi nhuận tháng này</span><br>
-                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">lợi nhuận hôm nay</span>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;" onclick="document.getElementById('chatbot-input').value='doanh thu hôm nay'; document.getElementById('send-chatbot-btn').click();">doanh thu hôm nay</span><br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;" onclick="document.getElementById('chatbot-input').value='chi phí tháng này'; document.getElementById('send-chatbot-btn').click();">chi phí tháng này</span><br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;" onclick="document.getElementById('chatbot-input').value='lợi nhuận tháng này'; document.getElementById('send-chatbot-btn').click();">lợi nhuận tháng này</span><br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;" onclick="document.getElementById('chatbot-input').value='lợi nhuận hôm nay'; document.getElementById('send-chatbot-btn').click();">lợi nhuận hôm nay</span>
                 <br><br>
                 <b>📈 Đầu tư (Warren Buffett):</b><br>
-                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">danh mục đầu tư</span> (Xem tổng quan tài sản)<br>
-                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">cổ phiếu FPT</span> (Xem chi tiết mã FPT)<br>
-                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;">cổ phiếu HPG</span>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;" onclick="document.getElementById('chatbot-input').value='danh mục đầu tư'; document.getElementById('send-chatbot-btn').click();">danh mục đầu tư</span> (Xem tổng quan tài sản)<br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;" onclick="document.getElementById('chatbot-input').value='cổ phiếu FPT'; document.getElementById('send-chatbot-btn').click();">cổ phiếu FPT</span> (Xem chi tiết mã FPT)<br>
+                - <span class="suggestion-tag" style="cursor:pointer; display:inline-block; margin: 2px;" onclick="document.getElementById('chatbot-input').value='cổ phiếu HPG'; document.getElementById('send-chatbot-btn').click();">cổ phiếu HPG</span>
             </div>
         `;
         addMessage(helpHtml, "ai");
@@ -1016,6 +1026,206 @@ document.addEventListener("DOMContentLoaded", () => {
         } finally {
             setBotBusy(false);
         }
+    }
+
+    function showCropSchedulerQuery(lower) {
+        let holidayDate = null;
+        let holidayLabel = "Mục tiêu";
+        let presetKey = "custom";
+        
+        const now = new Date();
+        
+        function getHolidayDate(m, d) {
+            let year = now.getFullYear();
+            let target = new Date(year, m, d);
+            const todayNoTime = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            if (target < todayNoTime) {
+                year += 1;
+                target = new Date(year, m, d);
+            }
+            return target;
+        }
+        
+        const presets = [
+            { key: "valentine", m: 1, d: 14, label: "Valentine 14/02" },
+            { key: "womensday_intl", m: 2, d: 8, label: "Quốc tế Phụ nữ 08/03" },
+            { key: "womensday_vn", m: 9, d: 20, label: "Phụ nữ Việt Nam 20/10" },
+            { key: "teachersday_vn", m: 10, d: 20, label: "Nhà giáo Việt Nam 20/11" },
+            { key: "christmas", m: 11, d: 25, label: "Giáng Sinh 25/12" }
+        ];
+        
+        let matchedPreset = null;
+        if (lower.includes("20/10") || lower.includes("20-10") || lower.includes("phụ nữ việt nam")) {
+            matchedPreset = presets.find(p => p.key === "womensday_vn");
+        } else if (lower.includes("8/3") || lower.includes("8-3") || lower.includes("08/03") || lower.includes("quốc tế phụ nữ")) {
+            matchedPreset = presets.find(p => p.key === "womensday_intl");
+        } else if (lower.includes("14/2") || lower.includes("14-2") || lower.includes("14/02") || lower.includes("valentine")) {
+            matchedPreset = presets.find(p => p.key === "valentine");
+        } else if (lower.includes("20/11") || lower.includes("20-11") || lower.includes("nhà giáo")) {
+            matchedPreset = presets.find(p => p.key === "teachersday_vn");
+        } else if (lower.includes("noel") || lower.includes("giáng sinh") || lower.includes("christmas") || lower.includes("25/12") || lower.includes("25-12")) {
+            matchedPreset = presets.find(p => p.key === "christmas");
+        }
+        
+        if (matchedPreset) {
+            holidayLabel = matchedPreset.label;
+            presetKey = matchedPreset.key;
+            holidayDate = getHolidayDate(matchedPreset.m, matchedPreset.d);
+        } else {
+            const customMatch = lower.match(/(\d{1,2})[\/\-](\d{1,2})/);
+            if (customMatch) {
+                const d = parseInt(customMatch[1]);
+                const m = parseInt(customMatch[2]) - 1;
+                holidayLabel = `Ngày ${d}/${m + 1}`;
+                holidayDate = getHolidayDate(m, d);
+            } else {
+                let closestPreset = presets[0];
+                let minDiff = Infinity;
+                presets.forEach(p => {
+                    const pDate = getHolidayDate(p.m, p.d);
+                    const diff = pDate - now;
+                    if (diff < minDiff && diff > 0) {
+                        minDiff = diff;
+                        closestPreset = p;
+                    }
+                });
+                holidayLabel = closestPreset.label;
+                presetKey = closestPreset.key;
+                holidayDate = getHolidayDate(closestPreset.m, closestPreset.d);
+            }
+        }
+        
+        const varietyMap = {
+            "ecuador": "Ecuador",
+            "pháp": "Pháp",
+            "xô đỏ": "Xô Đỏ",
+            "xô ngoại": "Xô ngoại",
+            "xô nội": "Xô nội",
+            "trắng ù": "Trắng ù",
+            "quốc vương": "Quốc Vương",
+            "ô hồng": "Ô Hồng",
+            "hà lan": "Hà Lan",
+            "kem": "Kem",
+            "simmo": "Simmo",
+            "vitto": "Vitto",
+            "lạc thần": "Lạc Thần",
+            "hỷ trứng": "Hỷ Trứng",
+            "capu": "Capu"
+        };
+        
+        const detected = [];
+        for (const [key, val] of Object.entries(varietyMap)) {
+            if (lower.includes(key)) {
+                detected.push(val);
+            }
+        }
+        
+        if (detected.length === 0) {
+            detected.push("Ecuador", "Pháp");
+        }
+        
+        const FLOWER_CYCLES = {
+            "Ecuador": { base: 68, winter: 7, summer: -5 },
+            "Pháp": { base: 62, winter: 6, summer: -4 },
+            "Xô Đỏ": { base: 53, winter: 5, summer: -3 },
+            "Xô ngoại": { base: 56, winter: 5, summer: -3 },
+            "Xô nội": { base: 53, winter: 5, summer: -3 },
+            "Trắng ù": { base: 60, winter: 6, summer: -4 },
+            "Quốc Vương": { base: 64, winter: 6, summer: -4 },
+            "Ô Hồng": { base: 63, winter: 6, summer: -4 },
+            "Hà Lan": { base: 60, winter: 6, summer: -4 },
+            "Kem": { base: 58, winter: 5, summer: -3 },
+            "Simmo": { base: 55, winter: 5, summer: -3 },
+            "Vitto": { base: 57, winter: 5, summer: -3 },
+            "Lạc Thần": { base: 59, winter: 5, summer: -3 },
+            "Hỷ Trứng": { base: 54, winter: 5, summer: -3 },
+            "Capu": { base: 61, winter: 6, summer: -4 }
+        };
+        
+        const daysBefore = 7;
+        const peakDate = new Date(holidayDate.getTime() - (daysBefore * 24 * 60 * 60 * 1000));
+        
+        function getCycleDays(varName, targetPeakDate) {
+            const info = FLOWER_CYCLES[varName] || { base: 60, winter: 6, summer: -4 };
+            const peakMonth = targetPeakDate.getMonth();
+            let mod = 0;
+            if ([10, 11, 0, 1].includes(peakMonth)) mod = info.winter;
+            else if ([5, 6, 7].includes(peakMonth)) mod = info.summer;
+            return info.base + mod;
+        }
+        
+        function getFormattedDate(d) {
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yyyy = d.getFullYear();
+            return `${dd}/${mm}/${yyyy}`;
+        }
+        
+        let comparisonHtml = "";
+        detected.forEach(v => {
+            const cycle = getCycleDays(v, peakDate);
+            const cutD = new Date(peakDate.getTime() - (cycle * 24 * 60 * 60 * 1000));
+            comparisonHtml += `
+                <tr style="border-bottom:1px solid rgba(124, 58, 237, 0.15); font-size:0.85rem;">
+                    <td style="padding:10px 8px; font-weight:700; color:#1e293b;">${v}</td>
+                    <td style="padding:10px 8px; font-weight:800; color:#6366f1;">${getFormattedDate(cutD)}</td>
+                    <td style="padding:10px 8px; font-weight:700; color:#10b981;">${getFormattedDate(peakDate)}</td>
+                    <td style="padding:10px 8px; text-align:center;"><span style="background:rgba(99, 102, 241, 0.1); color:#4f46e5; font-weight:800; padding:2px 6px; border-radius:4px; font-size:0.75rem;">${cycle} ngày</span></td>
+                </tr>
+            `;
+        });
+        
+        const peakMonthName = peakDate.getMonth() + 1;
+        let weatherWarning = "";
+        if ([11, 12, 1, 2].includes(peakMonthName)) {
+            weatherWarning = `⚠️ <b>Lưu ý khí hậu:</b> Tháng ${peakMonthName} là mùa đông lạnh Đà Lạt nên thời gian sinh trưởng bị kéo dài thêm từ 5-7 ngày. Lịch trên đã tự động bù trừ ngày lạnh.`;
+        } else if ([6, 7, 8].includes(peakMonthName)) {
+            weatherWarning = `☀️ <b>Lưu ý khí hậu:</b> Tháng ${peakMonthName} thời tiết hè ấm giúp hoa lớn nhanh hơn từ 3-5 ngày. Lịch trên đã tự động rút ngắn chu kỳ.`;
+        }
+        
+        const holidayDateVal = `${holidayDate.getFullYear()}-${String(holidayDate.getMonth() + 1).padStart(2, '0')}-${String(holidayDate.getDate()).padStart(2, '0')}`;
+        
+        const cardHtml = `
+            <div style="background:linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%); border:1.5px solid #d8b4fe; border-radius:18px; padding:1.25rem; box-shadow:0 8px 24px rgba(124, 58, 237, 0.1); font-family:'Inter', sans-serif; max-width:480px; display:flex; flex-direction:column; gap:10px; margin-bottom:8px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="background:#7c3aed; color:white; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(124,58,237,0.3);">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="font-size:0.85rem;"></i>
+                    </div>
+                    <div style="display:flex; flex-direction:column;">
+                        <b style="color:#6b21a8; font-size:0.95rem; text-transform:uppercase; letter-spacing:0.5px;">Phân tích Cắt Bông AI</b>
+                        <span style="font-size:0.75rem; color:#701a75; font-weight:600;">Lễ mục tiêu: ${holidayLabel} (Rộ rực rỡ ngày: ${getFormattedDate(peakDate)})</span>
+                    </div>
+                </div>
+                
+                <p style="margin:0; font-size:0.85rem; color:#4a044e; line-height:1.45;">Trợ lý nông nghiệp AI khuyến nghị ngày cắt cành tối ưu rộ trước lễ <b>1 tuần</b> để đóng gói & vận chuyển hàng đi các tỉnh:</p>
+                
+                <div style="overflow-x:auto; margin:4px 0; background:white; border-radius:12px; border:1px solid #e9d5ff;">
+                    <table style="width:100%; border-collapse:collapse; text-align:left;">
+                        <thead>
+                            <tr style="background:#f3e8ff; font-weight:700; color:#6b21a8; font-size:0.78rem; border-bottom:1.5px solid #d8b4fe;">
+                                <th style="padding:8px;">Màu / Giống</th>
+                                <th style="padding:8px;">Ngày cắt cành</th>
+                                <th style="padding:8px;">Ngày rộ hoa</th>
+                                <th style="padding:8px; text-align:center;">Chu kỳ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${comparisonHtml}
+                        </tbody>
+                    </table>
+                </div>
+                
+                ${weatherWarning ? `<p style="margin:0; font-size:0.78rem; color:#7e22ce; line-height:1.4;">${weatherWarning}</p>` : ''}
+                
+                <button class="suggestion-tag" style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; border: none; font-weight: 800; padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 10px rgba(124,58,237,0.2); font-size:0.82rem; margin-top:4px;" 
+                    onclick="window.openAISchedulerPreset('${presetKey}', '${holidayDateVal}', '${detected[0]}')">
+                    <i class="fa-solid fa-calendar-plus"></i> Mở Lập Lịch AI để lưu lịch trình
+                </button>
+            </div>
+        `;
+        
+        addMessage(cardHtml, "ai");
+        return true;
     }
 
 });

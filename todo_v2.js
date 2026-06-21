@@ -7,7 +7,7 @@ let todoCache = [];
 let todoCharts = {};
 let currentSort = { key: 'deadline', asc: true };
 let selectedFocusDate = new Date();
-selectedFocusDate.setHours(0,0,0,0);
+selectedFocusDate.setHours(0, 0, 0, 0);
 let selectedCalCategories = [];
 let selectedCalStickers = [];
 let selectedListStickers = [];
@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (targetId === 'view-calendar') renderCalendar();
                 if (targetId === 'view-dashboard') renderDashboard();
                 if (targetId === 'view-list') renderTable();
+                if (targetId === 'view-ai-scheduler') renderAIScheduler();
             }
         });
     });
@@ -254,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial Load
     loadTodoData();
-    
+
     // Fallback: If for some reason renderActiveView isn't called by loadTodoData
     setTimeout(() => {
         if (document.getElementById('view-calendar')?.style.display !== 'none') {
@@ -263,6 +264,50 @@ document.addEventListener('DOMContentLoaded', () => {
             renderFocus();
         }
     }, 1500);
+
+    // Setup variety pill selectors for AI Scheduler
+    const schedPillButtons = document.querySelectorAll('.sched-flower-pill-btn');
+    schedPillButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            schedPillButtons.forEach(b => {
+                b.classList.remove('active');
+            });
+            btn.classList.add('active');
+            const varietyVal = btn.getAttribute('data-value');
+            const hiddenInput = document.getElementById('sched-selected-variety');
+            if (hiddenInput) hiddenInput.value = varietyVal;
+        });
+    });
+
+    // Run analysis button
+    const runAnalysisBtn = document.getElementById('btn-run-sched-analysis');
+    if (runAnalysisBtn) {
+        runAnalysisBtn.addEventListener('click', () => {
+            if (typeof window.runAIScheduleAnalysis === 'function') {
+                window.runAIScheduleAnalysis();
+            }
+        });
+    }
+
+    // Save tasks button
+    const saveSchedTasksBtn = document.getElementById('btn-save-sched-tasks');
+    if (saveSchedTasksBtn) {
+        saveSchedTasksBtn.addEventListener('click', () => {
+            if (typeof window.saveAIScheduleTasks === 'function') {
+                window.saveAIScheduleTasks();
+            }
+        });
+    }
+
+    // Reset button
+    const resetSchedBtn = document.getElementById('btn-reset-sched');
+    if (resetSchedBtn) {
+        resetSchedBtn.addEventListener('click', () => {
+            if (typeof window.cancelAIScheduleAnalysis === 'function') {
+                window.cancelAIScheduleAnalysis();
+            }
+        });
+    }
 
     // Initial check and listeners on sync queue
     window.addEventListener('online', () => {
@@ -382,6 +427,7 @@ function renderActiveView() {
     else if (targetId === 'view-calendar') renderCalendar();
     else if (targetId === 'view-dashboard') renderDashboard();
     else if (targetId === 'view-focus') renderFocus();
+    else if (targetId === 'view-ai-scheduler') renderAIScheduler();
 }
 
 function updateCategoryFilterOptions() {
@@ -422,24 +468,24 @@ function renderTable() {
     // Apply Filters
     let filtered = todoCache.filter(t => {
         // Smart Date Search: if query is DD/MM/YYYY format, match exactly with deadlineDate
-        let matchesSearch = !searchQuery || 
-                             t.task.toLowerCase().includes(searchQuery) || 
-                             (t.category && t.category.toLowerCase().includes(searchQuery));
-        
+        let matchesSearch = !searchQuery ||
+            t.task.toLowerCase().includes(searchQuery) ||
+            (t.category && t.category.toLowerCase().includes(searchQuery));
+
         // If searchQuery looks like a date (e.g. "01/05/2026")
         if (searchQuery.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/) && t.deadlineDate) {
             const parts = searchQuery.split('/');
             const d = t.deadlineDate;
             const isMatch = d.getDate() === parseInt(parts[0]) &&
-                            (d.getMonth() + 1) === parseInt(parts[1]) &&
-                            d.getFullYear() === parseInt(parts[2]);
+                (d.getMonth() + 1) === parseInt(parts[1]) &&
+                d.getFullYear() === parseInt(parts[2]);
             if (isMatch) matchesSearch = true;
         } else if (searchQuery && t.deadline && t.deadline.includes(searchQuery)) {
             matchesSearch = true;
         }
 
         let matchesStatus = !statusFilter || t.status === statusFilter;
-        
+
         // Handle special derived filter: Delayed
         if (statusFilter === 'Trễ') {
             const isDone = t.status === 'Hoàn thành' || t.status === 'Hủy bỏ';
@@ -564,10 +610,10 @@ function renderCalendar() {
 
     // Day Headers
     const isMobile = window.innerWidth < 600;
-    const days = isMobile ? 
-        ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'] : 
+    const days = isMobile ?
+        ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'] :
         ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
-    
+
     days.forEach(d => {
         const div = document.createElement('div');
         div.className = 'calendar-day-header';
@@ -633,7 +679,7 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
         if (!dl) return false;
 
         const isSameDay = dl.getDate() === dayNum && dl.getMonth() === m && dl.getFullYear() === y;
-        
+
         // Logic for Overdue/Delayed: if this cell is TODAY, show all past incomplete tasks
         const isTodayCell = date.getTime() === today.getTime();
         const isOverdue = dl.getTime() < today.getTime() && t.status !== 'Hoàn thành' && t.status !== 'Hủy bỏ';
@@ -659,7 +705,7 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
         const isDone = t.status === 'Hoàn thành' || t.status === 'Hủy bỏ';
         const tDiv = document.createElement('div');
         tDiv.className = 'calendar-task';
-        
+
         const dl = parseLocalDate(t.deadline);
         const isOverdue = dl && dl.getTime() < today.getTime() && !isDone;
         // Sticker Tag Logic
@@ -682,15 +728,15 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
             else if (cat.includes('family')) catClass = 'cat-tag-family';
             else if (cat.includes('cá nhân')) catClass = 'cat-tag-ca-nhan';
             else if (cat.includes('self-help')) catClass = 'cat-tag-phat-trien';
-            
+
             catTag = ` <span class="cat-tag ${catClass}">${t.category}</span>`;
         }
 
         const checkIcon = t.status === 'Hoàn thành' ? '<i class="fa-solid fa-check" style="font-size: 0.7rem;"></i> ' : '';
-        const taskNameHtml = isDone 
-            ? `<span style="text-decoration: line-through; color: #94a3b8;">${escapeHtml(t.task)}</span>` 
+        const taskNameHtml = isDone
+            ? `<span style="text-decoration: line-through; color: #94a3b8;">${escapeHtml(t.task)}</span>`
             : `<span>${escapeHtml(t.task)}</span>`;
-        
+
         tDiv.innerHTML = (isOverdue ? '<span style="color: #ef4444; font-weight: 800;">(Trễ)</span> ' : '') + checkIcon + taskNameHtml + stickerTag + catTag;
         tDiv.title = t.task + (t.category ? ` [${t.category}]` : '');
 
@@ -739,7 +785,7 @@ function renderFocus() {
     if (!todayList || !upcomingList) return;
 
     const today = new Date();
-    today.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
 
     // 1. Filter Việc Hôm Nay: tasks of selected day + overdue if today is selected
     const todayTasks = todoCache.filter(t => {
@@ -747,7 +793,7 @@ function renderFocus() {
         if (!dl) return false;
 
         const isSameDay = dl.getTime() === selectedFocusDate.getTime();
-        
+
         // If viewing TODAY, also show overdue tasks
         const isPast = dl.getTime() < today.getTime();
         const isIncomplete = t.status !== 'Hoàn thành' && t.status !== 'Hủy bỏ';
@@ -804,7 +850,7 @@ function renderWeeklyFilter() {
     if (!filterContainer) return;
 
     filterContainer.innerHTML = '';
-    
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -817,14 +863,14 @@ function renderWeeklyFilter() {
     for (let i = 0; i < 7; i++) {
         const d = new Date(startDate);
         d.setDate(startDate.getDate() + i);
-        d.setHours(0,0,0,0);
+        d.setHours(0, 0, 0, 0);
 
         const isActive = d.getTime() === selectedFocusDate.getTime();
         const isToday = d.getTime() === today.getTime();
 
         const pill = document.createElement('div');
         pill.className = `date-pill ${isActive ? 'active' : ''} ${isToday ? 'today' : ''}`;
-        
+
         const dayName = dayNames[d.getDay()];
         const dayNum = d.getDate();
 
@@ -845,7 +891,7 @@ function renderWeeklyFilter() {
 function createFocusItemHTML(t, borderColor) {
     const isCompleted = t.status === 'Hoàn thành';
     const titleStyle = isCompleted ? 'text-decoration: line-through; color: var(--text-light);' : '';
-    
+
     // Check for delay
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -1047,7 +1093,7 @@ function resetModal() {
     document.querySelectorAll('.sticker-checkbox').forEach(cb => cb.checked = false);
     updateStickerLabel();
     toggleStickerFieldVisibility();
-    
+
     // Hide delete button for new tasks
     const delBtn = document.getElementById('delete-task-btn');
     if (delBtn) delBtn.style.display = 'none';
@@ -1056,13 +1102,13 @@ function resetModal() {
 window.openAddTaskModalWithDate = function (date) {
     resetModal();
     document.getElementById('modal-title').innerText = "Thêm Công Việc Mới";
-    
+
     // Format date as YYYY-MM-DD for input[type="date"]
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     document.getElementById('task-deadline').value = `${y}-${m}-${d}`;
-    
+
     if (isRestricted()) return;
     document.getElementById('todo-modal').style.display = 'flex';
 }
@@ -1187,18 +1233,18 @@ window.deleteTask = async function (id) {
     // Optimistic update
     todoCache = todoCache.filter(x => x.id !== id);
     localStorage.setItem('todo_cache_v2', JSON.stringify(todoCache));
-    
+
     const modal = document.getElementById('todo-modal');
     if (modal) modal.style.display = 'none';
-    
+
     renderActiveView();
 
     // Queue synchronization in the background
     let queue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
-    
+
     // Check if there is a pending save for this offline task in the queue
     const pendingSaveIndex = queue.findIndex(item => item.action === "save_todo_task" && item.clientId === id);
-    
+
     if (pendingSaveIndex > -1) {
         // If there's a pending save that has not synced yet, remove it from the queue
         queue.splice(pendingSaveIndex, 1);
@@ -1223,7 +1269,7 @@ window.applyDashboardFilter = function (type, value) {
     if (searchInput) searchInput.value = '';
     if (statusInput) statusInput.value = '';
     if (priorityInput) priorityInput.value = '';
-    
+
     currentDateFilter = null; // Reset special date filter
 
     if (type === 'today') {
@@ -1282,7 +1328,7 @@ function getStatusClass(s) {
 
 function getStickerTagClass(sticker) {
     if (!sticker) return '';
-    switch(sticker) {
+    switch (sticker) {
         case 'Nấm': return 'sticker-tag-nam';
         case 'Nhện': return 'sticker-tag-nhen';
         case 'Sâu': return 'sticker-tag-sau';
@@ -1298,7 +1344,7 @@ function getStickerTagClass(sticker) {
 
 function getStickerEmoji(sticker) {
     if (!sticker) return '';
-    switch(sticker) {
+    switch (sticker) {
         case 'Nấm': return '🍄';
         case 'Nhện': return '🕷️';
         case 'Sâu': return '🐛';
@@ -1316,7 +1362,7 @@ function toggleStickerFieldVisibility() {
     const category = document.getElementById('task-category')?.value;
     const stickerWrapper = document.getElementById('task-sticker-wrapper');
     if (!stickerWrapper) return;
-    
+
     const isFarmCategory = category === "Farm" || category === "Farm I" || category === "Farm II";
     if (isFarmCategory) {
         stickerWrapper.style.display = "grid";
@@ -1381,7 +1427,7 @@ function escapeHtml(text) {
 }
 
 // --- MULTI-SELECT CATEGORY HELPERS ---
-window.toggleCalCategory = function(cat, isChecked) {
+window.toggleCalCategory = function (cat, isChecked) {
     if (isChecked) {
         if (!selectedCalCategories.includes(cat)) {
             selectedCalCategories.push(cat);
@@ -1393,7 +1439,7 @@ window.toggleCalCategory = function(cat, isChecked) {
     renderCalendar();
 };
 
-window.selectAllCalCategories = function(selectBool) {
+window.selectAllCalCategories = function (selectBool) {
     const checkboxes = document.querySelectorAll('#cal-category-multiselect .multiselect-dropdown input[type="checkbox"]');
     checkboxes.forEach(cb => {
         cb.checked = selectBool;
@@ -1475,35 +1521,35 @@ function openExportTextModal() {
 
     const month = parseInt(monthVal);
     const year = parseInt(yearVal);
-    
+
     // Filter tasks based on month and year of deadline
     const filtered = todoCache.filter(t => {
         if (!t.deadline) return false;
         const dl = parseLocalDate(t.deadline);
         if (!dl) return false;
-        
+
         // Match month and year
         const matchesDate = dl.getMonth() === month && dl.getFullYear() === year;
         if (!matchesDate) return false;
-        
+
         // Match category filter
         const tCategory = t.category || 'Chung';
         const matchesCategory = selectedCalCategories.length === 0 || selectedCalCategories.includes(tCategory);
-        
+
         // Match sticker filter
         const taskStickers = t.sticker ? t.sticker.split(',').map(s => s.trim()).filter(Boolean) : [];
         const matchesSticker = selectedCalStickers.length === 0 || taskStickers.some(st => selectedCalStickers.includes(st));
 
         return matchesCategory && matchesSticker;
     });
-    
+
     // Sort chronologically (lowest date to highest date)
     filtered.sort((a, b) => {
         const dlA = parseLocalDate(a.deadline);
         const dlB = parseLocalDate(b.deadline);
         return dlA.getTime() - dlB.getTime();
     });
-    
+
     // Group by day of month
     const groups = {};
     filtered.forEach(t => {
@@ -1514,26 +1560,26 @@ function openExportTextModal() {
         }
         groups[day].push(t);
     });
-    
+
     // Priority weights for sorting within same day
     const priorityWeight = { 'Khẩn cấp': 1, 'Cao': 2, 'Trung bình': 3, 'Thấp': 4 };
     const pad = (n) => String(n).padStart(2, '0');
     const displayMonth = pad(month + 1);
-    
+
     let textResult = "";
-    
+
     // Sort day numbers ascending
     const sortedDays = Object.keys(groups).map(Number).sort((a, b) => a - b);
-    
+
     if (sortedDays.length === 0) {
         textResult = `Lịch trình tháng ${displayMonth}/${year} không có công việc nào.`;
     } else {
         sortedDays.forEach(day => {
             const dayTasks = groups[day];
-            
+
             // Sort by priority within the day
             dayTasks.sort((a, b) => (priorityWeight[a.priority] || 99) - (priorityWeight[b.priority] || 99));
-            
+
             textResult += `ngày ${pad(day)}/${displayMonth}:\n`;
             dayTasks.forEach(t => {
                 const noteStr = t.note ? ` (${t.note})` : '';
@@ -1541,17 +1587,17 @@ function openExportTextModal() {
             });
             textResult += `\n`;
         });
-        
+
         // Trim trailing newlines
         textResult = textResult.trim();
     }
-    
+
     // Set text to textarea
     const contentTextarea = document.getElementById('export-text-content');
     if (contentTextarea) {
         contentTextarea.value = textResult;
     }
-    
+
     // Open modal
     const modal = document.getElementById('export-text-modal');
     if (modal) {
@@ -1565,9 +1611,9 @@ function openExportTextModal() {
 async function copyExportText() {
     const textarea = document.getElementById('export-text-content');
     if (!textarea) return;
-    
+
     const text = textarea.value;
-    
+
     try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
             await navigator.clipboard.writeText(text);
@@ -1597,16 +1643,16 @@ async function copyExportText() {
 function showCopySuccess() {
     const btn = document.getElementById('btn-copy-export');
     if (!btn) return;
-    
+
     const originalBg = btn.style.background;
     const originalShadow = btn.style.boxShadow;
     const originalHtml = btn.innerHTML;
-    
+
     btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
     btn.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
     btn.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đã sao chép!';
     btn.disabled = true;
-    
+
     setTimeout(() => {
         btn.style.background = originalBg;
         btn.style.boxShadow = originalShadow;
@@ -1648,7 +1694,7 @@ function renderCalStickerMultiSelect() {
     }
 }
 
-window.toggleCalSticker = function(sticker, isChecked) {
+window.toggleCalSticker = function (sticker, isChecked) {
     if (isChecked) {
         if (!selectedCalStickers.includes(sticker)) {
             selectedCalStickers.push(sticker);
@@ -1660,7 +1706,7 @@ window.toggleCalSticker = function(sticker, isChecked) {
     renderCalendar();
 };
 
-window.selectAllCalStickers = function(selectBool) {
+window.selectAllCalStickers = function (selectBool) {
     const checkboxes = document.querySelectorAll('#cal-sticker-multiselect .multiselect-dropdown input[type="checkbox"]');
     checkboxes.forEach(cb => {
         cb.checked = selectBool;
@@ -1723,7 +1769,7 @@ function renderListStickerMultiSelect() {
     }
 }
 
-window.toggleListSticker = function(sticker, isChecked) {
+window.toggleListSticker = function (sticker, isChecked) {
     if (isChecked) {
         if (!selectedListStickers.includes(sticker)) {
             selectedListStickers.push(sticker);
@@ -1735,7 +1781,7 @@ window.toggleListSticker = function(sticker, isChecked) {
     renderTable();
 };
 
-window.selectAllListStickers = function(selectBool) {
+window.selectAllListStickers = function (selectBool) {
     const checkboxes = document.querySelectorAll('#filter-sticker-multiselect .multiselect-dropdown input[type="checkbox"]');
     checkboxes.forEach(cb => {
         cb.checked = selectBool;
@@ -1892,6 +1938,8 @@ async function processTodoSyncQueue() {
                     localStorage.setItem('todo_sync_queue', JSON.stringify(updatedQueue));
                 }
             } else {
+                const errMsg = (response && response.message) ? response.message : "Lỗi kết nối mạng hoặc server Google Sheets.";
+                showToast(`Đồng bộ thất bại: ${errMsg}`, "error");
                 break;
             }
         }
@@ -1929,7 +1977,7 @@ window.showToast = window.showToast || function (message, type = 'info', duratio
 
     const toast = document.createElement('div');
     toast.className = 'toast toast-' + type;
-    
+
     const colors = {
         success: { bg: '#f0fdf4', color: '#166534', border: '#bbf7d0', icon: '✔' },
         error: { bg: '#fef2f2', color: '#991b1b', border: '#fecaca', icon: '❌' },
@@ -2000,7 +2048,7 @@ if (typeof window.renderQueueItems !== 'function') {
         }
     }
 
-    window.renderQueueItems = function() {
+    window.renderQueueItems = function () {
         const listContainer = document.getElementById('queue-items-list');
         if (!listContainer) return;
 
@@ -2051,9 +2099,9 @@ if (typeof window.renderQueueItems !== 'function') {
         listContainer.innerHTML = html;
     };
 
-    window.removeQueueItem = function(source, index) {
+    window.removeQueueItem = function (source, index) {
         if (!confirm('Bạn có chắc muốn xóa mục này khỏi hàng chờ? Giao dịch/công việc này sẽ không được đồng bộ lên Cloud.')) return;
-        
+
         if (source === 'harvest') {
             let queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
             queue.splice(index, 1);
@@ -2077,13 +2125,13 @@ if (typeof window.renderQueueItems !== 'function') {
     if (btnClearQueue) {
         btnClearQueue.addEventListener('click', () => {
             if (!confirm('Cảnh báo: Bạn có chắc chắn muốn xóa TOÀN BỘ hàng chờ đồng bộ của cả Dữ liệu Farm và Công Việc? Tất cả thay đổi chưa lưu lên Cloud sẽ bị hủy bỏ.')) return;
-            
+
             localStorage.setItem('harvest_sync_queue', '[]');
             localStorage.setItem('todo_sync_queue', '[]');
-            
+
             showToast('Đã xóa toàn bộ hàng chờ đồng bộ!', 'info');
             document.getElementById('queue-manager-modal').style.display = 'none';
-            
+
             if (window.updateConnectionStatus) window.updateConnectionStatus();
             if (window.updateTodoConnectionStatus) window.updateTodoConnectionStatus();
         });
@@ -2094,7 +2142,7 @@ if (typeof window.renderQueueItems !== 'function') {
         btnRetryQueue.addEventListener('click', () => {
             showToast('Đang thực hiện đồng bộ lại...', 'info');
             document.getElementById('queue-manager-modal').style.display = 'none';
-            
+
             if (window.processSyncQueue) window.processSyncQueue();
             if (window.processTodoSyncQueue) window.processTodoSyncQueue();
         });
@@ -2116,6 +2164,691 @@ if (todoConnBadge) {
         }
     });
 }
+
+
+// ==========================================
+// ==========================================
+// AGRICULTURAL AI SCHEDULER ENGINE
+// ==========================================
+
+const FLOWER_CYCLES = {
+    "Ecuador": { base: 68, winter: 7, summer: -5 },
+    "Pháp": { base: 62, winter: 6, summer: -4 },
+    "Xô Đỏ": { base: 53, winter: 5, summer: -3 },
+    "Xô ngoại": { base: 56, winter: 5, summer: -3 },
+    "Xô nội": { base: 53, winter: 5, summer: -3 },
+    "Trắng ù": { base: 60, winter: 6, summer: -4 },
+    "Quốc Vương": { base: 64, winter: 6, summer: -4 },
+    "Ô Hồng": { base: 63, winter: 6, summer: -4 },
+    "Hà Lan": { base: 60, winter: 6, summer: -4 },
+    "Kem": { base: 58, winter: 5, summer: -3 },
+    "Simmo": { base: 55, winter: 5, summer: -3 },
+    "Vitto": { base: 57, winter: 5, summer: -3 },
+    "Lạc Thần": { base: 59, winter: 5, summer: -3 },
+    "Hỷ Trứng": { base: 54, winter: 5, summer: -3 },
+    "Capu": { base: 61, winter: 6, summer: -4 }
+};
+
+const HOLIDAY_LABELS = {
+    "valentine": "Valentine 14/02",
+    "womensday_intl": "Quốc tế Phụ nữ 08/03",
+    "womensday_vn": "Phụ nữ Việt Nam 20/10",
+    "teachersday_vn": "Nhà giáo Việt Nam 20/11",
+    "christmas": "Giáng Sinh 25/12",
+    "custom": "Lịch tự chọn"
+};
+
+function formatDateString(d, format = 'YYYY-MM-DD') {
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    if (format === 'DD/MM/YYYY') {
+        return `${dd}/${mm}/${yyyy}`;
+    }
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+function parseSchedulerNote(note) {
+    if (!note || !note.includes('[AI Scheduler]')) return null;
+    const parts = {};
+    const regexes = {
+        variety: /Giống:\s*(.*?)(?:\s*\||$)/,
+        holidayLabel: /Lễ:\s*(.*?)(?:\s*\||$)/,
+        holidayDateStr: /Ngày lễ:\s*(.*?)(?:\s*\||$)/,
+        baseCycle: /Chu kỳ tiêu chuẩn:\s*(\d+)/,
+        totalCycle: /Tổng chu kỳ:\s*(\d+)/,
+        peakDateStr: /Ngày rộ:\s*(.*?)(?:\s*\||$)/
+    };
+    for (const [key, regex] of Object.entries(regexes)) {
+        const match = note.match(regex);
+        if (match) {
+            if (key === 'baseCycle' || key === 'totalCycle') {
+                parts[key] = parseInt(match[1]);
+            } else {
+                parts[key] = match[1].trim();
+            }
+        }
+    }
+    return parts;
+}
+
+function generateAIReportHTML(variety, baseCycle, seasonModifier, totalCycle, peakDate, cutDate, holidayDate, daysBefore) {
+    const peakMonth = peakDate.getMonth() + 1;
+    let modifierText = "";
+    if (seasonModifier > 0) {
+        modifierText = `<p style="margin: 0 0 8px 0; color: #b45309; font-weight: 600;"><i class="fa-solid fa-cloud-sun"></i> Thời tiết Mùa Đông Đà Lạt lạnh kéo dài chu kỳ thêm <b>+${seasonModifier} ngày</b>.</p>`;
+    } else if (seasonModifier < 0) {
+        modifierText = `<p style="margin: 0 0 8px 0; color: #047857; font-weight: 600;"><i class="fa-solid fa-sun"></i> Thời tiết Mùa Hè ấm rút ngắn chu kỳ sinh trưởng <b>${seasonModifier} ngày</b>.</p>`;
+    } else {
+        modifierText = `<p style="margin: 0 0 8px 0; color: #4b5563;"><i class="fa-solid fa-calendar-check"></i> Chu kỳ sinh trưởng giữ nguyên tiêu chuẩn (không ảnh hưởng thời tiết cực đoan).</p>`;
+    }
+
+    return `
+        <div style="font-size: 0.88rem; line-height: 1.5; color: #374151;">
+            <p style="margin: 0 0 10px 0;">Giống hoa <b>${variety}</b> có chu kỳ sinh trưởng tiêu chuẩn là <b>${baseCycle} ngày</b>.</p>
+            ${modifierText}
+            <div style="background: rgba(124, 58, 237, 0.04); border-left: 3px solid #7c3aed; padding: 10px; border-radius: 4px; margin-top: 10px; margin-bottom: 10px;">
+                <ul style="margin: 0; padding-left: 20px;">
+                    <li>Ngày Lễ Mục Tiêu: <b>${formatDateString(holidayDate, 'DD/MM/YYYY')}</b></li>
+                    <li>Ngày Rộ Hoa: <b>${formatDateString(peakDate, 'DD/MM/YYYY')}</b> (trước lễ ${daysBefore} ngày để đóng gói & xuất hàng)</li>
+                    <li>Chu kỳ thực tế: <b>${totalCycle} ngày</b></li>
+                    <li>Khuyến nghị ngày cắt cành: <b style="color: #7c3aed; font-size: 0.95rem;">${formatDateString(cutDate, 'DD/MM/YYYY')}</b></li>
+                </ul>
+            </div>
+            <p style="margin: 10px 0 6px 0; font-weight: 800; color: #1e293b;">Quy trình kỹ thuật chăm sóc đi kèm:</p>
+            <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px;">
+                <li><strong style="color: #6366f1;">Ngày 0 - 15 (Sau cắt cành):</strong> Đi nước đầy đủ. Bón thúc đạm cao kết hợp Humic kích rễ để chồi bật mầm đồng đều, khỏe mạnh.</li>
+                <li><strong style="color: #f59e0b;">Ngày 15 - 40 (Nuôi nụ):</strong> Phun thuốc phòng ngừa bọ trĩ và phấn trắng định kỳ. Khi chồi có nụ hạt đậu, tỉa bỏ nụ phụ để tập trung dinh dưỡng nuôi nụ chính.</li>
+                <li><strong style="color: #10b981;">Ngày 40 đến rộ:</strong> Tăng hàm lượng Kali trắng (K2SO4) giúp bông dày cánh, màu sắc rực rỡ và phom hoa cứng cáp khi đóng thùng đi vựa.</li>
+            </ul>
+        </div>
+    `;
+}
+
+window.handleHolidayPresetChange = function () {
+    const preset = document.getElementById('sched-holiday-preset').value;
+    if (preset === 'custom') return;
+
+    const now = new Date();
+    let year = now.getFullYear();
+    let month = 0;
+    let day = 1;
+
+    switch (preset) {
+        case 'valentine':
+            month = 1; // February
+            day = 14;
+            break;
+        case 'womensday_intl':
+            month = 2; // March
+            day = 8;
+            break;
+        case 'womensday_vn':
+            month = 9; // October
+            day = 20;
+            break;
+        case 'teachersday_vn':
+            month = 10; // November
+            day = 20;
+            break;
+        case 'christmas':
+            month = 11; // December
+            day = 25;
+            break;
+    }
+
+    let holidayDate = new Date(year, month, day);
+    const todayNoTime = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (holidayDate < todayNoTime) {
+        year += 1;
+        holidayDate = new Date(year, month, day);
+    }
+
+    const yyyy = holidayDate.getFullYear();
+    const mm = String(holidayDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(holidayDate.getDate()).padStart(2, '0');
+    document.getElementById('sched-holiday-date').value = `${yyyy}-${mm}-${dd}`;
+};
+
+window.openAISchedulerPreset = function (presetKey, holidayDateVal, variety) {
+    // 1. Switch tab to scheduler
+    const navBtn = document.querySelector('.todo-nav-btn[data-target="view-ai-scheduler"]');
+    if (navBtn) {
+        navBtn.click();
+    } else {
+        const schedulerTab = document.getElementById('view-ai-scheduler');
+        if (schedulerTab) {
+            const subviews = document.querySelectorAll('.subview');
+            subviews.forEach(v => {
+                v.style.display = 'none';
+                v.classList.remove('active-subview');
+            });
+            schedulerTab.style.display = 'block';
+            schedulerTab.classList.add('active-subview');
+            const btns = document.querySelectorAll('.todo-nav-btn');
+            btns.forEach(b => {
+                if (b.getAttribute('data-target') === 'view-ai-scheduler') {
+                    b.classList.add('active');
+                } else {
+                    b.classList.remove('active');
+                }
+            });
+        }
+    }
+
+    // 2. Set form values
+    const presetSelect = document.getElementById('sched-holiday-preset');
+    if (presetSelect) presetSelect.value = presetKey;
+
+    const dateInput = document.getElementById('sched-holiday-date');
+    if (dateInput) dateInput.value = holidayDateVal;
+
+    const varietyInput = document.getElementById('sched-selected-variety');
+    if (varietyInput) varietyInput.value = variety;
+
+    // Highlight selected variety pill
+    const pills = document.querySelectorAll('.sched-flower-pill-btn');
+    pills.forEach(pill => {
+        if (pill.getAttribute('data-value') === variety) {
+            pill.classList.add('active');
+        } else {
+            pill.classList.remove('active');
+        }
+    });
+
+    // 3. Automatically run analysis
+    window.runAIScheduleAnalysis();
+};
+
+window.runAIScheduleAnalysis = function () {
+    const variety = document.getElementById('sched-selected-variety').value;
+    const holidayDateVal = document.getElementById('sched-holiday-date').value;
+    const daysBeforeVal = document.getElementById('sched-days-before').value;
+
+    if (!variety) {
+        alert("Vui lòng chọn giống hoa / màu.");
+        return;
+    }
+    if (!holidayDateVal) {
+        alert("Vui lòng chọn ngày lễ mục tiêu.");
+        return;
+    }
+
+    const daysBefore = parseInt(daysBeforeVal) || 0;
+    const holidayDate = parseLocalDate(holidayDateVal);
+    if (!holidayDate || isNaN(holidayDate.getTime())) {
+        alert("Ngày lễ mục tiêu không hợp lệ.");
+        return;
+    }
+
+    const peakDate = new Date(holidayDate.getTime() - (daysBefore * 24 * 60 * 60 * 1000));
+
+    const cycleInfo = FLOWER_CYCLES[variety] || { base: 60, winter: 6, summer: -4 };
+    const baseCycle = cycleInfo.base;
+
+    const peakMonth = peakDate.getMonth();
+    let seasonModifier = 0;
+    if ([10, 11, 0, 1].includes(peakMonth)) {
+        seasonModifier = cycleInfo.winter;
+    } else if ([5, 6, 7].includes(peakMonth)) {
+        seasonModifier = cycleInfo.summer;
+    }
+
+    const totalCycle = baseCycle + seasonModifier;
+    const cutDate = new Date(peakDate.getTime() - (totalCycle * 24 * 60 * 60 * 1000));
+
+    const preset = document.getElementById('sched-holiday-preset').value;
+    const holidayLabel = HOLIDAY_LABELS[preset] || `Ngày ${formatDateString(holidayDate, 'DD/MM/YYYY')}`;
+
+    window.activeAIScheduleAnalysis = {
+        variety,
+        holidayPreset: preset,
+        holidayLabel,
+        holidayDate,
+        daysBefore,
+        baseCycle,
+        seasonModifier,
+        totalCycle,
+        peakDate,
+        cutDate
+    };
+
+    const resultPlaceholder = document.getElementById('sched-result-placeholder');
+    const resultContent = document.getElementById('sched-result-content');
+    if (resultPlaceholder) resultPlaceholder.style.display = 'none';
+    if (resultContent) {
+        resultContent.style.display = 'flex';
+    }
+
+    const cutDateDiv = document.getElementById('sched-timeline-cut-date');
+    if (cutDateDiv) cutDateDiv.innerText = formatDateString(cutDate, 'DD/MM/YYYY');
+
+    const peakDateDiv = document.getElementById('sched-timeline-peak-date');
+    if (peakDateDiv) peakDateDiv.innerText = formatDateString(peakDate, 'DD/MM/YYYY');
+
+    const holidayDateDiv = document.getElementById('sched-timeline-holiday-date');
+    if (holidayDateDiv) holidayDateDiv.innerText = formatDateString(holidayDate, 'DD/MM/YYYY');
+
+    const baseInput = document.getElementById('sched-timeline-days-base');
+    if (baseInput) baseInput.value = baseCycle;
+
+    const seasonModSpan = document.getElementById('sched-timeline-season-mod');
+    if (seasonModSpan) {
+        seasonModSpan.innerText = (seasonModifier >= 0 ? "+" : "") + seasonModifier;
+    }
+
+    const totalSpan = document.getElementById('sched-timeline-days-total');
+    if (totalSpan) {
+        totalSpan.innerText = totalCycle;
+    }
+
+    const progressDiv = document.getElementById('sched-timeline-progress');
+    if (progressDiv) {
+        progressDiv.style.width = "100%";
+    }
+
+    const reportTextDiv = document.getElementById('sched-ai-report-text');
+    if (reportTextDiv) {
+        reportTextDiv.innerHTML = generateAIReportHTML(
+            variety,
+            baseCycle,
+            seasonModifier,
+            totalCycle,
+            peakDate,
+            cutDate,
+            holidayDate,
+            daysBefore
+        );
+    }
+};
+
+window.onBaseCycleOverride = function () {
+    const active = window.activeAIScheduleAnalysis;
+    if (!active) return;
+
+    const baseInput = document.getElementById('sched-timeline-days-base');
+    if (!baseInput) return;
+
+    let newBase = parseInt(baseInput.value);
+    if (isNaN(newBase) || newBase <= 0) {
+        newBase = active.baseCycle;
+    }
+
+    active.baseCycle = newBase;
+    active.totalCycle = newBase + active.seasonModifier;
+
+    const peakDate = new Date(active.peakDate);
+    const newCutDate = new Date(peakDate.getTime() - (active.totalCycle * 24 * 60 * 60 * 1000));
+    active.cutDate = newCutDate;
+
+    const totalSpan = document.getElementById('sched-timeline-days-total');
+    if (totalSpan) totalSpan.innerText = active.totalCycle;
+
+    const cutDateDiv = document.getElementById('sched-timeline-cut-date');
+    if (cutDateDiv) cutDateDiv.innerText = formatDateString(newCutDate, 'DD/MM/YYYY');
+
+    const reportTextDiv = document.getElementById('sched-ai-report-text');
+    if (reportTextDiv) {
+        reportTextDiv.innerHTML = generateAIReportHTML(
+            active.variety,
+            active.baseCycle,
+            active.seasonModifier,
+            active.totalCycle,
+            active.peakDate,
+            active.cutDate,
+            active.holidayDate,
+            active.daysBefore
+        );
+    }
+};
+
+window.saveAIScheduleTasks = async function () {
+    if (isRestricted()) return;
+    const active = window.activeAIScheduleAnalysis;
+    if (!active) {
+        alert("Vui lòng thực hiện phân tích lịch trình trước khi lưu.");
+        return;
+    }
+
+    const schedId = "AI_SCHED_" + Date.now();
+    const holidayLabel = active.holidayLabel || "Lịch tự chọn";
+    const holidayDateStr = formatDateString(active.holidayDate, 'DD/MM/YYYY');
+    const peakDateStr = formatDateString(active.peakDate, 'DD/MM/YYYY');
+    
+    // 1. Create Cut Cành task
+    const cutTaskId = "OFFLINE_TODO_" + Date.now() + "_1";
+    const cutTaskName = `[Cắt Cành] hoa ${active.variety} cho ${holidayLabel}`;
+    const cutNote = `[AI Scheduler] Giống: ${active.variety} | Lễ: ${holidayLabel} | Ngày lễ: ${holidayDateStr} | Chu kỳ tiêu chuẩn: ${active.baseCycle} | Tổng chu kỳ: ${active.totalCycle} | Ngày rộ: ${peakDateStr} | [Mã Lịch AI: ${schedId}]`;
+
+    const cutTaskObj = {
+        id: cutTaskId,
+        task: cutTaskName,
+        deadline: formatDateString(active.cutDate, 'YYYY-MM-DD'),
+        category: "Lập Lịch AI",
+        note: cutNote,
+        priority: "Cao",
+        status: "Chưa bắt đầu",
+        sticker: "Cắt Cành"
+    };
+    cutTaskObj.deadlineDate = parseLocalDate(cutTaskObj.deadline);
+
+    // 2. Create Hoa Rộ task
+    const peakTaskId = "OFFLINE_TODO_" + Date.now() + "_2";
+    const peakTaskName = `[Hoa Rộ] hoa ${active.variety} cho ${holidayLabel}`;
+    const peakNote = `Thời điểm hoa ${active.variety} đạt độ nở rộ phục vụ ${holidayLabel}.\nThu hoạch đóng gói gửi vựa.\n[Mã Lịch AI: ${schedId}]`;
+
+    const peakTaskObj = {
+        id: peakTaskId,
+        task: peakTaskName,
+        deadline: formatDateString(active.peakDate, 'YYYY-MM-DD'),
+        category: "Lập Lịch AI",
+        note: peakNote,
+        priority: "Khẩn cấp",
+        status: "Chưa bắt đầu",
+        sticker: "Hoa Rộ"
+    };
+    peakTaskObj.deadlineDate = parseLocalDate(peakTaskObj.deadline);
+
+    const now = new Date();
+    const datePart = String(now.getDate()).padStart(2, '0') + '/' + String(now.getMonth() + 1).padStart(2, '0') + '/' + now.getFullYear();
+    const timePart = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ':' + String(now.getSeconds()).padStart(2, '0');
+    
+    cutTaskObj.createdAt = datePart + ' ' + timePart;
+    cutTaskObj.createdDate = now;
+    
+    peakTaskObj.createdAt = datePart + ' ' + timePart;
+    peakTaskObj.createdDate = now;
+
+    // Add both tasks
+    todoCache.unshift(cutTaskObj);
+    todoCache.unshift(peakTaskObj);
+    localStorage.setItem('todo_cache_v2', JSON.stringify(todoCache));
+
+    showToast("Đã lưu lịch trình cắt cành và ngày rộ hoa!", "success");
+    window.renderAIScheduler();
+    
+    if (typeof renderActiveView === 'function') {
+        renderActiveView();
+    }
+
+    // Push both to sync queue
+    let queue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
+    queue.push({ action: "save_todo_task", data: cutTaskObj, clientId: cutTaskId });
+    queue.push({ action: "save_todo_task", data: peakTaskObj, clientId: peakTaskId });
+    localStorage.setItem('todo_sync_queue', JSON.stringify(queue));
+    processTodoSyncQueue();
+};
+
+window.cancelAIScheduleAnalysis = function () {
+    window.activeAIScheduleAnalysis = null;
+    document.getElementById('sched-result-content').style.display = 'none';
+    document.getElementById('sched-result-placeholder').style.display = 'flex';
+    document.getElementById('sched-selected-variety').value = "";
+    document.getElementById('sched-holiday-preset').value = "custom";
+    document.getElementById('sched-holiday-date').value = "";
+    document.getElementById('sched-days-before').value = "7";
+    
+    document.querySelectorAll('.sched-flower-pill-btn').forEach(btn => btn.classList.remove('active'));
+};
+
+window.renderAIScheduler = function () {
+    const tableBody = document.getElementById('sched-saved-list-body');
+    if (!tableBody) return;
+
+    const schedTasks = todoCache.filter(t => t.category === 'Lập Lịch AI' && t.task.startsWith('[Cắt Cành]'));
+
+    if (schedTasks.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem; color: #94a3b8;">
+                    Chưa có lịch trình cắt cành nào được lưu.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let html = "";
+    schedTasks.forEach(t => {
+        const info = parseSchedulerNote(t.note) || {};
+        const variety = info.variety || "Ecuador";
+        const holidayLabel = info.holidayLabel || "Lịch tự chọn";
+        const holidayDateStr = info.holidayDateStr || "";
+        const peakDateStr = info.peakDateStr || "";
+        const baseCycle = info.baseCycle || 60;
+        const totalCycle = info.totalCycle || 60;
+        const seasonModifier = totalCycle - baseCycle;
+        const cutDateStr = formatDate(t.deadline); 
+
+        html += `
+            <tr id="sched-row-${t.id}" data-id="${t.id}" data-variety="${variety}" data-basecycle="${baseCycle}" data-seasonmodifier="${seasonModifier}" data-peakdate="${peakDateStr}" data-holidaydate="${holidayDateStr}" data-holidaylabel="${holidayLabel}" style="border-bottom: 1px solid #e2e8f0; font-size: 0.9rem;">
+                <td style="padding: 12px 10px; font-weight: 700; color: #1e293b;">${variety}</td>
+                <td style="padding: 12px 10px; color: #475569;">${holidayLabel}</td>
+                <td style="padding: 12px 10px; color: #475569;">${holidayDateStr}</td>
+                <td class="sched-cut-date-col" style="padding: 12px 10px; font-weight: 700; color: #6366f1;">${cutDateStr}</td>
+                <td style="padding: 12px 10px; font-weight: 700; color: #10b981;">${peakDateStr}</td>
+                <td class="sched-cycle-col" style="padding: 12px 10px; color: #475569;">
+                    <span class="cycle-display">
+                        ${baseCycle} ngày <span style="font-size:0.75rem; color:#94a3b8; font-style:italic;">(thực tế: ${totalCycle} ngày)</span>
+                    </span>
+                </td>
+                <td style="padding: 12px 10px; text-align: right; white-space: nowrap;">
+                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <button class="btn-action btn-edit-inline" onclick="window.inlineEditAISchedule('${t.id}')" title="Sửa chu kỳ sinh trưởng tiêu chuẩn" style="background: rgba(99, 102, 241, 0.1); color: #4f46e5; border: none; padding: 6px; border-radius: 6px; cursor: pointer;">
+                            <i class="fa-solid fa-pencil"></i>
+                        </button>
+                        <button class="btn-action" onclick="window.deleteAISchedule('${t.id}')" title="Xóa lịch trình" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: none; padding: 6px; border-radius: 6px; cursor: pointer;">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+
+    tableBody.innerHTML = html;
+};
+
+window.deleteAISchedule = async function (id) {
+    if (isRestricted()) return;
+    if (!confirm("Bạn có chắc chắn muốn xóa lịch trình này? Tất cả công việc liên quan sẽ bị xóa.")) return;
+
+    const task = todoCache.find(x => x.id === id);
+    if (!task) return;
+
+    const match = task.note ? task.note.match(/\[Mã Lịch AI:\s*(.*?)\]/) : null;
+    const schedId = match ? match[1] : null;
+
+    if (schedId) {
+        const tasksToDelete = todoCache.filter(t => 
+            t.category === 'Lập Lịch AI' && 
+            t.note && 
+            t.note.includes(`[Mã Lịch AI: ${schedId}]`)
+        );
+        const deleteIds = tasksToDelete.map(t => t.id);
+
+        todoCache = todoCache.filter(t => !deleteIds.includes(t.id));
+        localStorage.setItem('todo_cache_v2', JSON.stringify(todoCache));
+
+        let queue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
+        deleteIds.forEach(delId => {
+            queue.push({ action: "delete_todo_task", id: delId, clientId: delId });
+        });
+        localStorage.setItem('todo_sync_queue', JSON.stringify(queue));
+    } else {
+        todoCache = todoCache.filter(t => t.id !== id);
+        localStorage.setItem('todo_cache_v2', JSON.stringify(todoCache));
+
+        let queue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
+        queue.push({ action: "delete_todo_task", id: id, clientId: id });
+        localStorage.setItem('todo_sync_queue', JSON.stringify(queue));
+    }
+
+    showToast("Đã xóa lịch trình thành công!", "success");
+    window.renderAIScheduler();
+    
+    if (typeof renderActiveView === 'function') {
+        renderActiveView();
+    }
+    processTodoSyncQueue();
+};
+
+window.inlineEditAISchedule = function (taskId) {
+    const row = document.getElementById(`sched-row-${taskId}`);
+    if (!row) return;
+
+    const variety = row.getAttribute('data-variety');
+    const baseCycle = parseInt(row.getAttribute('data-basecycle'));
+    const seasonModifier = parseInt(row.getAttribute('data-seasonmodifier'));
+    const peakDateStr = row.getAttribute('data-peakdate');
+    const holidayDateStr = row.getAttribute('data-holidaydate');
+    const holidayLabel = row.getAttribute('data-holidaylabel');
+    const totalCycle = baseCycle + seasonModifier;
+
+    const cycleCol = row.querySelector('.sched-cycle-col');
+    const actionCol = row.cells[row.cells.length - 1];
+
+    if (!cycleCol || !actionCol) return;
+
+    if (!row.dataset.originalCycleHtml) {
+        row.dataset.originalCycleHtml = cycleCol.innerHTML;
+        row.dataset.originalActionHtml = actionCol.innerHTML;
+    }
+
+    row.classList.add('inline-editing');
+
+    cycleCol.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <input type="number" class="inline-edit-base-cycle input-modern" 
+                value="${baseCycle}" min="1" max="200" 
+                style="width: 60px; padding: 4px 6px; text-align: center; font-weight: 800; border: 1px solid #cbd5e1; border-radius: 6px; color: #6366f1;" 
+                oninput="window.previewInlineEdit('${taskId}')">
+            <span style="font-size: 0.85rem; color: #475569;">ngày</span>
+            <span style="font-size: 0.75rem; color: #94a3b8; font-style: italic;">
+                (thực tế: <span class="inline-preview-total-cycle">${totalCycle}</span> ngày)
+            </span>
+        </div>
+    `;
+
+    actionCol.innerHTML = `
+        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+            <button class="btn-action" onclick="window.saveInlineAISchedule('${taskId}')" title="Lưu thay đổi" 
+                style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: none; padding: 6px; border-radius: 6px; cursor: pointer;">
+                <i class="fa-solid fa-check"></i>
+            </button>
+            <button class="btn-action" onclick="window.renderAIScheduler()" title="Hủy" 
+                style="background: rgba(100, 116, 139, 0.1); color: #64748b; border: none; padding: 6px; border-radius: 6px; cursor: pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    `;
+};
+
+window.previewInlineEdit = function (taskId) {
+    const row = document.getElementById(`sched-row-${taskId}`);
+    if (!row) return;
+
+    const seasonModifier = parseInt(row.getAttribute('data-seasonmodifier'));
+    const peakDateStr = row.getAttribute('data-peakdate');
+
+    const baseInput = row.querySelector('.inline-edit-base-cycle');
+    if (!baseInput) return;
+
+    let newBase = parseInt(baseInput.value);
+    if (isNaN(newBase) || newBase <= 0) {
+        newBase = parseInt(row.getAttribute('data-basecycle'));
+    }
+
+    const newTotal = newBase + seasonModifier;
+
+    const totalPreview = row.querySelector('.inline-preview-total-cycle');
+    if (totalPreview) {
+        totalPreview.innerText = newTotal;
+    }
+
+    const cutDateCol = row.querySelector('.sched-cut-date-col');
+    if (cutDateCol) {
+        const peakDate = parseLocalDate(peakDateStr);
+        if (peakDate && !isNaN(peakDate.getTime())) {
+            const newCutDate = new Date(peakDate.getTime() - (newTotal * 24 * 60 * 60 * 1000));
+            cutDateCol.innerText = formatDateString(newCutDate, 'DD/MM/YYYY');
+        }
+    }
+};
+
+window.saveInlineAISchedule = async function (taskId) {
+    if (isRestricted()) return;
+    const row = document.getElementById(`sched-row-${taskId}`);
+    if (!row) return;
+
+    const baseInput = row.querySelector('.inline-edit-base-cycle');
+    if (!baseInput) return;
+
+    const newBase = parseInt(baseInput.value);
+    if (isNaN(newBase) || newBase <= 0) {
+        alert("Vui lòng nhập chu kỳ sinh trưởng tiêu chuẩn hợp lệ.");
+        return;
+    }
+
+    const variety = row.getAttribute('data-variety');
+    const seasonModifier = parseInt(row.getAttribute('data-seasonmodifier'));
+    const peakDateStr = row.getAttribute('data-peakdate');
+    const holidayDateStr = row.getAttribute('data-holidaydate');
+    const holidayLabel = row.getAttribute('data-holidaylabel');
+
+    const newTotal = newBase + seasonModifier;
+
+    const peakDate = parseLocalDate(peakDateStr);
+    if (!peakDate || isNaN(peakDate.getTime())) {
+        alert("Ngày rộ hoa không hợp lệ.");
+        return;
+    }
+
+    const newCutDate = new Date(peakDate.getTime() - (newTotal * 24 * 60 * 60 * 1000));
+    const newCutDateIso = formatDateString(newCutDate, 'YYYY-MM-DD');
+
+    const task = todoCache.find(x => x.id === taskId);
+    if (!task) {
+        alert("Không tìm thấy công việc tương ứng.");
+        return;
+    }
+
+    const match = task.note ? task.note.match(/\[Mã Lịch AI:\s*(.*?)\]/) : null;
+    const schedId = match ? match[1] : ("AI_SCHED_" + Date.now());
+
+    task.deadline = newCutDateIso;
+    task.deadlineDate = newCutDate;
+    task.note = `[AI Scheduler] Giống: ${variety} | Lễ: ${holidayLabel} | Ngày lễ: ${holidayDateStr} | Chu kỳ tiêu chuẩn: ${newBase} | Tổng chu kỳ: ${newTotal} | Ngày rộ: ${peakDateStr} | [Mã Lịch AI: ${schedId}]`;
+
+    localStorage.setItem('todo_cache_v2', JSON.stringify(todoCache));
+
+    showToast("Đã cập nhật chu kỳ & ngày cắt cành!", "success");
+    window.renderAIScheduler();
+
+    if (typeof renderActiveView === 'function') {
+        renderActiveView();
+    }
+
+    let queue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
+    queue.push({ action: "save_todo_task", data: { ...task }, clientId: taskId });
+    localStorage.setItem('todo_sync_queue', JSON.stringify(queue));
+    processTodoSyncQueue();
+};
+
+// Bind elements
+document.addEventListener('DOMContentLoaded', () => {
+    const bindReset = () => {
+        const btnReset = document.getElementById('btn-reset-sched');
+        if (btnReset && !btnReset.dataset.resetBound) {
+            btnReset.dataset.resetBound = 'true';
+            btnReset.addEventListener('click', () => {
+                window.cancelAIScheduleAnalysis();
+            });
+        }
+    };
+    bindReset();
+    setTimeout(bindReset, 200);
+});
 
 
 

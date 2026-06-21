@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="leaf_icon.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="todo_v2.css">
+    <link rel="stylesheet" href="todo_v2.css?v=20260621_v2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Centered & narrow container style for detail view on desktop */
@@ -500,6 +500,7 @@
                 height: 320px !important;
             }
         }
+
         /* User Profile Dropdown */
         .user-dropdown-menu {
             display: none !important;
@@ -507,11 +508,13 @@
             transform: translateY(-10px);
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
         .user-dropdown-menu.active {
             display: block !important;
             opacity: 1;
             transform: translateY(0);
         }
+
         .user-dropdown-menu .dropdown-item:hover {
             background: #f1f5f9 !important;
         }
@@ -529,7 +532,8 @@
                 <i class="fa-solid fa-leaf"></i>
                 <span>theHarvest7 Admin</span>
             </div>
-            <p style="text-align: center; margin-bottom: 1rem; color: var(--text-light);">Vui lòng nhập mật khẩu truy cập nội bộ</p>
+            <p style="text-align: center; margin-bottom: 1rem; color: var(--text-light);">Vui lòng nhập mật khẩu truy
+                cập nội bộ</p>
 
             <form id="login-form">
                 <div class="form-group" style="margin-bottom: 0.75rem;">
@@ -548,7 +552,9 @@
                 </div>
                 <button type="submit" class="btn-primary" style="width: 100%;">Truy Cập Hệ Thống</button>
                 <div style="text-align: center; margin-top: 1rem;">
-                    <a href="#" id="go-to-register" style="color: #6366f1; font-weight: 700; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;">Đăng ký tài khoản mới</a>
+                    <a href="#" id="go-to-register"
+                        style="color: #6366f1; font-weight: 700; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;">Đăng
+                        ký tài khoản mới</a>
                 </div>
                 <p id="login-error"
                     style="color: var(--danger); font-size: 0.85rem; text-align: center; margin-top: 1rem; display: none;">
@@ -562,7 +568,8 @@
                 <i class="fa-solid fa-leaf"></i>
                 <span>theHarvest7 Đăng Ký</span>
             </div>
-            <p style="text-align: center; margin-bottom: 1rem; color: var(--text-light);">Yêu cầu tạo tài khoản mới (Chờ phê duyệt)</p>
+            <p style="text-align: center; margin-bottom: 1rem; color: var(--text-light);">Yêu cầu tạo tài khoản mới (Chờ
+                phê duyệt)</p>
 
             <form id="register-form">
                 <div class="form-group" style="margin-bottom: 0.75rem;">
@@ -584,14 +591,20 @@
                         <option value="EMP_LV1">Nhân viên Bậc 1 (Nhập liệu & Đọc)</option>
                     </select>
                 </div>
-                <button type="submit" class="btn-primary" style="width: 100%; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">Gửi Yêu Cầu Đăng Ký</button>
+                <button type="submit" class="btn-primary"
+                    style="width: 100%; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">Gửi Yêu Cầu Đăng
+                    Ký</button>
                 <div style="text-align: center; margin-top: 1rem;">
-                    <a href="#" id="go-to-login" style="color: #64748b; font-weight: 700; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;">Quay lại đăng nhập</a>
+                    <a href="#" id="go-to-login"
+                        style="color: #64748b; font-weight: 700; text-decoration: none; font-size: 0.9rem; transition: color 0.2s;">Quay
+                        lại đăng nhập</a>
                 </div>
                 <p id="register-error"
-                    style="color: var(--danger); font-size: 0.85rem; text-align: center; margin-top: 1rem; display: none;"></p>
+                    style="color: var(--danger); font-size: 0.85rem; text-align: center; margin-top: 1rem; display: none;">
+                </p>
                 <p id="register-success"
-                    style="color: var(--success); font-size: 0.85rem; text-align: center; margin-top: 1rem; display: none; font-weight: 700;"></p>
+                    style="color: var(--success); font-size: 0.85rem; text-align: center; margin-top: 1rem; display: none; font-weight: 700;">
+                </p>
             </form>
         </div>
     </div>
@@ -618,7 +631,8 @@
                 <a href="#" id="menu-debt"><i class="fa-solid fa-book-journal-whills"></i> <span>Các khoản phải
                         thu</span></a>
                 <a href="#" id="menu-investment"><i class="fa-solid fa-seedling"></i> <span>Đầu Tư</span></a>
-                <a href="#" id="menu-financial"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Báo Cáo Tài Chính</span></a>
+                <a href="#" id="menu-financial"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Báo Cáo Tài
+                        Chính</span></a>
                 <a href="#" id="menu-formulas"><i class="fa-solid fa-calculator"></i> <span>Công Thức</span></a>
             </nav>
         </aside>
@@ -642,7 +656,8 @@
                         style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.85rem; padding: 6px 12px; border-radius: 30px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
                         <span class="status-dot"
                             style="width: 8px; height: 8px; border-radius: 50%; background: #22c55e;"></span>
-                        <i class="fa-solid fa-spinner fa-spin status-loader" style="display: none; font-size: 0.85rem; color: #f59e0b;"></i>
+                        <i class="fa-solid fa-spinner fa-spin status-loader"
+                            style="display: none; font-size: 0.85rem; color: #f59e0b;"></i>
                         <span class="status-text">Trực tuyến</span>
                     </div>
 
@@ -653,11 +668,13 @@
                     </button>
 
                     <!-- Notification Badge (All users see their own, Admin also sees account approvals) -->
-                    <div id="admin-notifications-wrapper" style="position: relative; display: none; align-items: center;">
+                    <div id="admin-notifications-wrapper"
+                        style="position: relative; display: none; align-items: center;">
                         <button id="admin-notifications-btn" title="Thông báo"
                             style="padding: 10px 14px; border-radius: 12px; font-weight: 700; background: #fffbeb; border: 1.5px solid #fef3c7; color: #d97706; cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative; font-size: 1rem; width: 42px; height: 42px; box-sizing: border-box; box-shadow: 0 4px 10px rgba(217, 119, 6, 0.08);">
                             <i class="fa-solid fa-bell"></i>
-                            <span id="admin-notifications-count" style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; display: none; align-items: center; justify-content: center; font-weight: 800;">0</span>
+                            <span id="admin-notifications-count"
+                                style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; display: none; align-items: center; justify-content: center; font-weight: 800;">0</span>
                         </button>
 
                         <!-- Stacked Notifications Panel -->
@@ -666,7 +683,8 @@
                             <!-- Panel Header -->
                             <div class="notif-panel-header">
                                 <h3><i class="fa-solid fa-bell"></i> Thông báo</h3>
-                                <button class="btn-mark-all-read" id="btn-notif-mark-all">Đánh dấu tất cả đã đọc</button>
+                                <button class="btn-mark-all-read" id="btn-notif-mark-all">Đánh dấu tất cả đã
+                                    đọc</button>
                             </div>
 
                             <!-- Category Tabs -->
@@ -724,7 +742,8 @@
                                 <span id="user-role-badge"
                                     style="font-size: 0.65rem; font-weight: 700; color: #6366f1;"></span>
                             </div>
-                            <i class="fa-solid fa-chevron-down" style="font-size: 0.75rem; color: #64748b; margin-left: 2px;"></i>
+                            <i class="fa-solid fa-chevron-down"
+                                style="font-size: 0.75rem; color: #64748b; margin-left: 2px;"></i>
                         </div>
 
                         <!-- User Profile Dropdown Menu - Aligned to right: 0 -->
@@ -810,6 +829,10 @@
                         <button class="todo-nav-btn" data-target="view-list"
                             style="flex: 1; min-width: max-content; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; border-radius: 8px; border: none; background: transparent; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 0.8rem;">
                             <i class="fa-solid fa-list-ul"></i> <span>Danh Sách</span>
+                        </button>
+                        <button class="todo-nav-btn" data-target="view-ai-scheduler"
+                            style="flex: 1; min-width: max-content; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; border-radius: 8px; border: none; background: transparent; color: #64748b; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 0.8rem;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Lập Lịch AI</span>
                         </button>
                     </div>
 
@@ -1037,12 +1060,18 @@
                                             <!-- Checkbox items dynamically rendered -->
                                         </div>
                                     </div>
-                                    <div class="custom-multiselect" id="cal-sticker-multiselect" style="position: relative; display: inline-block;">
-                                        <button type="button" class="multiselect-trigger input-modern" style="width: 180px; text-align: left; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white;">
-                                            <span class="multiselect-label" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; font-weight: 600; color: #64748b;">Tất cả sticker</span>
-                                            <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; color: #64748b; margin-left: 8px;"></i>
+                                    <div class="custom-multiselect" id="cal-sticker-multiselect"
+                                        style="position: relative; display: inline-block;">
+                                        <button type="button" class="multiselect-trigger input-modern"
+                                            style="width: 180px; text-align: left; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white;">
+                                            <span class="multiselect-label"
+                                                style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; font-weight: 600; color: #64748b;">Tất
+                                                cả sticker</span>
+                                            <i class="fa-solid fa-chevron-down"
+                                                style="font-size: 0.8rem; color: #64748b; margin-left: 8px;"></i>
                                         </button>
-                                        <div class="multiselect-dropdown glassmorphism" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: rgba(255, 255, 255, 0.98); border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); z-index: 1000; padding: 10px; max-height: 250px; overflow-y: auto; min-width: 200px;">
+                                        <div class="multiselect-dropdown glassmorphism"
+                                            style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: rgba(255, 255, 255, 0.98); border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); z-index: 1000; padding: 10px; max-height: 250px; overflow-y: auto; min-width: 200px;">
                                             <!-- Checkbox items dynamically rendered -->
                                         </div>
                                     </div>
@@ -1094,12 +1123,18 @@
                                 </select>
                             </div>
                             <div style="flex: 1; min-width: 150px;">
-                                <div class="custom-multiselect" id="filter-sticker-multiselect" style="position: relative; display: inline-block; width: 100%;">
-                                    <button type="button" class="multiselect-trigger input-modern" style="width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white;">
-                                        <span class="multiselect-label" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; font-weight: 600; color: #64748b;">Tất cả sticker</span>
-                                        <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; color: #64748b; margin-left: 8px;"></i>
+                                <div class="custom-multiselect" id="filter-sticker-multiselect"
+                                    style="position: relative; display: inline-block; width: 100%;">
+                                    <button type="button" class="multiselect-trigger input-modern"
+                                        style="width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white;">
+                                        <span class="multiselect-label"
+                                            style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; font-weight: 600; color: #64748b;">Tất
+                                            cả sticker</span>
+                                        <i class="fa-solid fa-chevron-down"
+                                            style="font-size: 0.8rem; color: #64748b; margin-left: 8px;"></i>
                                     </button>
-                                    <div class="multiselect-dropdown glassmorphism" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: rgba(255, 255, 255, 0.98); border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); z-index: 1000; padding: 10px; max-height: 250px; overflow-y: auto; min-width: 200px;">
+                                    <div class="multiselect-dropdown glassmorphism"
+                                        style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: rgba(255, 255, 255, 0.98); border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); z-index: 1000; padding: 10px; max-height: 250px; overflow-y: auto; min-width: 200px;">
                                         <!-- Checkbox items dynamically rendered -->
                                     </div>
                                 </div>
@@ -1150,6 +1185,233 @@
                             </table>
                         </div>
                     </div> <!-- End of view-list -->
+
+                    <!-- VIEW: AI CROP SCHEDULER -->
+                    <div id="view-ai-scheduler" class="subview" style="display: none;">
+                        <div class="scheduler-grid">
+                            <!-- Left Panel: Input Form -->
+                            <div class="glass-card"
+                                style="background: white; padding: 1.5rem; border-radius: 20px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 1.25rem;">
+                                <div
+                                    style="font-weight: 800; font-size: 1.2rem; color: #6366f1; border-left: 5px solid #6366f1; padding-left: 15px; margin-bottom: 0.5rem;">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> LẬP LỊCH CẮT CÀNH AI
+                                </div>
+
+                                <div class="form-group">
+                                    <label
+                                        style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.9rem; color: #475569;">Chọn
+                                        Ngày Lễ Mục Tiêu</label>
+                                    <select id="sched-holiday-preset" class="input-modern"
+                                        style="width: 100%; padding: 12px; border-radius: 10px;"
+                                        onchange="handleHolidayPresetChange()">
+                                        <option value="custom">-- Chọn ngày lễ hoặc tự chọn --</option>
+                                        <option value="valentine">14/02 - Lễ Tình Nhân (Valentine)</option>
+                                        <option value="womensday_intl">08/03 - Quốc tế Phụ nữ</option>
+                                        <option value="womensday_vn">20/10 - Phụ nữ Việt Nam</option>
+                                        <option value="teachersday_vn">20/11 - Nhà giáo Việt Nam</option>
+                                        <option value="christmas">25/12 - Lễ Giáng Sinh (Noel)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label
+                                        style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.9rem; color: #475569;">Ngày
+                                        Lễ Mục Tiêu</label>
+                                    <input type="date" id="sched-holiday-date" class="input-modern"
+                                        style="width: 100%; padding: 12px; border-radius: 10px;">
+                                </div>
+
+                                <div class="form-group">
+                                    <label
+                                        style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.9rem; color: #475569;">Số
+                                        ngày rộ trước lễ (ngày)</label>
+                                    <input type="number" id="sched-days-before" class="input-modern"
+                                        style="width: 100%; padding: 12px; border-radius: 10px;" value="7" min="0"
+                                        max="30">
+                                    <small
+                                        style="color: #64748b; font-size: 0.75rem; margin-top: 4px; display: block;">Thời
+                                        gian để thu hoạch và phân phối hoa đến các vựa/khách hàng (thường là 7
+                                        ngày).</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label
+                                        style="display: block; font-weight: 700; margin-bottom: 8px; font-size: 0.9rem; color: #475569;">Chọn
+                                        màu / giống hoa ở phần chọn nhanh</label>
+                                    <div class="flower-pills-selector"
+                                        style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                        <button type="button" class="sched-flower-pill-btn"
+                                            data-value="Ecuador">Ecuador</button>
+                                        <button type="button" class="sched-flower-pill-btn"
+                                            data-value="Pháp">Pháp</button>
+                                        <button type="button" class="sched-flower-pill-btn" data-value="Xô Đỏ">Xô
+                                            Đỏ</button>
+                                        <button type="button" class="sched-flower-pill-btn" data-value="Xô ngoại">Xô
+                                            ngoại</button>
+                                        <button type="button" class="sched-flower-pill-btn" data-value="Xô nội">Xô
+                                            nội</button>
+                                        <button type="button" class="sched-flower-pill-btn" data-value="Trắng ù">Trắng
+                                            ù</button>
+                                        <button type="button" class="sched-flower-pill-btn" data-value="Quốc Vương">Quốc
+                                            Vương</button>
+                                        <button type="button" class="sched-flower-pill-btn" data-value="Ô Hồng">Ô
+                                            Hồng</button>
+                                        <button type="button" class="sched-flower-pill-btn" data-value="Hà Lan">Hà
+                                            Lan</button>
+                                        <button type="button" class="sched-flower-pill-btn"
+                                            data-value="Kem">Kem</button>
+                                        <button type="button" class="sched-flower-pill-btn"
+                                            data-value="Simmo">Simmo</button>
+                                        <button type="button" class="sched-flower-pill-btn"
+                                            data-value="Vitto">Vitto</button>
+                                        <button type="button" class="sched-flower-pill-btn" data-value="Lạc Thần">Lạc
+                                            Thần</button>
+                                        <button type="button" class="sched-flower-pill-btn" data-value="Hỷ Trứng">Hỷ
+                                            Trứng</button>
+                                        <button type="button" class="sched-flower-pill-btn"
+                                            data-value="Capu">Capu</button>
+                                    </div>
+                                    <input type="hidden" id="sched-selected-variety" value="">
+                                </div>
+
+                                <button type="button" id="btn-run-sched-analysis" class="btn-primary"
+                                    style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); padding: 14px; font-size: 1rem; border-radius: 12px; font-weight: 800; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); margin-top: 1rem;">
+                                    <i class="fa-solid fa-brain"></i> Phân tích cành & Lập lịch bằng AI
+                                </button>
+                            </div>
+
+                            <!-- Right Panel: AI Results & Timeline -->
+                            <div class="glass-card"
+                                style="background: white; padding: 1.5rem; border-radius: 20px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 1.25rem;">
+                                <div id="sched-result-placeholder"
+                                    style="text-align: center; padding: 4rem 2rem; color: #94a3b8; display: flex; flex-direction: column; align-items: center; gap: 1rem; justify-content: center; height: 100%;">
+                                    <i class="fa-solid fa-wand-magic-sparkles"
+                                        style="font-size: 3rem; color: #cbd5e1;"></i>
+                                    <div style="font-weight: 700; font-size: 1.1rem;">Chưa có dữ liệu phân tích</div>
+                                    <div style="font-size: 0.9rem; max-width: 320px;">Vui lòng chọn ngày lễ, giống hoa
+                                        và bấm "Phân tích cành & Lập lịch bằng AI" để trợ lý ảo gợi ý ngày cắt cành tối
+                                        ưu.</div>
+                                </div>
+
+                                <div id="sched-result-content"
+                                    style="display: none; flex-direction: column; gap: 1.25rem; height: 100%;">
+                                    <!-- Timeline container -->
+                                    <div class="sched-timeline-wrapper">
+                                        <h4
+                                            style="margin-top: 0; margin-bottom: 1.25rem; font-weight: 800; color: #1e293b; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                                            <i class="fa-solid fa-route" style="color: #6366f1;"></i> Lộ trình sinh
+                                            trưởng dự kiến
+                                        </h4>
+                                        <div class="sched-timeline">
+                                            <div
+                                                style="position: absolute; top: 12px; left: 10px; right: 10px; height: 4px; background: #cbd5e1; z-index: 1;">
+                                            </div>
+                                            <div id="sched-timeline-progress"
+                                                style="position: absolute; top: 12px; left: 10px; width: 0%; height: 4px; background: linear-gradient(90deg, #6366f1, #10b981); z-index: 2; transition: width 0.8s ease;">
+                                            </div>
+
+                                            <div class="timeline-step">
+                                                <div class="step-dot">1</div>
+                                                <div
+                                                    style="font-weight: 800; font-size: 0.8rem; margin-top: 8px; color: #1e293b;">
+                                                    Ngày Cắt Cành</div>
+                                                <div id="sched-timeline-cut-date"
+                                                    style="font-weight: 700; font-size: 0.85rem; color: #6366f1; margin-top: 2px;">
+                                                    --/--</div>
+                                            </div>
+                                            <div class="timeline-step">
+                                                <div class="step-dot" style="background: #10b981;">2</div>
+                                                <div
+                                                    style="font-weight: 800; font-size: 0.8rem; margin-top: 8px; color: #1e293b;">
+                                                    Ngày Rộ</div>
+                                                <div id="sched-timeline-peak-date"
+                                                    style="font-weight: 700; font-size: 0.85rem; color: #10b981; margin-top: 2px;">
+                                                    --/--</div>
+                                            </div>
+                                            <div class="timeline-step">
+                                                <div class="step-dot" style="background: #f59e0b;">3</div>
+                                                <div
+                                                    style="font-weight: 800; font-size: 0.8rem; margin-top: 8px; color: #1e293b;">
+                                                    Ngày Lễ</div>
+                                                <div id="sched-timeline-holiday-date"
+                                                    style="font-weight: 700; font-size: 0.85rem; color: #f59e0b; margin-top: 2px;">
+                                                    --/--</div>
+                                            </div>
+                                        </div>
+                                        <div id="sched-timeline-summary"
+                                            style="text-align: center; font-size: 0.85rem; color: #475569; font-weight: 700; margin-top: 0.5rem; background: rgba(99, 102, 241, 0.05); padding: 8px 12px; border-radius: 8px; border: 1px dashed rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                                            <span>Chu kỳ tiêu chuẩn:</span>
+                                            <input type="number" id="sched-timeline-days-base" value="0" min="1" max="200"
+                                                style="color:#6366f1; font-weight:900; width:50px; border:none; border-bottom: 2px solid #6366f1; background:transparent; text-align:center; font-size:0.9rem; font-family:inherit; padding:0 2px; outline:none; cursor:text;"
+                                                oninput="window.onBaseCycleOverride()" title="Nhấp để chỉnh sửa chu kỳ tiêu chuẩn">
+                                            ngày
+                                            <span style="color: #cbd5e1; font-weight: 400;">|</span>
+                                            <span>Bù trừ thời tiết:</span>
+                                            <span id="sched-timeline-season-mod" style="color: #f59e0b; font-weight: 800;">0</span> ngày
+                                            <span style="color: #cbd5e1; font-weight: 400;">|</span>
+                                            <span>Chu kỳ thực tế:</span>
+                                            <span id="sched-timeline-days-total" style="color: #10b981; font-weight: 900;">0</span> ngày
+                                        </div>
+                                    </div>
+
+                                    <!-- AI Report Box -->
+                                    <div class="sched-ai-report-box">
+                                        <h4
+                                            style="margin-top: 0; margin-bottom: 0.75rem; font-weight: 800; color: #7c3aed; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                                            <i class="fa-solid fa-lightbulb" style="color: #a855f7;"></i> Phân Tích
+                                            Chuyên Gia Nông Nghiệp AI
+                                        </h4>
+                                        <div id="sched-ai-report-text">
+                                            <!-- AI Analysis Report HTML goes here -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Action buttons -->
+                                    <div style="display: flex; gap: 1rem; margin-top: auto;">
+                                        <button type="button" id="btn-save-sched-tasks" class="btn-primary"
+                                            style="flex: 2; padding: 14px; font-weight: 800; background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: flex; align-items: center; justify-content: center; gap: 8px; border: none; color: white; cursor: pointer; border-radius: 12px; box-shadow: 0 4px 12px rgba(16,185,129,0.2);">
+                                            <i class="fa-solid fa-calendar-plus"></i> Lưu lịch trình vào Lịch biểu &
+                                            Công việc
+                                        </button>
+                                        <button type="button" id="btn-reset-sched" class="btn-primary"
+                                            style="flex: 1; padding: 14px; font-weight: 800; background: #f1f5f9; color: #475569; border: none; cursor: pointer; border-radius: 12px;">
+                                            Đặt lại
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Saved AI Schedules Section -->
+                        <div class="glass-card"
+                            style="background: white; padding: 1.5rem; border-radius: 20px; border: 1px solid var(--border-color); margin-top: 1.5rem;">
+                            <h3
+                                style="margin-top: 0; margin-bottom: 1rem; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-circle-check" style="color: #10b981;"></i> Lịch trình cắt bông đã
+                                lập
+                            </h3>
+                            <div class="todo-table-wrapper" style="overflow-x: auto;">
+                                <table class="modern-todo-table"
+                                    style="width: 100%; border-collapse: collapse; text-align: left;">
+                                    <thead>
+                                        <tr
+                                            style="border-bottom: 2px solid #cbd5e1; font-weight: 700; color: #475569; font-size: 0.85rem;">
+                                            <th style="padding: 12px 10px;">Giống hoa/Màu</th>
+                                            <th style="padding: 12px 10px;">Dịp lễ mục tiêu</th>
+                                            <th style="padding: 12px 10px;">Ngày lễ</th>
+                                            <th style="padding: 12px 10px;">Ngày cắt cành (Pruning)</th>
+                                            <th style="padding: 12px 10px;">Ngày rộ hoa (Peak)</th>
+                                            <th style="padding: 12px 10px;">Chu kỳ sinh trưởng</th>
+                                            <th style="padding: 12px 10px; text-align: right;">Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="sched-saved-list-body">
+                                        <!-- Saved schedules will be populated by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div> <!-- End of todo-content-wrapper -->
             </div> <!-- End of view-todo -->
 
@@ -1222,7 +1484,8 @@
                                 <button type="button" class="flower-pill-btn" data-value="Ecuador">Ecuador</button>
                                 <button type="button" class="flower-pill-btn" data-value="Pháp">Pháp</button>
                                 <button type="button" class="flower-pill-btn" data-value="Trắng ù">Trắng ù</button>
-                                <button type="button" class="flower-pill-btn" data-value="Quốc Vương">Quốc Vương</button>
+                                <button type="button" class="flower-pill-btn" data-value="Quốc Vương">Quốc
+                                    Vương</button>
                                 <button type="button" class="flower-pill-btn" data-value="Ô Hồng">Ô Hồng</button>
                                 <button type="button" class="flower-pill-btn" data-value="Hà Lan">Hà Lan</button>
                                 <button type="button" class="flower-pill-btn" data-value="Kem">Kem</button>
@@ -1758,7 +2021,8 @@
 
                 <!-- Common Report Charts (Expense Distribution Pie Chart) -->
                 <section id="common-report-charts" style="margin-bottom: 2rem;">
-                    <div id="expense-distribution-card" class="card glassmorphism full-width-card" style="margin-bottom: 0;">
+                    <div id="expense-distribution-card" class="card glassmorphism full-width-card"
+                        style="margin-bottom: 0;">
                         <h2
                             style="font-size: 1.15rem; font-weight: 800; margin-bottom: 1.5rem; color: var(--text-dark); border-bottom: 2px solid rgba(0,0,0,0.05); padding-bottom: 8px;">
                             <i class="fa-solid fa-chart-pie"></i> Phân Bổ Chi Phí (Cơ Cấu Chi Phí)
@@ -1910,7 +2174,8 @@
                     </div>
 
                     <!-- Detailed report container split layout -->
-                    <div class="cashflow-grid-container" style="display: flex; gap: 2rem; justify-content: center; width: 100%; max-width: 1250px; margin: 0 auto 2rem auto; flex-wrap: wrap;">
+                    <div class="cashflow-grid-container"
+                        style="display: flex; gap: 2rem; justify-content: center; width: 100%; max-width: 1250px; margin: 0 auto 2rem auto; flex-wrap: wrap;">
                         <section id="detailed-statement-section"
                             style="flex: 1.2; min-width: 320px; max-width: 700px; width: 100%;">
                             <div class="card glassmorphism"
@@ -1944,10 +2209,12 @@
                                         PHÂN BỔ CHI PHÍ
                                     </h2>
                                 </div>
-                                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 250px; position: relative;">
+                                <div
+                                    style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 250px; position: relative;">
                                     <canvas id="cashflowExpenseChart" style="width: 100%; height: 250px;"></canvas>
                                 </div>
-                                <div id="cashflow-expense-legend" style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                                <div id="cashflow-expense-legend"
+                                    style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 8px; width: 100%;">
                                     <!-- Dynamic legend content -->
                                 </div>
                             </div>
@@ -1962,16 +2229,19 @@
                                         PHÂN TÍCH ĐIỂM HÒA VỐN
                                     </h2>
                                 </div>
-                                
+
                                 <div class="form-group" style="margin-bottom: 1.2rem;">
-                                    <label for="cashflow-be-depr-input" style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; display: block;">
+                                    <label for="cashflow-be-depr-input"
+                                        style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; display: block;">
                                         Khấu hao mỗi tháng:
                                     </label>
                                     <div style="position: relative;">
-                                        <input type="text" id="cashflow-be-depr-input" value="45.000.000" data-currency="true"
+                                        <input type="text" id="cashflow-be-depr-input" value="45.000.000"
+                                            data-currency="true"
                                             style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #cbd5e1; outline: none; font-weight: 700; color: #4f46e5; box-sizing: border-box;"
                                             placeholder="Ví dụ: 45.000.000">
-                                        <span style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b;">đ</span>
+                                        <span
+                                            style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-weight: 700; color: #64748b;">đ</span>
                                     </div>
                                 </div>
 
@@ -2508,7 +2778,7 @@
                             <i class="fa-solid fa-calculator" style="color: #6366f1;"></i>
                             <span>Công Cụ Tính Toán</span>
                         </div>
-                        
+
                         <div class="formula-tab-group-title">Định giá cổ phiếu</div>
                         <button class="formula-tab-btn active" data-formula="pe">
                             <i class="fa-solid fa-chart-line"></i> Định giá P/E
@@ -2519,7 +2789,7 @@
                         <button class="formula-tab-btn" data-formula="graham">
                             <i class="fa-solid fa-scale-balanced"></i> Graham (Sửa đổi)
                         </button>
-                        
+
                         <div class="formula-tab-group-title">Tính toán tài chính</div>
                         <button class="formula-tab-btn" data-formula="compound">
                             <i class="fa-solid fa-arrow-trend-up"></i> Tính Lãi Kép
@@ -2736,16 +3006,19 @@
             <div class="chatbot-header">
                 <i class="fa-solid fa-leaf text-primary"></i>
                 <span class="chat-title">Trợ lý Harvest</span>
-                <button id="help-chatbot-btn" class="btn-close-chat" title="Hướng dẫn sử dụng" style="margin-right: 6px;"><i
-                        class="fa-regular fa-circle-question"></i></button>
+                <button id="help-chatbot-btn" class="btn-close-chat" title="Hướng dẫn sử dụng"
+                    style="margin-right: 6px;"><i class="fa-regular fa-circle-question"></i></button>
                 <button id="close-chatbot" class="btn-close-chat" title="Đóng"><i
                         class="fa-solid fa-chevron-down"></i></button>
             </div>
             <div id="chatbot-messages" class="chatbot-messages">
                 <div class="message ai-message">
-                    <p>Xin chào! Tôi là <strong>Trợ lý Harvest</strong>. Hãy gõ nội dung bạn muốn nhập hoặc hỏi tôi nhé!</p>
+                    <p>Xin chào! Tôi là <strong>Trợ lý Harvest</strong>. Hãy gõ nội dung bạn muốn nhập hoặc hỏi tôi nhé!
+                    </p>
                     <div class="chat-suggestions">
-                        <span class="suggestion-tag" style="background:#e0e7ff; border-color:#c7d2fe; color:#4f46e5; font-weight:700;" title="Xem hướng dẫn sử dụng Trợ lý">"Hướng dẫn sử dụng"</span>
+                        <span class="suggestion-tag"
+                            style="background:#e0e7ff; border-color:#c7d2fe; color:#4f46e5; font-weight:700;"
+                            title="Xem hướng dẫn sử dụng Trợ lý">"Hướng dẫn sử dụng"</span>
                         <span class="suggestion-tag" title="Nhập đơn cho Farm">"Bán 100 cúc Anh Nam 5k"</span>
                         <span class="suggestion-tag" title="Nhập hàng loạt bằng dấu phẩy">"Thơm 200 ecu 5k, 300 pháp
                             4k"</span>
@@ -3201,53 +3474,79 @@
                             <option value="Family">Family</option>
                             <option value="Cá nhân">Cá nhân</option>
                             <option value="Self-help">Self-help</option>
+                            <option value="Lập Lịch AI">Lập Lịch AI</option>
                             <option value="Khác">Khác</option>
                         </select>
                     </div>
                 </div>
-                <div id="task-sticker-wrapper" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+                <div id="task-sticker-wrapper"
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
                     <div class="form-group">
                         <label style="display: block; font-weight: 700; margin-bottom: 6px;">Sticker (Farm)</label>
-                        <div class="custom-multiselect" id="task-sticker-multiselect" style="position: relative; display: inline-block; width: 100%;">
-                            <button type="button" class="multiselect-trigger input-modern" style="width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white; padding: 12px; border-radius: 10px;">
-                                <span class="multiselect-label" id="task-sticker-label" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.95rem; color: #64748b; font-weight: 600;">Chọn sticker...</span>
-                                <i class="fa-solid fa-chevron-down" style="font-size: 0.8rem; color: #64748b; margin-left: 8px;"></i>
+                        <div class="custom-multiselect" id="task-sticker-multiselect"
+                            style="position: relative; display: inline-block; width: 100%;">
+                            <button type="button" class="multiselect-trigger input-modern"
+                                style="width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white; padding: 12px; border-radius: 10px;">
+                                <span class="multiselect-label" id="task-sticker-label"
+                                    style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.95rem; color: #64748b; font-weight: 600;">Chọn
+                                    sticker...</span>
+                                <i class="fa-solid fa-chevron-down"
+                                    style="font-size: 0.8rem; color: #64748b; margin-left: 8px;"></i>
                             </button>
-                            <div class="multiselect-dropdown" id="task-sticker-dropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: rgba(255, 255, 255, 0.98); border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); z-index: 1000; padding: 10px; max-height: 200px; overflow-y: auto;">
-                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
-                                    <input type="checkbox" value="Nấm" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                            <div class="multiselect-dropdown" id="task-sticker-dropdown"
+                                style="display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: rgba(255, 255, 255, 0.98); border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); z-index: 1000; padding: 10px; max-height: 200px; overflow-y: auto;">
+                                <label class="multiselect-item"
+                                    style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Nấm" class="sticker-checkbox"
+                                        style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
                                     <span>🍄 Nấm</span>
                                 </label>
-                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
-                                    <input type="checkbox" value="Nhện" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                <label class="multiselect-item"
+                                    style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Nhện" class="sticker-checkbox"
+                                        style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
                                     <span>🕷️ Nhện</span>
                                 </label>
-                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
-                                    <input type="checkbox" value="Sâu" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                <label class="multiselect-item"
+                                    style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Sâu" class="sticker-checkbox"
+                                        style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
                                     <span>🐛 Sâu</span>
                                 </label>
-                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
-                                    <input type="checkbox" value="Châm Kim" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                <label class="multiselect-item"
+                                    style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Châm Kim" class="sticker-checkbox"
+                                        style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
                                     <span>💮 Châm Kim</span>
                                 </label>
-                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
-                                    <input type="checkbox" value="Thối Cánh" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                <label class="multiselect-item"
+                                    style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Thối Cánh" class="sticker-checkbox"
+                                        style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
                                     <span>🥀 Thối Cánh</span>
                                 </label>
-                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
-                                    <input type="checkbox" value="Phấn Trắng" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                <label class="multiselect-item"
+                                    style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Phấn Trắng" class="sticker-checkbox"
+                                        style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
                                     <span>🍃⚪ Phấn Trắng</span>
                                 </label>
-                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
-                                    <input type="checkbox" value="Phân" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                <label class="multiselect-item"
+                                    style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Phân" class="sticker-checkbox"
+                                        style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
                                     <span>💦 Phân</span>
                                 </label>
-                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
-                                    <input type="checkbox" value="Mò" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                <label class="multiselect-item"
+                                    style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Mò" class="sticker-checkbox"
+                                        style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
                                     <span>🪲 Mò</span>
                                 </label>
-                                <label class="multiselect-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
-                                    <input type="checkbox" value="Thợ" class="sticker-checkbox" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                                <label class="multiselect-item"
+                                    style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    <input type="checkbox" value="Thợ" class="sticker-checkbox"
+                                        style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
                                     <span>👷 Thợ</span>
                                 </label>
                             </div>
@@ -3342,7 +3641,8 @@
             style="max-width: 650px !important; background: white; width: 90%; border-radius: 16px; padding: 2rem; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; max-height: 85vh;">
             <div class="modal-header"
                 style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="font-size: 1.4rem; font-weight: 800; color: #f59e0b; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <h2
+                    style="font-size: 1.4rem; font-weight: 800; color: #f59e0b; margin: 0; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-clock-rotate-left"></i> Hàng chờ đồng bộ (Queue)
                 </h2>
                 <button type="button" onclick="document.getElementById('queue-manager-modal').style.display='none'"
@@ -3381,7 +3681,8 @@
             style="max-width: 450px !important; background: white; width: 90%; border-radius: 16px; padding: 2rem; box-shadow: var(--shadow-lg); display: flex; flex-direction: column;">
             <div class="modal-header"
                 style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="font-size: 1.4rem; font-weight: 800; color: #6366f1; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <h2
+                    style="font-size: 1.4rem; font-weight: 800; color: #6366f1; margin: 0; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-user-gear"></i> Thay đổi thông tin
                 </h2>
                 <button type="button" onclick="document.getElementById('profile-modal').style.display='none'"
@@ -3392,20 +3693,31 @@
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Tên hiển thị mới</label>
-                    <input type="text" id="profile-new-name" class="input-modern" placeholder="Nhập tên hiển thị mới" style="width: 100%; padding: 12px; border-radius: 10px;">
+                    <label
+                        style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Tên
+                        hiển thị mới</label>
+                    <input type="text" id="profile-new-name" class="input-modern" placeholder="Nhập tên hiển thị mới"
+                        style="width: 100%; padding: 12px; border-radius: 10px;">
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Tên đăng nhập mới</label>
-                    <input type="text" id="profile-new-username" class="input-modern" placeholder="Nhập tên đăng nhập mới" style="width: 100%; padding: 12px; border-radius: 10px;">
+                    <label
+                        style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Tên
+                        đăng nhập mới</label>
+                    <input type="text" id="profile-new-username" class="input-modern"
+                        placeholder="Nhập tên đăng nhập mới" style="width: 100%; padding: 12px; border-radius: 10px;">
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Mật khẩu hiện tại (để xác nhận thay đổi)</label>
-                    <input type="password" id="profile-current-password" class="input-modern" placeholder="Nhập mật khẩu hiện tại" style="width: 100%; padding: 12px; border-radius: 10px;">
+                    <label
+                        style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Mật
+                        khẩu hiện tại (để xác nhận thay đổi)</label>
+                    <input type="password" id="profile-current-password" class="input-modern"
+                        placeholder="Nhập mật khẩu hiện tại" style="width: 100%; padding: 12px; border-radius: 10px;">
                 </div>
-                <p id="profile-error-msg" style="color: #ef4444; font-size: 0.8rem; font-weight: 600; margin: 0; display: none;"></p>
+                <p id="profile-error-msg"
+                    style="color: #ef4444; font-size: 0.8rem; font-weight: 600; margin: 0; display: none;"></p>
             </div>
-            <div style="display: flex; gap: 1rem; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1.25rem; margin-top: 1.25rem;">
+            <div
+                style="display: flex; gap: 1rem; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1.25rem; margin-top: 1.25rem;">
                 <button type="button" id="btn-save-profile" class="btn-primary"
                     style="flex: 2; padding: 12px; border-radius: 12px; font-weight: 800; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); display: flex; align-items: center; justify-content: center; gap: 8px; border: none; color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(99,102,241,0.3);">
                     Lưu thay đổi
@@ -3426,7 +3738,8 @@
             style="max-width: 450px !important; background: white; width: 90%; border-radius: 16px; padding: 2rem; box-shadow: var(--shadow-lg); display: flex; flex-direction: column;">
             <div class="modal-header"
                 style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="font-size: 1.4rem; font-weight: 800; color: #f59e0b; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <h2
+                    style="font-size: 1.4rem; font-weight: 800; color: #f59e0b; margin: 0; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-key"></i> Thay đổi mật khẩu
                 </h2>
                 <button type="button" onclick="document.getElementById('password-modal').style.display='none'"
@@ -3437,20 +3750,31 @@
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Mật khẩu hiện tại</label>
-                    <input type="password" id="pw-current-password" class="input-modern" placeholder="Nhập mật khẩu hiện tại" style="width: 100%; padding: 12px; border-radius: 10px;">
+                    <label
+                        style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Mật
+                        khẩu hiện tại</label>
+                    <input type="password" id="pw-current-password" class="input-modern"
+                        placeholder="Nhập mật khẩu hiện tại" style="width: 100%; padding: 12px; border-radius: 10px;">
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Mật khẩu mới</label>
-                    <input type="password" id="pw-new-password" class="input-modern" placeholder="Nhập mật khẩu mới" style="width: 100%; padding: 12px; border-radius: 10px;">
+                    <label
+                        style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Mật
+                        khẩu mới</label>
+                    <input type="password" id="pw-new-password" class="input-modern" placeholder="Nhập mật khẩu mới"
+                        style="width: 100%; padding: 12px; border-radius: 10px;">
                 </div>
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Xác nhận mật khẩu mới</label>
-                    <input type="password" id="pw-confirm-password" class="input-modern" placeholder="Xác nhận mật khẩu mới" style="width: 100%; padding: 12px; border-radius: 10px;">
+                    <label
+                        style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Xác
+                        nhận mật khẩu mới</label>
+                    <input type="password" id="pw-confirm-password" class="input-modern"
+                        placeholder="Xác nhận mật khẩu mới" style="width: 100%; padding: 12px; border-radius: 10px;">
                 </div>
-                <p id="pw-error-msg" style="color: #ef4444; font-size: 0.8rem; font-weight: 600; margin: 0; display: none;"></p>
+                <p id="pw-error-msg"
+                    style="color: #ef4444; font-size: 0.8rem; font-weight: 600; margin: 0; display: none;"></p>
             </div>
-            <div style="display: flex; gap: 1rem; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1.25rem; margin-top: 1.25rem;">
+            <div
+                style="display: flex; gap: 1rem; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1.25rem; margin-top: 1.25rem;">
                 <button type="button" id="btn-save-password" class="btn-primary"
                     style="flex: 2; padding: 12px; border-radius: 12px; font-weight: 800; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); display: flex; align-items: center; justify-content: center; gap: 8px; border: none; color: white; cursor: pointer; box-shadow: 0 4px 12px rgba(245,158,11,0.3);">
                     Lưu mật khẩu
@@ -3468,7 +3792,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="config.js"></script>
-    <script src="todo_v2.js"></script>
+    <script src="todo_v2.js?v=20260621_v2"></script>
     <script src="app.js"></script>
     <script src="investment.js"></script>
     <script src="formulas.js"></script>
