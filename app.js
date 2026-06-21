@@ -7865,11 +7865,14 @@ document.addEventListener("DOMContentLoaded", () => {
     window.updateBulkDeleteUI = function () {
         const checkedBoxes = tableBody.querySelectorAll('.row-checkbox:checked');
         const count = checkedBoxes.length;
+        const bulkHint = document.getElementById('bulk-hint');
         if (count > 0) {
             bulkDeleteBtn.style.display = 'block';
             if (bulkDeleteCount) bulkDeleteCount.innerText = count;
+            if (bulkHint) bulkHint.style.display = 'block';
         } else {
             bulkDeleteBtn.style.display = 'none';
+            if (bulkHint) bulkHint.style.display = 'none';
         }
 
         const allBoxes = tableBody.querySelectorAll('.row-checkbox:not(:disabled)');
