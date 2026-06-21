@@ -277,11 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const hiddenInput = document.getElementById('sched-selected-variety');
             if (hiddenInput) hiddenInput.value = varietyVal;
 
-            // Auto-run analysis if date is selected
-            const holidayDateVal = document.getElementById('sched-holiday-date').value;
-            if (holidayDateVal && typeof window.runAIScheduleAnalysis === 'function') {
-                window.runAIScheduleAnalysis();
-            }
+            // No auto-run on selection, wait for user to click the blue button
         });
     });
 
@@ -293,13 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (presetSelect && presetSelect.value !== 'custom') {
                 presetSelect.value = 'custom';
             }
-            const variety = document.getElementById('sched-selected-variety').value;
-            if (variety && typeof window.runAIScheduleAnalysis === 'function') {
-                const val = schedHolidayDateInput.value;
-                if (val) {
-                    window.runAIScheduleAnalysis();
-                }
-            }
+            // No auto-run on date change, wait for user to click the blue button
         };
         schedHolidayDateInput.addEventListener('change', handleDateChange);
         schedHolidayDateInput.addEventListener('input', handleDateChange);
@@ -2426,11 +2416,7 @@ window.handleHolidayPresetChange = function () {
     const dd = String(holidayDate.getDate()).padStart(2, '0');
     document.getElementById('sched-holiday-date').value = `${yyyy}-${mm}-${dd}`;
 
-    // Auto-run analysis if a variety is already selected
-    const variety = document.getElementById('sched-selected-variety').value;
-    if (variety && typeof window.runAIScheduleAnalysis === 'function') {
-        window.runAIScheduleAnalysis();
-    }
+    // No auto-run on preset change, wait for user to click the blue button
 };
 
 window.openAISchedulerPreset = function (presetKey, holidayDateVal, variety) {
@@ -2526,11 +2512,27 @@ window.runAIScheduleAnalysis = async function () {
     const baseCycle = cycleInfo.base;
 
     // Call Gemini API if API Key is configured
-    const apiKey = localStorage.getItem('sched_gemini_key') || (typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "") || "";
+    const apiKey = (typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "") || "";
     let seasonModifier = 0;
     let weatherReason = "";
 
-    if (apiKey && apiKey.trim() !== "") {
+    // Check if we can reuse the previous successful AI analysis for the same target date (peakDate)
+    const lastAnalysis = window.activeAIScheduleAnalysis;
+    const canReuseAnalysis = lastAnalysis && 
+                           lastAnalysis.peakDate && 
+                           new Date(lastAnalysis.peakDate).getTime() === peakDate.getTime() &&
+                           lastAnalysis.weatherReason &&
+                           lastAnalysis.weatherReason.includes("🤖") &&
+                           !lastAnalysis.weatherReason.includes("Lỗi kết nối");
+
+    if (canReuseAnalysis) {
+        seasonModifier = lastAnalysis.seasonModifier;
+        weatherReason = lastAnalysis.weatherReason;
+        if (!weatherReason.includes("được dùng lại")) {
+            weatherReason = weatherReason.replace(" (🤖 <i>Phân tích real-time bằng Gemini AI</i>)", " (🤖 <i>Phân tích thời tiết được dùng lại từ lần trước</i>)");
+        }
+        console.log("Reused previous weather analysis for the same target date.");
+    } else if (apiKey && apiKey.trim() !== "") {
         try {
             const formattedPeakDate = formatDateString(peakDate, 'DD/MM/YYYY');
             const prompt = `Bạn là một chuyên gia nông nghiệp AI chuyên phân tích chu kỳ sinh trưởng của hoa hồng cắt cành tại Đà Lạt.
@@ -2551,7 +2553,7 @@ Trả về kết quả dưới định dạng JSON duy nhất, không kèm markd
   "reason": "<chuỗi giải thích thuyết minh khí hậu>"
 }`;
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
             const response = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -2561,7 +2563,16 @@ Trả về kết quả dưới định dạng JSON duy nhất, không kèm markd
                 })
             });
 
-            if (!response.ok) throw new Error(`Gemini API error! status: ${response.status}`);
+            if (!response.ok) {
+                let errorMsg = `HTTP ${response.status}`;
+                try {
+                    const errorJson = await response.json();
+                    if (errorJson && errorJson.error && errorJson.error.message) {
+                        errorMsg = errorJson.error.message;
+                    }
+                } catch (_) {}
+                throw new Error(errorMsg);
+            }
             const apiResult = await response.json();
             const responseText = apiResult.candidates[0].content.parts[0].text;
             const parsed = JSON.parse(responseText.trim());
@@ -2572,12 +2583,42 @@ Trả về kết quả dưới định dạng JSON duy nhất, không kèm markd
             console.error("Gemini API calculation failed, falling back to rules engine:", e);
             const fallback = getWeatherModifierInfo(variety, peakDate);
             seasonModifier = fallback.modifier;
-            weatherReason = fallback.reason + " <span style='color: #ef4444; font-size: 0.75rem; font-weight: 500;'>(⚠️ Lỗi kết nối Gemini API, tự động dùng bộ dự phòng)</span>";
+            
+            let displayErr = "Lỗi kết nối Gemini API";
+            if (e.message) {
+                if (e.message.includes("not found") || e.message.includes("404") || e.message.includes("supported")) {
+                    try {
+                        const checkUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+                        const checkResponse = await fetch(checkUrl);
+                        if (!checkResponse.ok) {
+                            const checkJson = await checkResponse.json();
+                            if (checkJson && checkJson.error && checkJson.error.message) {
+                                if (checkJson.error.message.includes("API key expired")) {
+                                    displayErr = "Khóa API đã hết hạn (API key expired)";
+                                } else if (checkJson.error.message.includes("API key not valid") || checkJson.error.message.includes("INVALID_ARGUMENT")) {
+                                    displayErr = "Khóa API không hợp lệ (Invalid API key)";
+                                } else {
+                                    displayErr = `Lỗi API: ${checkJson.error.message}`;
+                                }
+                            }
+                        }
+                    } catch (_) {
+                        displayErr = `Lỗi Gemini API: ${e.message}`;
+                    }
+                } else if (e.message.includes("API key expired")) {
+                    displayErr = "Khóa API đã hết hạn (API key expired)";
+                } else if (e.message.includes("API key not valid") || e.message.includes("INVALID_ARGUMENT") || e.message.includes("not valid")) {
+                    displayErr = "Khóa API không hợp lệ (Invalid API key)";
+                } else {
+                    displayErr = `Lỗi Gemini API: ${e.message}`;
+                }
+            }
+            weatherReason = fallback.reason + ` <span style='color: #ef4444; font-size: 0.75rem; font-weight: 500;'>(⚠️ ${displayErr}, tự động dùng bộ dự phòng)</span>`;
         }
     } else {
         const fallback = getWeatherModifierInfo(variety, peakDate);
         seasonModifier = fallback.modifier;
-        weatherReason = fallback.reason + " <span style='color: #64748b; font-size: 0.75rem; font-weight: 500;'>(💡 Cài đặt Gemini API Key bên dưới để kích hoạt phân tích AI trực tuyến)</span>";
+        weatherReason = fallback.reason + " <span style='color: #64748b; font-size: 0.75rem; font-weight: 500;'>(💡 Vui lòng cấu hình biến môi trường GEMINI_API_KEY trên Vercel/Github để kích hoạt phân tích AI)</span>";
     }
 
     const totalCycle = baseCycle + seasonModifier;

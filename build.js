@@ -3,9 +3,11 @@ const fs = require('fs');
 // Lấy dữ liệu từ Environment Variables của Vercel
 let webAppUrl = (process.env.WEB_APP_URL || "").trim();
 let usersJsonStr = (process.env.USERS_JSON || "{}").trim();
+let geminiApiKey = (process.env.GEMINI_API_KEY || "").trim();
 
 // Tự động làm sạch URL và JSON (xóa dấu ngoặc thừa, khoảng trắng lạ)
 webAppUrl = webAppUrl.replace(/^["']|["']$/g, '');
+geminiApiKey = geminiApiKey.replace(/^["']|["']$/g, '');
 // Xóa các ký tự điều khiển/ẩn nếu có trong JSON string
 usersJsonStr = usersJsonStr.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
 
@@ -20,6 +22,7 @@ try {
 
 const configObj = {
     WEB_APP_URL: webAppUrl,
+    GEMINI_API_KEY: geminiApiKey,
     USERS: usersData
 };
 
