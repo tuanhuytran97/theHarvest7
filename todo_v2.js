@@ -305,6 +305,12 @@ document.addEventListener('DOMContentLoaded', () => {
         schedHolidayDateInput.addEventListener('input', handleDateChange);
     }
 
+    // Initialize Gemini API Key field
+    const geminiKeyInput = document.getElementById('sched-gemini-key');
+    if (geminiKeyInput) {
+        geminiKeyInput.value = localStorage.getItem('sched_gemini_key') || "";
+    }
+
     // Run analysis button
     const runAnalysisBtn = document.getElementById('btn-run-sched-analysis');
     if (runAnalysisBtn) {
@@ -2477,7 +2483,7 @@ window.openAISchedulerPreset = function (presetKey, holidayDateVal, variety) {
     window.runAIScheduleAnalysis();
 };
 
-window.runAIScheduleAnalysis = function () {
+window.runAIScheduleAnalysis = async function () {
     const variety = document.getElementById('sched-selected-variety').value;
     const holidayDateVal = document.getElementById('sched-holiday-date').value;
     const daysBeforeVal = document.getElementById('sched-days-before').value;
@@ -2498,14 +2504,81 @@ window.runAIScheduleAnalysis = function () {
         return;
     }
 
-    const peakDate = new Date(holidayDate.getTime() - (daysBefore * 24 * 60 * 60 * 1000));
+    const resultPlaceholder = document.getElementById('sched-result-placeholder');
+    const resultContent = document.getElementById('sched-result-content');
+    if (resultPlaceholder) resultPlaceholder.style.display = 'none';
+    if (resultContent) {
+        resultContent.style.display = 'flex';
+    }
 
+    const reportTextDiv = document.getElementById('sched-ai-report-text');
+    if (reportTextDiv) {
+        reportTextDiv.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 2rem; color: #6366f1; font-weight: 700;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem;"></i>
+                <span>Trợ lý AI đang phân tích khí hậu và dự báo thời tiết real-time...</span>
+            </div>
+        `;
+    }
+
+    const peakDate = new Date(holidayDate.getTime() - (daysBefore * 24 * 60 * 60 * 1000));
     const cycleInfo = FLOWER_CYCLES[variety] || { base: 60, winter: 6, summer: -4 };
     const baseCycle = cycleInfo.base;
 
-    const weatherInfo = getWeatherModifierInfo(variety, peakDate);
-    const seasonModifier = weatherInfo.modifier;
-    const weatherReason = weatherInfo.reason;
+    // Call Gemini API if API Key is configured
+    const apiKey = localStorage.getItem('sched_gemini_key') || "";
+    let seasonModifier = 0;
+    let weatherReason = "";
+
+    if (apiKey && apiKey.trim() !== "") {
+        try {
+            const formattedPeakDate = formatDateString(peakDate, 'DD/MM/YYYY');
+            const prompt = `Bạn là một chuyên gia nông nghiệp AI chuyên phân tích chu kỳ sinh trưởng của hoa hồng cắt cành tại Đà Lạt.
+Hãy phân tích điều kiện thời tiết thực tế và dự báo khí hậu năm 2026/2027 để đưa ra con số ngày "Bù trừ thời tiết" (modifier) cho giống hoa hồng sau:
+- Giống hoa: ${variety}
+- Chu kỳ sinh trưởng tiêu chuẩn (base): ${baseCycle} ngày
+- Ngày hoa nở rộ mục tiêu: ${formattedPeakDate} (tháng ${peakDate.getMonth() + 1})
+
+Yêu cầu phân tích chi tiết dựa trên:
+1. Đặc điểm mùa vụ tại Đà Lạt vào tháng ${peakDate.getMonth() + 1} (mùa mưa/khô, nhiệt độ ban ngày/ban đêm, ánh sáng).
+2. Dự đoán thời tiết năm 2026/2027 (như đợt nắng nóng cực đoan do biến đổi khí hậu vào mùa xuân-hè, mưa dầm dề mây mù do La Nina vào mùa thu, lạnh sâu kèm sương muối vào mùa đông).
+3. Đưa ra một số nguyên (modifier) là số ngày điều chỉnh (ví dụ: -7 ngày nếu hè nắng nóng, +3 ngày nếu mưa mây mù, +8 ngày nếu đông lạnh sâu). Đối với giống Ecuador vào mùa hè nóng gắt, modifier phải nằm trong khoảng từ -5 đến -8 ngày.
+4. Viết thuyết minh ngắn gọn, khoa học bằng tiếng Việt (khoảng 3-4 câu) giải thích rõ ràng tại sao con số này được lựa chọn.
+
+Trả về kết quả dưới định dạng JSON duy nhất, không kèm markdown khác:
+{
+  "modifier": <số nguyên ngày bù trừ>,
+  "reason": "<chuỗi giải thích thuyết minh khí hậu>"
+}`;
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: { responseMimeType: "application/json" }
+                })
+            });
+
+            if (!response.ok) throw new Error(`Gemini API error! status: ${response.status}`);
+            const apiResult = await response.json();
+            const responseText = apiResult.candidates[0].content.parts[0].text;
+            const parsed = JSON.parse(responseText.trim());
+
+            seasonModifier = parseInt(parsed.modifier) || 0;
+            weatherReason = parsed.reason + " (🤖 <i>Phân tích real-time bằng Gemini AI</i>)";
+        } catch (e) {
+            console.error("Gemini API calculation failed, falling back to rules engine:", e);
+            const fallback = getWeatherModifierInfo(variety, peakDate);
+            seasonModifier = fallback.modifier;
+            weatherReason = fallback.reason + " <span style='color: #ef4444; font-size: 0.75rem; font-weight: 500;'>(⚠️ Lỗi kết nối Gemini API, tự động dùng bộ dự phòng)</span>";
+        }
+    } else {
+        const fallback = getWeatherModifierInfo(variety, peakDate);
+        seasonModifier = fallback.modifier;
+        weatherReason = fallback.reason + " <span style='color: #64748b; font-size: 0.75rem; font-weight: 500;'>(💡 Cài đặt Gemini API Key bên dưới để kích hoạt phân tích AI trực tuyến)</span>";
+    }
 
     const totalCycle = baseCycle + seasonModifier;
     const cutDate = new Date(peakDate.getTime() - (totalCycle * 24 * 60 * 60 * 1000));
@@ -2526,13 +2599,6 @@ window.runAIScheduleAnalysis = function () {
         peakDate,
         cutDate
     };
-
-    const resultPlaceholder = document.getElementById('sched-result-placeholder');
-    const resultContent = document.getElementById('sched-result-content');
-    if (resultPlaceholder) resultPlaceholder.style.display = 'none';
-    if (resultContent) {
-        resultContent.style.display = 'flex';
-    }
 
     const cutDateDiv = document.getElementById('sched-timeline-cut-date');
     if (cutDateDiv) cutDateDiv.innerText = formatDateString(cutDate, 'DD/MM/YYYY');
@@ -2561,7 +2627,6 @@ window.runAIScheduleAnalysis = function () {
         progressDiv.style.width = "100%";
     }
 
-    const reportTextDiv = document.getElementById('sched-ai-report-text');
     if (reportTextDiv) {
         reportTextDiv.innerHTML = generateAIReportHTML(
             variety,

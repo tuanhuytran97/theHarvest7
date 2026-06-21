@@ -400,6 +400,18 @@
                         <input type="hidden" id="sched-selected-variety" value="">
                     </div>
 
+                    <!-- Gemini API Key configuration -->
+                    <div class="form-group" style="margin-top: 1rem; border-top: 1px dashed #e2e8f0; padding-top: 1rem;">
+                        <label
+                            style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-key" style="color: #6366f1;"></i> Cấu hình Gemini API Key
+                        </label>
+                        <input type="password" id="sched-gemini-key" class="input-modern"
+                            placeholder="Nhập Gemini API Key để kích hoạt AI phân tích thời tiết..."
+                            style="width: 100%; padding: 10px; border-radius: 10px; font-size: 0.85rem;"
+                            onchange="localStorage.setItem('sched_gemini_key', this.value)">
+                    </div>
+
                     <button type="button" id="btn-run-sched-analysis" class="btn-primary"
                         style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); padding: 14px; font-size: 1rem; border-radius: 12px; font-weight: 800; border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); margin-top: 1rem;">
                         <i class="fa-solid fa-brain"></i> Phân tích cành & Lập lịch bằng AI
