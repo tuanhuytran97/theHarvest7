@@ -308,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Gemini API Key field
     const geminiKeyInput = document.getElementById('sched-gemini-key');
     if (geminiKeyInput) {
-        geminiKeyInput.value = localStorage.getItem('sched_gemini_key') || "";
+        geminiKeyInput.value = localStorage.getItem('sched_gemini_key') || (typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "") || "";
     }
 
     // Run analysis button
@@ -2526,7 +2526,7 @@ window.runAIScheduleAnalysis = async function () {
     const baseCycle = cycleInfo.base;
 
     // Call Gemini API if API Key is configured
-    const apiKey = localStorage.getItem('sched_gemini_key') || "";
+    const apiKey = localStorage.getItem('sched_gemini_key') || (typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "") || "";
     let seasonModifier = 0;
     let weatherReason = "";
 
