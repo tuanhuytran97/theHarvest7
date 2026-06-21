@@ -1127,7 +1127,7 @@ document.addEventListener("DOMContentLoaded", () => {
             detected.push("Ecuador", "Pháp");
         }
         
-        const FLOWER_CYCLES = {
+        const FLOWER_CYCLES = window.FLOWER_CYCLES_DB || {
             "Ecuador": { base: 68, winter: 7, summer: -5 },
             "Pháp": { base: 62, winter: 6, summer: -4 },
             "Xô Đỏ": { base: 53, winter: 5, summer: -3 },

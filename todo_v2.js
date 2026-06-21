@@ -2171,7 +2171,7 @@ if (todoConnBadge) {
 // AGRICULTURAL AI SCHEDULER ENGINE
 // ==========================================
 
-const FLOWER_CYCLES = {
+const FLOWER_CYCLES = window.FLOWER_CYCLES_DB || {
     "Ecuador": { base: 68, winter: 7, summer: -5 },
     "Pháp": { base: 62, winter: 6, summer: -4 },
     "Xô Đỏ": { base: 53, winter: 5, summer: -3 },
@@ -2243,9 +2243,13 @@ function generateAIReportHTML(variety, baseCycle, seasonModifier, totalCycle, pe
         modifierText = `<p style="margin: 0 0 8px 0; color: #4b5563;"><i class="fa-solid fa-calendar-check"></i> Chu kỳ sinh trưởng giữ nguyên tiêu chuẩn (không ảnh hưởng thời tiết cực đoan).</p>`;
     }
 
+    const docLinkHtml = window.FLOWER_CYCLES_DB && window.FLOWER_CYCLES_DB[variety] 
+        ? `<a href="javascript:void(0)" onclick="window.showScientificDocs('${variety}')" style="color: #7c3aed; font-weight: 700; text-decoration: none; margin-left: 6px; font-size: 0.8rem; border-bottom: 1px dashed #7c3aed; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-graduation-cap"></i> Xem cơ sở khoa học & tài liệu chứng minh</a>` 
+        : "";
+
     return `
         <div style="font-size: 0.88rem; line-height: 1.5; color: #374151;">
-            <p style="margin: 0 0 10px 0;">Giống hoa <b>${variety}</b> có chu kỳ sinh trưởng tiêu chuẩn là <b>${baseCycle} ngày</b>.</p>
+            <p style="margin: 0 0 10px 0;">Giống hoa <b>${variety}</b> có chu kỳ sinh trưởng tiêu chuẩn là <b>${baseCycle} ngày</b>.${docLinkHtml}</p>
             ${modifierText}
             <div style="background: rgba(124, 58, 237, 0.04); border-left: 3px solid #7c3aed; padding: 10px; border-radius: 4px; margin-top: 10px; margin-bottom: 10px;">
                 <ul style="margin: 0; padding-left: 20px;">
@@ -2264,6 +2268,51 @@ function generateAIReportHTML(variety, baseCycle, seasonModifier, totalCycle, pe
         </div>
     `;
 }
+
+window.showScientificDocs = function (variety) {
+    const db = window.FLOWER_CYCLES_DB || {};
+    const info = db[variety];
+    if (!info) {
+        alert("Không tìm thấy tài liệu nghiên cứu cho giống hoa này.");
+        return;
+    }
+
+    const modal = document.getElementById('scientific-docs-modal');
+    const nameEl = document.getElementById('scientific-flower-name');
+    const basisEl = document.getElementById('scientific-basis-text');
+    const listEl = document.getElementById('scientific-docs-list');
+
+    if (!modal || !nameEl || !basisEl || !listEl) return;
+
+    nameEl.innerText = `Giống hoa: ${variety}`;
+    basisEl.innerText = info.scientificBasis || "Đặc tính sinh lý đang được tiếp tục cập nhật bởi chuyên gia nông nghiệp.";
+
+    let listHtml = "";
+    if (info.references && info.references.length > 0) {
+        info.references.forEach(ref => {
+            listHtml += `
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; font-size: 0.85rem;">
+                    <div style="font-weight: 700; color: #1e293b; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-regular fa-file-lines" style="color: #7c3aed;"></i> ${ref.title}
+                    </div>
+                    <p style="margin: 0 0 6px 0; color: #64748b; font-style: italic; line-height: 1.45;">
+                        "${ref.snippet}"
+                    </p>
+                    <div style="text-align: right;">
+                        <a href="${ref.url}" target="_blank" style="color: #6366f1; text-decoration: none; font-weight: 700; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Xem nguồn tài liệu
+                        </a>
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        listHtml = `<p style="font-size: 0.85rem; color: #94a3b8; font-style: italic; margin: 0; text-align: center;">Tài liệu kiểm chứng đang được đồng bộ...</p>`;
+    }
+    listEl.innerHTML = listHtml;
+
+    modal.style.display = 'flex';
+};
 
 window.handleHolidayPresetChange = function () {
     const preset = document.getElementById('sched-holiday-preset').value;

@@ -3780,10 +3780,47 @@
         </div>
     </div>
 
+    <!-- Modal: Scientific References -->
+    <div id="scientific-docs-modal" class="modal-overlay"
+        style="display: none; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); z-index: 10002;">
+        <div class="modal-content"
+            style="max-width: 600px !important; background: white; width: 92%; border-radius: 16px; padding: 1.5rem; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; max-height: 85vh;">
+            <div class="modal-header"
+                style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 0.75rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                <h2
+                    style="font-size: 1.25rem; font-weight: 800; color: #7c3aed; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-graduation-cap"></i> Cơ sở khoa học & Tài liệu chứng minh
+                </h2>
+                <button type="button" onclick="document.getElementById('scientific-docs-modal').style.display='none'"
+                    class="btn-icon"
+                    style="background: rgba(0,0,0,0.05); border-radius: 50%; width: 32px; height: 32px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; padding-right: 4px;">
+                <div style="background: rgba(124, 58, 237, 0.05); border-left: 4px solid #7c3aed; padding: 12px; border-radius: 6px;">
+                    <h4 style="margin: 0 0 6px 0; color: #6d28d9; font-weight: 700;" id="scientific-flower-name">Tên hoa</h4>
+                    <p style="margin: 0; font-size: 0.88rem; color: #4b5563; line-height: 1.5;" id="scientific-basis-text">Đặc điểm sinh học...</p>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px;" id="scientific-docs-list">
+                    <!-- Proof documents list will go here -->
+                </div>
+            </div>
+            <div style="border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1rem; margin-top: 1.25rem; text-align: right;">
+                <button type="button" onclick="document.getElementById('scientific-docs-modal').style.display='none'"
+                    class="btn-primary"
+                    style="padding: 10px 24px; border-radius: 10px; font-weight: 800; background: #f1f5f9; color: #475569; border: none; cursor: pointer; box-shadow: none;">
+                    Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="config.js"></script>
+    <script src="flower_cycles_db.js?v=20260621_v2"></script>
     <script src="todo_v2.js?v=20260621_v2"></script>
     <script src="app.js"></script>
     <script src="investment.js"></script>
