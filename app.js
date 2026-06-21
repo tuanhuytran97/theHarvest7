@@ -7875,15 +7875,12 @@ document.addEventListener("DOMContentLoaded", () => {
     window.updateBulkDeleteUI = function () {
         const checkedBoxes = tableBody.querySelectorAll('.row-checkbox:checked');
         const count = checkedBoxes.length;
-        const bulkHint = document.getElementById('bulk-hint');
         const noPermission = bulkDeleteBtn && bulkDeleteBtn.dataset.noPermission === 'true';
         if (count > 0 && !noPermission) {
             bulkDeleteBtn.style.display = 'block';
             if (bulkDeleteCount) bulkDeleteCount.innerText = count;
-            if (bulkHint) bulkHint.style.display = 'block';
         } else {
             if (bulkDeleteBtn) bulkDeleteBtn.style.display = 'none';
-            if (bulkHint) bulkHint.style.display = 'none';
         }
 
         const allBoxes = tableBody.querySelectorAll('.row-checkbox:not(:disabled)');
