@@ -2180,10 +2180,10 @@ const FLOWER_CYCLES = {
     "Trắng ù": { base: 60, winter: 6, summer: -4 },
     "Quốc Vương": { base: 64, winter: 6, summer: -4 },
     "Ô Hồng": { base: 63, winter: 6, summer: -4 },
-    "Hà Lan": { base: 60, winter: 6, summer: -4 },
+    "Vàng Hà Lan": { base: 60, winter: 6, summer: -4 },
     "Kem": { base: 58, winter: 5, summer: -3 },
     "Simmo": { base: 55, winter: 5, summer: -3 },
-    "Vitto": { base: 57, winter: 5, summer: -3 },
+    "Victor Vàng": { base: 57, winter: 5, summer: -3 },
     "Lạc Thần": { base: 59, winter: 5, summer: -3 },
     "Hỷ Trứng": { base: 54, winter: 5, summer: -3 },
     "Capu": { base: 61, winter: 6, summer: -4 }
