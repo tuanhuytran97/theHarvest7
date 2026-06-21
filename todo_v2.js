@@ -276,8 +276,34 @@ document.addEventListener('DOMContentLoaded', () => {
             const varietyVal = btn.getAttribute('data-value');
             const hiddenInput = document.getElementById('sched-selected-variety');
             if (hiddenInput) hiddenInput.value = varietyVal;
+
+            // Auto-run analysis if date is selected
+            const holidayDateVal = document.getElementById('sched-holiday-date').value;
+            if (holidayDateVal && typeof window.runAIScheduleAnalysis === 'function') {
+                window.runAIScheduleAnalysis();
+            }
         });
     });
+
+    // Listeners for manual date input changes
+    const schedHolidayDateInput = document.getElementById('sched-holiday-date');
+    if (schedHolidayDateInput) {
+        const handleDateChange = () => {
+            const presetSelect = document.getElementById('sched-holiday-preset');
+            if (presetSelect && presetSelect.value !== 'custom') {
+                presetSelect.value = 'custom';
+            }
+            const variety = document.getElementById('sched-selected-variety').value;
+            if (variety && typeof window.runAIScheduleAnalysis === 'function') {
+                const val = schedHolidayDateInput.value;
+                if (val) {
+                    window.runAIScheduleAnalysis();
+                }
+            }
+        };
+        schedHolidayDateInput.addEventListener('change', handleDateChange);
+        schedHolidayDateInput.addEventListener('input', handleDateChange);
+    }
 
     // Run analysis button
     const runAnalysisBtn = document.getElementById('btn-run-sched-analysis');
@@ -1400,6 +1426,9 @@ function parseLocalDate(dateStr) {
     if (!dateStr) return null;
     if (dateStr instanceof Date) return dateStr;
 
+    dateStr = String(dateStr).trim();
+    if (!dateStr) return null;
+
     // Handle ISO YYYY-MM-DD
     const isoMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if (isoMatch) {
@@ -2357,6 +2386,12 @@ window.handleHolidayPresetChange = function () {
     const mm = String(holidayDate.getMonth() + 1).padStart(2, '0');
     const dd = String(holidayDate.getDate()).padStart(2, '0');
     document.getElementById('sched-holiday-date').value = `${yyyy}-${mm}-${dd}`;
+
+    // Auto-run analysis if a variety is already selected
+    const variety = document.getElementById('sched-selected-variety').value;
+    if (variety && typeof window.runAIScheduleAnalysis === 'function') {
+        window.runAIScheduleAnalysis();
+    }
 };
 
 window.openAISchedulerPreset = function (presetKey, holidayDateVal, variety) {
