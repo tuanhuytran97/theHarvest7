@@ -265,6 +265,81 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 1500);
 
+    // Setup planning mode switcher
+    window.currentSchedMode = 'backward';
+    const backwardBtns = document.querySelectorAll('#btn-sched-mode-backward, #btn-sched-mode-backward-main');
+    const forwardBtns = document.querySelectorAll('#btn-sched-mode-forward, #btn-sched-mode-forward-main');
+
+    const setMode = (mode) => {
+        window.currentSchedMode = mode;
+        if (mode === 'backward') {
+            backwardBtns.forEach(btn => {
+                btn.classList.add('active');
+                btn.style.background = 'white';
+                btn.style.color = '#4f46e5';
+                btn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+            });
+            forwardBtns.forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.background = 'transparent';
+                btn.style.color = '#64748b';
+                btn.style.boxShadow = 'none';
+            });
+            const el1 = document.getElementById('sched-holiday-preset-group');
+            const el2 = document.getElementById('sched-holiday-date-group');
+            const el3 = document.getElementById('sched-days-before-group');
+            const el4 = document.getElementById('sched-cut-date-group');
+            const el5 = document.getElementById('sched-actual-date-group');
+            if (el1) el1.style.display = 'block';
+            if (el2) el2.style.display = 'block';
+            if (el3) el3.style.display = 'block';
+            if (el4) el4.style.display = 'none';
+            if (el5) el5.style.display = 'none';
+            
+            const label3 = document.getElementById('sched-timeline-holiday-label');
+            if (label3) label3.innerText = 'Ngày Lễ';
+            const dot3 = document.getElementById('sched-timeline-holiday-dot');
+            if (dot3) dot3.style.background = '#f59e0b';
+        } else {
+            forwardBtns.forEach(btn => {
+                btn.classList.add('active');
+                btn.style.background = 'white';
+                btn.style.color = '#4f46e5';
+                btn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+            });
+            backwardBtns.forEach(btn => {
+                btn.classList.remove('active');
+                btn.style.background = 'transparent';
+                btn.style.color = '#64748b';
+                btn.style.boxShadow = 'none';
+            });
+            const el1 = document.getElementById('sched-holiday-preset-group');
+            const el2 = document.getElementById('sched-holiday-date-group');
+            const el3 = document.getElementById('sched-days-before-group');
+            const el4 = document.getElementById('sched-cut-date-group');
+            const el5 = document.getElementById('sched-actual-date-group');
+            if (el1) el1.style.display = 'none';
+            if (el2) el2.style.display = 'none';
+            if (el3) el3.style.display = 'none';
+            if (el4) el4.style.display = 'block';
+            if (el5) el5.style.display = 'block';
+
+            const cutDateInput = document.getElementById('sched-cut-date');
+            if (cutDateInput && !cutDateInput.value) {
+                const todayStr = new Date().toISOString().split('T')[0];
+                cutDateInput.value = todayStr;
+            }
+
+            const label3 = document.getElementById('sched-timeline-holiday-label');
+            if (label3) label3.innerText = 'Rộ Thực Tế';
+            const dot3 = document.getElementById('sched-timeline-holiday-dot');
+            if (dot3) dot3.style.background = '#8b5cf6';
+        }
+    };
+
+    backwardBtns.forEach(btn => btn.addEventListener('click', () => setMode('backward')));
+    forwardBtns.forEach(btn => btn.addEventListener('click', () => setMode('forward')));
+
     // Setup variety pill selectors for AI Scheduler
     const schedPillButtons = document.querySelectorAll('.sched-flower-pill-btn');
     schedPillButtons.forEach(btn => {
@@ -2242,7 +2317,8 @@ function parseSchedulerNote(note) {
         holidayDateStr: /Ngày lễ:\s*(.*?)(?:\s*\||$)/,
         baseCycle: /Chu kỳ tiêu chuẩn:\s*(\d+)/,
         totalCycle: /Tổng chu kỳ:\s*(\d+)/,
-        peakDateStr: /Ngày rộ:\s*(.*?)(?:\s*\||$)/
+        peakDateStr: /Ngày rộ:\s*(.*?)(?:\s*\||$)/,
+        actualPeakDateStr: /Ngày rộ thực tế:\s*(.*?)(?:\s*\||$)/
     };
     for (const [key, regex] of Object.entries(regexes)) {
         const match = note.match(regex);
@@ -2298,9 +2374,84 @@ function getWeatherModifierInfo(variety, peakDate) {
 }
 
 function generateAIReportHTML(variety, baseCycle, seasonModifier, weatherReason, totalCycle, peakDate, cutDate, holidayDate, daysBefore) {
+    const active = window.activeAIScheduleAnalysis || {};
     const docLinkHtml = window.FLOWER_CYCLES_DB && window.FLOWER_CYCLES_DB[variety] 
         ? `<a href="javascript:void(0)" onclick="window.showScientificDocs('${variety}')" style="color: #7c3aed; font-weight: 700; text-decoration: none; margin-left: 6px; font-size: 0.8rem; border-bottom: 1px dashed #7c3aed; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-graduation-cap"></i> Xem cơ sở khoa học & tài liệu chứng minh</a>` 
         : "";
+
+    let detailListHtml = "";
+    if (active.mode === 'forward') {
+        const actualDateStr = active.actualDate ? formatDateString(active.actualDate, 'DD/MM/YYYY') : "Chưa chọn";
+        let deviationHtml = "";
+        if (active.actualDate) {
+            const dev = active.deviationDays;
+            const stdDev = active.standardDeviationDays;
+            
+            let devText = "";
+            let devStyle = "";
+            if (dev > 0) {
+                devText = `⚠️ Muộn hơn dự báo AI <b>${dev} ngày</b>`;
+                devStyle = "color: #d97706; font-weight: 700;";
+            } else if (dev < 0) {
+                devText = `⚡ Sớm hơn dự báo AI <b>${Math.abs(dev)} ngày</b>`;
+                devStyle = "color: #3b82f6; font-weight: 700;";
+            } else {
+                devText = `🎉 Khớp hoàn hảo với dự báo AI!`;
+                devStyle = "color: #10b981; font-weight: 700;";
+            }
+
+            let stdDevText = "";
+            if (stdDev > 0) {
+                stdDevText = `muộn hơn chu kỳ tiêu chuẩn <b>${stdDev} ngày</b>`;
+            } else if (stdDev < 0) {
+                stdDevText = `sớm hơn chu kỳ tiêu chuẩn <b>${Math.abs(stdDev)} ngày</b>`;
+            } else {
+                stdDevText = `trùng khớp chu kỳ tiêu chuẩn`;
+            }
+
+            // Đánh giá hiệu quả AI
+            let aiComparison = "";
+            if (Math.abs(dev) < Math.abs(stdDev)) {
+                aiComparison = `<div style="margin-top: 6px; font-size: 0.8rem; color: #10b981; font-weight: 700;"><i class="fa-solid fa-circle-check"></i> Dự báo thời tiết AI chính xác hơn chu kỳ tiêu chuẩn (lệch ${Math.abs(dev)} ngày so với ${Math.abs(stdDev)} ngày).</div>`;
+            } else if (Math.abs(dev) > Math.abs(stdDev)) {
+                aiComparison = `<div style="margin-top: 6px; font-size: 0.8rem; color: #d97706; font-weight: 700;"><i class="fa-solid fa-circle-exclamation"></i> Chu kỳ tiêu chuẩn chính xác hơn dự báo AI ở trường hợp này.</div>`;
+            } else {
+                aiComparison = `<div style="margin-top: 6px; font-size: 0.8rem; color: #475569; font-weight: 700;"><i class="fa-solid fa-equals"></i> Dự báo AI và chu kỳ tiêu chuẩn cho kết quả sai số tương đương.</div>`;
+            }
+
+            deviationHtml = `
+                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(124, 58, 237, 0.2);">
+                    <div style="font-size: 0.82rem; color: #475569;">
+                        Đánh giá sai lệch: <span style="${devStyle}">${devText}</span>
+                    </div>
+                    <div style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">
+                        (Thực tế ${stdDevText})
+                    </div>
+                    ${aiComparison}
+                </div>
+            `;
+        }
+
+        detailListHtml = `
+            <ul style="margin: 0; padding-left: 20px;">
+                <li>Ngày Hạ Cành: <b>${formatDateString(cutDate, 'DD/MM/YYYY')}</b></li>
+                <li>Chu kỳ tiêu chuẩn: <b>${baseCycle} ngày</b></li>
+                <li>Chu kỳ thực tế (có bù trừ): <b>${totalCycle} ngày</b></li>
+                <li>Ngày Rộ Dự Kiến (AI): <b style="color: #10b981; font-size: 0.95rem;">${formatDateString(peakDate, 'DD/MM/YYYY')}</b></li>
+                <li>Ngày Rộ Thực Tế: <b>${actualDateStr}</b></li>
+            </ul>
+            ${deviationHtml}
+        `;
+    } else {
+        detailListHtml = `
+            <ul style="margin: 0; padding-left: 20px;">
+                <li>Ngày Lễ Mục Tiêu: <b>${holidayDate ? formatDateString(holidayDate, 'DD/MM/YYYY') : '--/--'}</b></li>
+                <li>Ngày Rộ Hoa: <b>${formatDateString(peakDate, 'DD/MM/YYYY')}</b> (trước lễ ${daysBefore} ngày để đóng gói & xuất hàng)</li>
+                <li>Chu kỳ thực tế: <b>${totalCycle} ngày</b></li>
+                <li>Khuyến nghị ngày cắt cành: <b style="color: #7c3aed; font-size: 0.95rem;">${formatDateString(cutDate, 'DD/MM/YYYY')}</b></li>
+            </ul>
+        `;
+    }
 
     return `
         <div style="font-size: 0.88rem; line-height: 1.5; color: #374151;">
@@ -2310,12 +2461,7 @@ function generateAIReportHTML(variety, baseCycle, seasonModifier, weatherReason,
                 ${weatherReason}
             </div>
             <div style="background: rgba(124, 58, 237, 0.04); border-left: 3px solid #7c3aed; padding: 10px; border-radius: 4px; margin-top: 10px; margin-bottom: 10px;">
-                <ul style="margin: 0; padding-left: 20px;">
-                    <li>Ngày Lễ Mục Tiêu: <b>${formatDateString(holidayDate, 'DD/MM/YYYY')}</b></li>
-                    <li>Ngày Rộ Hoa: <b>${formatDateString(peakDate, 'DD/MM/YYYY')}</b> (trước lễ ${daysBefore} ngày để đóng gói & xuất hàng)</li>
-                    <li>Chu kỳ thực tế: <b>${totalCycle} ngày</b></li>
-                    <li>Khuyến nghị ngày cắt cành: <b style="color: #7c3aed; font-size: 0.95rem;">${formatDateString(cutDate, 'DD/MM/YYYY')}</b></li>
-                </ul>
+                ${detailListHtml}
             </div>
             <p style="margin: 10px 0 6px 0; font-weight: 800; color: #1e293b;">Quy trình kỹ thuật chăm sóc đi kèm:</p>
             <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px;">
@@ -2471,22 +2617,8 @@ window.openAISchedulerPreset = function (presetKey, holidayDateVal, variety) {
 
 window.runAIScheduleAnalysis = async function () {
     const variety = document.getElementById('sched-selected-variety').value;
-    const holidayDateVal = document.getElementById('sched-holiday-date').value;
-    const daysBeforeVal = document.getElementById('sched-days-before').value;
-
     if (!variety) {
         alert("Vui lòng chọn giống hoa / màu.");
-        return;
-    }
-    if (!holidayDateVal) {
-        alert("Vui lòng chọn ngày lễ mục tiêu.");
-        return;
-    }
-
-    const daysBefore = parseInt(daysBeforeVal) || 0;
-    const holidayDate = parseLocalDate(holidayDateVal);
-    if (!holidayDate || isNaN(holidayDate.getTime())) {
-        alert("Ngày lễ mục tiêu không hợp lệ.");
         return;
     }
 
@@ -2507,20 +2639,66 @@ window.runAIScheduleAnalysis = async function () {
         `;
     }
 
-    const peakDate = new Date(holidayDate.getTime() - (daysBefore * 24 * 60 * 60 * 1000));
     const cycleInfo = FLOWER_CYCLES[variety] || { base: 60, winter: 6, summer: -4 };
     const baseCycle = cycleInfo.base;
-
-    // Call Gemini API if API Key is configured
     const apiKey = (typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "") || "";
+
+    let cutDate, peakDate, holidayDate, daysBefore = 0, actualDate = null;
+    let estimatedPeakDate;
+    let preset = 'custom';
+    let holidayLabel = '';
+
+    if (window.currentSchedMode === 'forward') {
+        const cutDateVal = document.getElementById('sched-cut-date').value;
+        if (!cutDateVal) {
+            alert("Vui lòng chọn ngày hạ cành.");
+            return;
+        }
+        cutDate = parseLocalDate(cutDateVal);
+        if (!cutDate || isNaN(cutDate.getTime())) {
+            alert("Ngày hạ cành không hợp lệ.");
+            return;
+        }
+
+        const actualDateVal = document.getElementById('sched-actual-date').value;
+        if (actualDateVal) {
+            actualDate = parseLocalDate(actualDateVal);
+        }
+
+        // Ước lượng ngày rộ tiêu chuẩn làm mốc phân tích khí hậu
+        estimatedPeakDate = new Date(cutDate.getTime() + baseCycle * 24 * 60 * 60 * 1000);
+        preset = 'forward_plan';
+        holidayLabel = 'Tính xuôi từ ngày hạ cành';
+    } else {
+        const holidayDateVal = document.getElementById('sched-holiday-date').value;
+        const daysBeforeVal = document.getElementById('sched-days-before').value;
+
+        if (!holidayDateVal) {
+            alert("Vui lòng chọn ngày lễ mục tiêu.");
+            return;
+        }
+
+        daysBefore = parseInt(daysBeforeVal) || 0;
+        holidayDate = parseLocalDate(holidayDateVal);
+        if (!holidayDate || isNaN(holidayDate.getTime())) {
+            alert("Ngày lễ mục tiêu không hợp lệ.");
+            return;
+        }
+
+        peakDate = new Date(holidayDate.getTime() - (daysBefore * 24 * 60 * 60 * 1000));
+        estimatedPeakDate = peakDate;
+        preset = document.getElementById('sched-holiday-preset').value;
+        holidayLabel = HOLIDAY_LABELS[preset] || `Ngày ${formatDateString(holidayDate, 'DD/MM/YYYY')}`;
+    }
+
     let seasonModifier = 0;
     let weatherReason = "";
 
-    // Check if we can reuse the previous successful AI analysis for the same target date (peakDate)
+    // Check if we can reuse previous analysis
     const lastAnalysis = window.activeAIScheduleAnalysis;
     const canReuseAnalysis = lastAnalysis && 
                            lastAnalysis.peakDate && 
-                           new Date(lastAnalysis.peakDate).getTime() === peakDate.getTime() &&
+                           new Date(lastAnalysis.peakDate).getTime() === estimatedPeakDate.getTime() &&
                            lastAnalysis.weatherReason &&
                            lastAnalysis.weatherReason.includes("🤖") &&
                            !lastAnalysis.weatherReason.includes("Lỗi kết nối");
@@ -2531,18 +2709,38 @@ window.runAIScheduleAnalysis = async function () {
         if (!weatherReason.includes("được dùng lại")) {
             weatherReason = weatherReason.replace(" (🤖 <i>Phân tích real-time bằng Gemini AI</i>)", " (🤖 <i>Phân tích thời tiết được dùng lại từ lần trước</i>)");
         }
-        console.log("Reused previous weather analysis for the same target date.");
+        console.log("Reused previous weather analysis.");
     } else if (apiKey && apiKey.trim() !== "") {
         try {
-            const formattedPeakDate = formatDateString(peakDate, 'DD/MM/YYYY');
-            const prompt = `Bạn là một chuyên gia nông nghiệp AI chuyên phân tích chu kỳ sinh trưởng của hoa hồng cắt cành tại Đà Lạt.
+            const formattedPeakDate = formatDateString(estimatedPeakDate, 'DD/MM/YYYY');
+            let prompt = "";
+            if (window.currentSchedMode === 'forward') {
+                prompt = `Bạn là một chuyên gia nông nghiệp AI chuyên phân tích chu kỳ sinh trưởng của hoa hồng cắt cành tại Đà Lạt.
 Hãy phân tích điều kiện thời tiết thực tế và dự báo khí hậu năm 2026/2027 để đưa ra con số ngày "Bù trừ thời tiết" (modifier) cho giống hoa hồng sau:
 - Giống hoa: ${variety}
 - Chu kỳ sinh trưởng tiêu chuẩn (base): ${baseCycle} ngày
-- Ngày hoa nở rộ mục tiêu: ${formattedPeakDate} (tháng ${peakDate.getMonth() + 1})
+- Ngày hoa nở rộ mục tiêu ước tính: ${formattedPeakDate} (tháng ${estimatedPeakDate.getMonth() + 1}) (được tính ước tính từ ngày hạ cành ${formatDateString(cutDate, 'DD/MM/YYYY')} cộng với chu kỳ tiêu chuẩn)
 
 Yêu cầu phân tích chi tiết dựa trên:
-1. Đặc điểm mùa vụ tại Đà Lạt vào tháng ${peakDate.getMonth() + 1} (mùa mưa/khô, nhiệt độ ban ngày/ban đêm, ánh sáng).
+1. Đặc điểm mùa vụ tại Đà Lạt vào tháng ${estimatedPeakDate.getMonth() + 1} (mùa mưa/khô, nhiệt độ ban ngày/ban đêm, ánh sáng).
+2. Dự đoán thời tiết năm 2026/2027 (như đợt nắng nóng cực đoan do biến đổi khí hậu vào mùa xuân-hè, mưa dầm dề mây mù do La Nina vào mùa thu, lạnh sâu kèm sương muối vào mùa đông).
+3. Đưa ra một số nguyên (modifier) là số ngày điều chỉnh (ví dụ: -7 ngày nếu hè nắng nóng, +3 ngày nếu mưa mây mù, +8 ngày nếu đông lạnh sâu). Đối với giống Victor Vàng vào mùa hè nóng gắt, modifier nằm trong khoảng từ -3 đến -5 ngày.
+4. Viết thuyết minh ngắn gọn, khoa học bằng tiếng Việt (khoảng 3-4 câu) giải thích rõ ràng tại sao con số này được lựa chọn.
+
+Trả về kết quả dưới định dạng JSON duy nhất, không kèm markdown khác:
+{
+  "modifier": <số nguyên ngày bù trừ>,
+  "reason": "<chuỗi giải thích thuyết minh khí hậu>"
+}`;
+            } else {
+                prompt = `Bạn là một chuyên gia nông nghiệp AI chuyên phân tích chu kỳ sinh trưởng của hoa hồng cắt cành tại Đà Lạt.
+Hãy phân tích điều kiện thời tiết thực tế và dự báo khí hậu năm 2026/2027 để đưa ra con số ngày "Bù trừ thời tiết" (modifier) cho giống hoa hồng sau:
+- Giống hoa: ${variety}
+- Chu kỳ sinh trưởng tiêu chuẩn (base): ${baseCycle} ngày
+- Ngày hoa nở rộ mục tiêu: ${formattedPeakDate} (tháng ${estimatedPeakDate.getMonth() + 1})
+
+Yêu cầu phân tích chi tiết dựa trên:
+1. Đặc điểm mùa vụ tại Đà Lạt vào tháng ${estimatedPeakDate.getMonth() + 1} (mùa mưa/khô, nhiệt độ ban ngày/ban đêm, ánh sáng).
 2. Dự đoán thời tiết năm 2026/2027 (như đợt nắng nóng cực đoan do biến đổi khí hậu vào mùa xuân-hè, mưa dầm dề mây mù do La Nina vào mùa thu, lạnh sâu kèm sương muối vào mùa đông).
 3. Đưa ra một số nguyên (modifier) là số ngày điều chỉnh (ví dụ: -7 ngày nếu hè nắng nóng, +3 ngày nếu mưa mây mù, +8 ngày nếu đông lạnh sâu). Đối với giống Ecuador vào mùa hè nóng gắt, modifier phải nằm trong khoảng từ -5 đến -8 ngày.
 4. Viết thuyết minh ngắn gọn, khoa học bằng tiếng Việt (khoảng 3-4 câu) giải thích rõ ràng tại sao con số này được lựa chọn.
@@ -2552,6 +2750,7 @@ Trả về kết quả dưới định dạng JSON duy nhất, không kèm markd
   "modifier": <số nguyên ngày bù trừ>,
   "reason": "<chuỗi giải thích thuyết minh khí hậu>"
 }`;
+            }
 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
             const response = await fetch(url, {
@@ -2581,7 +2780,7 @@ Trả về kết quả dưới định dạng JSON duy nhất, không kèm markd
             weatherReason = parsed.reason + " (🤖 <i>Phân tích real-time bằng Gemini AI</i>)";
         } catch (e) {
             console.error("Gemini API calculation failed, falling back to rules engine:", e);
-            const fallback = getWeatherModifierInfo(variety, peakDate);
+            const fallback = getWeatherModifierInfo(variety, estimatedPeakDate);
             seasonModifier = fallback.modifier;
             
             let displayErr = "Lỗi kết nối Gemini API";
@@ -2616,39 +2815,62 @@ Trả về kết quả dưới định dạng JSON duy nhất, không kèm markd
             weatherReason = fallback.reason + ` <span style='color: #ef4444; font-size: 0.75rem; font-weight: 500;'>(⚠️ ${displayErr}, tự động dùng bộ dự phòng)</span>`;
         }
     } else {
-        const fallback = getWeatherModifierInfo(variety, peakDate);
+        const fallback = getWeatherModifierInfo(variety, estimatedPeakDate);
         seasonModifier = fallback.modifier;
         weatherReason = fallback.reason + " <span style='color: #64748b; font-size: 0.75rem; font-weight: 500;'>(💡 Vui lòng cấu hình biến môi trường GEMINI_API_KEY trên Vercel/Github để kích hoạt phân tích AI)</span>";
     }
 
     const totalCycle = baseCycle + seasonModifier;
-    const cutDate = new Date(peakDate.getTime() - (totalCycle * 24 * 60 * 60 * 1000));
+    let predictedPeakDate;
 
-    const preset = document.getElementById('sched-holiday-preset').value;
-    const holidayLabel = HOLIDAY_LABELS[preset] || `Ngày ${formatDateString(holidayDate, 'DD/MM/YYYY')}`;
+    if (window.currentSchedMode === 'forward') {
+        predictedPeakDate = new Date(cutDate.getTime() + totalCycle * 24 * 60 * 60 * 1000);
+    } else {
+        predictedPeakDate = peakDate;
+        cutDate = new Date(predictedPeakDate.getTime() - (totalCycle * 24 * 60 * 60 * 1000));
+    }
+
+    // Tính chênh lệch nếu có ngày rộ thực tế
+    let deviationDays = null;
+    let standardDeviationDays = null;
+    if (window.currentSchedMode === 'forward' && actualDate) {
+        deviationDays = Math.round((actualDate.getTime() - predictedPeakDate.getTime()) / (24 * 60 * 60 * 1000));
+        const standardPeakDate = new Date(cutDate.getTime() + baseCycle * 24 * 60 * 60 * 1000);
+        standardDeviationDays = Math.round((actualDate.getTime() - standardPeakDate.getTime()) / (24 * 60 * 60 * 1000));
+    }
 
     window.activeAIScheduleAnalysis = {
+        mode: window.currentSchedMode,
         variety,
         holidayPreset: preset,
         holidayLabel,
-        holidayDate,
-        daysBefore,
+        holidayDate: window.currentSchedMode === 'backward' ? holidayDate : null,
+        daysBefore: window.currentSchedMode === 'backward' ? daysBefore : 0,
         baseCycle,
         seasonModifier,
         weatherReason,
         totalCycle,
-        peakDate,
-        cutDate
+        peakDate: predictedPeakDate,
+        cutDate,
+        actualDate,
+        deviationDays,
+        standardDeviationDays
     };
 
     const cutDateDiv = document.getElementById('sched-timeline-cut-date');
     if (cutDateDiv) cutDateDiv.innerText = formatDateString(cutDate, 'DD/MM/YYYY');
 
     const peakDateDiv = document.getElementById('sched-timeline-peak-date');
-    if (peakDateDiv) peakDateDiv.innerText = formatDateString(peakDate, 'DD/MM/YYYY');
+    if (peakDateDiv) peakDateDiv.innerText = formatDateString(predictedPeakDate, 'DD/MM/YYYY');
 
     const holidayDateDiv = document.getElementById('sched-timeline-holiday-date');
-    if (holidayDateDiv) holidayDateDiv.innerText = formatDateString(holidayDate, 'DD/MM/YYYY');
+    if (holidayDateDiv) {
+        if (window.currentSchedMode === 'backward') {
+            holidayDateDiv.innerText = formatDateString(holidayDate, 'DD/MM/YYYY');
+        } else {
+            holidayDateDiv.innerText = actualDate ? formatDateString(actualDate, 'DD/MM/YYYY') : '--/--';
+        }
+    }
 
     const baseInput = document.getElementById('sched-timeline-days-base');
     if (baseInput) baseInput.value = baseCycle;
@@ -2675,7 +2897,7 @@ Trả về kết quả dưới định dạng JSON duy nhất, không kèm markd
             seasonModifier,
             weatherReason,
             totalCycle,
-            peakDate,
+            predictedPeakDate,
             cutDate,
             holidayDate,
             daysBefore
@@ -2698,15 +2920,30 @@ window.onBaseCycleOverride = function () {
     active.baseCycle = newBase;
     active.totalCycle = newBase + active.seasonModifier;
 
-    const peakDate = new Date(active.peakDate);
-    const newCutDate = new Date(peakDate.getTime() - (active.totalCycle * 24 * 60 * 60 * 1000));
-    active.cutDate = newCutDate;
+    if (active.mode === 'forward') {
+        const cutDate = new Date(active.cutDate);
+        const newPeakDate = new Date(cutDate.getTime() + active.totalCycle * 24 * 60 * 60 * 1000);
+        active.peakDate = newPeakDate;
+
+        const peakDateDiv = document.getElementById('sched-timeline-peak-date');
+        if (peakDateDiv) peakDateDiv.innerText = formatDateString(newPeakDate, 'DD/MM/YYYY');
+
+        if (active.actualDate) {
+            active.deviationDays = Math.round((active.actualDate.getTime() - newPeakDate.getTime()) / (24 * 60 * 60 * 1000));
+            const standardPeakDate = new Date(cutDate.getTime() + active.baseCycle * 24 * 60 * 60 * 1000);
+            active.standardDeviationDays = Math.round((active.actualDate.getTime() - standardPeakDate.getTime()) / (24 * 60 * 60 * 1000));
+        }
+    } else {
+        const peakDate = new Date(active.peakDate);
+        const newCutDate = new Date(peakDate.getTime() - (active.totalCycle * 24 * 60 * 60 * 1000));
+        active.cutDate = newCutDate;
+
+        const cutDateDiv = document.getElementById('sched-timeline-cut-date');
+        if (cutDateDiv) cutDateDiv.innerText = formatDateString(newCutDate, 'DD/MM/YYYY');
+    }
 
     const totalSpan = document.getElementById('sched-timeline-days-total');
     if (totalSpan) totalSpan.innerText = active.totalCycle;
-
-    const cutDateDiv = document.getElementById('sched-timeline-cut-date');
-    if (cutDateDiv) cutDateDiv.innerText = formatDateString(newCutDate, 'DD/MM/YYYY');
 
     const reportTextDiv = document.getElementById('sched-ai-report-text');
     if (reportTextDiv) {
@@ -2724,6 +2961,7 @@ window.onBaseCycleOverride = function () {
     }
 };
 
+
 window.saveAIScheduleTasks = async function () {
     if (isRestricted()) return;
     const active = window.activeAIScheduleAnalysis;
@@ -2733,14 +2971,19 @@ window.saveAIScheduleTasks = async function () {
     }
 
     const schedId = "AI_SCHED_" + Date.now();
-    const holidayLabel = active.holidayLabel || "Lịch tự chọn";
-    const holidayDateStr = formatDateString(active.holidayDate, 'DD/MM/YYYY');
+    const isForward = active.mode === 'forward';
+    const holidayLabel = active.holidayLabel || (isForward ? "Tính xuôi từ ngày hạ cành" : "Lịch tự chọn");
+    const holidayDateStr = active.holidayDate ? formatDateString(active.holidayDate, 'DD/MM/YYYY') : "--";
     const peakDateStr = formatDateString(active.peakDate, 'DD/MM/YYYY');
-    
+    const actualDateStr = active.actualDate ? formatDateString(active.actualDate, 'DD/MM/YYYY') : "";
+
     // 1. Create Cut Cành task
     const cutTaskId = "OFFLINE_TODO_" + Date.now() + "_1";
     const cutTaskName = `[Cắt Cành] hoa ${active.variety} cho ${holidayLabel}`;
-    const cutNote = `[AI Scheduler] Giống: ${active.variety} | Lễ: ${holidayLabel} | Ngày lễ: ${holidayDateStr} | Chu kỳ tiêu chuẩn: ${active.baseCycle} | Tổng chu kỳ: ${active.totalCycle} | Ngày rộ: ${peakDateStr} | [Mã Lịch AI: ${schedId}]`;
+    let cutNote = `[AI Scheduler] Giống: ${active.variety} | Lễ: ${holidayLabel} | Ngày lễ: ${holidayDateStr} | Chu kỳ tiêu chuẩn: ${active.baseCycle} | Tổng chu kỳ: ${active.totalCycle} | Ngày rộ: ${peakDateStr} | [Mã Lịch AI: ${schedId}]`;
+    if (isForward) {
+        cutNote = `[AI Scheduler] Giống: ${active.variety} | Lễ: ${holidayLabel} | Ngày lễ: ${holidayDateStr} | Chu kỳ tiêu chuẩn: ${active.baseCycle} | Tổng chu kỳ: ${active.totalCycle} | Ngày rộ: ${peakDateStr} | Ngày rộ thực tế: ${actualDateStr} | [Mã Lịch AI: ${schedId}]`;
+    }
 
     const cutTaskObj = {
         id: cutTaskId,
@@ -2749,7 +2992,7 @@ window.saveAIScheduleTasks = async function () {
         category: "Lập Lịch AI",
         note: cutNote,
         priority: "Cao",
-        status: "Chưa bắt đầu",
+        status: isForward && active.cutDate < new Date() ? "Hoàn thành" : "Chưa bắt đầu",
         sticker: "Cắt Cành"
     };
     cutTaskObj.deadlineDate = parseLocalDate(cutTaskObj.deadline);
@@ -2757,7 +3000,15 @@ window.saveAIScheduleTasks = async function () {
     // 2. Create Hoa Rộ task
     const peakTaskId = "OFFLINE_TODO_" + Date.now() + "_2";
     const peakTaskName = `[Hoa Rộ] hoa ${active.variety} cho ${holidayLabel}`;
-    const peakNote = `Thời điểm hoa ${active.variety} đạt độ nở rộ phục vụ ${holidayLabel}.\nThu hoạch đóng gói gửi vựa.\n[Mã Lịch AI: ${schedId}]`;
+    let peakNote = `Thời điểm hoa ${active.variety} đạt độ nở rộ phục vụ ${holidayLabel}.\nThu hoạch đóng gói gửi vựa.\n[Mã Lịch AI: ${schedId}]`;
+    if (isForward) {
+        peakNote = `Thời điểm hoa ${active.variety} dự kiến nở rộ sau khi hạ cành ngày ${formatDateString(active.cutDate, 'DD/MM/YYYY')}.`;
+        if (actualDateStr) {
+            let devText = active.deviationDays === 0 ? "Khớp hoàn hảo!" : (active.deviationDays > 0 ? `Trễ ${active.deviationDays} ngày` : `Sớm ${Math.abs(active.deviationDays)} ngày`);
+            peakNote += `\nNgày rộ thực tế: ${actualDateStr}\nSai lệch dự báo: ${devText}`;
+        }
+        peakNote += `\n[Mã Lịch AI: ${schedId}]`;
+    }
 
     const peakTaskObj = {
         id: peakTaskId,
@@ -2766,7 +3017,7 @@ window.saveAIScheduleTasks = async function () {
         category: "Lập Lịch AI",
         note: peakNote,
         priority: "Khẩn cấp",
-        status: "Chưa bắt đầu",
+        status: isForward && active.peakDate < new Date() ? "Hoàn thành" : "Chưa bắt đầu",
         sticker: "Hoa Rộ"
     };
     peakTaskObj.deadlineDate = parseLocalDate(peakTaskObj.deadline);
@@ -2840,7 +3091,25 @@ window.renderAIScheduler = function () {
         const baseCycle = info.baseCycle || 60;
         const totalCycle = info.totalCycle || 60;
         const seasonModifier = totalCycle - baseCycle;
-        const cutDateStr = formatDate(t.deadline); 
+        const cutDateStr = formatDate(t.deadline);
+        const actualPeakDateStr = info.actualPeakDateStr || "--";
+
+        let deviationStr = "--";
+        if (info.actualPeakDateStr && info.actualPeakDateStr !== "--") {
+            const actualDate = parseLocalDate(info.actualPeakDateStr);
+            const peakDate = parseLocalDate(peakDateStr);
+            if (actualDate && peakDate && !isNaN(actualDate.getTime()) && !isNaN(peakDate.getTime())) {
+                const diffTime = actualDate.getTime() - peakDate.getTime();
+                const deviationDays = Math.round(diffTime / (24 * 60 * 60 * 1000));
+                if (deviationDays > 0) {
+                    deviationStr = `<span style="color: #d97706; font-weight: 700;">+${deviationDays} ngày</span>`;
+                } else if (deviationDays < 0) {
+                    deviationStr = `<span style="color: #3b82f6; font-weight: 700;">-${Math.abs(deviationDays)} ngày</span>`;
+                } else {
+                    deviationStr = `<span style="color: #10b981; font-weight: 700;">Chuẩn xác</span>`;
+                }
+            }
+        }
 
         html += `
             <tr id="sched-row-${t.id}" data-id="${t.id}" data-variety="${variety}" data-basecycle="${baseCycle}" data-seasonmodifier="${seasonModifier}" data-peakdate="${peakDateStr}" data-holidaydate="${holidayDateStr}" data-holidaylabel="${holidayLabel}" style="border-bottom: 1px solid #e2e8f0; font-size: 0.9rem;">
@@ -2854,6 +3123,8 @@ window.renderAIScheduler = function () {
                         ${baseCycle} ngày <span style="font-size:0.75rem; color:#94a3b8; font-style:italic;">(thực tế: ${totalCycle} ngày)</span>
                     </span>
                 </td>
+                <td class="sched-actual-date-col" data-label="Rộ thực tế" style="padding: 12px 10px; color: #475569;">${actualPeakDateStr}</td>
+                <td class="sched-deviation-col" data-label="Sai lệch" style="padding: 12px 10px;">${deviationStr}</td>
                 <td data-label="Thao tác" style="padding: 12px 10px; text-align: right; white-space: nowrap;">
                     <div style="display: flex; gap: 8px; justify-content: flex-end;">
                         <button class="btn-action btn-edit-inline" onclick="window.inlineEditAISchedule('${t.id}')" title="Sửa chu kỳ sinh trưởng tiêu chuẩn" style="background: rgba(99, 102, 241, 0.1); color: #4f46e5; border: none; padding: 6px; border-radius: 6px; cursor: pointer;">
@@ -2929,12 +3200,14 @@ window.inlineEditAISchedule = function (taskId) {
     const totalCycle = baseCycle + seasonModifier;
 
     const cycleCol = row.querySelector('.sched-cycle-col');
+    const actualCol = row.querySelector('.sched-actual-date-col');
     const actionCol = row.cells[row.cells.length - 1];
 
-    if (!cycleCol || !actionCol) return;
+    if (!cycleCol || !actualCol || !actionCol) return;
 
     if (!row.dataset.originalCycleHtml) {
         row.dataset.originalCycleHtml = cycleCol.innerHTML;
+        row.dataset.originalActualHtml = actualCol.innerHTML;
         row.dataset.originalActionHtml = actionCol.innerHTML;
     }
 
@@ -2951,6 +3224,18 @@ window.inlineEditAISchedule = function (taskId) {
                 (thực tế: <span class="inline-preview-total-cycle">${totalCycle}</span> ngày)
             </span>
         </div>
+    `;
+
+    // Render actual date input
+    const originalActualText = actualCol.innerText.trim();
+    const actualDateObj = originalActualText && originalActualText !== '--' ? parseLocalDate(originalActualText) : null;
+    const actualDateIso = actualDateObj ? formatDateString(actualDateObj, 'YYYY-MM-DD') : '';
+
+    actualCol.innerHTML = `
+        <input type="date" class="inline-edit-actual-date input-modern" 
+            value="${actualDateIso}" 
+            style="padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 6px; color: #475569; font-size: 0.85rem; width: 130px;"
+            oninput="window.previewInlineEdit('${taskId}')">
     `;
 
     actionCol.innerHTML = `
@@ -2973,6 +3258,8 @@ window.previewInlineEdit = function (taskId) {
 
     const seasonModifier = parseInt(row.getAttribute('data-seasonmodifier'));
     const peakDateStr = row.getAttribute('data-peakdate');
+    const holidayLabel = row.getAttribute('data-holidaylabel');
+    const isForward = holidayLabel === 'Tính xuôi từ ngày hạ cành';
 
     const baseInput = row.querySelector('.inline-edit-base-cycle');
     if (!baseInput) return;
@@ -2989,12 +3276,52 @@ window.previewInlineEdit = function (taskId) {
         totalPreview.innerText = newTotal;
     }
 
-    const cutDateCol = row.querySelector('.sched-cut-date-col');
-    if (cutDateCol) {
-        const peakDate = parseLocalDate(peakDateStr);
-        if (peakDate && !isNaN(peakDate.getTime())) {
-            const newCutDate = new Date(peakDate.getTime() - (newTotal * 24 * 60 * 60 * 1000));
-            cutDateCol.innerText = formatDateString(newCutDate, 'DD/MM/YYYY');
+    let cutDate, peakDate;
+    if (isForward) {
+        // Forward mode: Cut date is fixed, peak date changes
+        const cutDateCol = row.querySelector('.sched-cut-date-col');
+        const cutDateStr = cutDateCol.dataset.originalVal || cutDateCol.innerText;
+        if (!cutDateCol.dataset.originalVal) {
+            cutDateCol.dataset.originalVal = cutDateStr;
+        }
+        cutDate = parseLocalDate(cutDateStr);
+        peakDate = new Date(cutDate.getTime() + newTotal * 24 * 60 * 60 * 1000);
+        
+        const peakDateCell = row.querySelector('[data-label="Ngày rộ hoa"]');
+        if (peakDateCell) {
+            peakDateCell.innerText = formatDateString(peakDate, 'DD/MM/YYYY');
+        }
+    } else {
+        // Backward mode: Peak date is fixed, cut date changes
+        const cutDateCol = row.querySelector('.sched-cut-date-col');
+        if (cutDateCol) {
+            peakDate = parseLocalDate(peakDateStr);
+            cutDate = new Date(peakDate.getTime() - (newTotal * 24 * 60 * 60 * 1000));
+            cutDateCol.innerText = formatDateString(cutDate, 'DD/MM/YYYY');
+        }
+    }
+
+    // Preview deviation
+    const actualInput = row.querySelector('.inline-edit-actual-date');
+    const deviationCell = row.querySelector('.sched-deviation-col') || row.querySelector('[data-label="Sai lệch"]');
+    if (deviationCell) {
+        if (actualInput && actualInput.value) {
+            const actualDate = parseLocalDate(actualInput.value);
+            if (actualDate && peakDate && !isNaN(actualDate.getTime()) && !isNaN(peakDate.getTime())) {
+                const diffTime = actualDate.getTime() - peakDate.getTime();
+                const deviationDays = Math.round(diffTime / (24 * 60 * 60 * 1000));
+                if (deviationDays > 0) {
+                    deviationCell.innerHTML = `<span style="color: #d97706; font-weight: 700;">+${deviationDays} ngày</span>`;
+                } else if (deviationDays < 0) {
+                    deviationCell.innerHTML = `<span style="color: #3b82f6; font-weight: 700;">-${Math.abs(deviationDays)} ngày</span>`;
+                } else {
+                    deviationCell.innerHTML = `<span style="color: #10b981; font-weight: 700;">Chuẩn xác</span>`;
+                }
+            } else {
+                deviationCell.innerText = "--";
+            }
+        } else {
+            deviationCell.innerText = "--";
         }
     }
 };
@@ -3018,17 +3345,19 @@ window.saveInlineAISchedule = async function (taskId) {
     const peakDateStr = row.getAttribute('data-peakdate');
     const holidayDateStr = row.getAttribute('data-holidaydate');
     const holidayLabel = row.getAttribute('data-holidaylabel');
+    const isForward = holidayLabel === 'Tính xuôi từ ngày hạ cành';
 
     const newTotal = newBase + seasonModifier;
 
-    const peakDate = parseLocalDate(peakDateStr);
-    if (!peakDate || isNaN(peakDate.getTime())) {
-        alert("Ngày rộ hoa không hợp lệ.");
-        return;
+    // Get actual date input value
+    const actualInput = row.querySelector('.inline-edit-actual-date');
+    let actualDateStr = "";
+    if (actualInput && actualInput.value) {
+        const actualParsed = parseLocalDate(actualInput.value);
+        if (actualParsed && !isNaN(actualParsed.getTime())) {
+            actualDateStr = formatDateString(actualParsed, 'DD/MM/YYYY');
+        }
     }
-
-    const newCutDate = new Date(peakDate.getTime() - (newTotal * 24 * 60 * 60 * 1000));
-    const newCutDateIso = formatDateString(newCutDate, 'YYYY-MM-DD');
 
     const task = todoCache.find(x => x.id === taskId);
     if (!task) {
@@ -3039,13 +3368,63 @@ window.saveInlineAISchedule = async function (taskId) {
     const match = task.note ? task.note.match(/\[Mã Lịch AI:\s*(.*?)\]/) : null;
     const schedId = match ? match[1] : ("AI_SCHED_" + Date.now());
 
-    task.deadline = newCutDateIso;
-    task.deadlineDate = newCutDate;
-    task.note = `[AI Scheduler] Giống: ${variety} | Lễ: ${holidayLabel} | Ngày lễ: ${holidayDateStr} | Chu kỳ tiêu chuẩn: ${newBase} | Tổng chu kỳ: ${newTotal} | Ngày rộ: ${peakDateStr} | [Mã Lịch AI: ${schedId}]`;
+    let finalCutDate, finalPeakDate;
+
+    if (isForward) {
+        // Forward mode: Cut date is fixed (represented by task deadline), peak date is recalculated
+        finalCutDate = parseLocalDate(task.deadline);
+        finalPeakDate = new Date(finalCutDate.getTime() + newTotal * 24 * 60 * 60 * 1000);
+        
+        task.deadline = formatDateString(finalCutDate, 'YYYY-MM-DD');
+        task.deadlineDate = finalCutDate;
+    } else {
+        // Backward mode: Peak date is fixed, cut date is recalculated
+        finalPeakDate = parseLocalDate(peakDateStr);
+        finalCutDate = new Date(finalPeakDate.getTime() - (newTotal * 24 * 60 * 60 * 1000));
+        
+        task.deadline = formatDateString(finalCutDate, 'YYYY-MM-DD');
+        task.deadlineDate = finalCutDate;
+    }
+
+    // Now update task note
+    let newNote = `[AI Scheduler] Giống: ${variety} | Lễ: ${holidayLabel} | Ngày lễ: ${holidayDateStr} | Chu kỳ tiêu chuẩn: ${newBase} | Tổng chu kỳ: ${newTotal} | Ngày rộ: ${formatDateString(finalPeakDate, 'DD/MM/YYYY')}`;
+    if (actualDateStr) {
+        newNote += ` | Ngày rộ thực tế: ${actualDateStr}`;
+    }
+    newNote += ` | [Mã Lịch AI: ${schedId}]`;
+    task.note = newNote;
+
+    // Update associated peak task ([Hoa Rộ])
+    const peakTask = todoCache.find(t => 
+        t.category === 'Lập Lịch AI' && 
+        t.task.startsWith('[Hoa Rộ]') && 
+        t.note && 
+        t.note.includes(`[Mã Lịch AI: ${schedId}]`)
+    );
+
+    if (peakTask) {
+        peakTask.deadline = formatDateString(finalPeakDate, 'YYYY-MM-DD');
+        peakTask.deadlineDate = finalPeakDate;
+        
+        let peakNote = "";
+        if (isForward) {
+            peakNote = `Thời điểm hoa ${variety} dự kiến nở rộ sau khi hạ cành ngày ${formatDateString(finalCutDate, 'DD/MM/YYYY')}.`;
+            if (actualDateStr) {
+                const actualDateObj = parseLocalDate(actualDateStr);
+                const devDays = Math.round((actualDateObj.getTime() - finalPeakDate.getTime()) / (24 * 60 * 60 * 1000));
+                let devText = devDays === 0 ? "Khớp hoàn hảo!" : (devDays > 0 ? `Trễ ${devDays} ngày` : `Sớm ${Math.abs(devDays)} ngày`);
+                peakNote += `\nNgày rộ thực tế: ${actualDateStr}\nSai lệch dự báo: ${devText}`;
+            }
+            peakNote += `\n[Mã Lịch AI: ${schedId}]`;
+        } else {
+            peakNote = `Thời điểm hoa ${variety} đạt độ nở rộ phục vụ ${holidayLabel}.\nThu hoạch đóng gói gửi vựa.\n[Mã Lịch AI: ${schedId}]`;
+        }
+        peakTask.note = peakNote;
+    }
 
     localStorage.setItem('todo_cache_v2', JSON.stringify(todoCache));
 
-    showToast("Đã cập nhật chu kỳ & ngày cắt cành!", "success");
+    showToast("Đã cập nhật lịch trình thành công!", "success");
     window.renderAIScheduler();
 
     if (typeof renderActiveView === 'function') {
@@ -3054,6 +3433,9 @@ window.saveInlineAISchedule = async function (taskId) {
 
     let queue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
     queue.push({ action: "save_todo_task", data: { ...task }, clientId: taskId });
+    if (peakTask) {
+        queue.push({ action: "save_todo_task", data: { ...peakTask }, clientId: peakTask.id });
+    }
     localStorage.setItem('todo_sync_queue', JSON.stringify(queue));
     processTodoSyncQueue();
 };

@@ -1,5 +1,13 @@
 const fs = require('fs');
 
+// Nếu file config.js đã tồn tại và không có biến môi trường nào được cấu hình (chạy ở máy local),
+// ta sẽ không ghi đè để tránh làm mất các cài đặt thủ công của người dùng.
+const hasEnv = process.env.WEB_APP_URL || process.env.USERS_JSON || process.env.GEMINI_API_KEY;
+if (fs.existsSync('config.js') && !hasEnv) {
+    console.log('File config.js đã tồn tại và không có biến môi trường nào được thiết lập. Bỏ qua ghi đè để bảo toàn cấu hình.');
+    process.exit(0);
+}
+
 // Lấy dữ liệu từ Environment Variables của Vercel
 let webAppUrl = (process.env.WEB_APP_URL || "").trim();
 let usersJsonStr = (process.env.USERS_JSON || "{}").trim();
