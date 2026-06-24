@@ -6293,6 +6293,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 const goalData = goalRow.slice(1).map(v => Number(v) || 0);
                 updateFinancialGrowthChart(years, equityData, goalData);
             }
+
+            if (equityRow && years.length > 0) {
+                updateAccumulationJourney(years, equityRow);
+            }
         } catch (err) {
             console.error("Chart Error:", err);
         }
@@ -6376,6 +6380,74 @@ document.addEventListener("DOMContentLoaded", () => {
             },
             plugins: [ChartDataLabels]
         });
+    }
+
+    function updateAccumulationJourney(years, equityRow) {
+        if (!years || !equityRow || years.length === 0) return;
+        
+        const equityData = equityRow.slice(1).map(v => Number(v) || 0);
+        
+        // Find index of the maximum (latest) year
+        let maxYearIdx = 0;
+        let maxYearVal = -Infinity;
+        for (let i = 0; i < years.length; i++) {
+            const yVal = parseInt(years[i], 10);
+            if (!isNaN(yVal) && yVal > maxYearVal) {
+                maxYearVal = yVal;
+                maxYearIdx = i;
+            }
+        }
+        
+        if (maxYearVal === -Infinity) return;
+        
+        const latestYear = maxYearVal;
+        const latestEquityMillions = equityData[maxYearIdx]; // this is in millions
+        const latestEquityVND = latestEquityMillions * 1000000;
+        const targetVND = 10000000000; // 10 Billion VND
+        
+        const percentage = Math.min(100, Math.max(0, (latestEquityVND / targetVND) * 100));
+        
+        // Update DOM elements
+        const pctEl = document.getElementById('accumulation-percentage');
+        const barEl = document.getElementById('accumulation-progress-bar');
+        const yearEl = document.getElementById('accumulation-year');
+        const currentEl = document.getElementById('accumulation-current');
+        const remainingEl = document.getElementById('accumulation-remaining');
+        const remainingLabelEl = document.getElementById('accumulation-remaining-label');
+        const iconContainerEl = document.getElementById('accumulation-remaining-icon-container');
+        
+        if (pctEl) {
+            pctEl.innerText = percentage.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+        }
+        if (barEl) {
+            barEl.style.width = percentage.toFixed(2) + '%';
+        }
+        if (yearEl) {
+            yearEl.innerText = latestYear.toString();
+        }
+        if (currentEl) {
+            currentEl.innerText = formatCurrency(latestEquityVND);
+        }
+        if (remainingEl) {
+            const remaining = targetVND - latestEquityVND;
+            if (remaining > 0) {
+                remainingEl.innerText = formatCurrency(remaining);
+                if (remainingLabelEl) remainingLabelEl.innerText = "Còn Cần Tích Lũy";
+                if (iconContainerEl) {
+                    iconContainerEl.style.background = 'rgba(16, 185, 129, 0.1)';
+                    iconContainerEl.style.color = '#10b981';
+                    iconContainerEl.innerHTML = '<i class="fa-solid fa-hourglass-half"></i>';
+                }
+            } else {
+                remainingEl.innerText = "Đã đạt mục tiêu! 🎉";
+                if (remainingLabelEl) remainingLabelEl.innerText = "Trạng Thái";
+                if (iconContainerEl) {
+                    iconContainerEl.style.background = 'rgba(251, 191, 36, 0.15)';
+                    iconContainerEl.style.color = '#d97706';
+                    iconContainerEl.innerHTML = '<i class="fa-solid fa-award"></i>';
+                }
+            }
+        }
     }
 
     // Attach sync button listener
