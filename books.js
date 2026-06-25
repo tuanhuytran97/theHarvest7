@@ -744,8 +744,7 @@ async function saveBook(e) {
         if (existing) payload.isFavorite = existing.isFavorite || false;
     }
 
-    // Show spinner in UI or wait cursor
-    document.body.style.cursor = 'wait';
+    // Lưu qua queue — không cần cursor chờ, modal đóng ngay lập tức
     
     // Save to Cache immediately (optimistic UI)
     const idx = booksCache.findIndex(b => b.id === payload.id);
@@ -792,9 +791,8 @@ async function saveBook(e) {
             window.processBooksQueue();
         }
     }, 100);
-    
-    document.body.style.cursor = 'default';
 }
+
 
 // Delete Book record
 async function deleteTaskBook(id) {
@@ -2047,21 +2045,34 @@ async function saveCategorySummary() {
     if (cancelBtn) cancelBtn.style.display = 'none';
     if (saveBtn) saveBtn.style.display = 'none';
     
-    // Save to cloud in background
+    // Đưa vào queue đồng bộ — không chờ API, không cursor wait
     try {
-        document.body.style.cursor = 'wait';
-        const res = await callBooksApi("save_category_summary", { data: record });
-        if (res && res.status === "success") {
-            if (window.showToast) window.showToast("Đã lưu đúc kết chủ đề vào đám mây!", "success");
-            loadCategorySummaries(); // Reload to sync
-        } else {
-            if (window.showToast) window.showToast("Đã lưu đúc kết chủ đề cục bộ (Offline)!", "info");
-        }
-    } catch(e) {
-        if (window.showToast) window.showToast("Đã lưu đúc kết chủ đề cục bộ!", "info");
-    } finally {
-        document.body.style.cursor = 'default';
+        const catQueue = JSON.parse(localStorage.getItem('books_sync_queue') || '[]');
+        // Xóa item cũ cùng category nếu có trong queue
+        const filteredQueue = catQueue.filter(item =>
+            !(item.action === 'category_summary_save' && item.data && item.data.category === record.category)
+        );
+        filteredQueue.push({
+            action: 'category_summary_save',
+            data: record,
+            clientId: 'CATSUM_' + record.category + '_' + Date.now(),
+            addedAt: new Date().toISOString()
+        });
+        localStorage.setItem('books_sync_queue', JSON.stringify(filteredQueue));
+    } catch(qErr) {
+        console.warn('[BooksQueue] Failed to queue category summary save:', qErr);
     }
+
+    if (window.showToast) {
+        window.showToast("Đã lưu đúc kết cục bộ — đang đồng bộ lên đám mây trong nền... ☁️", "info");
+    }
+
+    // Xử lý queue trong nền
+    setTimeout(() => {
+        if (typeof window.processBooksQueue === 'function') {
+            window.processBooksQueue();
+        }
+    }, 100);
 }
 
 // Synthesize Theme Wisdom using Gemini AI
@@ -2313,6 +2324,23 @@ async function processBooksQueue() {
                 }
             } catch(e) {
                 console.warn('[BooksQueue] Network error syncing book:', e.message);
+                break;
+            }
+        } else if (item.action === 'category_summary_save') {
+            try {
+                const res = await callBooksApi('save_category_summary', { data: item.data });
+                if (res && res.status === 'success') {
+                    const updatedQueue = JSON.parse(localStorage.getItem('books_sync_queue') || '[]');
+                    localStorage.setItem('books_sync_queue', JSON.stringify(
+                        updatedQueue.filter(x => x.clientId !== item.clientId)
+                    ));
+                    console.log('[BooksQueue] Synced category summary:', item.data && item.data.category);
+                } else {
+                    console.warn('[BooksQueue] Failed to sync category summary:', item.data && item.data.category, res);
+                    break;
+                }
+            } catch(e) {
+                console.warn('[BooksQueue] Network error syncing category summary:', e.message);
                 break;
             }
         }
