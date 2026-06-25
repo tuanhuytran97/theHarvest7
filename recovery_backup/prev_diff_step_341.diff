@@ -1,0 +1,50 @@
+Created At: 2026-06-25T00:14:05Z
+Completed At: 2026-06-25T00:14:07Z
+The following changes were made by the multi_replace_file_content tool to: c:\Users\NC\.gemini\antigravity\scratch\farm-management\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -2915,6 +2915,16 @@
+ 
+             <!-- VIEW-BOOKS (TỦ SÁCH TINH HOA) -->
+             <div id="view-books" class="app-view" style="display: none;">
++                <!-- Segmented Control Tab Switcher -->
++                <div class="books-view-segmented-tabs" style="display: flex; gap: 10px; margin-bottom: 2rem; background: rgba(255,255,255,0.4); padding: 6px; border-radius: 14px; width: fit-content; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
++                    <button type="button" class="segmented-tab-btn active" data-view="bookshelf" style="padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 0.9rem; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white;">
++                        <i class="fa-solid fa-book-bookmark"></i> Tủ Sách Cá Nhân
++                    </button>
++                    <button type="button" class="segmented-tab-btn" data-view="wisdom-hub" style="padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 0.9rem; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s; background: transparent; color: var(--text-light);">
++                        <i class="fa-solid fa-brain"></i> Đúc Kết Chủ Đề
++                    </button>
++                </div>
++
+                 <!-- KPI Dashboard Cards -->
+                 <div class="kpi-cards" style="margin-bottom: 2rem;">
+                     <div class="card glassmorphism kpi-card">
+@@ -2946,42 +2946,52 @@
+                     </div>
+                 </div>
+ 
+<truncated 14674 bytes>
+c này tại đây..."></textarea>
++                                </div>
++                                <!-- AI Summary Tab -->
++                                <div id="cat-tab-ai" class="cat-tab-content" style="display: none;">
++                                    <div id="cat-summary-ai-text" style="color: #475569; line-height: 1.7; font-size: 0.95rem; white-space: pre-wrap; background: #f8fafc; padding: 1.5rem; border-radius: 12px; border-left: 4px solid #8b5cf6; margin: 0; font-style: italic;">Bấm nút 'AI Tổng Hợp Tinh Túy' bên trái để Gemini liên kết tất cả các sách của chủ đề này và tạo cẩm nang triết lý tổng hợp.</div>
++                                </div>
++                            </div>
++                            <!-- Save footer -->
++                            <div style="padding: 1rem 2rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc;">
++                                <button type="button" onclick="closeCategorySummaryModal()" class="btn-primary" style="background: #f1f5f9; color: #475569; border: none; box-shadow: none;">Đóng</button>
++                                <button type="button" id="cat-summary-save-btn" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); color: white; display: flex; align-items: center; gap: 8px; border:none; cursor:pointer; font-weight:700;">
++                                    <i class="fa-solid fa-floppy-disk"></i> Lưu Thay Đổi
++                                </button>
++                            </div>
++                        </div>
++                    </div>
++                </div>
++            </div>
+             </div> <!-- End of VIEW-FORMULAS -->
+ 
+ 
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.

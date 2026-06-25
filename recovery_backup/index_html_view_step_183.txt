@@ -1,0 +1,49 @@
+Created At: 2026-06-25T10:40:31Z
+Completed At: 2026-06-25T10:40:31Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 4353
+Total Bytes: 319605
+Showing lines 3250 to 3290
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+3250:                         </button>
+3251:                     </div>
+3252:                 </form>
+3253:             </div>
+3254:             
+3255:             <!-- CATEGORY SUMMARY MODAL (WISDOM HUB DETAIL PANEL) -->
+3256:             <div id="category-summary-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 1.5rem; box-sizing: border-box;">
+3257:                 <div class="category-summary-container glassmorphism" style="background: white; border-radius: 24px; width: 100%; max-width: 900px; height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.8); animation: slideInUpPremium 0.4s ease; position: relative;">
+3258:                     <!-- Loading Spinner for AI Synthesis -->
+3259:                     <div id="category-summary-loading" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 10; align-items: center; justify-content: center; flex-direction: column; gap: 1rem;">
+3260:                         <i class="fa-solid fa-brain fa-bounce" style="font-size: 3.5rem; color: #8b5cf6;"></i>
+3261:                         <div style="font-weight: 800; color: #6d28d9; font-size: 1.1rem; text-align:center; padding: 0 2rem;" id="category-summary-loading-text">Gemini AI đang liên kết toàn bộ bài học và đúc kết triết lý...</div>
+3262:                     </div>
+3263:                     
+3264:                     <!-- Header -->
+3265:                     <div style="padding: 1.25rem 2rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+3266:                         <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b;" id="category-summary-modal-title">Tổng Hợp Tinh Hoa Lĩnh Vực</h3>
+3267:                         <button onclick="closeCategorySummaryModal()" style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 1.5rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; hover: background: #f1f5f9;"><i class="fa-solid fa-xmark"></i></button>
+3268:                     </div>
+3269:                     
+3270:                     <div style="flex: 1; display: flex; overflow: hidden;" class="book-detail-body-split">
+3271:                         <!-- Left panel: Theme info & Trigger -->
+3272:                         <div style="width: 280px; padding: 2rem; border-right: 1px solid #f1f5f9; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.5rem; overflow-y: auto; background: #f8fafc; flex-shrink:0;" class="book-detail-left">
+3273:                             <div id="cat-summary-cover" class="book-cover-large" style="width: 140px; height: 190px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 1.5rem; text-align: center; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.15); background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+3274:                                 <div id="cat-summary-cover-icon" style="font-size: 3rem; margin-bottom: 12px; opacity:0.85;">🌱</div>
+3275:                                 <div style="font-size: 1rem; font-weight: 900; line-height: 1.3;" id="cat-summary-cover-title">Phát triển bản thân</div>
+3276:                             </div>
+3277:                             <div style="margin-top: 5px; width: 100%;">
+3278:                                 <h2 style="margin: 0; font-size: 1.25rem; font-weight: 900; color: #1e293b; line-height: 1.3;" id="cat-summary-title">Phát Triển Bản Thân</h2>
+3279:                                 <p style="margin: 6px 0 0 0; font-size: 0.85rem; font-weight: 700; color: #64748b; background: rgba(0,0,0,0.05); padding: 4px 10px; border-radius: 8px; display: inline-block;" id="cat-summary-books-count">0 cuốn sách</p>
+3280:                             </div>
+3281:                             
+3282:                             <!-- AI synthesis trigger -->
+3283:                             <button type="button" id="btn-synthesize-category-ai" class="btn-primary" style="margin-top: auto; width: 100%; padding: 12px; border-radius: 12px; font-size: 0.85rem; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; border: none; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3); cursor:pointer;">
+3284:                                 <i class="fa-solid fa-wand-magic-sparkles"></i> AI Tổng Hợp Tinh Túy
+3285:                             </button>
+3286:                         </div>
+3287:                         
+3288:                         <!-- Right panel: Rich content tabs -->
+3289:                         <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;" class="book-detail-right">
+3290:                             <!-- Tab Headers -->
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

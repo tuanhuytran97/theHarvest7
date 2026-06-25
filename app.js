@@ -2533,6 +2533,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const menuFinancial = document.getElementById('menu-financial');
     const menuInvestment = document.getElementById('menu-investment');
     const menuFormulas = document.getElementById('menu-formulas'); // NEW
+    const menuBooks = document.getElementById('menu-books');
     const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
 
     const viewTodo = document.getElementById('view-todo'); // NEW
@@ -2543,6 +2544,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const viewFinancial = document.getElementById('view-financial');
     const viewInvestment = document.getElementById('view-investment');
     const viewFormulas = document.getElementById('view-formulas'); // NEW
+    const viewBooks = document.getElementById('view-books');
 
     function hideAllViews() {
         if (menuTodo) menuTodo.classList.remove('active');
@@ -2553,6 +2555,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (menuFinancial) menuFinancial.classList.remove('active');
         if (menuInvestment) menuInvestment.classList.remove('active');
         if (menuFormulas) menuFormulas.classList.remove('active');
+        if (menuBooks) menuBooks.classList.remove('active');
 
         mobileNavItems.forEach(i => i.classList.remove('active'));
 
@@ -2564,6 +2567,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (viewFinancial) viewFinancial.style.display = 'none';
         if (viewInvestment) viewInvestment.style.display = 'none';
         if (viewFormulas) viewFormulas.style.display = 'none';
+        if (viewBooks) viewBooks.style.display = 'none';
     }
 
     function syncMobileNav(viewId) {
@@ -2627,6 +2631,11 @@ document.addEventListener("DOMContentLoaded", () => {
             syncMobileNav('formulas');
             if (viewFormulas) viewFormulas.style.display = 'block';
             if (typeof initFormulasTab === 'function') initFormulasTab();
+        } else if (viewId === 'books') {
+            if (menuBooks) menuBooks.classList.add('active');
+            syncMobileNav('books');
+            if (viewBooks) viewBooks.style.display = 'block';
+            if (typeof initBooksTab === 'function') initBooksTab();
         }
     }
     window.switchView = switchView;
@@ -2684,6 +2693,13 @@ document.addEventListener("DOMContentLoaded", () => {
         menuFormulas.addEventListener('click', (e) => {
             e.preventDefault();
             switchView('formulas');
+        });
+    }
+
+    if (menuBooks) {
+        menuBooks.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchView('books');
         });
     }
 

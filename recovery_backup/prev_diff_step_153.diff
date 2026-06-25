@@ -1,0 +1,33 @@
+Created At: 2026-06-24T23:57:54Z
+Completed At: 2026-06-24T23:57:55Z
+The following changes were made by the replace_file_content tool to: c:\Users\NC\.gemini\antigravity\scratch\farm-management\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -3157,18 +3157,16 @@
+ - Lắng nghe để hiểu thay vì để trả lời." style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: 0.9rem; outline: none; resize: vertical; box-sizing: border-box;"></textarea>
+                         </div>
+ 
+-                        <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; display: grid;">
+-                            <div class="form-group" style="grid-column: span 1;">
+-                                <label for="book-form-quotes">Trích Dẫn Hay (Mỗi trích dẫn một dòng)</label>
+-                                <textarea id="book-form-quotes" rows="3" placeholder="Ví dụ:
++                        <div class="form-group">
++                            <label for="book-form-quotes">Trích Dẫn Hay (Mỗi trích dẫn một dòng)</label>
++                            <textarea id="book-form-quotes" rows="3" placeholder="Ví dụ:
+ Chỉ nghe thôi cũng là một sự tôn trọng lớn lao." style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: 0.9rem; outline: none; resize: vertical; box-sizing: border-box;"></textarea>
+-                            </div>
+-                            <div class="form-group" style="grid-column: span 1;">
+-                                <label for="book-form-actions">Kế Hoạch Hành Động (Mỗi hành động một dòng)</label>
+-                                <textarea id="book-form-actions" rows="3" placeholder="Ví dụ:
++                        </div>
++                        <div class="form-group">
++                            <label for="book-form-actions">Kế Hoạch Hành Động (Mỗi hành động một dòng)</label>
++                            <textarea id="book-form-actions" rows="3" placeholder="Ví dụ:
+ Khen ngợi 1 đồng nghiệp hôm nay.
+ Không ngắt lời người khác trong cuộc họp." style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: 0.9rem; outline: none; resize: vertical; box-sizing: border-box;"></textarea>
+-                            </div>
+                         </div>
+                     </div>
+                     <!-- Footer -->
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.

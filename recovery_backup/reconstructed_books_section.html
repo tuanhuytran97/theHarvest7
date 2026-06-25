@@ -1,0 +1,135 @@
+                        </button>
+                        <button class="formula-tab-btn" data-formula="dupont">
+                            <i class="fa-solid fa-diagram-project"></i> Mô hình DuPont (3 bước)
+                        </button>
+                    </div>
+
+                    <!-- Right Panel for interactive calculator -->
+                    <div class="card glassmorphism formula-calculator-card" id="formula-calculator-container">
+                        <!-- Content will be rendered dynamically by formulas.js -->
+                    </div>
+                    </div>
+                </div>
+            </div> <!-- End of VIEW-FORMULAS -->
+
+
+
+            <!-- VIEW-BOOKS (TỦ SÁCH TINH HOA) -->
+            <div id="view-books" class="app-view" style="display: none;">
+                <!-- KPI Dashboard Cards -->
+                <div class="kpi-cards" style="margin-bottom: 2rem;">
+                    <div class="card glassmorphism kpi-card">
+                        <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;"><i class="fa-solid fa-book"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Tổng số sách</span>
+                            <h2 id="books-kpi-total" class="kpi-value" style="margin:0;">0</h2>
+                        </div>
+                    </div>
+                    <div class="card glassmorphism kpi-card">
+                        <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;"><i class="fa-solid fa-square-check"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Đã hoàn thành</span>
+                            <h2 id="books-kpi-completed" class="kpi-value" style="margin:0;">0</h2>
+                        </div>
+                    </div>
+                    <div class="card glassmorphism kpi-card">
+            
+
+                <div class="receipt-title">
+                    <h1>HÓA ĐƠN THANH TOÁN</h1>
+                    <p id="receipt-id">Số: INV-2024-001</p>
+                </div>
+
+                <div class="receipt-info-grid">
+                    <div class="info-group">
+                        <label>Khách hàng</label>
+                        <p id="receipt-customer-name">Đang tải...</p>
+                    </div>
+                    <div class="info-group" style="text-align: right;">
+                        <label>Ngày xuất</label>
+                        <p id="receipt-date">10/04/2026</p>
+                    </div>
+                    <div class="card glassmorphism kpi-card">
+                        <div class="kpi-icon" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;"><i class="fa-solid fa-bullseye"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Mục tiêu năm</span>
+                            <h2 class="kpi-value" style="margin:0;">24 <span style="font-size: 0.9rem; font-weight:600; color:var(--text-light);">quyển</span></h2>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wrap current Bookshelf content -->
+                <div id="books-grid-wrapper">
+                    <!-- Search & Filters -->
+                    <div class="card glassmorphism" style="padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: flex; flex-direction: column; gap: 1rem;">
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+                            <div style="position: relative; flex: 1; min-width: 250px;">
+                                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-light);"></i>
+                                <input type="text" id="book-search-input" placeholder="Tìm tên sách, tác giả, bài học..." style="w
+                <div class="book-detail-container glassmorphism" style="background: white; border-radius: 24px; width: 100%; max-width: 900px; height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.8); animation: slideInUpPremium 0.4s ease;">
+                    <div style="padding: 1.25rem 2rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+                        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b;" id="detail-modal-title">Chi Tiết Sách & Bài Học</h3>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <button id="detail-edit-btn" class="btn-primary" style="padding: 8px 16px; border-radius: 10px; font-size: 0.85rem; background: #e0e7ff; color: #4338ca; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight:700;"><i class="fa-solid fa-pen"></i> Chỉnh sửa</button>
+                            <button onclick="closeBookDetail()" style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 1.5rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; hover: background: #f1f5f9;"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                    <div style="flex: 1; display: flex; overflow: hidden;" class="book-detail-body-split">
+                        <!-- Left panel: Cover card & Meta -->
+                        <div style="width: 280px; padding: 2rem; border-right: 1px solid #f1f5f9; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1rem; overflow-y: auto; background: #f8fafc; flex-shrink:0;" class="book-detail-left">
+                            <div id="detail-book-cover" class="book-cover-large" style="width: 140px; height: 190px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 1rem; text-align: center; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.15); background: linear-gradient(135deg, #6366f1, #3b82f6);">
+                                <i class="fa-solid fa-book" style="font-size: 2.5rem; margin-bottom: 8px; opacity:0.8;"></i>
+                                <div style="font-size: 0.85rem; font-weight: 800; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;" id="detail-cover-title">Title</div>
+                            </div>
+                            <div style="margin-top: 5px; width: 100%;">
+                                <h2 style="margin: 0; font-size: 1.2rem; font-weight: 900; color: #1e293b; line-height: 1.3;" id="detail-title">Book Title</h2>
+                                <p style="margin: 4px 0 0 0; font-size: 0.9rem; font-weight: 600; color: #64748b;" id="detail-author">Author Name</p>
+                            </div>
+                       
+                                    <option value="Muốn đọc">Muốn đọc</option>
+                                    <option value="Đang đọc">Đang đọc</option>
+                                    <option value="Đã đọc xong">Đã đọc xong</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="grid-column: span 1;">
+                                <label for="book-form-rating">Đánh Giá</label>
+                                <select id="book-form-rating" style="color: #fbbf24; font-weight:800; background:white;">
+                                    <option value="0" style="color:#64748b;">Chưa đánh giá</option>
+                                    <option value="5" style="color: #fbbf24;">★★★★★ (5 Sao)</option>
+                                    <option value="4" style="color: #fbbf24;">★★★★☆ (4 Sao)</option>
+                                    <option value="3" style="color: #fbbf24;">★★★☆☆ (3 Sao)</option>
+                                    <option value="2" style="color: #fbbf24;">★★☆☆☆ (2 Sao)</option>
+                                    <option value="1" style="color: #fbbf24;">★☆☆☆☆ (1 Sao)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div style="display: flex; justify-content: space-between; align-items:center;">
+                                <label for="book-form-progress">Tiến Trình Đọc</label>
+                                <span id="form-progress-val" style="font-weight:700; color:#6366f1;">0%</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="range" id="book-form-progress" min="0" max="100" value="0" style="flex: 1; cursor: pointer; height: 6px; accent-color: #6366f1;">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="book-form-summary">Tóm Tắt Cốt Lõi (Ngắn Gọn)</label>
+                            <textarea id="book-form-summary" rows="2" placeholder="Nhập tóm tắt sơ lược của sách..." style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: 0.9rem; outline: none; resize: vertical; box-sizing: border-box;"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="book-form-content-directory">Danh Mục Nội Dung (Table of Contents / Outlines)</label>
+                            <textarea id="book-form-content-directory" rows="4" placeholder="Nhập mục lục hoặc danh mục nội dung chi tiết của sách (hỗ trợ định dạng gạch đầu dòng, markdown để hiển thị đẹp mắt)..." style="width: 100%; border: 1px solid var(--
+                    <!-- Loading Spinner for AI Synthesis -->
+                    <div id="category-summary-loading" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 10; align-items: center; justify-content: center; flex-direction: column; gap: 1rem;">
+                        <i class="fa-solid fa-brain fa-bounce" style="font-size: 3.5rem; color: #8b5cf6;"></i>
+                        <div style="font-weight: 800; color: #6d28d9; font-size: 1.1rem; text-align:center; padding: 0 2rem;" id="category-summary-loading-text">Gemini AI đang liên kết toàn bộ bài học và đúc kết triết lý...</div>
+                    </div>
+                    
+                    <!-- Header -->
+                    <div style="padding: 1.25rem 2rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+                        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b;" id="category-summary-modal-title">Tổng Hợp Tinh Hoa Lĩnh Vực</h3>
+                        <button onclick="closeCategorySummaryModal()" style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 1.5rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; hover: background: #f1f5f9;"><i class="fa-solid fa-xmark"></i></button>
+                    </div>

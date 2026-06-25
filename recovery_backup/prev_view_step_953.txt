@@ -1,0 +1,41 @@
+Created At: 2026-06-25T01:34:31Z
+Completed At: 2026-06-25T01:34:31Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 4345
+Total Bytes: 318766
+Showing lines 3040 to 3120
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+3040:                                 </div>
+3041:                             </div>
+3042:                         </div>
+3043:                         <!-- Right panel: Rich content tabs -->
+3044:                         <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;" class="book-detail-right">
+3045:                             <!-- Tab Headers -->
+3046:                             <div style="display: flex; border-bottom: 1px solid #f1f5f9; background: #f8fafc; padding: 0 1rem;">
+3047:                                 <button class="book-tab-btn active" data-target="tab-summary">Tóm Tắt</button>
+3048:                                 <button class="book-tab-btn" data-target="tab-contents">Danh Mục</button>
+3049:                                 <button class="book-tab-btn" data-target="tab-lessons">Bài Học Hay</button>
+3050:                                 <button class="book-tab-btn" data-target="tab-quotes">Trích Dẫn Nổi Tiếng</button>
+3051:                                 <button class="book-tab-btn" data-target="tab-actions">Hành Động</button>
+3052:                             </div>
+3053:                             <!-- Tab Contents -->
+3054:                             <div style="flex: 1; padding: 1.5rem 2rem; overflow-y: auto;" id="detail-tabs-container">
+3055:                                 <!-- Summary Tab -->
+3056:                                 <div id="tab-summary" class="book-tab-content active">
+3057:                                     <h4 style="margin: 0 0 10px 0; font-siz
+<truncated 5096 bytes>
+tyle="padding: 1.25rem 2rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+3108:                         <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b;" id="form-modal-title">Thêm Sách Mới</h3>
+3109:                         <button type="button" onclick="closeBookForm()" style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 1.5rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; hover: background: #f1f5f9;"><i class="fa-solid fa-xmark"></i></button>
+3110:                     </div>
+3111:                     <!-- Body -->
+3112:                     <div style="flex: 1; padding: 1.5rem 2rem; overflow-y: auto; max-height: 70vh; display: flex; flex-direction: column; gap: 1.25rem;">
+3113:                         <input type="hidden" id="book-form-id">
+3114:                         <input type="hidden" id="book-form-cover-url">
+3115:                         
+3116:                         <!-- Quick AI Helper -->
+3117:                         <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(236, 72, 153, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.2); padding: 1.25rem; border-radius: 16px; display: flex; flex-direction: column; gap: 12px;">
+3118:                             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+3119:                                 <div style="display: flex; align-items: center; gap: 8px; color: #4338ca; font-weight: 800; font-size: 0.95rem;">
+3120:                                     <i class="fa-solid fa-wand-magic-sparkles" style="color:#7c3aed;"></i> Trợ lý Trích Lọc & Tóm Tắt Gemini AI
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

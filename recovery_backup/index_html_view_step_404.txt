@@ -1,0 +1,52 @@
+Created At: 2026-06-25T10:57:59Z
+Completed At: 2026-06-25T10:57:59Z
+File Path: `file:///C:/Users/NC/.gemini/antigravity-ide/brain/8071188f-9d9c-4285-8b7c-74986edadc0b/scratch/fix_tab_header2.js`
+Total Lines: 44
+Total Bytes: 2507
+Showing lines 1 to 44
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: const fs = require('fs');
+2: const path = 'c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html';
+3: 
+4: let html = fs.readFileSync(path, 'utf8');
+5: 
+6: // The file uses CRLF line endings, so we match with \r\n
+7: // The old h4 for tab-contents
+8: const oldH4 = '<h4 style="margin: 0 0 10px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Danh m\u1ee5c & N\u1ed9i dung chi ti\u1ebft</h4>';
+9: 
+10: // Check if we can find it with different encoding approach
+11: const idx = html.indexOf('Danh m');
+12: console.log('idx of Danh m:', idx);
+13: console.log('Context at tab-contents h4:', JSON.stringify(html.substring(
+14:     html.indexOf('tab-contents') + 'tab-contents"'.length,
+15:     html.indexOf('tab-contents') + 'tab-contents"'.length + 300
+16: )));
+17: 
+18: // Try to find the h4 within the tab-contents div
+19: const tabContentsStart = html.indexOf('<div id="tab-contents" class="book-tab-content">');
+20: if (tabContentsStart === -1) {
+21:     console.log('Cannot find tab-contents div');
+22:     process.exit(1);
+23: }
+24: 
+25: const h4Start = html.indexOf('<h4', tabContentsStart);
+26: const h4End = html.indexOf('</h4>', h4Start) + '</h4>'.length;
+27: console.log('h4 from', h4Start, 'to', h4End);
+28: console.log('h4 content:', JSON.stringify(html.substring(h4Start, h4End)));
+29: 
+30: // Replace the h4 with nicer header
+31: const newHeader = `<div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+32:                                         <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+33:                                             <i class="fa-solid fa-list-ol" style="color: white; font-size: 0.85rem;"></i>
+34:                                         </div>
+35:                                         <div>
+36:                                             <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">M\u1ee5c l\u1ee5c n\u1ed9i dung</h4>
+37:                                             <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #94a3b8; font-weight: 500;">Click v\xe0o m\u1ed7i ch\u01b0\u01a1ng \u0111\u1ec3 m\u1edf r\u1ed9ng chi ti\u1ebft</p>
+38:                                         </div>
+39:                                     </div>`;
+40: 
+41: const newHtml = html.substring(0, h4Start) + newHeader + html.substring(h4End);
+42: fs.writeFileSync(path, newHtml, 'utf8');
+43: console.log('Updated h4 in tab-contents to a nicer header');
+44: 
+The above content shows the entire, complete file contents of the requested file.

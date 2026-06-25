@@ -1,0 +1,39 @@
+Created At: 2026-06-25T00:00:41Z
+Completed At: 2026-06-25T00:00:41Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 4216
+Total Bytes: 302745
+Showing lines 3100 to 3130
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+3100:                             <div class="form-group" style="grid-column: span 1;">
+3101:                                 <label for="book-form-author">Tác Giả <span style="color:var(--danger)">*</span></label>
+3102:                                 <input type="text" id="book-form-author" placeholder="Ví dụ: Dale Carnegie" required>
+3103:                             </div>
+3104:                         </div>
+3105: 
+3106:                         <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 1rem; display: grid;">
+3107:                             <div class="form-group" style="grid-column: span 1;">
+3108:                                 <label for="book-form-category">Chủ Đề</label>
+3109:                                 <select id="book-form-category" style="background:white; color:var(--text-dark); font-weight:600;">
+3110:                                     <option value="Phát triển bản thân">🌱 Phát triển bản thân</option>
+3111:                                     <option value="Kinh doanh">💼 Kinh doanh</option>
+3112:                                     <option value="Đầu tư">📈 Đầu tư</option>
+3113:                                     <option value="Marketing">📣 Marketing</option>
+3114:                                     <option value="Khác">🧩 Khác</option>
+3115:                                 </select>
+3116:                             </div>
+3117:                             <div class="form-group" style="grid-column: span 1;">
+3118:                                 <label for="book-form-status">Trạng Thái Đọc</label>
+3119:                                 <select id="book-form-status" style="background:white; color:var(--text-dark); font-weight:600;">
+3120:                                     <option value="Muốn đọc">Muốn đọc</option>
+3121:                                     <option value="Đang đọc">Đang đọc</option>
+3122:                                     <option value="Đã đọc xong">Đã đọc xong</option>
+3123:                                 </select>
+3124:                             </div>
+3125:                             <div class="form-group" style="grid-column: span 1;">
+3126:                                 <label for="book-form-rating">Đánh Giá</label>
+3127:                                 <select id="book-form-rating" style="color: #fbbf24; font-weight:800; background:white;">
+3128:                                     <option value="0" style="color:#64748b;">Chưa đánh giá</option>
+3129:                                     <option value="5" style="color: #fbbf24;">★★★★★ (5 Sao)</option>
+3130:                                     <option value="4" style="color: #fbbf24;">★★★★☆ (4 Sao)</option>
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

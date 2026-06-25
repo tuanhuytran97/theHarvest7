@@ -1,0 +1,26 @@
+Created At: 2026-06-25T11:03:45Z
+Completed At: 2026-06-25T11:03:45Z
+File Path: `file:///C:/Users/NC/.gemini/antigravity-ide/brain/1bf74721-f193-43f9-a444-6344e20f79f7/scratch/recover_view.ps1`
+Total Lines: 18
+Total Bytes: 793
+Showing lines 1 to 18
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: $logPath = "C:\Users\NC\.gemini\antigravity-ide\brain\1bf74721-f193-43f9-a444-6344e20f79f7\.system_generated\logs\transcript_full.jsonl"
+2: $lines = Get-Content $logPath
+3: if (Test-Path "c:\Users\NC\.gemini\antigravity\scratch\farm-management\view_output.txt") {
+4:     Remove-Item "c:\Users\NC\.gemini\antigravity\scratch\farm-management\view_output.txt"
+5: }
+6: foreach ($line in $lines) {
+7:     if ($line.Contains("VIEW_FILE") -and $line.Contains("index.html")) {
+8:         try {
+9:             $json = ConvertFrom-Json $line
+10:             $content = $json.content
+11:             if ($content) {
+12:                 $content | Out-File -FilePath "c:\Users\NC\.gemini\antigravity\scratch\farm-management\view_output.txt" -Append -Encoding utf8
+13:             }
+14:         } catch {}
+15:     }
+16: }
+17: Write-Output "Done scanning views."
+18: 
+The above content shows the entire, complete file contents of the requested file.

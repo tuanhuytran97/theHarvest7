@@ -1,0 +1,42 @@
+Created At: 2026-06-25T10:57:36Z
+Completed At: 2026-06-25T10:57:36Z
+File Path: `file:///C:/Users/NC/.gemini/antigravity-ide/brain/8071188f-9d9c-4285-8b7c-74986edadc0b/scratch/fix_html.js`
+Total Lines: 34
+Total Bytes: 1654
+Showing lines 1 to 34
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: const fs = require('fs');
+2: 
+3: // Fix 1: detail-contents-text in index.html - remove white-space: pre-wrap
+4: let html = fs.readFileSync('c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html', 'utf8');
+5: 
+6: const oldDetailContents = '<div id="detail-contents-text" style="color: #475569; line-height: 1.7; font-size: 0.95rem; white-space: pre-wrap;">';
+7: const newDetailContents = '<div id="detail-contents-text" class="book-content-directory">';
+8: 
+9: if (html.indexOf(oldDetailContents) !== -1) {
+10:     html = html.replace(oldDetailContents, newDetailContents);
+11:     fs.writeFileSync('c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html', html, 'utf8');
+12:     console.log('Fix 1: Fixed detail-contents-text element');
+13: } else {
+14:     console.log('Fix 1: Target already changed or not found');
+15: }
+16: 
+17: // Fix 2: Remove `open` from all markdown-details in parseMarkdownToHtml in books.js
+18: // so chapters start collapsed - user can click to expand
+19: let booksJs = fs.readFileSync('c:/Users/NC/.gemini/antigravity/scratch/farm-management/books.js', 'utf8');
+20: 
+21: // Change `<details class="markdown-details" open>` to `<details class="markdown-details">`
+22: const oldDetailsOpen = '<details class="markdown-details" open>';
+23: const newDetails = '<details class="markdown-details">';
+24: 
+25: if (booksJs.indexOf(oldDetailsOpen) !== -1) {
+26:     booksJs = booksJs.split(oldDetailsOpen).join(newDetails);
+27:     fs.writeFileSync('c:/Users/NC/.gemini/antigravity/scratch/farm-management/books.js', booksJs, 'utf8');
+28:     console.log('Fix 2: Removed open attribute from details elements');
+29: } else {
+30:     console.log('Fix 2: open attribute not found');
+31: }
+32: 
+33: console.log('All fixes applied!');
+34: 
+The above content shows the entire, complete file contents of the requested file.

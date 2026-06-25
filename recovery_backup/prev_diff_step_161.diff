@@ -1,0 +1,31 @@
+Created At: 2026-06-25T00:00:50Z
+Completed At: 2026-06-25T00:00:52Z
+The following changes were made by the replace_file_content tool to: c:\Users\NC\.gemini\antigravity\scratch\farm-management\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -3084,12 +3084,30 @@
+                         <input type="hidden" id="book-form-id">
+                         
+                         <!-- Quick AI Helper -->
+-                        <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(236, 72, 153, 0.08) 100%); border: 1.5px dashed rgba(99, 102, 241, 0.3); padding: 1.25rem; border-radius: 16px; display: flex; flex-direction: column; gap: 8px;">
+-                            <div style="display: flex; align-items: center; gap: 8px; color: #4338ca; font-weight: 800; font-size: 0.95rem;">
+-                                <i class="fa-solid fa-wand-magic-sparkles" style="color:#7c3aed;"></i> Trợ lý Tóm Tắt bằng Gemini AI
+-                            </div>
+-                            <p style="margin: 0; font-size: 0.8rem; color: #475569; line-height: 1.4;">Nhập <b>Tên Sách</b> và <b>Tác Giả</b> dưới đây rồi bấm nút này. AI sẽ tự điền tóm tắt, 4 bài học lớn, 3 trích dẫn hay nhất và 4 hành động thực tế.</p>
+-                            <button type="button" id="btn-autofill-book-ai" class="btn-primary" style="padding: 10px; border-radius: 10px; font-size: 0.85rem; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; font-weight: 700; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25); cursor:pointer;"><i class="fa-solid fa-robot"></i> Tạo nhanh bằng Gemini AI</button>
++                        <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(236, 72, 153, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.2); 
+<truncated 2230 bytes>
+-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25); cursor:pointer;"><i class="fa-solid fa-robot"></i> Tạo nhanh theo Tên Sách</button>
++                            </div>
++                            
++                            <!-- Container 2: Raw Document Extract Mode -->
++                            <div id="ai-container-extract" style="display: none; flex-direction: column; gap: 8px;">
++                                <p style="margin: 0; font-size: 0.8rem; color: #475569; line-height: 1.4;">Dán tài liệu, ghi chú thô của bạn (từ Word, Kindle clippings, v.v.). AI sẽ tự động phân loại, sửa văn phong và điền vào các ô tương ứng.</p>
++                                <textarea id="book-form-raw-input" rows="4" placeholder="Dán nội dung thô tại đây để AI biên dịch lại..." style="width: 100%; border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 10px; padding: 10px; font-family: inherit; font-size: 0.85rem; outline: none; resize: vertical; box-sizing: border-box; background: white;"></textarea>
++                                <button type="button" id="btn-extract-book-ai" class="btn-primary" style="padding: 10px; border-radius: 10px; font-size: 0.85rem; background: linear-gradient(135deg, #10b981, #059669); color: white; font-weight: 700; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); cursor:pointer;"><i class="fa-solid fa-file-lines"></i> AI Phân Tích & Trích Lọc Ghi Chú</button>
++                            </div>
+                         </div>
+ 
+                         <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; display: grid;">
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.

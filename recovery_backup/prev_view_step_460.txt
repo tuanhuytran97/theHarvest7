@@ -1,0 +1,64 @@
+Created At: 2026-06-25T00:28:48Z
+Completed At: 2026-06-25T00:28:48Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/server.js`
+Total Lines: 56
+Total Bytes: 1899
+Showing lines 1 to 56
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: const http = require('http');
+2: const fs = require('fs');
+3: const path = require('path');
+4: 
+5: const PORT = 8000;
+6: 
+7: http.createServer((req, res) => {
+8:     // Clean URL query params
+9:     let filePath = '.' + req.url.split('?')[0];
+10:     if (filePath === './') filePath = './index.html';
+11: 
+12:     const extname = String(path.extname(filePath)).toLowerCase();
+13:     const mimeTypes = {
+14:         '.html': 'text/html',
+15:         '.js': 'text/javascript',
+16:         '.css': 'text/css',
+17:         '.json': 'application/json',
+18:         '.png': 'image/png',
+19:         '.jpg': 'image/jpg',
+20:         '.jpeg': 'image/jpeg',
+21:         '.gif': 'image/gif',
+22:         '.svg': 'image/svg+xml',
+23:         '.ico': 'image/x-icon',
+24:         '.manifest': 'text/cache-manifest',
+25:         '.woff': 'font/woff',
+26:         '.woff2': 'font/woff2',
+27:         '.ttf': 'font/ttf'
+28:     };
+29: 
+30:     const contentType = mimeTypes[extname] || 'application/octet-stream';
+31: 
+32:     fs.readFile(filePath, (error, content) => {
+33:         if (error) {
+34:             if (error.code === 'ENOENT') {
+35:                 res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+36:                 res.end('<h1>404 Không Tìm Thấy</h1><p>File không tồn tại trên hệ thống.</p>', 'utf-8');
+37:             } else {
+38:                 res.writeHead(500);
+39:                 res.end('Lỗi máy chủ: ' + error.code + ' ..\n');
+40:             }
+41:         } else {
+42:             res.writeHead(200, { 
+43:                 'Content-Type': contentType,
+44:                 'Cache-Control': 'no-cache, no-store, must-revalidate',
+45:                 'Pragma': 'no-cache',
+46:                 'Expires': '0'
+47:             });
+48:             res.end(content, 'utf-8');
+49:         }
+50:     });
+51: }).listen(PORT, () => {
+52:     console.log('===================================================');
+53:     console.log(` Server dang chay tai: http://localhost:${PORT}/`);
+54:     console.log('===================================================');
+55: });
+56: 
+The above content shows the entire, complete file contents of the requested file.

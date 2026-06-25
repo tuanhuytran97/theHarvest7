@@ -8,7 +8,14 @@
     <link rel="icon" type="image/png" href="leaf_icon.png">
     
     <!-- PWA Configuration -->
-    <link rel="manifest" href="manifest.json">
+    <script>
+        if (window.location.protocol.startsWith('http')) {
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = 'manifest.json';
+            document.head.appendChild(link);
+        }
+    </script>
     <meta name="theme-color" content="#4f46e5">
     
     <!-- iOS Support -->
@@ -645,6 +652,7 @@
                 <a href="#" id="menu-financial"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Báo Cáo Tài
                         Chính</span></a>
                 <a href="#" id="menu-formulas"><i class="fa-solid fa-calculator"></i> <span>Công Thức</span></a>
+                <a href="#" id="menu-books"><i class="fa-solid fa-book-open"></i> <span>Tủ Sách Tinh Hoa</span></a>
             </nav>
         </aside>
 
@@ -2911,6 +2919,101 @@
             </div> <!-- End of VIEW-FORMULAS -->
 
 
+            <!-- VIEW-BOOKS (TỦ SÁCH TINH HOA) -->
+            <div id="view-books" class="app-view" style="display: none;">
+                <!-- Segmented Control Tab Switcher -->
+                <div class="books-view-segmented-tabs" style="display: flex; gap: 10px; margin-bottom: 2rem; background: rgba(255,255,255,0.4); padding: 6px; border-radius: 14px; width: fit-content; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+                    <button type="button" class="segmented-tab-btn active" data-view="bookshelf" style="padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 0.9rem; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white;">
+                        <i class="fa-solid fa-book-bookmark"></i> Tủ Sách Cá Nhân
+                    </button>
+                    <button type="button" class="segmented-tab-btn" data-view="wisdom-hub" style="padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 0.9rem; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s; background: transparent; color: var(--text-light);">
+                        <i class="fa-solid fa-brain"></i> Đúc Kết Chủ Đề
+                    </button>
+                </div>
+
+                <!-- KPI Dashboard Cards -->
+                <div class="kpi-cards" style="margin-bottom: 2rem;">
+                    <div class="card glassmorphism kpi-card">
+                        <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;"><i class="fa-solid fa-book"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Tổng số sách</span>
+                            <h2 id="books-kpi-total" class="kpi-value" style="margin:0;">0</h2>
+                        </div>
+                    </div>
+                    <div class="card glassmorphism kpi-card">
+                        <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;"><i class="fa-solid fa-square-check"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Đã hoàn thành</span>
+                            <h2 id="books-kpi-completed" class="kpi-value" style="margin:0;">0</h2>
+                        </div>
+                    </div>
+                    <div class="card glassmorphism kpi-card">
+                        <div class="kpi-icon" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;"><i class="fa-solid fa-lightbulb"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">Bài học tích lũy</span>
+                            <h2 id="books-kpi-lessons" class="kpi-value" style="margin:0;">0</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bookshelf wrapper -->
+                <div id="books-grid-wrapper">
+                    <!-- Search & Filters -->
+                    <div class="card glassmorphism" style="padding: 1.25rem; margin-bottom: 2rem; display: flex; flex-direction: column; gap: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 280px;">
+                                <div class="search-input-wrapper" style="position: relative; flex: 1;">
+                                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-light);"></i>
+                                    <input type="text" id="book-search-input" placeholder="Tìm kiếm theo tiêu đề hoặc tác giả..." style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid var(--border-color); border-radius: 10px; font-family: inherit; font-size: 0.9rem; outline: none; background: rgba(255,255,255,0.6); box-sizing: border-box;">
+                                </div>
+                                <select id="book-filter-status" style="padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 10px; font-family: inherit; font-size: 0.9rem; outline: none; background: rgba(255,255,255,0.6); cursor: pointer; color: var(--text-dark);">
+                                    <option value="all">Tất cả trạng thái</option>
+                                    <option value="Muốn đọc">Muốn đọc</option>
+                                    <option value="Đang đọc">Đang đọc</option>
+                                    <option value="Đã đọc xong">Đã đọc xong</option>
+                                </select>
+                                <select id="book-filter-rating" style="padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 10px; font-family: inherit; font-size: 0.9rem; outline: none; background: rgba(255,255,255,0.6); cursor: pointer; color: var(--text-dark);">
+                                    <option value="all">Tất cả đánh giá</option>
+                                    <option value="5">★★★★★ 5 sao</option>
+                                    <option value="4">★★★★☆ 4+ sao</option>
+                                    <option value="3">★★★☆☆ 3+ sao</option>
+                                    <option value="2">★★☆☆☆ 2+ sao</option>
+                                    <option value="1">★☆☆☆☆ 1+ sao</option>
+                                </select>
+                            </div>
+                            <button type="button" id="add-book-btn" class="btn-primary" style="padding: 10px 20px; border-radius: 10px; font-weight: 700; background: #0f172a; color: white; border: none; display: flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);">
+                                <i class="fa-solid fa-plus"></i> Thêm Sách Mới
+                            </button>
+                        </div>
+                        <!-- Category pills -->
+                        <div class="category-filters-container" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                            <button class="book-filter-pill active" data-category="all">Tất cả</button>
+                            <button class="book-filter-pill" data-category="Phát triển bản thân">🌱 Phát triển bản thân</button>
+                            <button class="book-filter-pill" data-category="Kinh doanh">💼 Kinh doanh</button>
+                            <button class="book-filter-pill" data-category="Đầu tư">📈 Đầu tư</button>
+                            <button class="book-filter-pill" data-category="Marketing">📣 Marketing</button>
+                            <button class="book-filter-pill" data-category="Tình yêu">❤️ Tình yêu</button>
+                            <button class="book-filter-pill" data-category="Khác">🧩 Khác</button>
+                            <button class="book-filter-pill book-filter-fav" data-category="__favorites__" style="margin-left: auto;">❤️ Yêu Thích</button>
+                        </div>
+                    </div>
+
+                    <!-- Books grid -->
+                    <div id="books-grid" class="books-grid" style="margin-bottom: 2rem;">
+                        <!-- Populated dynamically by books.js -->
+                    </div>
+                </div>
+
+                <!-- Theme Wisdom Hub Grid Wrapper (Hidden by default) -->
+                <div id="categories-summary-wrapper" style="display: none; margin-bottom: 2rem;">
+                    <div id="categories-summary-grid" class="categories-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+                        <!-- Rendered dynamically inside books.js -->
+                    </div>
+                </div>
+            </div> <!-- End of VIEW-BOOKS -->
+
+
+
 
         </main>
     </div> <!-- End of app-container -->
@@ -3919,7 +4022,491 @@
         </div>
     </div>
 
-    <!-- SCRIPTS -->
+    
+    <!-- BOOK DETAIL MODAL -->
+    <div id="book-detail-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 1.5rem; box-sizing: border-box;">
+        <div class="book-detail-container glassmorphism" style="background: white; border-radius: 24px; width: 100%; max-width: 1000px; height: 85vh; display: flex; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.8); animation: slideInUpPremium 0.4s ease; position: relative;">
+            <!-- Close button -->
+            <button type="button" onclick="document.getElementById('book-detail-modal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.05); border: none; color: #475569; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; z-index:100;"><i class="fa-solid fa-xmark"></i></button>
+
+            <!-- Left panel: Book Cover & Quick Meta -->
+            <div style="width: 280px; border-right: 1px solid #f1f5f9; padding: 2rem; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; background: #fafbff; flex-shrink: 0; box-sizing: border-box; height: 100%;">
+                <!-- Large book cover card -->
+                <div id="detail-book-cover" class="book-cover-large" style="width: 100%; height: 260px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 1rem; box-sizing: border-box; box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.3); position: relative; overflow: hidden;">
+                    <!-- Dynamically populated -->
+                </div>
+                
+                <div style="margin-top: 5px; width: 100%; text-align: center;">
+                    <h2 style="margin: 0; font-size: 1.2rem; font-weight: 900; color: #1e293b; line-height: 1.3;" id="detail-title">Book Title</h2>
+                    <p style="margin: 4px 0 0 0; font-size: 0.9rem; font-weight: 600; color: #64748b;" id="detail-author">Author Name</p>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; border-top: 1px solid #e2e8f0; padding-top: 1rem; font-size: 0.85rem; text-align: left; margin-top: auto;">
+                    <div style="display:flex; justify-content:space-between;"><span style="color:#64748b; font-weight:600;">Chủ đề:</span> <span id="detail-category" class="role-badge" style="background:#f1f5f9; color:#475569; font-weight:700;">Chung</span></div>
+                    <div style="display:flex; justify-content:space-between;"><span style="color:#64748b; font-weight:600;">Trạng thái:</span> <span id="detail-status" class="role-badge" style="background:#e0f2fe; color:#0369a1; font-weight:700;">Đang đọc</span></div>
+                    <div style="display:flex; justify-content:space-between; align-items: center;"><span style="color:#64748b; font-weight:600;">Đánh giá:</span> <span id="detail-rating" style="color: #fbbf24; font-weight:800; font-size:0.95rem;">★★★★★</span></div>
+                    <div style="margin-top: 5px; width: 100%;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom: 4px;"><span style="color:#64748b; font-weight:600;">Tiến trình đọc:</span> <span id="detail-progress-percent" style="font-weight:800; color:#4f46e5;">0%</span></div>
+                        <div style="width: 100%; height: 6px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                            <div id="detail-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #6366f1, #10b981); border-radius: 4px;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 8px; width: 100%; margin-top: 10px;">
+                    <button id="detail-favorite-btn" onclick="toggleBookFavorite()" style="flex-shrink: 0; padding: 10px 14px; border-radius: 10px; font-weight: 700; background: #fff0f3; color: #e11d48; border: 1px solid #fecdd3; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; transition: all 0.2s;" title="Đánh dấu yêu thích">
+                        <i class="fa-regular fa-heart" id="detail-favorite-icon"></i>
+                    </button>
+                    <button id="detail-edit-btn" class="btn-primary" style="flex: 1; padding: 10px; border-radius: 10px; font-weight: 700; background: #0f172a; color: white; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                        <i class="fa-solid fa-pen-to-square"></i> Chỉnh Sửa Sách
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right panel: Rich content tabs -->
+            <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;" class="book-detail-right">
+                <!-- Tab Headers -->
+                <div style="display: flex; border-bottom: 1px solid #f1f5f9; background: #f8fafc; padding: 0 1rem;">
+                    <button class="book-tab-btn active" data-target="tab-summary">Tóm Tắt</button>
+                    <button class="book-tab-btn" data-target="tab-contents">Danh Mục</button>
+                    <button class="book-tab-btn" data-target="tab-lessons">Bài Học Hay</button>
+                    <button class="book-tab-btn" data-target="tab-quotes">Trích Dẫn Nổi Tiếng</button>
+                    <button class="book-tab-btn" data-target="tab-actions">Hành Động</button>
+                </div>
+
+                <!-- Tab Contents Container -->
+                <div style="flex: 1; padding: 1.5rem 2rem; overflow-y: auto;" id="detail-tabs-container">
+                    <!-- Summary Tab -->
+                    <div id="tab-summary" class="book-tab-content active">
+                        <h4 style="margin: 0 0 10px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Tóm tắt cốt lõi</h4>
+                        <p id="detail-summary-text" style="color: #475569; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; font-style: italic; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border-left: 4px solid #6366f1; margin: 0;">Chưa có tóm tắt cho cuốn sách này.</p>
+                    </div>
+
+                    <!-- Contents Directory Tab -->
+                    <div id="tab-contents" class="book-tab-content">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <i class="fa-solid fa-list-ol" style="color: white; font-size: 0.85rem;"></i>
+                                </div>
+                                <div>
+                                    <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Mục lục nội dung</h4>
+                                    <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #94a3b8; font-weight: 500;">Click vào mỗi chương để mở rộng chi tiết</p>
+                                </div>
+                            </div>
+                            <button id="btn-quick-edit-contents" class="btn-quick-edit" style="padding: 0.4rem 0.75rem; font-size: 0.8rem; font-weight: 600; border-radius: 8px; border: 1px solid #cbd5e1; background: white; color: #334155; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;">
+                                <i class="fa-solid fa-pen" style="font-size: 0.75rem;"></i> Sửa nhanh
+                            </button>
+                        </div>
+                        
+                        <!-- View Mode -->
+                        <div id="detail-contents-text" class="book-content-directory">
+                            <!-- Will populate parsed content directory here -->
+                        </div>
+
+                        <!-- Edit Mode Wrapper (Hidden by default) -->
+                        <div id="detail-contents-edit-wrapper" style="display: none; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
+                            <!-- Formatting Toolbar -->
+                            <div class="edit-toolbar" style="display: flex; flex-wrap: wrap; gap: 0.25rem; padding: 0.5rem; background: #f8fafc; border: 1px solid #cbd5e1; border-bottom: none; border-radius: 12px 12px 0 0; align-items: center;">
+                                <!-- Text styling group -->
+                                <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('**', '**')" title="In đậm (Bold)" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; font-weight: bold; transition: all 0.15s;">
+                                    <i class="fa-solid fa-bold"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('*', '*')" title="In nghiêng (Italic)" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                    <i class="fa-solid fa-italic"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<u>', '</u>')" title="Gạch chân (Underline)" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                    <i class="fa-solid fa-underline"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<mark>', '</mark>')" title="Tô màu (Highlight)" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                    <i class="fa-solid fa-highlighter"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('~~', '~~')" title="Gạch ngang (Strikethrough)" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                    <i class="fa-solid fa-strikethrough"></i>
+                                </button>
+                                
+                                <div style="width: 1px; height: 20px; background: #e2e8f0; margin: 0 4px;"></div>
+                                
+                                <!-- Alignment group -->
+                                <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<left>', '</left>')" title="Canh lề trái" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                    <i class="fa-solid fa-align-left"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<center>', '</center>')" title="Canh giữa" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                    <i class="fa-solid fa-align-center"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<right>', '</right>')" title="Canh lề phải" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                    <i class="fa-solid fa-align-right"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<justify>', '</justify>')" title="Canh đều hai bên" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                    <i class="fa-solid fa-align-justify"></i>
+                                </button>
+                                
+                                <div style="width: 1px; height: 20px; background: #e2e8f0; margin: 0 4px;"></div>
+                                
+                                <!-- Structure/Lists group -->
+                                <button type="button" class="toolbar-btn text-btn" onclick="insertFormattingIntoTextarea('### ')" title="Tiêu đề chương (###)" style="height: 32px; padding: 0 6px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; font-size: 0.8rem; font-weight: 800; transition: all 0.15s;">
+                                    H3
+                                </button>
+                                <button type="button" class="toolbar-btn text-btn" onclick="insertFormattingIntoTextarea('#### ')" title="Tiêu đề phụ (####)" style="height: 32px; padding: 0 6px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: all 0.15s;">
+                                    H4
+                                </button>
+                                <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('- ')" title="Danh sách gạch đầu dòng" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                    <i class="fa-solid fa-list"></i>
+                                </button>
+                                <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('1. ')" title="Danh sách số" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                    <i class="fa-solid fa-list-ol"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Textarea -->
+                            <textarea id="detail-contents-textarea" style="width: 100%; min-height: 320px; padding: 1rem; border: 1px solid #cbd5e1; border-radius: 0 0 12px 12px; font-family: inherit; font-size: 0.95rem; line-height: 1.6; resize: vertical; outline: none; transition: border-color 0.2s; color: #334155; margin-bottom: 0.75rem;" placeholder="Nhập danh mục nội dung ở định dạng Markdown..."></textarea>
+                            
+                            <!-- Actions row -->
+                            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.75rem;">
+                                <!-- AI Button -->
+                                <button id="btn-ai-format-layout" class="btn-ai-sparkle" style="padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: 10px; border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2), 0 2px 4px -2px rgba(99, 102, 241, 0.2);">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> AI Định dạng bố cục
+                                </button>
+                                
+                                <!-- Save/Cancel buttons -->
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button id="btn-quick-cancel-contents" style="padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: 10px; border: 1px solid #cbd5e1; background: white; color: #64748b; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-xmark"></i> Hủy
+                                    </button>
+                                    <button id="btn-quick-save-contents" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; font-weight: 600; border-radius: 10px; border: none; background: #10b981; color: white; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);">
+                                        <i class="fa-solid fa-check"></i> Lưu
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lessons Tab -->
+                    <div id="tab-lessons" class="book-tab-content">
+                        <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Những bài học cốt lõi rút ra</h4>
+                        <div id="detail-lessons-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Quotes Tab -->
+                    <div id="tab-quotes" class="book-tab-content">
+                        <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Trích dẫn tâm đắc</h4>
+                        <div id="detail-quotes-list" style="display: flex; flex-direction: column; gap: 1rem;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Actions Tab -->
+                    <div id="tab-actions" class="book-tab-content">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+                            <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Kế hoạch hành động cụ thể</h4>
+                            <span id="actions-progress-badge" class="role-badge" style="background:#d1fae5; color:#065f46; font-weight:700; font-size: 0.75rem;">0/0 Hoàn thành</span>
+                        </div>
+                        <div id="detail-actions-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- BOOK FORM MODAL -->
+    <div id="book-form-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 1.5rem; box-sizing: border-box;">
+        <div class="book-form-container glassmorphism" style="background: white; border-radius: 24px; width: 100%; max-width: 900px; height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.8); animation: slideInUpPremium 0.4s ease; position: relative;">
+            
+            <!-- Loading Indicator overlay -->
+            <div id="book-form-loading" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 10; align-items: center; justify-content: center; flex-direction: column; gap: 1rem;">
+                <i class="fa-solid fa-wand-magic-sparkles fa-spin" style="font-size: 3rem; color: #6366f1;"></i>
+                <div style="font-weight: 800; color: #4338ca; font-size: 1.1rem; text-align:center; padding: 0 2rem;" id="book-form-loading-text">Đang kết nối Gemini AI để tóm tắt sách...</div>
+            </div>
+            
+            <form id="book-form" style="display: flex; flex-direction: column; height: 100%; margin: 0;">
+                <!-- Header -->
+                <div style="padding: 1.25rem 2rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+                    <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b;" id="form-modal-title">Thêm Sách Mới</h3>
+                    <button type="button" onclick="closeBookForm()" style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 1.5rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <!-- Body -->
+                <div style="flex: 1; padding: 1.5rem 2rem; overflow-y: auto; max-height: 70vh; display: flex; flex-direction: column; gap: 1.25rem;">
+                    <input type="hidden" id="book-form-id">
+                    <input type="hidden" id="book-form-cover-url">
+                    
+                    <!-- Quick AI Helper -->
+                    <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(236, 72, 153, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.2); padding: 1.25rem; border-radius: 16px; display: flex; flex-direction: column; gap: 12px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                            <div style="display: flex; align-items: center; gap: 8px; color: #4338ca; font-weight: 800; font-size: 0.95rem;">
+                                <i class="fa-solid fa-wand-magic-sparkles" style="color:#7c3aed;"></i> Trợ lý Trích Lọc & Tóm Tắt Gemini AI
+                            </div>
+                            <!-- Mode Selector Toggle -->
+                            <div style="display: flex; background: rgba(0,0,0,0.05); padding: 2px; border-radius: 8px;" class="ai-mode-selector">
+                                <button type="button" id="btn-ai-mode-search" class="active" style="padding: 4px 8px; border: none; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; background: white; color: #4338ca; transition: all 0.2s;">Tóm tắt nhanh</button>
+                                <button type="button" id="btn-ai-mode-extract" style="padding: 4px 8px; border: none; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; background: transparent; color: #64748b; transition: all 0.2s;">Phân tích tài liệu thô</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Container 1: Book Search Mode -->
+                        <div id="ai-container-search" style="display: flex; flex-direction: column; gap: 8px;">
+                            <p style="margin: 0; font-size: 0.8rem; color: #475569; line-height: 1.4;">Điền <b>Tên Sách</b> và <b>Tác Giả</b> ở dưới, AI sẽ tự động tra cứu tóm tắt và bài học phổ biến trên Internet.</p>
+                            <button type="button" id="btn-autofill-book-ai" class="btn-primary" style="padding: 10px; border-radius: 10px; font-size: 0.85rem; background: linear-gradient(135deg, #6366f1, #a855f7); color: white; font-weight: 700; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25); cursor:pointer;"><i class="fa-solid fa-robot"></i> Tạo nhanh theo Tên Sách</button>
+                        </div>
+                        
+                        <!-- Container 2: Raw Document Extract Mode -->
+                        <div id="ai-container-extract" style="display: none; flex-direction: column; gap: 8px;">
+                            <p style="margin: 0; font-size: 0.8rem; color: #475569; line-height: 1.4;">Dán tài liệu, ghi chú thô của bạn (từ Word, Kindle clippings, v.v.). AI sẽ tự động phân loại, sửa văn phong và điền vào các ô tương ứng.</p>
+                            <textarea id="book-form-raw-input" rows="4" placeholder="Dán nội dung thô tại đây để AI biên dịch lại..." style="width: 100%; border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 10px; padding: 10px; font-family: inherit; font-size: 0.85rem; outline: none; resize: vertical; box-sizing: border-box; background: white;"></textarea>
+                            <button type="button" id="btn-extract-book-ai" class="btn-primary" style="padding: 10px; border-radius: 10px; font-size: 0.85rem; background: linear-gradient(135deg, #10b981, #059669); color: white; font-weight: 700; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); cursor:pointer;"><i class="fa-solid fa-file-lines"></i> AI Phân Tích & Trích Lọc Ghi Chú</button>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 0.25rem;" class="book-form-meta-split">
+                        <!-- Left: image preview -->
+                        <div id="book-form-cover-preview-container" style="width: 90px; height: 120px; border-radius: 12px; border: 2px dashed rgba(99, 102, 241, 0.2); display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8fafc; color: var(--text-light); flex-shrink: 0; position: relative; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-top: 1.45rem;">
+                            <i class="fa-solid fa-image" style="font-size: 1.5rem; margin-bottom: 4px; opacity:0.6; color: #6366f1;"></i>
+                            <span style="font-size: 0.65rem; font-weight: 700; text-align: center; padding: 0 4px; color:#64748b;">Ảnh bìa</span>
+                            <img id="book-form-cover-preview-img" style="display: none; position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover;">
+                        </div>
+                        <!-- Right: inputs -->
+                        <div style="flex: 1; display: flex; flex-direction: column;">
+                            <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; display: grid;">
+                                <div class="form-group" style="grid-column: span 1;">
+                                    <label for="book-form-title">Tên Sách <span style="color:var(--danger)">*</span></label>
+                                    <input type="text" id="book-form-title" placeholder="Ví dụ: Đắc Nhân Tâm" required>
+                                </div>
+                                <div class="form-group" style="grid-column: span 1;">
+                                    <label for="book-form-author">Tác Giả <span style="color:var(--danger)">*</span></label>
+                                    <input type="text" id="book-form-author" placeholder="Ví dụ: Dale Carnegie" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr; gap: 1rem; display: grid;">
+                        <div class="form-group">
+                            <label for="book-form-category">Chủ Đề</label>
+                            <select id="book-form-category" style="width:100%;">
+                                <option value="Phát triển bản thân">🌱 Phát triển bản thân</option>
+                                <option value="Kinh doanh">💼 Kinh doanh</option>
+                                <option value="Đầu tư">📈 Đầu tư</option>
+                                <option value="Marketing">📣 Marketing</option>
+                                <option value="Tình yêu">❤️ Tình yêu</option>
+                                <option value="Khác">🧩 Khác</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="book-form-status">Trạng Thái Đọc</label>
+                            <select id="book-form-status" style="width:100%;">
+                                <option value="Muốn đọc">Muốn đọc</option>
+                                <option value="Đang đọc">Đang đọc</option>
+                                <option value="Đã đọc xong">Đã đọc xong</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="book-form-rating">Đánh Giá</label>
+                            <select id="book-form-rating" style="width:100%; color: #64748b;">
+                                <option value="0">Chưa đánh giá</option>
+                                <option value="1">★ (Tệ)</option>
+                                <option value="2">★★ (Tạm được)</option>
+                                <option value="3">★★★ (Khá)</option>
+                                <option value="4">★★★★ (Hay)</option>
+                                <option value="5">★★★★★ (Xuất sắc)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="book-form-progress" style="display:flex; justify-content:space-between;">
+                            <span>Tiến Trình Đọc</span>
+                            <span id="form-progress-val" style="font-weight:700; color:var(--primary-color);">0%</span>
+                        </label>
+                        <input type="range" id="book-form-progress" min="0" max="100" value="0" style="width: 100%; accent-color: var(--primary-color);">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="book-form-summary">Tóm Tắt Sơ Lược Cốt Lõi</label>
+                        <textarea id="book-form-summary" rows="2" placeholder="Tóm tắt ngắn gọn nội dung cuốn sách..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="book-form-content-directory">Danh Mục Nội Dung (Table of Contents / Outlines)</label>
+                        <textarea id="book-form-content-directory" rows="4" placeholder="Nhập mục lục hoặc danh mục nội dung chi tiết của sách (hỗ trợ định dạng gạch đầu dòng, markdown để hiển thị đẹp mắt)..." style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: 0.9rem; outline: none; resize: vertical; box-sizing: border-box;"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="book-form-lessons">Bài Học Hay (Mỗi bài học một dòng)</label>
+                        <textarea id="book-form-lessons" rows="3" placeholder="Ví dụ:&#10;- Hãy thành thật quan tâm đến người khác.&#10;- Gọi tên người khác một cách trân trọng."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="book-form-quotes">Trích Dẫn Hay (Mỗi trích dẫn một dòng)</label>
+                        <textarea id="book-form-quotes" rows="3" placeholder="Ví dụ:&#10;Cách duy nhất để có thể đạt được hiệu quả tốt nhất trong một cuộc tranh luận là tránh né nó."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="book-form-actions">Kế Hoạch Hành Động (Mỗi hành động một dòng)</label>
+                        <textarea id="book-form-actions" rows="3" placeholder="Ví dụ:&#10;Lắng nghe đồng nghiệp chia sẻ trong buổi họp tiếp theo mà không ngắt lời"></textarea>
+                    </div>
+                </div>
+                <!-- Footer -->
+                <div style="padding: 1.25rem 2rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc;">
+                    <button type="button" onclick="closeBookForm()" class="btn-primary" style="background: #f1f5f9; color: #475569; border: none; box-shadow: none;">Hủy</button>
+                    <button type="submit" class="btn-primary" style="background: var(--primary-color); color: white; display: flex; align-items: center; gap: 8px; border:none; cursor:pointer; font-weight:700;"><i class="fa-solid fa-floppy-disk"></i> Lưu Sách</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+
+    <!-- CATEGORY SUMMARY MODAL -->
+    <div id="category-summary-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 1.5rem; box-sizing: border-box;">
+        <div class="category-summary-container glassmorphism" style="background: white; border-radius: 24px; width: 100%; max-width: 900px; height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.8); animation: slideInUpPremium 0.4s ease; position: relative;">
+            <!-- Loading spinner -->
+            <div id="category-summary-loading" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 10; align-items: center; justify-content: center; flex-direction: column; gap: 1rem;">
+                <i class="fa-solid fa-wand-magic-sparkles fa-spin" style="font-size: 3rem; color: #8b5cf6;"></i>
+                <div style="font-weight: 800; color: #6d28d9; font-size: 1.1rem; text-align:center; padding: 0 2rem;" id="category-summary-loading-text">Đang kết nối Gemini AI...</div>
+            </div>
+
+            <!-- Close button -->
+            <button type="button" onclick="closeCategorySummaryModal()" style="position: absolute; top: 1rem; right: 1rem; background: rgba(0,0,0,0.05); border: none; color: #475569; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; z-index:100;"><i class="fa-solid fa-xmark"></i></button>
+
+            <div style="display: flex; flex: 1; overflow: hidden; height: 100%;">
+                <!-- Left panel: Cover and Actions -->
+                <div style="width: 260px; border-right: 1px solid #f1f5f9; padding: 2rem; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; background: #fafbff; flex-shrink: 0; box-sizing: border-box; height: 100%;">
+                    <div id="cat-summary-cover" style="width: 100%; height: 180px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 1rem; box-sizing: border-box; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.3); position: relative; overflow: hidden; margin-top: 1rem;">
+                        <div id="cat-summary-cover-icon" style="font-size: 2.5rem; margin-bottom: 8px; opacity:0.8;"></div>
+                        <div id="cat-summary-cover-title" style="font-size: 1rem; font-weight: 800; line-height: 1.3;">Category</div>
+                    </div>
+                    
+                    <div style="margin-top: 5px; width: 100%; text-align: center;">
+                        <h2 style="margin: 0; font-size: 1.15rem; font-weight: 900; color: #1e293b; line-height: 1.3;" id="cat-summary-title">Category Title</h2>
+                        <span id="cat-summary-books-count" class="role-badge" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6; font-weight: 700; margin-top: 6px; display: inline-block;">0 cuốn sách</span>
+                    </div>
+                    
+                    <p style="font-size: 0.78rem; color: #64748b; line-height: 1.5; text-align: center; margin: 0;">Tổng hợp toàn bộ các bài học cốt lõi từ tất cả cuốn sách cùng lĩnh vực để đúc rút triết lý hành trình cốt tủy.</p>
+                </div>
+
+                <!-- Right panel: Theme Summary Editor -->
+                <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #fafbff;" class="book-detail-right">
+                    
+                    <!-- Content area -->
+                    <div style="flex: 1; padding: 1.5rem 2rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.25rem;" id="cat-tabs-container">
+                        
+                        <!-- Header Row (Always visible) -->
+                        <div id="cat-summary-header-row" style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9; flex-shrink: 0;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                    <i class="fa-solid fa-brain" style="color: white; font-size: 0.85rem;"></i>
+                                </div>
+                                <div>
+                                    <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Đúc kết cá nhân</h4>
+                                    <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #94a3b8; font-weight: 500;">Triết lý và bài học tâm huyết của bạn cho chủ đề này</p>
+                                </div>
+                            </div>
+                            <button id="btn-quick-edit-cat-summary" class="btn-quick-edit" style="padding: 0.4rem 0.75rem; font-size: 0.8rem; font-weight: 600; border-radius: 8px; border: 1px solid #cbd5e1; background: white; color: #334155; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;">
+                                <i class="fa-solid fa-pen" style="font-size: 0.75rem;"></i> Sửa nhanh
+                            </button>
+                        </div>
+
+                        <!-- View Mode Content Wrapper -->
+                        <div id="cat-summary-view-wrapper" class="book-content-directory" style="flex: 1; overflow-y: auto;">
+                            <!-- Will populate parsed category user summary here -->
+                        </div>
+
+                        <!-- Edit Mode Wrapper (Hidden by default) -->
+                        <div id="cat-summary-edit-wrapper" style="display: none; flex-direction: column; gap: 1.25rem; flex: 1;">
+                            <!-- PWA / Notion Raw Notes AI Extractor -->
+                            <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(236, 72, 153, 0.08) 100%); border: 1px solid rgba(99, 102, 241, 0.2); padding: 1.25rem; border-radius: 16px; display: flex; flex-direction: column; gap: 10px;">
+                                <div style="display: flex; align-items: center; gap: 8px; color: #4338ca; font-weight: 800; font-size: 0.95rem;">
+                                    <i class="fa-solid fa-wand-magic-sparkles" style="color:#7c3aed;"></i> Trợ lý Trích Lọc & Tóm Tắt Ghi Chú AI
+                                </div>
+                                <p style="margin: 0; font-size: 0.8rem; color: #475569; line-height: 1.4;">Dán nội dung thô (từ Notion, Kindle clippings, Word, v.v.). AI sẽ tự động phân tích sâu sắc, căn chỉnh Markdown và điền vào ô Đúc Kết bên dưới.</p>
+                                <textarea id="cat-summary-raw-input" rows="3" placeholder="Dán nội dung thô hoặc link Notion/Word tại đây để AI biên dịch lại..." style="width: 100%; border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 10px; padding: 10px; font-family: inherit; font-size: 0.85rem; outline: none; resize: vertical; box-sizing: border-box; background: white;"></textarea>
+                                <button type="button" id="btn-extract-cat-ai" class="btn-primary" style="padding: 10px; border-radius: 10px; font-size: 0.85rem; background: linear-gradient(135deg, #10b981, #059669); color: white; font-weight: 700; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); cursor:pointer;"><i class="fa-solid fa-file-lines"></i> AI Phân Tích & Trích Lọc Ghi Chú</button>
+                            </div>
+                            
+                            <!-- User Editor Pane -->
+                            <div id="cat-tab-user" style="display: flex; flex-direction: column; gap: 0.5rem; flex: 1;">
+                                <!-- Formatting Toolbar -->
+                                <div class="edit-toolbar" style="display: flex; flex-wrap: wrap; gap: 0.25rem; padding: 0.5rem; background: #f8fafc; border: 1px solid #cbd5e1; border-bottom: none; border-radius: 12px 12px 0 0; align-items: center;">
+                                    <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('**', '**', 'cat-summary-user-text')" title="In đậm (Bold)" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; font-weight: bold; transition: all 0.15s;">
+                                        <i class="fa-solid fa-bold"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('*', '*', 'cat-summary-user-text')" title="In nghiêng (Italic)" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                        <i class="fa-solid fa-italic"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<u>', '</u>', 'cat-summary-user-text')" title="Gạch chân (Underline)" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                        <i class="fa-solid fa-underline"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<mark>', '</mark>', 'cat-summary-user-text')" title="Tô màu (Highlight)" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                        <i class="fa-solid fa-highlighter"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('~~', '~~', 'cat-summary-user-text')" title="Gạch ngang (Strikethrough)" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                        <i class="fa-solid fa-strikethrough"></i>
+                                    </button>
+                                    
+                                    <div style="width: 1px; height: 20px; background: #e2e8f0; margin: 0 4px;"></div>
+                                    
+                                    <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<left>', '</left>', 'cat-summary-user-text')" title="Canh lề trái" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                        <i class="fa-solid fa-align-left"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<center>', '</center>', 'cat-summary-user-text')" title="Canh giữa" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                        <i class="fa-solid fa-align-center"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<right>', '</right>', 'cat-summary-user-text')" title="Canh lề phải" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                        <i class="fa-solid fa-align-right"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<justify>', '</justify>', 'cat-summary-user-text')" title="Canh đều hai bên" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                        <i class="fa-solid fa-align-justify"></i>
+                                    </button>
+                                    
+                                    <div style="width: 1px; height: 20px; background: #e2e8f0; margin: 0 4px;"></div>
+                                    
+                                    <button type="button" class="toolbar-btn text-btn" onclick="insertFormattingIntoTextarea('### ', '', 'cat-summary-user-text')" title="Tiêu đề chương (###)" style="height: 32px; padding: 0 6px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; font-size: 0.8rem; font-weight: 800; transition: all 0.15s;">
+                                        H3
+                                    </button>
+                                    <button type="button" class="toolbar-btn text-btn" onclick="insertFormattingIntoTextarea('#### ', '', 'cat-summary-user-text')" title="Tiêu đề phụ (####)" style="height: 32px; padding: 0 6px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: all 0.15s;">
+                                        H4
+                                    </button>
+                                    <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('- ', '', 'cat-summary-user-text')" title="Danh sách gạch đầu dòng" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                        <i class="fa-solid fa-list"></i>
+                                    </button>
+                                    <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('1. ', '', 'cat-summary-user-text')" title="Danh sách số" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                        <i class="fa-solid fa-list-ol"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Textarea -->
+                                <textarea id="cat-summary-user-text" style="flex: 1; width: 100%; min-height: 220px; border: 1px solid #cbd5e1; border-top: none; border-radius: 0 0 12px 12px; padding: 1rem; font-family: inherit; font-size: 0.9rem; outline: none; resize: vertical; box-sizing: border-box; color: #334155; margin-bottom: 0.5rem;" placeholder="Ghi chú những bài học đúc kết lớn của riêng bạn tại đây..."></textarea>
+                                
+                                <!-- AI Formatting Row -->
+                                <div style="display: flex; justify-content: flex-start; margin-bottom: 0.25rem;">
+                                    <button type="button" id="btn-ai-format-cat-summary" class="btn-ai-sparkle" style="padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: 10px; border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2), 0 2px 4px -2px rgba(99, 102, 241, 0.2);">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> AI Định dạng bố cục
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Save footer -->
+                    <div style="padding: 1rem 2rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc;">
+                        <button type="button" id="cat-summary-cancel-btn" class="btn-primary" style="background: #f1f5f9; color: #475569; border: none; box-shadow: none; display: none;">Hủy</button>
+                        <button type="button" id="cat-summary-close-btn" onclick="closeCategorySummaryModal()" class="btn-primary" style="background: #f1f5f9; color: #475569; border: none; box-shadow: none;">Đóng</button>
+                        <button type="button" id="cat-summary-save-btn" onclick="saveCategorySummary()" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); color: white; display: flex; align-items: center; gap: 8px; border:none; cursor:pointer; font-weight:700; display: none;">
+                            <i class="fa-solid fa-floppy-disk"></i> Lưu Thay Đổi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+<!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="config.js"></script>
@@ -3928,11 +4515,12 @@
     <script src="app.js"></script>
     <script src="investment.js"></script>
     <script src="formulas.js"></script>
+    <script src="books.js"></script>
     <script src="chatbot.js"></script>
     
     <!-- PWA Service Worker Registration -->
     <script>
-        if ('serviceWorker' in navigator) {
+        if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
                     .then((reg) => console.log('Service Worker registered successfully:', reg.scope))

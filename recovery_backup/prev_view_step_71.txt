@@ -1,0 +1,59 @@
+Created At: 2026-06-24T23:47:33Z
+Completed At: 2026-06-24T23:47:33Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 3945
+Total Bytes: 275914
+Showing lines 2900 to 2950
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+2900:                         </button>
+2901:                         <button class="formula-tab-btn" data-formula="dupont">
+2902:                             <i class="fa-solid fa-diagram-project"></i> Mô hình DuPont (3 bước)
+2903:                         </button>
+2904:                     </div>
+2905: 
+2906:                     <!-- Right Panel for interactive calculator -->
+2907:                     <div class="card glassmorphism formula-calculator-card" id="formula-calculator-container">
+2908:                         <!-- Content will be rendered dynamically by formulas.js -->
+2909:                     </div>
+2910:                 </div>
+2911:             </div> <!-- End of VIEW-FORMULAS -->
+2912: 
+2913: 
+2914: 
+2915:         </main>
+2916:     </div> <!-- End of app-container -->
+2917: 
+2918:     <!-- DIGITAL RECEIPT MODAL (PREMIUM DESIGN) -->
+2919:     <div id="receipt-modal" class="modal-overlay" style="display: none;">
+2920:         <div class="receipt-container glassmorphism">
+2921:             <div class="receipt-actions-top">
+2922:                 <button onclick="closeReceipt()" class="btn-close-receipt"><i class="fa-solid fa-xmark"></i></button>
+2923:             </div>
+2924: 
+2925:             <div id="receipt-content" class="receipt-paper">
+2926:                 <!-- HEADER -->
+2927:                 <div class="receipt-header">
+2928:                     <div class="farm-logo">
+2929:                         <i class="fa-solid fa-seedling"></i>
+2930:                     </div>
+2931:                     <div class="farm-info">
+2932:                         <h2>THEHARVEST7</h2>
+2933:                         <p>Nông trại hoa cao cấp & Cung cấp vựa</p>
+2934:                     </div>
+2935:                 </div>
+2936: 
+2937:                 <div class="receipt-title">
+2938:                     <h1>HÓA ĐƠN THANH TOÁN</h1>
+2939:                     <p id="receipt-id">Số: INV-2024-001</p>
+2940:                 </div>
+2941: 
+2942:                 <div class="receipt-info-grid">
+2943:                     <div class="info-group">
+2944:                         <label>Khách hàng</label>
+2945:                         <p id="receipt-customer-name">Đang tải...</p>
+2946:                     </div>
+2947:                     <div class="info-group" style="text-align: right;">
+2948:                         <label>Ngày xuất</label>
+2949:                         <p id="receipt-date">10/04/2026</p>
+2950:                     </div>
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

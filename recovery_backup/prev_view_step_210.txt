@@ -1,0 +1,46 @@
+Created At: 2026-06-25T00:02:45Z
+Completed At: 2026-06-25T00:02:46Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 4234
+Total Bytes: 305415
+Showing lines 2910 to 3000
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+2910:                     </div>
+2911:                 </div>
+2912:             </div> <!-- End of VIEW-FORMULAS -->
+2913: 
+2914: 
+2915: 
+2916:             <!-- VIEW-BOOKS (TỦ SÁCH TINH HOA) -->
+2917:             <div id="view-books" class="app-view" style="display: none;">
+2918:                 <!-- KPI Dashboard Cards -->
+2919:                 <div class="kpi-cards" style="margin-bottom: 2rem;">
+2920:                     <div class="card glassmorphism kpi-card">
+2921:                         <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;"><i class="fa-solid fa-book"></i></div>
+2922:                         <div class="kpi-info">
+2923:                             <span class="kpi-label">Tổng số sách</span>
+2924:                             <h2 id="books-kpi-total" class="kpi-value" style="margin:0;">0</h2>
+2925:                         </div>
+2926:                     </div>
+2927:                     <div class="card glassmorphism kpi-card">
+2928:                         <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;"><i class="fa-solid fa-square-check"></i></div>
+2929:                         <div class="kpi-info">
+2930:                             <span class="kpi-label">Đã hoàn thành</span>
+2931:                             <h2 id="books-kpi-completed" class="kpi-value" style="margin:0;">0</h2>
+2932:                         </div>
+2933:                     </div>
+2934:                     <div class="card glassmorphism kpi-card">
+2935:             
+<truncated 5134 bytes>
+drop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 1.5rem; box-sizing: border-box;">
+2991:                 <div class="book-detail-container glassmorphism" style="background: white; border-radius: 24px; width: 100%; max-width: 900px; height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.8); animation: slideInUpPremium 0.4s ease;">
+2992:                     <div style="padding: 1.25rem 2rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+2993:                         <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b;" id="detail-modal-title">Chi Tiết Sách & Bài Học</h3>
+2994:                         <div style="display: flex; gap: 8px; align-items: center;">
+2995:                             <button id="detail-edit-btn" class="btn-primary" style="padding: 8px 16px; border-radius: 10px; font-size: 0.85rem; background: #e0e7ff; color: #4338ca; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight:700;"><i class="fa-solid fa-pen"></i> Chỉnh sửa</button>
+2996:                             <button onclick="closeBookDetail()" style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 1.5rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; hover: background: #f1f5f9;"><i class="fa-solid fa-xmark"></i></button>
+2997:                         </div>
+2998:                     </div>
+2999:                     <div style="flex: 1; display: flex; overflow: hidden;" class="book-detail-body-split">
+3000:                         <!-- Left panel: Cover card & Meta -->
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

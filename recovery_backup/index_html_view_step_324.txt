@@ -1,0 +1,89 @@
+Created At: 2026-06-25T10:55:23Z
+Completed At: 2026-06-25T10:55:23Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 4328
+Total Bytes: 316479
+Showing lines 3000 to 3080
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+3000: 
+3001:                 <!-- Theme Wisdom Hub Grid Wrapper (Hidden by default) -->
+3002:                 <div id="categories-summary-wrapper" style="display: none; margin-bottom: 2rem;">
+3003:                     <div id="categories-summary-grid" class="categories-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+3004:                         <!-- Rendered dynamically inside books.js -->
+3005:                     </div>
+3006:                 </div>
+3007:             </div> <!-- End of VIEW-BOOKS -->
+3008: 
+3009: 
+3010:             <!-- BOOK DETAIL MODAL (PREMIUM VIEW) -->
+3011:             <div id="book-detail-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 1.5rem; box-sizing: border-box;">
+3012:                 <div class="book-detail-container glassmorphism" style="background: white; border-radius: 24px; width: 100%; max-width: 900px; height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.8); animation: slideInUpPremium 0.4s ease;">
+3013:                     <div style="padding: 1.25rem 2rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+3014:                         <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b;" id="detail-modal-title">Chi Tiết Sách & Bài Học</h3>
+3015:                         <div style="display: flex; gap: 8px; align-items: center;">
+3016:                             <button id="detail-edit-btn" class="btn-primary" style="padding: 8px 16px; border-radius: 10px; font-size: 0.85rem; background: #e0e7ff; color: #4338ca; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight:700;"><i class="fa-solid fa-pen"></i> Chỉnh sửa</button>
+3017:                             <button onclick="closeBookDetail()" style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 1.5rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; hover: background: #f1f5f9;"><i class="fa-solid fa-xmark"></i></button>
+3018:                         </div>
+3019:                     </div>
+3020:                     <div style="flex: 1; display: flex; overflow: hidden;" class="book-detail-body-split">
+3021:                         <!-- Left panel: Cover card & Meta -->
+3022:                         <div style="width: 280px; padding: 2rem; border-right: 1px solid #f1f5f9; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1rem; overflow-y: auto; background: #f8fafc; flex-shrink:0;" class="book-detail-left">
+3023:                             <div id="detail-book-cover" class="book-cover-large" style="width: 140px; height: 190px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 1rem; text-align: center; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.15); background: linear-gradient(135deg, #6366f1, #3b82f6);">
+3024:                                 <i class="fa-solid fa-book" style="font-size: 2.5rem; margin-bottom: 8px; opacity:0.8;"></i>
+3025:                                 <div style="font-size: 0.85rem; font-weight: 800; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;" id="detail-cover-title">Title</div>
+3026:                             </div>
+3027:                             <div style="margin-top: 5px; width: 100%;">
+3028:                                 <h2 style="margin: 0; font-size: 1.2rem; font-weight: 900; color: #1e293b; line-height: 1.3;" id="detail-title">Book Title</h2>
+3029:                             <div style="flex: 1; padding: 1.5rem 2rem; overflow-y: auto;" id="detail-tabs-container">
+3030:                                 <!-- Summary Tab -->
+3031:                                 <div id="tab-summary" class="book-tab-content active">
+3032:                                     <h4 style="margin: 0 0 10px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Tóm tắt cốt lõi</h4>
+3033:                                     <p id="detail-summary-text" style="color: #475569; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; font-style: italic; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border-left: 4px solid #6366f1; margin: 0;">Chưa có tóm tắt cho cuốn sách này.</p>
+3034:                                 </div>
+3035:                                 <!-- Contents Directory Tab -->
+3036:                                 <div id="tab-contents" class="book-tab-content">
+3037:                                     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+3038:                                         <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+3039:                                             <i class="fa-solid fa-list-ol" style="color: white; font-size: 0.85rem;"></i>
+3040:                                         </div>
+3041:                                         <div>
+3042:                                             <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Mục lục nội dung</h4>
+3043:                                             <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #94a3b8; font-weight: 500;">Click vào mỗi chương để mở rộng chi tiết</p>
+3044:                                         </div>
+3045:                                     </div>
+3046:                                     <div id="detail-contents-text" class="book-content-directory">
+3047:                                         <!-- Will populate parsed content directory here -->
+3048:                                     </div>
+3049:                                 </div>
+3050:                                 <!-- Lessons Tab -->
+3051:                                 <div id="tab-lessons" class="book-tab-content">
+3052:                                     <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Những bài học cốt lõi rút ra</h4>
+3053:                                     <div id="detail-lessons-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+3054:                                         <!-- Populate list items here -->
+3055:                                     </div>
+3056:                                 </div>
+3057:                                 <!-- Quotes Tab -->
+3058:                                 <div id="tab-quotes" class="book-tab-content">
+3059:                                     <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Trích dẫn hay & sâu sắc</h4>
+3060:                                     <div id="detail-quotes-list" style="display: flex; flex-direction: column; gap: 1rem;">
+3061:                                         <!-- Populate quotes here -->
+3062:                                     </div>
+3063:                                 </div>
+3064:                                 <!-- Actions Tab -->
+3065:                                 <div id="tab-actions" class="book-tab-content">
+3066:                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+3067:                                         <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Hành động thực tế áp dụng</h4>
+3068:                                         <span class="role-badge" id="actions-progress-badge" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight:700;">0/0 Hoàn thành</span>
+3069:                                     </div>
+3070:                                     <div id="detail-actions-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+3071:                                         <!-- Checklist of action items -->
+3072:                                     </div>
+3073:                                 </div>
+3074:                             </div>
+3075:                         </div>
+3076:                     </div>
+3077:                 </div>
+3078:             </div>
+3079: 
+3080: 
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

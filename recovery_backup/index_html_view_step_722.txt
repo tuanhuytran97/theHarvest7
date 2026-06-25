@@ -1,0 +1,58 @@
+Created At: 2026-06-25T11:07:20Z
+Completed At: 2026-06-25T11:07:20Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/prev_diff_step_341.diff`
+Total Lines: 50
+Total Bytes: 4121
+Showing lines 1 to 50
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: Created At: 2026-06-25T00:14:05Z
+2: Completed At: 2026-06-25T00:14:07Z
+3: The following changes were made by the multi_replace_file_content tool to: c:\Users\NC\.gemini\antigravity\scratch\farm-management\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+4: [diff_block_start]
+5: @@ -2915,6 +2915,16 @@
+6:  
+7:              <!-- VIEW-BOOKS (TỦ SÁCH TINH HOA) -->
+8:              <div id="view-books" class="app-view" style="display: none;">
+9: +                <!-- Segmented Control Tab Switcher -->
+10: +                <div class="books-view-segmented-tabs" style="display: flex; gap: 10px; margin-bottom: 2rem; background: rgba(255,255,255,0.4); padding: 6px; border-radius: 14px; width: fit-content; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+11: +                    <button type="button" class="segmented-tab-btn active" data-view="bookshelf" style="padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 0.9rem; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s; background: linear-gradient(135deg, #6366f1, #4f46e5); color: white;">
+12: +                        <i class="fa-solid fa-book-bookmark"></i> Tủ Sách Cá Nhân
+13: +                    </button>
+14: +                    <button type="button" class="segmented-tab-btn" data-view="wisdom-hub" style="padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 0.9rem; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s; background: transparent; color: var(--text-light);">
+15: +                        <i class="fa-solid fa-brain"></i> Đúc Kết Chủ Đề
+16: +                    </button>
+17: +                </div>
+18: +
+19:                  <!-- KPI Dashboard Cards -->
+20:                  <div class="kpi-cards" style="margin-bottom: 2rem;">
+21:                      <div class="card glassmorphism kpi-card">
+22: @@ -2946,42 +2946,52 @@
+23:                      </div>
+24:                  </div>
+25:  
+26: <truncated 14674 bytes>
+27: c này tại đây..."></textarea>
+28: +                                </div>
+29: +                                <!-- AI Summary Tab -->
+30: +                                <div id="cat-tab-ai" class="cat-tab-content" style="display: none;">
+31: +                                    <div id="cat-summary-ai-text" style="color: #475569; line-height: 1.7; font-size: 0.95rem; white-space: pre-wrap; background: #f8fafc; padding: 1.5rem; border-radius: 12px; border-left: 4px solid #8b5cf6; margin: 0; font-style: italic;">Bấm nút 'AI Tổng Hợp Tinh Túy' bên trái để Gemini liên kết tất cả các sách của chủ đề này và tạo cẩm nang triết lý tổng hợp.</div>
+32: +                                </div>
+33: +                            </div>
+34: +                            <!-- Save footer -->
+35: +                            <div style="padding: 1rem 2rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc;">
+36: +                                <button type="button" onclick="closeCategorySummaryModal()" class="btn-primary" style="background: #f1f5f9; color: #475569; border: none; box-shadow: none;">Đóng</button>
+37: +                                <button type="button" id="cat-summary-save-btn" class="btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); color: white; display: flex; align-items: center; gap: 8px; border:none; cursor:pointer; font-weight:700;">
+38: +                                    <i class="fa-solid fa-floppy-disk"></i> Lưu Thay Đổi
+39: +                                </button>
+40: +                            </div>
+41: +                        </div>
+42: +                    </div>
+43: +                </div>
+44: +            </div>
+45:              </div> <!-- End of VIEW-FORMULAS -->
+46:  
+47:  
+48: [diff_block_end]
+49: 
+50: Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.
+The above content shows the entire, complete file contents of the requested file.

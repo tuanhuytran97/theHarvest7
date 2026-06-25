@@ -1,0 +1,80 @@
+
+                <!-- Theme Wisdom Hub Grid Wrapper (Hidden by default) -->
+                <div id="categories-summary-wrapper" style="display: none; margin-bottom: 2rem;">
+                    <div id="categories-summary-grid" class="categories-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+                        <!-- Rendered dynamically inside books.js -->
+                    </div>
+                </div>
+            </div> <!-- End of VIEW-BOOKS -->
+
+
+            <!-- BOOK DETAIL MODAL (PREMIUM VIEW) -->
+            <div id="book-detail-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 1.5rem; box-sizing: border-box;">
+                <div class="book-detail-container glassmorphism" style="background: white; border-radius: 24px; width: 100%; max-width: 900px; height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.8); animation: slideInUpPremium 0.4s ease;">
+                    <div style="padding: 1.25rem 2rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+                        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b;" id="detail-modal-title">Chi Tiáº¿t SÃ¡ch & BÃ i Há»c</h3>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <button id="detail-edit-btn" class="btn-primary" style="padding: 8px 16px; border-radius: 10px; font-size: 0.85rem; background: #e0e7ff; color: #4338ca; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight:700;"><i class="fa-solid fa-pen"></i> Chá»‰nh sá»­a</button>
+                            <button onclick="closeBookDetail()" style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 1.5rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; hover: background: #f1f5f9;"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                    <div style="flex: 1; display: flex; overflow: hidden;" class="book-detail-body-split">
+                        <!-- Left panel: Cover card & Meta -->
+                        <div style="width: 280px; padding: 2rem; border-right: 1px solid #f1f5f9; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1rem; overflow-y: auto; background: #f8fafc; flex-shrink:0;" class="book-detail-left">
+                            <div id="detail-book-cover" class="book-cover-large" style="width: 140px; height: 190px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 1rem; text-align: center; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.15); background: linear-gradient(135deg, #6366f1, #3b82f6);">
+                                <i class="fa-solid fa-book" style="font-size: 2.5rem; margin-bottom: 8px; opacity:0.8;"></i>
+                                <div style="font-size: 0.85rem; font-weight: 800; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;" id="detail-cover-title">Title</div>
+                            </div>
+                            <div style="margin-top: 5px; width: 100%;">
+                                <h2 style="margin: 0; font-size: 1.2rem; font-weight: 900; color: #1e293b; line-height: 1.3;" id="detail-title">Book Title</h2>
+                            <div style="flex: 1; padding: 1.5rem 2rem; overflow-y: auto;" id="detail-tabs-container">
+                                <!-- Summary Tab -->
+                                <div id="tab-summary" class="book-tab-content active">
+                                    <h4 style="margin: 0 0 10px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">TÃ³m táº¯t cá»‘t lÃµi</h4>
+                                    <p id="detail-summary-text" style="color: #475569; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; font-style: italic; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border-left: 4px solid #6366f1; margin: 0;">ChÆ°a cÃ³ tÃ³m táº¯t cho cuá»‘n sÃ¡ch nÃ y.</p>
+                                </div>
+                                <!-- Contents Directory Tab -->
+                                <div id="tab-contents" class="book-tab-content">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+                                        <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <i class="fa-solid fa-list-ol" style="color: white; font-size: 0.85rem;"></i>
+                                        </div>
+                                        <div>
+                                            <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Má»¥c lá»¥c ná»™i dung</h4>
+                                            <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #94a3b8; font-weight: 500;">Click vÃ o má»—i chÆ°Æ¡ng Ä‘á»ƒ má»Ÿ rá»™ng chi tiáº¿t</p>
+                                        </div>
+                                    </div>
+                                    <div id="detail-contents-text" class="book-content-directory">
+                                        <!-- Will populate parsed content directory here -->
+                                    </div>
+                                </div>
+                                <!-- Lessons Tab -->
+                                <div id="tab-lessons" class="book-tab-content">
+                                    <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Nhá»¯ng bÃ i há»c cá»‘t lÃµi rÃºt ra</h4>
+                                    <div id="detail-lessons-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                        <!-- Populate list items here -->
+                                    </div>
+                                </div>
+                                <!-- Quotes Tab -->
+                                <div id="tab-quotes" class="book-tab-content">
+                                    <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">TrÃ­ch dáº«n hay & sÃ¢u sáº¯c</h4>
+                                    <div id="detail-quotes-list" style="display: flex; flex-direction: column; gap: 1rem;">
+                                        <!-- Populate quotes here -->
+                                    </div>
+                                </div>
+                                <!-- Actions Tab -->
+                                <div id="tab-actions" class="book-tab-content">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                        <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">HÃ nh Ä‘á»™ng thá»±c táº¿ Ã¡p dá»¥ng</h4>
+                                        <span class="role-badge" id="actions-progress-badge" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight:700;">0/0 HoÃ n thÃ nh</span>
+                                    </div>
+                                    <div id="detail-actions-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                        <!-- Checklist of action items -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+

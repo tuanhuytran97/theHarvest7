@@ -1,0 +1,28 @@
+Created At: 2026-06-25T00:13:57Z
+Completed At: 2026-06-25T00:13:57Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 4248
+Total Bytes: 307118
+Showing lines 3211 to 3230
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+3211:                 </form>
+3212:             </div>
+3213:             </div> <!-- End of VIEW-FORMULAS -->
+3214: 
+3215: 
+3216: 
+3217:         </main>
+3218:     </div> <!-- End of app-container -->
+3219: 
+3220:     <!-- DIGITAL RECEIPT MODAL (PREMIUM DESIGN) -->
+3221:     <div id="receipt-modal" class="modal-overlay" style="display: none;">
+3222:         <div class="receipt-container glassmorphism">
+3223:             <div class="receipt-actions-top">
+3224:                 <button onclick="closeReceipt()" class="btn-close-receipt"><i class="fa-solid fa-xmark"></i></button>
+3225:             </div>
+3226: 
+3227:             <div id="receipt-content" class="receipt-paper">
+3228:                 <!-- HEADER -->
+3229:                 <div class="receipt-header">
+3230:                     <div class="farm-logo">
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

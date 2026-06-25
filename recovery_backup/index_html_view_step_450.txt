@@ -1,0 +1,159 @@
+Created At: 2026-06-25T10:59:51Z
+Completed At: 2026-06-25T10:59:51Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/view_output.txt`
+Total Lines: 776
+Total Bytes: 151888
+Showing lines 150 to 300
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+150: 3022:                         <div style="width: 280px; padding: 2rem; border-right: 1px solid #f1f5f9; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1rem; overflow-y: auto; background: #f8fafc; flex-shrink:0;" class="book-detail-left">
+151: 3023:                             <div id="detail-book-cover" class="book-cover-large" style="width: 140px; height: 190px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 1rem; text-align: center; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.15); background: linear-gradient(135deg, #6366f1, #3b82f6);">
+152: 3024:                                 <i class="fa-solid fa-book" style="font-size: 2.5rem; margin-bottom: 8px; opacity:0.8;"></i>
+153: 3025:                                 <div style="font-size: 0.85rem; font-weight: 800; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;" id="detail-cover-title">Title</div>
+154: 3026:                             </div>
+155: 3027:                             <div style="margin-top: 5px; width: 100%;">
+156: 3028:                                 <h2 style="margin: 0; font-size: 1.2rem; font-weight: 900; color: #1e293b; line-height: 1.3;" id="detail-title">Book Title</h2>
+157: 3029:                                 <p style="margin: 4px 0 0 0; font-size: 0.9rem; font-weight: 600; color: #64748b;" id="detail-author">Author Name</p>
+158: 3030:                             </div>
+159: 3031:                             <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; border-top: 1px solid #e2e8f0; padding-top: 1rem; font-size: 0.85rem; text-align: left; margin-top: auto;">
+160: 3032:                                 <div style="display:flex; justify-content:space-between;"><span style="color:#64748b; font-weight:600;">Chá»§ Ä‘á»:</span> <span id="detail-category" class="role-badge" style="background:#f1f5f9; color:#475569; font-weight:700;">Chung</span></div>
+161: 3033:                                 <div style="display:flex; justify-content:space-between;"><span style="color:#64748b; font-weight:600;">Tráº¡ng thÃ¡i:</span> <span id="detail-status" class="role-badge" style="background:#e0f2fe; color:#0369a1; font-weight:700;">Äang Ä‘á»c</span></div>
+162: 3034:                                 <div style="display:flex; justify-content:space-between; align-items: center;"><span style="color:#64748b; font-weight:600;">ÄÃ¡nh giÃ¡:</span> <span id="detail-rating" style="color: #fbbf24; font-weight:800; font-size:0.95rem;">â˜…â˜…â˜…â˜…â˜…</span></div>
+163: 3035:                                 <div style="margin-top: 5px; width: 100%;">
+164: 3036:                                     <div style="display:flex; justify-content:space-between; margin-bottom: 4px;"><span style="color:#64748b; font-weight:600;">Tiáº¿n trÃ¬nh Ä‘á»c:</span> <span id="detail-progress-percent" style="font-weight:800; color:#4f46e5;">0%</span></div>
+165: 3037:                                     <div style="width: 100%; height: 6px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+166: 3038:                                         <div id="detail-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #6366f1, #10b981); border-radius: 4px;"></div>
+167: 3039:                                     </div>
+168: 3040:                                 </div>
+169: 3041:                             </div>
+170: 3042:                         </div>
+171: 3043:                         <!-- Right panel: Rich content tabs -->
+172: 3044:                         <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;" class="book-detail-right">
+173: 3045:                             <!-- Tab Headers -->
+174: 3046:                             <div style="display: flex; border-bottom: 1px solid #f1f5f9; background: #f8fafc; padding: 0 1rem;">
+175: 3047:                                 <button class="book-tab-btn active" data-target="tab-summary">TÃ³m Táº¯t</button>
+176: 3048:                                 <button class="book-tab-btn" data-target="tab-contents">Danh Má»¥c</button>
+177: 3049:                                 <button class="book-tab-btn" data-target="tab-lessons">BÃ i Há»c Hay</button>
+178: 3050:                                 <button class="book-tab-btn" data-target="tab-quotes">TrÃ­ch Dáº«n Ná»•i Tiáº¿ng</button>
+179: The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+180: 
+181: Created At: 2026-06-25T10:40:31Z
+182: Completed At: 2026-06-25T10:40:31Z
+183: File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+184: Total Lines: 4353
+185: Total Bytes: 319605
+186: Showing lines 3250 to 3290
+187: The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+188: 3250:                         </button>
+189: 3251:                     </div>
+190: 3252:                 </form>
+191: 3253:             </div>
+192: 3254:             
+193: 3255:             <!-- CATEGORY SUMMARY MODAL (WISDOM HUB DETAIL PANEL) -->
+194: 3256:             <div id="category-summary-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); z-index: 99999; align-items: center; justify-content: center; padding: 1.5rem; box-sizing: border-box;">
+195: 3257:                 <div class="category-summary-container glassmorphism" style="background: white; border-radius: 24px; width: 100%; max-width: 900px; height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.8); animation: slideInUpPremium 0.4s ease; position: relative;">
+196: 3258:                     <!-- Loading Spinner for AI Synthesis -->
+197: 3259:                     <div id="category-summary-loading" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 10; align-items: center; justify-content: center; flex-direction: column; gap: 1rem;">
+198: 3260:                         <i class="fa-solid fa-brain fa-bounce" style="font-size: 3.5rem; color: #8b5cf6;"></i>
+199: 3261:                         <div style="font-weight: 800; color: #6d28d9; font-size: 1.1rem; text-align:center; padding: 0 2rem;" id="category-summary-loading-text">Gemini AI Ä‘ang liÃªn káº¿t toÃ n bá»™ bÃ i há»c vÃ  Ä‘Ãºc káº¿t triáº¿t lÃ½...</div>
+200: 3262:                     </div>
+201: 3263:                     
+202: 3264:                     <!-- Header -->
+203: 3265:                     <div style="padding: 1.25rem 2rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+204: 3266:                         <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b;" id="category-summary-modal-title">Tá»•ng Há»£p Tinh Hoa LÄ©nh Vá»±c</h3>
+205: 3267:                         <button onclick="closeCategorySummaryModal()" style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 1.5rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; hover: background: #f1f5f9;"><i class="fa-solid fa-xmark"></i></button>
+206: 3268:                     </div>
+207: 3269:                     
+208: 3270:                     <div style="flex: 1; display: flex; overflow: hidden;" class="book-detail-body-split">
+209: 3271:                         <!-- Left panel: Theme info & Trigger -->
+210: 3272:                         <div style="width: 280px; padding: 2rem; border-right: 1px solid #f1f5f9; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.5rem; overflow-y: auto; background: #f8fafc; flex-shrink:0;" class="book-detail-left">
+211: 3273:                             <div id="cat-summary-cover" class="book-cover-large" style="width: 140px; height: 190px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 1.5rem; text-align: center; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.15); background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+212: 3274:                                 <div id="cat-summary-cover-icon" style="font-size: 3rem; margin-bottom: 12px; opacity:0.85;">ðŸŒ±</div>
+213: 3275:                                 <div style="font-size: 1rem; font-weight: 900; line-height: 1.3;" id="cat-summary-cover-title">PhÃ¡t triá»ƒn báº£n thÃ¢n</div>
+214: 3276:                             </div>
+215: 3277:                             <div style="margin-top: 5px; width: 100%;">
+216: 3278:                                 <h2 style="margin: 0; font-size: 1.25rem; font-weight: 900; color: #1e293b; line-height: 1.3;" id="cat-summary-title">PhÃ¡t Triá»ƒn Báº£n ThÃ¢n</h2>
+217: 3279:                                 <p style="margin: 6px 0 0 0; font-size: 0.85rem; font-weight: 700; color: #64748b; background: rgba(0,0,0,0.05); padding: 4px 10px; border-radius: 8px; display: inline-block;" id="cat-summary-books-count">0 cuá»‘n sÃ¡ch</p>
+218: 3280:                             </div>
+219: 3281:                             
+220: 3282:                             <!-- AI synthesis trigger -->
+221: 3283:                             <button type="button" id="btn-synthesize-category-ai" class="btn-primary" style="margin-top: auto; width: 100%; padding: 12px; border-radius: 12px; font-size: 0.85rem; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: white; border: none; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3); cursor:pointer;">
+222: 3284:                                 <i class="fa-solid fa-wand-magic-sparkles"></i> AI Tá»•ng Há»£p Tinh TÃºy
+223: 3285:                             </button>
+224: 3286:                         </div>
+225: 3287:                         
+226: 3288:                         <!-- Right panel: Rich content tabs -->
+227: 3289:                         <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;" class="book-detail-right">
+228: 3290:                             <!-- Tab Headers -->
+229: The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+230: 
+231: Created At: 2026-06-25T10:50:18Z
+232: Completed At: 2026-06-25T10:50:18Z
+233: File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+234: Total Lines: 4353
+235: Total Bytes: 319605
+236: Showing lines 3055 to 3080
+237: The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+238: 3055:                                 <!-- Summary Tab -->
+239: 3056:                                 <div id="tab-summary" class="book-tab-content active">
+240: 3057:                                     <h4 style="margin: 0 0 10px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">TÃ³m táº¯t cá»‘t lÃµi</h4>
+241: 3058:                                     <p id="detail-summary-text" style="color: #475569; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; font-style: italic; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border-left: 4px solid #6366f1; margin: 0;">ChÆ°a cÃ³ tÃ³m táº¯t cho cuá»‘n sÃ¡ch nÃ y.</p>
+242: 3059:                                 </div>
+243: 3060:                                 <!-- Contents Directory Tab -->
+244: 3061:                                 <div id="tab-contents" class="book-tab-content">
+245: 3062:                                     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+246: 3063:                                         <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+247: 3064:                                             <i class="fa-solid fa-list-ol" style="color: white; font-size: 0.85rem;"></i>
+248: 3065:                                         </div>
+249: 3066:                                         <div>
+250: 3067:                                             <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Má»¥c lá»¥c ná»™i dung</h4>
+251: 3068:                                             <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #94a3b8; font-weight: 500;">Click vÃ o má»—i chÆ°Æ¡ng Ä‘á»ƒ má»Ÿ rá»™ng chi tiáº¿t</p>
+252: 3069:                                         </div>
+253: 3070:                                     </div>
+254: 3071:                                     <div id="detail-contents-text" class="book-content-directory">
+255: 3072:                                         <!-- Will populate parsed content directory here -->
+256: 3073:                                     </div>
+257: 3074:                                 </div>
+258: 3075:                                 <!-- Lessons Tab -->
+259: 3076:                                 <div id="tab-lessons" class="book-tab-content">
+260: 3077:                                     <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Nhá»¯ng bÃ i há»c cá»‘t lÃµi rÃºt ra</h4>
+261: 3078:                                     <div id="detail-lessons-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+262: 3079:                                         <!-- Populate list items here -->
+263: 3080:                                     </div>
+264: The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+265: 
+266: Created At: 2026-06-25T10:50:52Z
+267: Completed At: 2026-06-25T10:50:52Z
+268: File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+269: Total Lines: 4353
+270: Total Bytes: 319605
+271: Showing lines 3040 to 3100
+272: The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+273: 3040:                                 </div>
+274: 3041:                             </div>
+275: 3042:                         </div>
+276: 3043:                         <!-- Right panel: Rich content tabs -->
+277: 3044:                         <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;" class="book-detail-right">
+278: 3045:                             <!-- Tab Headers -->
+279: 3046:                             <div style="display: flex; border-bottom: 1px solid #f1f5f9; background: #f8fafc; padding: 0 1rem;">
+280: 3047:                                 <button class="book-tab-btn active" data-target="tab-summary">TÃ³m Táº¯t</button>
+281: 3048:                                 <button class="book-tab-btn" data-target="tab-contents">Danh Má»¥c</button>
+282: 3049:                                 <button class="book-tab-btn" data-target="tab-lessons">BÃ i Há»c Hay</button>
+283: 3050:                                 <button class="book-tab-btn" data-target="tab-quotes">TrÃ­ch Dáº«n Ná»•i Tiáº¿ng</button>
+284: 3051:                                 <button class="book-tab-btn" data-target="tab-actions">HÃ nh Äá»™ng</button>
+285: 3052:                             </div>
+286: 3053:                             <!-- Tab Contents -->
+287: 3054:                             <div style="flex: 1; padding: 1.5rem 2rem; overflow-y: auto;" id="detail-tabs-container">
+288: 3055:                                 <!-- Summary Tab -->
+289: 3056:                                 <div id="tab-summary" class="book-tab-content active">
+290: 3057:                                     <h4 style="margin: 0 0 10px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">TÃ³m táº¯t cá»‘t lÃµi</h4>
+291: 3058:                                     <p id="detail-summary-text" style="color: #475569; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; font-style: italic; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border-left: 4px solid #6366f1; margin: 0;">ChÆ°a cÃ³ tÃ³m táº¯t cho cuá»‘n sÃ¡ch nÃ y.</p>
+292: 3059:                                 </div>
+293: 3060:                                 <!-- Contents Directory Tab -->
+294: 3061:                                 <div id="tab-contents" class="book-tab-content">
+295: 3062:                                     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+296: 3063:                                         <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+297: 3064:                                             <i class="fa-solid fa-list-ol" style="color: white; font-size: 0.85rem;"></i>
+298: 3065:                                         </div>
+299: 3066:                                         <div>
+300: 3067:                                             <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Má»¥c lá»¥c ná»™i dung</h4>
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

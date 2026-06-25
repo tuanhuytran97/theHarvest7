@@ -1,0 +1,39 @@
+Created At: 2026-06-25T11:00:57Z
+Completed At: 2026-06-25T11:00:57Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 3945
+Total Bytes: 275914
+Showing lines 630 to 660
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+630:                 </div>
+631:                 <div class="sidebar-buffett-wrapper">
+632:                     <img src="leaf_icon.png" alt="theHarvest7 Logo" class="sidebar-buffett-logo">
+633:                 </div>
+634:             </div>
+635:             <nav>
+636:                 <a href="#" id="menu-todo" class="active"><i class="fa-solid fa-list-check"></i> <span>Công
+637:                         Việc</span></a>
+638:                 <a href="#" id="menu-data"><i class="fa-solid fa-table"></i> <span>Nhập Liệu</span></a>
+639:                 <a href="#" id="menu-report"><i class="fa-solid fa-chart-pie"></i> <span>Báo Cáo Chi Tiết</span></a>
+640:                 <a href="#" id="menu-cashflow"><i class="fa-solid fa-money-bill-transfer"></i> <span>Dòng
+641:                         Tiền</span></a>
+642:                 <a href="#" id="menu-debt"><i class="fa-solid fa-book-journal-whills"></i> <span>Các khoản phải
+643:                         thu</span></a>
+644:                 <a href="#" id="menu-investment"><i class="fa-solid fa-seedling"></i> <span>Đầu Tư</span></a>
+645:                 <a href="#" id="menu-financial"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Báo Cáo Tài
+646:                         Chính</span></a>
+647:                 <a href="#" id="menu-formulas"><i class="fa-solid fa-calculator"></i> <span>Công Thức</span></a>
+648:             </nav>
+649:         </aside>
+650: 
+651:         <!-- Main Content Area -->
+652:         <main class="main-content">
+653:             <header
+654:                 style="position: relative; z-index: 2100; display: flex !important; justify-content: space-between; align-items: center; padding: 1rem 2rem; margin-bottom: 2rem; background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,0,0,0.05); border-radius: 0 0 20px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); flex-wrap: wrap; gap: 1rem;">
+655:                 <div class="header-title-group" style="display: flex; flex-direction: column; gap: 4px;">
+656:                     <h1 style="margin: 0; font-size: 1.5rem; font-weight: 900; color: #1e293b; letter-spacing: -0.5px;">
+657:                         theHarvest7</h1>
+658:                     <p
+659:                         style="margin: 0; font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+660:                         Báo cáo & Phân tích tài chính</p>
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

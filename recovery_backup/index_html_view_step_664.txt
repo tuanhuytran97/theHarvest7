@@ -1,0 +1,49 @@
+Created At: 2026-06-25T11:05:48Z
+Completed At: 2026-06-25T11:05:48Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/prev_diff_step_721.diff`
+Total Lines: 41
+Total Bytes: 3901
+Showing lines 1 to 41
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: Created At: 2026-06-25T00:48:19Z
+2: Completed At: 2026-06-25T00:48:20Z
+3: The following changes were made by the multi_replace_file_content tool to: c:\Users\NC\.gemini\antigravity\scratch\farm-management\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+4: [diff_block_start]
+5: @@ -3045,6 +3045,7 @@
+6:                              <!-- Tab Headers -->
+7:                              <div style="display: flex; border-bottom: 1px solid #f1f5f9; background: #f8fafc; padding: 0 1rem;">
+8:                                  <button class="book-tab-btn active" data-target="tab-summary">Tóm Tắt</button>
+9: +                                <button class="book-tab-btn" data-target="tab-contents">Danh Mục</button>
+10:                                  <button class="book-tab-btn" data-target="tab-lessons">Bài Học Hay</button>
+11:                                  <button class="book-tab-btn" data-target="tab-quotes">Trích Dẫn Nổi Tiếng</button>
+12:                                  <button class="book-tab-btn" data-target="tab-actions">Hành Động</button>
+13: @@ -3055,6 +3055,13 @@
+14:                                      <h4 style="margin: 0 0 10px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Tóm tắt cốt lõi</h4>
+15:                                      <p id="detail-summary-text" style="color: #475569; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; font-style: italic; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border-left: 4px solid #6366f1; margin: 0;">Chưa có tóm tắt cho cuốn sách này.</p>
+16:                                  </div>
+17: +                                <!-- Contents Directory Tab -->
+18: +                                <div id="tab-contents" class="book-tab-content">
+19: +                                    <h4 style="margin: 0 0 10px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Danh mục & Nội dung chi tiết</h4>
+20: +                                    <div id="detail-contents-text" style="color: #475569; line-height: 1.7; font-size: 0.95rem; white-space: pre-wrap;">
+21: +                                        <!-- Will populate parsed content directory here -->
+22: +                                    </div>
+23: +                                </div>
+24:                                  <!-- Lessons Tab -->
+25:                                  <div id="tab-lessons" class="book-tab-content">
+26:                                      <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Những bài học cốt lõi rút ra</h4>
+27: @@ -3201,6 +3201,11 @@
+28:                          </div>
+29:  
+30:                          <div class="form-group">
+31: +                            <label for="book-form-content-directory">Danh Mục Nội Dung (Table of Contents / Outlines)</label>
+32: +                            <textarea id="book-form-content-directory" rows="4" placeholder="Nhập mục lục hoặc danh mục nội dung chi tiết của sách (hỗ trợ định dạng gạch đầu dòng, markdown để hiển thị đẹp mắt)..." style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: 0.9rem; outline: none; resize: vertical; box-sizing: border-box;"></textarea>
+33: +                        </div>
+34: +
+35: +                        <div class="form-group">
+36:                              <label for="book-form-lessons">Bài Học Hay (Mỗi bài học một dòng)</label>
+37:                              <textarea id="book-form-lessons" rows="3" placeholder="Ví dụ:
+38:  - Luôn chân thành khen ngợi người khác.
+39: [diff_block_end]
+40: 
+41: Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.
+The above content shows the entire, complete file contents of the requested file.

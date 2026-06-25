@@ -1,0 +1,14 @@
+Created At: 2026-06-25T00:29:05Z
+Completed At: 2026-06-25T00:29:05Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/chay_he_thong.bat`
+Total Lines: 6
+Total Bytes: 110
+Showing lines 1 to 6
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: @echo off
+2: echo Khoi dong he thong local server...
+3: start http://localhost:8000/index.html
+4: node server.js
+5: pause
+6: 
+The above content shows the entire, complete file contents of the requested file.

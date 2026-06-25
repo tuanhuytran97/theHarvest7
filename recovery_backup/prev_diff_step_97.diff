@@ -1,0 +1,68 @@
+Created At: 2026-06-24T23:48:32Z
+Completed At: 2026-06-24T23:48:33Z
+The following changes were made by the multi_replace_file_content tool to: c:\Users\NC\.gemini\antigravity\scratch\farm-management\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -645,6 +645,7 @@
+                 <a href="#" id="menu-financial"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Báo Cáo Tài
+                         Chính</span></a>
+                 <a href="#" id="menu-formulas"><i class="fa-solid fa-calculator"></i> <span>Công Thức</span></a>
++                <a href="#" id="menu-books"><i class="fa-solid fa-book-open"></i> <span>Tủ Sách Tinh Hoa</span></a>
+             </nav>
+         </aside>
+ 
+@@ -2911,6 +2911,277 @@
+ 
+ 
+ 
++            <!-- VIEW-BOOKS (TỦ SÁCH TINH HOA) -->
++            <div id="view-books" class="app-view" style="display: none;">
++                <!-- KPI Dashboard Cards -->
++                <div class="kpi-cards" style="margin-bottom: 2rem;">
++                    <div class="card glassmorphism kpi-card">
++                        <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;"><i class="fa-solid fa-book"></i></div>
++                        <div class="kpi-info">
++                            <span class="kpi-label">Tổng số sách</span>
++                            <h2 id="books-kpi-total" class="kpi-value" style="margin:0;">0</h2>
++                        </div>
++                    </div>
++                    <div class="card glassmorphism kpi-card">
++                        <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;"><i class="fa-solid fa-square-check"></i></div>
++                        <div class="kpi-info">
++                            <span class="kpi-label">Đã hoàn thành</span>
++                            <h2 id="books-kpi-completed" class="kpi-value" style="margin:0;">0</h2>
++         
+<truncated 24508 bytes>
+ns">Kế Hoạch Hành Động (Mỗi hành động một dòng)</label>
++                                <textarea id="book-form-actions" rows="3" placeholder="Ví dụ:
++Khen ngợi 1 đồng nghiệp hôm nay.
++Không ngắt lời người khác trong cuộc họp." style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: 0.9rem; outline: none; resize: vertical; box-sizing: border-box;"></textarea>
++                            </div>
++                        </div>
++                    </div>
++                    <!-- Footer -->
++                    <div style="padding: 1.25rem 2rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc;">
++                        <button type="button" onclick="closeBookForm()" class="btn-primary" style="background: #f1f5f9; color: #475569; border: none; box-shadow: none;">Hủy</button>
++                        <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; display: flex; align-items: center; gap: 8px; border:none; cursor:pointer; font-weight:700;">
++                            <i class="fa-solid fa-floppy-disk"></i> Lưu Sách
++                        </button>
++                    </div>
++                </form>
++            </div>
++            </div> <!-- End of VIEW-FORMULAS -->
++
++
++
+         </main>
+     </div> <!-- End of app-container -->
+ 
+@@ -3926,6 +3926,7 @@
+     <script src="app.js"></script>
+     <script src="investment.js"></script>
+     <script src="formulas.js"></script>
++    <script src="books.js"></script>
+     <script src="chatbot.js"></script>
+     
+     <!-- PWA Service Worker Registration -->
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.

@@ -1,0 +1,92 @@
+                                <!-- Contents Directory Tab -->
+                                <div id="tab-contents" class="book-tab-content">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+                                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                            <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                                <i class="fa-solid fa-list-ol" style="color: white; font-size: 0.85rem;"></i>
+                                            </div>
+                                            <div>
+                                                <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Mục lục nội dung</h4>
+                                                <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #94a3b8; font-weight: 500;">Click vào mỗi chương để mở rộng chi tiết</p>
+                                            </div>
+                                        </div>
+                                        <button id="btn-quick-edit-contents" class="btn-quick-edit" style="padding: 0.4rem 0.75rem; font-size: 0.8rem; font-weight: 600; border-radius: 8px; border: 1px solid #cbd5e1; background: white; color: #334155; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;">
+                                            <i class="fa-solid fa-pen" style="font-size: 0.75rem;"></i> Sửa nhanh
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- View Mode -->
+                                    <div id="detail-contents-text" class="book-content-directory">
+                                        <!-- Will populate parsed content directory here -->
+                                    </div>
+
+                                    <!-- Edit Mode Wrapper (Hidden by default) -->
+                                    <div id="detail-contents-edit-wrapper" style="display: none; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
+                                        <!-- Formatting Toolbar -->
+                                        <div class="edit-toolbar" style="display: flex; flex-wrap: wrap; gap: 0.25rem; padding: 0.5rem; background: #f8fafc; border: 1px solid #cbd5e1; border-bottom: none; border-radius: 12px 12px 0 0; align-items: center;">
+                                            <!-- Text styling group -->
+                                            <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('**', '**')" title="In đậm (Bold)" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; font-weight: bold; transition: all 0.15s;">
+                                                <i class="fa-solid fa-bold"></i>
+                                            </button>
+                                            <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('*', '*')" title="In nghiêng (Italic)" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                                <i class="fa-solid fa-italic"></i>
+                                            </button>
+                                            <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<u>', '</u>')" title="Gạch chân (Underline)" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                                <i class="fa-solid fa-underline"></i>
+                                            </button>
+                                            <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('~~', '~~')" title="Gạch ngang (Strikethrough)" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                                <i class="fa-solid fa-strikethrough"></i>
+                                            </button>
+                                            
+                                            <div style="width: 1px; height: 20px; background: #e2e8f0; margin: 0 4px;"></div>
+                                            
+                                            <!-- Alignment group -->
+                                            <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<left>', '</left>')" title="Canh lề trái" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                                <i class="fa-solid fa-align-left"></i>
+                                            </button>
+                                            <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<center>', '</center>')" title="Canh giữa" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                                <i class="fa-solid fa-align-center"></i>
+                                            </button>
+                                            <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('<right>', '</right>')" title="Canh lề phải" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                                <i class="fa-solid fa-align-right"></i>
+                                            </button>
+                                            
+                                            <div style="width: 1px; height: 20px; background: #e2e8f0; margin: 0 4px;"></div>
+                                            
+                                            <!-- Structure/Lists group -->
+                                            <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('### ')" title="Tiêu đề chương (###)" style="height: 32px; padding: 0 6px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; font-size: 0.8rem; font-weight: 800; transition: all 0.15s;">
+                                                H3
+                                            </button>
+                                            <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('#### ')" title="Tiêu đề phụ (####)" style="height: 32px; padding: 0 6px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: all 0.15s;">
+                                                H4
+                                            </button>
+                                            <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('- ')" title="Danh sách gạch đầu dòng" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                                <i class="fa-solid fa-list"></i>
+                                            </button>
+                                            <button type="button" class="toolbar-btn" onclick="insertFormattingIntoTextarea('1. ')" title="Danh sách số" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid transparent; background: transparent; border-radius: 6px; color: #475569; cursor: pointer; transition: all 0.15s;">
+                                                <i class="fa-solid fa-list-ol"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Textarea -->
+                                        <textarea id="detail-contents-textarea" style="width: 100%; min-height: 320px; padding: 1rem; border: 1px solid #cbd5e1; border-radius: 0 0 12px 12px; font-family: inherit; font-size: 0.95rem; line-height: 1.6; resize: vertical; outline: none; transition: border-color 0.2s; color: #334155; margin-bottom: 0.75rem;" placeholder="Nhập danh mục nội dung ở định dạng Markdown..."></textarea>
+                                        
+                                        <!-- Actions row -->
+                                        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.75rem;">
+                                            <!-- AI Button -->
+                                            <button id="btn-ai-format-layout" class="btn-ai-sparkle" style="padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: 10px; border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2), 0 2px 4px -2px rgba(99, 102, 241, 0.2);">
+                                                <i class="fa-solid fa-wand-magic-sparkles"></i> AI Định dạng bố cục
+                                            </button>
+                                            
+                                            <!-- Save/Cancel buttons -->
+                                            <div style="display: flex; gap: 0.5rem;">
+                                                <button id="btn-quick-cancel-contents" style="padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 600; border-radius: 10px; border: 1px solid #cbd5e1; background: white; color: #64748b; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+                                                    <i class="fa-solid fa-xmark"></i> Hủy
+                                                </button>
+                                                <button id="btn-quick-save-contents" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; font-weight: 600; border-radius: 10px; border: none; background: #10b981; color: white; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);">
+                                                    <i class="fa-solid fa-check"></i> Lưu
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>

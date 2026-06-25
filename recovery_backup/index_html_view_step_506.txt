@@ -1,0 +1,86 @@
+Created At: 2026-06-25T11:02:00Z
+Completed At: 2026-06-25T11:02:00Z
+File Path: `file:///C:/Users/NC/.gemini/antigravity-ide/brain/8071188f-9d9c-4285-8b7c-74986edadc0b/implementation_plan.md`
+Total Lines: 78
+Total Bytes: 5888
+Showing lines 1 to 78
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: # Kế hoạch triển khai: Đúc Kết Tinh Hoa Theo Chủ Đề (Wisdom Hub)
+2: 
+3: Chúng ta sẽ xây dựng tính năng **Đúc Kết Tinh Hoa Theo Chủ Đề** (Wisdom Hub) ngay bên trong tab Tủ Sách Tinh Hoa. Tính năng này cho phép người dùng đúc kết những gì cốt lõi nhất của cả một lĩnh vực (ví dụ: Đầu tư, Kinh doanh, Tình yêu,...) bằng hai cách: tự ghi chép tay (chủ động) hoặc yêu cầu Gemini AI tự phân tích và tổng hợp toàn bộ các cuốn sách đã đọc trong lĩnh vực đó thành một cẩm nang triết lý duy nhất (thụ động).
+4: 
+5: ---
+6: 
+7: ## Giao Diện Đề Xuất (UI/UX)
+8: 
+9: 1. **Bộ chuyển tab (Segmented Control)**:
+10:    - Đặt ở đầu trang sách để chuyển đổi nhanh giữa:
+11:      - **📚 Tủ Sách Cá Nhân** (Danh sách các cuốn sách dạng card hiện tại).
+12:      - **🧠 Đúc Kết Chủ Đề** (Không gian đúc kết triết lý theo lĩnh vực mới).
+13: 2. **Thẻ chủ đề (Wisdom Cards)**:
+14:    - Thiết kế 6 thẻ tương ứng với 6 chủ đề: *Phát triển bản thân, Kinh doanh, Đầu tư, Marketing, Tình yêu, Khác*.
+15:    - Phong cách: **Glassmorphism cao cấp**, viền phát sáng nhẹ, màu nền gradient chuyển sắc sâu, biểu tượng icon lớn ẩn mờ ở góc, hiển thị số lượng sách đang có trong chủ đề và đoạn trích tóm tắt đúc kết ngắn.
+16: 3. **Modal Đúc Kết Chi Tiết (`#category-summary-modal`)**:
+17:    - Giao diện hai cột hiện đại:
+18:      - **Cột trái (Meta Panel)**: Tên chủ đề, icon lớn, số lượng sách, và nút bấm nổi bật **"🤖 AI Tổng Hợp Tinh Túy"**.
+19:      - **Cột phải (Content Panel)**: Bộ chuyển tab giữa:
+20:        - **✍️ Đúc kết của tôi**: Khung Textarea lớn, tối giản, hỗ trợ viết ghi chú đúc kết thủ công.
+21:        - **🤖 AI Tổng Hợp**: Khung hiển thị cẩm nang đúc kết do AI viết với định dạng chuyên nghiệp (Triết lý cốt lõi, Nguyên tắc vàng, Kế hoạch áp dụng).
+22: 
+23: ---
+24: 
+25: ## Chi Tiết Kỹ Thuật & Thay Đổi
+26: 
+27: ### 1. Backend (Google Sheets)
+28: 
+29: #### [MODIFY] [App_script](file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/App_script)
+30: - Thêm 2 hành động API mới:
+31:   - `get_category_summaries`: Lấy dữ liệu đúc kết chủ đề từ trang tính `"CategorySummaries"`. Nếu trang tính chưa tồn tại, tự động tạo mới với cấu trúc: `Category, UserSummary, AiSummary, UpdatedAt`.
+32:   - `save_category_summary`: Lưu hoặc cập nhật đúc kết của một chủ đề cụ thể.
+33: 
+34: ---
+35: 
+36: ### 2. Logic xử lý Client
+37: 
+38: #### [NEW/MODIFY] [books.js](file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/books.js)
+39: - **Quản lý dữ liệu**: Khởi tạo biến `categoriesCache` và đồng bộ với localStorage/Google Sheets.
+40: - **Hàm `synthesizeCategoryAI(category)`**:
+41:   - Tìm tất cả sách thuộc chủ đề (`category`) từ `booksCache`.
+42:   - Gom toàn bộ thông tin: Tên sách, Tóm tắt, Bài học, Trích dẫn thành một văn bản đầu vào.
+43:   - Gửi prompt lên Gemini API: *"Bạn là một triết gia và chuyên gia đúc kết tri thức. Dưới đây là ghi chép và bài học từ tất cả các cuốn sách tôi đã đọc trong lĩnh vực {category}: ... Hãy tổng hợp và viết thành một cẩm nang triết lý tinh túy nhất bao gồm: 1. Hệ tư duy cốt lõi, 2. Các nguyên tắc vàng bất biến, 3. Các hành động cụ thể để ứng dụng."*
+44:   - Lưu kết quả trả về vào trường `AiSummary` và cập nhật UI.
+45: - **Hàm `renderCategorySummaries()`**: Vẽ giao diện danh sách 6 thẻ chủ đề mượt mà với hiệu ứng động.
+46: - **Hàm `openCategorySummaryDetail(category)`**: Mở modal đúc kết chi tiết, điền thông tin cũ và cấu hình các nút lưu/AI.
+47: 
+48: #### [MODIFY] [app.js](file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/app.js)
+49: - Đăng ký bộ chuyển đổi tab Segmented Control để ẩn/hiện danh sách sách (`#books-grid-wrapper`) và danh sách đúc kết chủ đề (`#categories-summary-wrapper`).
+50: 
+51: ---
+52: 
+53: ### 3. Cập nhật HTML & Giao diện
+54: 
+55: #### [MODIFY] [index.html](file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html)
+56: - Thêm bộ chuyển tab ở đầu `#view-books`.
+57: - Thêm cấu trúc bao bọc danh sách thẻ sách hiện tại (`#books-grid-wrapper`).
+58: - Thêm container cho thẻ chủ đề mới (`#categories-summary-wrapper`, mặc định ẩn).
+59: - Thêm HTML cho modal đúc kết chủ đề `#category-summary-modal`.
+60: 
+61: #### [MODIFY] [styles.css](file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/styles.css)
+62: - CSS cho Segmented Control (nút bấm hiện đại, hiệu ứng trượt active).
+63: - CSS cho Wisdom Cards (nền mờ glassmorphism, gradient rực rỡ, bóng đổ nổi, hover phát sáng).
+64: - CSS cho modal đúc kết chi tiết và khung nhập liệu tối giản.
+65: 
+66: ---
+67: 
+68: ## Kế hoạch kiểm tra (Verification Plan)
+69: 
+70: 1. **Kiểm tra chuyển Tab**:
+71:    - Đảm bảo có thể chuyển đổi mượt mà giữa "Tủ sách cá nhân" và "Đúc kết chủ đề".
+72: 2. **Kiểm tra ghi chép tay**:
+73:    - Chọn chủ đề "Đầu tư", nhập ghi chú thủ công và bấm "Lưu". Tắt modal và mở lại xem dữ liệu đã được lưu đúng chưa.
+74: 3. **Kiểm tra AI tổng hợp**:
+75:    - Thêm 2-3 cuốn sách về chủ đề "Đầu tư" hoặc "Kinh doanh" (ví dụ: *Cha Giàu Cha Nghèo*, *Nhà Đầu Tư Thông Minh*).
+76:    - Vào mục Đúc kết chủ đề -> bấm "AI Tổng Hợp Tinh Túy".
+77:    - Kiểm tra xem AI có tổng hợp thành công bài học từ các cuốn sách trên thành một bài viết triết lý mạch lạc hay không.
+78: 
+The above content shows the entire, complete file contents of the requested file.

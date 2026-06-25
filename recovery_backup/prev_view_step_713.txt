@@ -1,0 +1,47 @@
+Created At: 2026-06-25T00:48:03Z
+Completed At: 2026-06-25T00:48:03Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 4332
+Total Bytes: 317335
+Showing lines 3040 to 3080
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+3040:                                 </div>
+3041:                             </div>
+3042:                         </div>
+3043:                         <!-- Right panel: Rich content tabs -->
+3044:                         <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;" class="book-detail-right">
+3045:                             <!-- Tab Headers -->
+3046:                             <div style="display: flex; border-bottom: 1px solid #f1f5f9; background: #f8fafc; padding: 0 1rem;">
+3047:                                 <button class="book-tab-btn active" data-target="tab-summary">Tóm Tắt</button>
+3048:                                 <button class="book-tab-btn" data-target="tab-lessons">Bài Học Hay</button>
+3049:                                 <button class="book-tab-btn" data-target="tab-quotes">Trích Dẫn Nổi Tiếng</button>
+3050:                                 <button class="book-tab-btn" data-target="tab-actions">Hành Động</button>
+3051:                             </div>
+3052:                             <!-- Tab Contents -->
+3053:                             <div style="flex: 1; padding: 1.5rem 2rem; overflow-y: auto;" id="detail-tabs-container">
+3054:                                 <!-- Summary Tab -->
+3055:                                 <div id="tab-summary" class="book-tab-content active">
+3056:                                     <h4 style="margin: 0 0 10px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Tóm tắt cốt lõi</h4>
+3057:                                     <
+<truncated 632 bytes>
+rút ra</h4>
+3062:                                     <div id="detail-lessons-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+3063:                                         <!-- Populate list items here -->
+3064:                                     </div>
+3065:                                 </div>
+3066:                                 <!-- Quotes Tab -->
+3067:                                 <div id="tab-quotes" class="book-tab-content">
+3068:                                     <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Trích dẫn hay & sâu sắc</h4>
+3069:                                     <div id="detail-quotes-list" style="display: flex; flex-direction: column; gap: 1rem;">
+3070:                                         <!-- Populate quotes here -->
+3071:                                     </div>
+3072:                                 </div>
+3073:                                 <!-- Actions Tab -->
+3074:                                 <div id="tab-actions" class="book-tab-content">
+3075:                                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+3076:                                         <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Hành động thực tế áp dụng</h4>
+3077:                                         <span class="role-badge" id="actions-progress-badge" style="background: rgba(16, 185, 129, 0.15); color: #047857; font-weight:700;">0/0 Hoàn thành</span>
+3078:                                     </div>
+3079:                                     <div id="detail-actions-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+3080:                                         <!-- Checklist of action items -->
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

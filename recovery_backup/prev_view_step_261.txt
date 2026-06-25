@@ -1,0 +1,72 @@
+Created At: 2026-06-25T00:10:14Z
+Completed At: 2026-06-25T00:10:14Z
+File Path: `file:///C:/Users/NC/.gemini/antigravity-ide/brain/8071188f-9d9c-4285-8b7c-74986edadc0b/implementation_plan.md`
+Total Lines: 89
+Total Bytes: 5387
+Showing lines 1 to 89
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: # Implementation Plan: Tủ Sách Tinh Hoa (Premium Book Summaries & Lessons Tab)
+2: 
+3: We will create a visually stunning, premium-designed tab called **Tủ Sách Tinh Hoa** inside the system. This tab will allow recording and organizing books, summarizing core content, logging key lessons, saving golden quotes, and tracking actionable implementation items.
+4: 
+5: It will also feature **Gemini AI Integration** to automatically generate book summaries, key takeaways, quotes, and actions with one click.
+6: 
+7: ---
+8: 
+9: ## User Review Required
+10: 
+11: > [!IMPORTANT]
+12: > **Data Synchronization Notice:**
+13: > - To save data permanently to your Google Sheets, you will need to update your Google Apps Script using the code provided at the end of the implementation.
+14: > - **Zero-Config Fallback:** The app will automatically fall back to `localStorage` if your Google Sheet is not updated yet. You can start using it immediately out of the box!
+15: 
+16: > [!TIP]
+17: > **Gemini AI Key:**
+18: > - The AI-generation feature utilizes the `CONFIG.GEMINI_API_KEY` defined in your `config.js`. If you have a custom key configured, it will run real-time analysis seamlessly.
+19: 
+20: ---
+21: 
+22: ## Proposed Changes
+23: 
+24: ### UI & Styling Changes
+25: 
+26: #### [MODIFY] [index.html](file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html)
+27: - Add a new menu item in the Sidebar navigation: `<a href="#" id="menu-books"><i class="fa-solid fa-book-open"></i> <span>Tủ Sách Tinh Hoa</span></a>`.
+28: - Add a main view contai
+<truncated 2210 bytes>
+enuBooks` and `viewBooks` DOM variables.
+56: - Add `menuBooks` and `viewBooks` to `hideAllViews()` and `switchView('books')`.
+57: - Register the `menuBooks` click event listener.
+58: 
+59: ---
+60: 
+61: ### Backend Updates (Google Sheets API)
+62: 
+63: #### [MODIFY] [App_script](file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/App_script)
+64: - Add backend actions for book tracking:
+65:   - `get_book_data`: Fetch from a new spreadsheet sheet named `"BooksTracker"`. If it doesn't exist, **automatically create it** with columns: `ID, Title, Author, Category, Status, Rating, Progress, Summary, Lessons, Quotes, Actions, CreatedAt`.
+66:   - `save_book_record`: Insert or update a row in `BooksTracker` matching the book's unique ID.
+67:   - `delete_book_record`: Delete the corresponding row in `BooksTracker`.
+68: 
+69: ---
+70: 
+71: ## Verification Plan
+72: 
+73: ### Automated Tests
+74: - Since this is a browser-based SPA, we will run the development environment or check Javascript console errors.
+75: 
+76: ### Manual Verification
+77: 1. **Visual Walkthrough**:
+78:    - Check if the "Tủ Sách Tinh Hoa" menu link appears in the sidebar navigation.
+79:    - Switch to the "Tủ Sách" view and check the KPI dashboard cards.
+80:    - Click "Thêm sách mới" to view the entry form modal.
+81: 2. **AI Integration**:
+82:    - Enter a title like *"Nghĩ Giàu Làm Giàu"* and click the AI Suggestion button. Verify that the form fields (Summary, Lessons, Quotes, Actions) are automatically populated.
+83: 3. **Save/Load & Fallback**:
+84:    - Save a book and verify it renders immediately as an elegant card.
+85:    - Verify category filters (Investment, Business, Self-Development) filter the cards correctly.
+86:    - Check that updating action item checkboxes inside the book detail view works.
+87: 4. **Google Apps Script**:
+88:    - Review copy-paste instructions for the Google Sheets backend code to enable full cloud synchronization.
+89: 
+The above content shows the entire, complete file contents of the requested file.

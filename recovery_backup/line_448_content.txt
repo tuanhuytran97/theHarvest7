@@ -1,0 +1,1 @@
+I will view lines 150 to 300 of `view_output.txt` to retrieve the rest of the book detail modal, including the left panel metadata and book form fields.

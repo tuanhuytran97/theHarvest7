@@ -1,0 +1,29 @@
+Created At: 2026-06-25T00:13:56Z
+Completed At: 2026-06-25T00:13:56Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 4248
+Total Bytes: 307118
+Showing lines 3190 to 3210
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+3190:                         </div>
+3191: 
+3192:                         <div class="form-group">
+3193:                             <label for="book-form-quotes">Trích Dẫn Hay (Mỗi trích dẫn một dòng)</label>
+3194:                             <textarea id="book-form-quotes" rows="3" placeholder="Ví dụ:
+3195: Chỉ nghe thôi cũng là một sự tôn trọng lớn lao." style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: 0.9rem; outline: none; resize: vertical; box-sizing: border-box;"></textarea>
+3196:                         </div>
+3197:                         <div class="form-group">
+3198:                             <label for="book-form-actions">Kế Hoạch Hành Động (Mỗi hành động một dòng)</label>
+3199:                             <textarea id="book-form-actions" rows="3" placeholder="Ví dụ:
+3200: Khen ngợi 1 đồng nghiệp hôm nay.
+3201: Không ngắt lời người khác trong cuộc họp." style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: 0.9rem; outline: none; resize: vertical; box-sizing: border-box;"></textarea>
+3202:                         </div>
+3203:                     </div>
+3204:                     <!-- Footer -->
+3205:                     <div style="padding: 1.25rem 2rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc;">
+3206:                         <button type="button" onclick="closeBookForm()" class="btn-primary" style="background: #f1f5f9; color: #475569; border: none; box-shadow: none;">Hủy</button>
+3207:                         <button type="submit" class="btn-primary" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; display: flex; align-items: center; gap: 8px; border:none; cursor:pointer; font-weight:700;">
+3208:                             <i class="fa-solid fa-floppy-disk"></i> Lưu Sách
+3209:                         </button>
+3210:                     </div>
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

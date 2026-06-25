@@ -1,0 +1,51 @@
+Created At: 2026-06-25T11:06:13Z
+Completed At: 2026-06-25T11:06:13Z
+File Path: `file:///C:/Users/NC/.gemini/antigravity-ide/brain/8071188f-9d9c-4285-8b7c-74986edadc0b/scratch/fix_tab_header.js`
+Total Lines: 43
+Total Bytes: 2728
+Showing lines 1 to 43
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: const fs = require('fs');
+2: const path = 'c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html';
+3: 
+4: let html = fs.readFileSync(path, 'utf8');
+5: 
+6: // Update the contents tab header to be more descriptive
+7: const oldContentsTab = `<div id="tab-contents" class="book-tab-content">
+8:                                     <h4 style="margin: 0 0 10px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Danh m\u1ee5c \u0026 N\u1ed9i dung chi ti\u1ebft</h4>
+9:                                     <div id="detail-contents-text" class="book-content-directory">
+10:                                         <!-- Will populate parsed content directory here -->
+11:                                     </div>
+12:                                 </div>`;
+13: 
+14: const newContentsTab = `<div id="tab-contents" class="book-tab-content">
+15:                                     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+16:                                         <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+17:                                             <i class="fa-solid fa-list-ol" style="color: white; font-size: 0.85rem;"></i>
+18:                                         </div>
+19:                                         <div>
+20:                                             <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">M\u1ee5c l\u1ee5c n\u1ed9i dung</h4>
+21:                                             <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #94a3b8; font-weight: 500;">Click v\xe0o m\u1ed7i ch\u01b0\u01a1ng \u0111\u1ec3 m\u1edf r\u1ed9ng chi ti\u1ebft</p>
+22:                                         </div>
+23:                                     </div>
+24:                                     <div id="detail-contents-text" class="book-content-directory">
+25:                                         <!-- Will populate parsed content directory here -->
+26:                                     </div>
+27:                                 </div>`;
+28: 
+29: if (html.indexOf(oldContentsTab) !== -1) {
+30:     html = html.replace(oldContentsTab, newContentsTab);
+31:     fs.writeFileSync(path, html, 'utf8');
+32:     console.log('Updated contents tab header');
+33: } else {
+34:     console.log('WARNING: Could not find old contents tab. Trying alternative...');
+35:     // Try to find just the h4 line
+36:     const altSearch = 'Danh m';
+37:     const idx = html.indexOf(altSearch);
+38:     if (idx !== -1) {
+39:         console.log('Found Danh m at idx:', idx);
+40:         console.log('Context:', JSON.stringify(html.substring(idx-100, idx+300)));
+41:     }
+42: }
+43: 
+The above content shows the entire, complete file contents of the requested file.

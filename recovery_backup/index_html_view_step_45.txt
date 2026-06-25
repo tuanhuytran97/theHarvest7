@@ -1,0 +1,49 @@
+Created At: 2026-06-25T10:25:29Z
+Completed At: 2026-06-25T10:25:29Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 4353
+Total Bytes: 319605
+Showing lines 3045 to 3085
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+3045:                             <!-- Tab Headers -->
+3046:                             <div style="display: flex; border-bottom: 1px solid #f1f5f9; background: #f8fafc; padding: 0 1rem;">
+3047:                                 <button class="book-tab-btn active" data-target="tab-summary">Tóm Tắt</button>
+3048:                                 <button class="book-tab-btn" data-target="tab-contents">Danh Mục</button>
+3049:                                 <button class="book-tab-btn" data-target="tab-lessons">Bài Học Hay</button>
+3050:                                 <button class="book-tab-btn" data-target="tab-quotes">Trích Dẫn Nổi Tiếng</button>
+3051:                                 <button class="book-tab-btn" data-target="tab-actions">Hành Động</button>
+3052:                             </div>
+3053:                             <!-- Tab Contents -->
+3054:                             <div style="flex: 1; padding: 1.5rem 2rem; overflow-y: auto;" id="detail-tabs-container">
+3055:                                 <!-- Summary Tab -->
+3056:                                 <div id="tab-summary" class="book-tab-content active">
+3057:                                     <h4 style="margin: 0 0 10px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Tóm tắt cốt lõi</h4>
+3058:                                     <p id="detail-summary-text" style="color: #475569; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap; font-style: italic; background: #f8fafc; padding: 1.25rem; border-radius: 12px; border-left: 4px solid #6366f1; margin: 0;">Chưa có tóm tắt cho cuốn sách này.</p>
+3059:                                 </div>
+3060:                                 <!-- Contents Directory Tab -->
+3061:                                 <div id="tab-contents" class="book-tab-content">
+3062:                                     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+3063:                                         <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+3064:                                             <i class="fa-solid fa-list-ol" style="color: white; font-size: 0.85rem;"></i>
+3065:                                         </div>
+3066:                                         <div>
+3067:                                             <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Mục lục nội dung</h4>
+3068:                                             <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #94a3b8; font-weight: 500;">Click vào mỗi chương để mở rộng chi tiết</p>
+3069:                                         </div>
+3070:                                     </div>
+3071:                                     <div id="detail-contents-text" class="book-content-directory">
+3072:                                         <!-- Will populate parsed content directory here -->
+3073:                                     </div>
+3074:                                 </div>
+3075:                                 <!-- Lessons Tab -->
+3076:                                 <div id="tab-lessons" class="book-tab-content">
+3077:                                     <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Những bài học cốt lõi rút ra</h4>
+3078:                                     <div id="detail-lessons-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+3079:                                         <!-- Populate list items here -->
+3080:                                     </div>
+3081:                                 </div>
+3082:                                 <!-- Quotes Tab -->
+3083:                                 <div id="tab-quotes" class="book-tab-content">
+3084:                                     <h4 style="margin: 0 0 12px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Trích dẫn hay & sâu sắc</h4>
+3085:                                     <div id="detail-quotes-list" style="display: flex; flex-direction: column; gap: 1rem;">
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

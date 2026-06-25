@@ -1004,6 +1004,169 @@ function doPost(e) {
             return returnJson({ "status": "error", "message": "Không tìm thấy task" });
         }
 
+        // --- BOOK TRACKER ACTIONS ---
+        else if (action === "get_book_data") {
+            let bookSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("BooksTracker");
+            if (!bookSheet) {
+                bookSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("BooksTracker");
+                const headers = ["ID", "Title", "Author", "Category", "Status", "Rating", "Progress", "Summary", "Lessons", "Quotes", "Actions", "CreatedAt", "CoverUrl", "ContentDirectory"];
+                bookSheet.getRange(1, 1, 1, headers.length).setValues([headers])
+                         .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+            } else {
+                // Ensure CoverUrl and ContentDirectory columns exist for legacy installations
+                const lastCol = bookSheet.getLastColumn();
+                const headers = bookSheet.getRange(1, 1, 1, lastCol).getValues()[0];
+                if (headers.indexOf("CoverUrl") === -1) {
+                    bookSheet.getRange(1, lastCol + 1).setValue("CoverUrl")
+                             .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+                }
+                const updatedHeaders = bookSheet.getRange(1, 1, 1, bookSheet.getLastColumn()).getValues()[0];
+                if (updatedHeaders.indexOf("ContentDirectory") === -1) {
+                    bookSheet.getRange(1, bookSheet.getLastColumn() + 1).setValue("ContentDirectory")
+                             .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+                }
+            }
+            const bookData = bookSheet.getDataRange().getValues();
+            const formattedData = bookData.map(function(row) {
+                return row.map(function(cell) {
+                    if (Object.prototype.toString.call(cell) === '[object Date]') {
+                        return Utilities.formatDate(cell, "GMT+7", "dd/MM/yyyy");
+                    }
+                    return cell;
+                });
+            });
+            return returnJson({ "status": "success", "data": formattedData });
+
+        } else if (action === "save_book_record") {
+            let bookSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("BooksTracker");
+            if (!bookSheet) {
+                bookSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("BooksTracker");
+                const headers = ["ID", "Title", "Author", "Category", "Status", "Rating", "Progress", "Summary", "Lessons", "Quotes", "Actions", "CreatedAt", "CoverUrl", "ContentDirectory"];
+                bookSheet.getRange(1, 1, 1, headers.length).setValues([headers])
+                         .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+            } else {
+                // Ensure CoverUrl and ContentDirectory columns exist for legacy installations
+                const lastCol = bookSheet.getLastColumn();
+                const headers = bookSheet.getRange(1, 1, 1, lastCol).getValues()[0];
+                if (headers.indexOf("CoverUrl") === -1) {
+                    bookSheet.getRange(1, lastCol + 1).setValue("CoverUrl")
+                             .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+                }
+                const updatedHeaders = bookSheet.getRange(1, 1, 1, bookSheet.getLastColumn()).getValues()[0];
+                if (updatedHeaders.indexOf("ContentDirectory") === -1) {
+                    bookSheet.getRange(1, bookSheet.getLastColumn() + 1).setValue("ContentDirectory")
+                             .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+                }
+            }
+            const bookData = bookSheet.getDataRange().getValues();
+            const book = params.data;
+            const bookId = book.id;
+
+            let rowIndex = -1;
+            if (bookId) {
+                for (let i = 1; i < bookData.length; i++) {
+                    if (String(bookData[i][0]) === String(bookId)) {
+                        rowIndex = i + 1;
+                        break;
+                    }
+                }
+            }
+
+            const now = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
+            const rowData = [
+                bookId || "BK_" + new Date().getTime(),
+                book.title || "",
+                book.author || "",
+                book.category || "Phát triển bản thân",
+                book.status || "Muốn đọc",
+                book.rating || 0,
+                book.progress || 0,
+                book.summary || "",
+                book.lessons || "",
+                book.quotes || "",
+                book.actions || "",
+                rowIndex > -1 ? (bookData[rowIndex-1][11] || now) : now,
+                book.coverUrl || "",
+                book.contentDirectory || ""
+            ];
+
+            if (rowIndex > -1) {
+                bookSheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
+            } else {
+                bookSheet.appendRow(rowData);
+            }
+            return returnJson({ "status": "success", "id": rowData[0] });
+
+        } else if (action === "delete_book_record") {
+            const bookSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("BooksTracker");
+            if (!bookSheet) return returnJson({ "status": "error", "message": "Sheet BooksTracker không tồn tại" });
+            const bookData = bookSheet.getDataRange().getValues();
+            const bookId = params.id;
+            for (let i = 1; i < bookData.length; i++) {
+                if (String(bookData[i][0]) === String(bookId)) {
+                    bookSheet.deleteRow(i + 1);
+                    return returnJson({ "status": "success" });
+                }
+            }
+            return returnJson({ "status": "error", "message": "Không tìm thấy sách" });
+
+        } else if (action === "get_category_summaries") {
+            let catSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("CategorySummaries");
+            if (!catSheet) {
+                catSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("CategorySummaries");
+                const headers = ["Category", "UserSummary", "AiSummary", "UpdatedAt"];
+                catSheet.getRange(1, 1, 1, headers.length).setValues([headers])
+                         .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+            }
+            const catData = catSheet.getDataRange().getValues();
+            const formattedData = catData.map(function(row) {
+                return row.map(function(cell) {
+                    if (Object.prototype.toString.call(cell) === '[object Date]') {
+                        return Utilities.formatDate(cell, "GMT+7", "dd/MM/yyyy");
+                    }
+                    return cell;
+                });
+            });
+            return returnJson({ "status": "success", "data": formattedData });
+
+        } else if (action === "save_category_summary") {
+            let catSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("CategorySummaries");
+            if (!catSheet) {
+                catSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("CategorySummaries");
+                const headers = ["Category", "UserSummary", "AiSummary", "UpdatedAt"];
+                catSheet.getRange(1, 1, 1, headers.length).setValues([headers])
+                         .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+            }
+            const catData = catSheet.getDataRange().getValues();
+            const payload = params.data;
+            const category = payload.category;
+
+            let rowIndex = -1;
+            if (category) {
+                for (let i = 1; i < catData.length; i++) {
+                    if (String(catData[i][0]).trim() === String(category).trim()) {
+                        rowIndex = i + 1;
+                        break;
+                    }
+                }
+            }
+
+            const now = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
+            const rowData = [
+                category,
+                payload.userSummary || "",
+                payload.aiSummary || "",
+                now
+            ];
+
+            if (rowIndex > -1) {
+                catSheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
+            } else {
+                catSheet.appendRow(rowData);
+            }
+            return returnJson({ "status": "success" });
+        }
+
     } catch (err) {
         return returnJson({ "status": "error", "message": err.toString() });
     }

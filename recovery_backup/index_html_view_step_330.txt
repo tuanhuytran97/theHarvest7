@@ -1,0 +1,49 @@
+Created At: 2026-06-25T10:55:36Z
+Completed At: 2026-06-25T10:55:36Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 3945
+Total Bytes: 275914
+Showing lines 3045 to 3085
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+3045:             <span>Báo Cáo</span>
+3046:         </a>
+3047:         <a href="#" class="mobile-nav-item" data-view="cashflow">
+3048:             <i class="fa-solid fa-money-bill-transfer"></i>
+3049:             <span>Dòng Tiền</span>
+3050:         </a>
+3051:         <a href="#" class="mobile-nav-item" data-view="financial">
+3052:             <i class="fa-solid fa-file-invoice-dollar"></i>
+3053:             <span>BCTC</span>
+3054:         </a>
+3055:         <a href="#" class="mobile-nav-item" data-view="debt">
+3056:             <i class="fa-solid fa-book-journal-whills"></i>
+3057:             <span>Phải thu</span>
+3058:         </a>
+3059:         <a href="#" class="mobile-nav-item" data-view="investment">
+3060:             <i class="fa-solid fa-seedling"></i>
+3061:             <span>Đầu Tư</span>
+3062:         </a>
+3063:         <a href="#" class="mobile-nav-item" data-view="formulas">
+3064:             <i class="fa-solid fa-calculator"></i>
+3065:             <span>Công Thức</span>
+3066:         </a>
+3067:     </nav>
+3068:     </div>
+3069: 
+3070:     <!-- Scripts -->
+3071:     <!-- Libraries -->
+3072:     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+3073:     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+3074:     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+3075:     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+3076: 
+3077:     <!-- GLOBAL DATA LISTS FOR AUTOCOMPLETE -->
+3078:     <datalist id="flower-types">
+3079:         <option value="Xô ngoại"></option>
+3080:         <option value="Xô nội"></option>
+3081:         <option value="Ecuador"></option>
+3082:         <option value="Pháp"></option>
+3083:         <option value="Trắng ù"></option>
+3084:         <option value="Quốc Vương"></option>
+3085:         <option value="Ô Hồng"></option>
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

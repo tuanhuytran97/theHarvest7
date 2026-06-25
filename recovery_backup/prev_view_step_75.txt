@@ -1,0 +1,54 @@
+Created At: 2026-06-24T23:47:36Z
+Completed At: 2026-06-24T23:47:36Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 3945
+Total Bytes: 275914
+Showing lines 3900 to 3945
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+3900:                     <i class="fa-solid fa-xmark"></i>
+3901:                 </button>
+3902:             </div>
+3903:             <div class="modal-body" style="overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; padding-right: 4px;">
+3904:                 <div style="background: rgba(124, 58, 237, 0.05); border-left: 4px solid #7c3aed; padding: 12px; border-radius: 6px;">
+3905:                     <h4 style="margin: 0 0 6px 0; color: #6d28d9; font-weight: 700;" id="scientific-flower-name">Tên hoa</h4>
+3906:                     <p style="margin: 0; font-size: 0.88rem; color: #4b5563; line-height: 1.5;" id="scientific-basis-text">Đặc điểm sinh học...</p>
+3907:                 </div>
+3908:                 <div style="display: flex; flex-direction: column; gap: 12px;" id="scientific-docs-list">
+3909:                     <!-- Proof documents list will go here -->
+3910:                 </div>
+3911:             </div>
+3912:             <div style="border-top: 1px solid rgba(0,0,0,0.05); padding-top: 1rem; margin-top: 1.25rem; text-align: right;">
+3913:                 <button type="button" onclick="document.getElementById('scientific-docs-modal').style.display='none'"
+3914:                     class="btn-primary"
+3915:                     style="padding: 10px 24px; border-radius: 10px; font-weight: 800; background: #f1f5f9; color: #475569; border: none; cursor: pointer; box-shadow: none;">
+3916:                     Đóng
+3917:                 </button>
+3918:             </div>
+3919:         </div>
+3920:     </div>
+3921: 
+3922:     <!-- SCRIPTS -->
+3923:     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+3924:     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+3925:     <script src="config.js"></script>
+3926:     <script src="flower_cycles_db.js?v=20260621_v2"></script>
+3927:     <script src="todo_v2.js?v=20260621_v2"></script>
+3928:     <script src="app.js"></script>
+3929:     <script src="investment.js"></script>
+3930:     <script src="formulas.js"></script>
+3931:     <script src="chatbot.js"></script>
+3932:     
+3933:     <!-- PWA Service Worker Registration -->
+3934:     <script>
+3935:         if ('serviceWorker' in navigator) {
+3936:             window.addEventListener('load', () => {
+3937:                 navigator.serviceWorker.register('sw.js')
+3938:                     .then((reg) => console.log('Service Worker registered successfully:', reg.scope))
+3939:                     .catch((err) => console.error('Service Worker registration failed:', err));
+3940:             });
+3941:         }
+3942:     </script>
+3943: </body>
+3944: 
+3945: </html>
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

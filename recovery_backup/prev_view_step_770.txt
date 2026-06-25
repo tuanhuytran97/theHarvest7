@@ -1,0 +1,49 @@
+Created At: 2026-06-25T00:49:36Z
+Completed At: 2026-06-25T00:49:36Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 4345
+Total Bytes: 318766
+Showing lines 2950 to 3200
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+2950:                     </div>
+2951:                     <div class="card glassmorphism kpi-card">
+2952:                         <div class="kpi-icon" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;"><i class="fa-solid fa-bullseye"></i></div>
+2953:                         <div class="kpi-info">
+2954:                             <span class="kpi-label">Mục tiêu năm</span>
+2955:                             <h2 class="kpi-value" style="margin:0;">24 <span style="font-size: 0.9rem; font-weight:600; color:var(--text-light);">quyển</span></h2>
+2956:                         </div>
+2957:                     </div>
+2958:                 </div>
+2959: 
+2960:                 <!-- Wrap current Bookshelf content -->
+2961:                 <div id="books-grid-wrapper">
+2962:                     <!-- Search & Filters -->
+2963:                     <div class="card glassmorphism" style="padding: 1.25rem 1.5rem; margin-bottom: 2rem; display: flex; flex-direction: column; gap: 1rem;">
+2964:                         <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+2965:                             <div style="position: relative; flex: 1; min-width: 250px;">
+2966:                                 <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-light);"></i>
+2967:                                 <input type="text" id="book-search-input" placeholder="Tìm tên sách, tác giả, bài học..." style="w
+<truncated 25197 bytes>
+background:white; color:var(--text-dark); font-weight:600;">
+3180:                                     <option value="Muốn đọc">Muốn đọc</option>
+3181:                                     <option value="Đang đọc">Đang đọc</option>
+3182:                                     <option value="Đã đọc xong">Đã đọc xong</option>
+3183:                                 </select>
+3184:                             </div>
+3185:                             <div class="form-group" style="grid-column: span 1;">
+3186:                                 <label for="book-form-rating">Đánh Giá</label>
+3187:                                 <select id="book-form-rating" style="color: #fbbf24; font-weight:800; background:white;">
+3188:                                     <option value="0" style="color:#64748b;">Chưa đánh giá</option>
+3189:                                     <option value="5" style="color: #fbbf24;">★★★★★ (5 Sao)</option>
+3190:                                     <option value="4" style="color: #fbbf24;">★★★★☆ (4 Sao)</option>
+3191:                                     <option value="3" style="color: #fbbf24;">★★★☆☆ (3 Sao)</option>
+3192:                                     <option value="2" style="color: #fbbf24;">★★☆☆☆ (2 Sao)</option>
+3193:                                     <option value="1" style="color: #fbbf24;">★☆☆☆☆ (1 Sao)</option>
+3194:                                 </select>
+3195:                             </div>
+3196:                         </div>
+3197: 
+3198:                         <div class="form-group">
+3199:                             <div style="display: flex; justify-content: space-between; align-items:center;">
+3200:                                 <label for="book-form-progress">Tiến Trình Đọc</label>
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

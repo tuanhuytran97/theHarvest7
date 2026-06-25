@@ -1,0 +1,23 @@
+Created At: 2026-06-25T00:02:53Z
+Completed At: 2026-06-25T00:02:55Z
+The following changes were made by the multi_replace_file_content tool to: c:\Users\NC\.gemini\antigravity\scratch\farm-management\index.html. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -2966,6 +2966,7 @@
+                             <button class="book-filter-pill" data-category="Kinh doanh">💼 Kinh doanh</button>
+                             <button class="book-filter-pill" data-category="Đầu tư">📈 Đầu tư</button>
+                             <button class="book-filter-pill" data-category="Marketing">📣 Marketing</button>
++                            <button class="book-filter-pill" data-category="Tình yêu">❤️ Tình yêu</button>
+                             <button class="book-filter-pill" data-category="Khác">🧩 Khác</button>
+                         </div>
+                         <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+@@ -3128,6 +3128,7 @@
+                                     <option value="Kinh doanh">💼 Kinh doanh</option>
+                                     <option value="Đầu tư">📈 Đầu tư</option>
+                                     <option value="Marketing">📣 Marketing</option>
++                                    <option value="Tình yêu">❤️ Tình yêu</option>
+                                     <option value="Khác">🧩 Khác</option>
+                                 </select>
+                             </div>
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.

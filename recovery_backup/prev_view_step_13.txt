@@ -1,0 +1,61 @@
+Created At: 2026-06-24T23:46:48Z
+Completed At: 2026-06-24T23:46:48Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 3945
+Total Bytes: 275914
+Showing lines 1 to 800
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: <!DOCTYPE html>
+2: <html lang="vi">
+3: 
+4: <head>
+5:     <meta charset="UTF-8">
+6:     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+7:     <title>theHarvest7</title>
+8:     <link rel="icon" type="image/png" href="leaf_icon.png">
+9:     
+10:     <!-- PWA Configuration -->
+11:     <link rel="manifest" href="manifest.json">
+12:     <meta name="theme-color" content="#4f46e5">
+13:     
+14:     <!-- iOS Support -->
+15:     <meta name="apple-mobile-web-app-capable" content="yes">
+16:     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+17:     <meta name="apple-mobile-web-app-title" content="theHarvest7">
+18:     <link rel="apple-touch-icon" href="apple-touch-icon.png">
+19:     
+20:     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+21:     <link rel="stylesheet" href="styles.css">
+22:     <link rel="stylesheet" href="todo_v2.css?v=20260621_v2">
+23:     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+24:     <style>
+25:         /* Centered & narrow container style for detail view on desktop */
+26:         @media (min-width: 768px) {
+27:             #debt-detail-view {
+28:                 max-width: 680px !important;
+29:                 width: 100% !important;
+30:                 margin-left: auto !important;
+31:                 margin-right: auto !important;
+32:                 box-shadow: 0 10px 25px -5px rgba
+<truncated 38793 bytes>
+ Dashboard Grid Container for Views -->
+782:             <div id="view-todo" class="app-view dashboard-grid relative">
+783: 
+784:                 <div class="todo-content-wrapper" style="max-width: 95%; margin: 0 auto; padding: 1rem;">
+785:                     <div class="todo-integrated-header glassmorphism"
+786:                         style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; margin-bottom: 1.5rem; padding: 1.25rem 2rem; border-radius: 24px; background: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 10px 30px rgba(0,0,0,0.05); gap: 0.75rem;">
+787: 
+788:                         <div class="header-branding"
+789:                             style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+790:                             <div style="display: flex; align-items: center; gap: 12px;">
+791:                                 <i class="fa-solid fa-leaf" style="color: #4f46e5; font-size: 1.6rem;"></i>
+792:                                 <h1
+793:                                     style="margin: 0; font-size: 2.2rem; font-weight: 900; color: #4f46e5; letter-spacing: -1px; line-height: 1;">
+794:                                     theHarvest7</h1>
+795:                             </div>
+796:                             <div class="quote-wrapper"
+797:                                 style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 5px;">
+798:                                 <p
+799:                                     style="font-style: italic; color: #475569; font-size: 1.1rem; margin: 0; line-height: 1.5; font-weight: 500; max-width: 700px; position: relative; padding: 0 40px;">
+800:                                     <i class="fa-solid fa-quote-left"
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

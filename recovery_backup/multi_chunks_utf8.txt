@@ -1,0 +1,15 @@
+﻿=== MULTI REPLACE ===
+--- TARGET ---
+--- REPLACEMENT ---
+=== MULTI REPLACE ===
+--- TARGET ---
+--- REPLACEMENT ---
+=== MULTI REPLACE ===
+--- TARGET ---
+--- REPLACEMENT ---
+=== MULTI REPLACE ===
+--- TARGET ---
+--- REPLACEMENT ---
+=== MULTI REPLACE ===
+--- TARGET ---
+--- REPLACEMENT ---

@@ -1,0 +1,109 @@
+Created At: 2026-06-25T11:07:09Z
+Completed At: 2026-06-25T11:07:09Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 3945
+Total Bytes: 275914
+Showing lines 2750 to 2850
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+2750:                             style="background: linear-gradient(135deg, #b45309 0%, #d97706 100%) !important;">
+2751:                             <div class="ratio-label"><i class="fa-solid fa-chart-line"></i> HIỆU SUẤT (ROI)</div>
+2752:                             <h3 id="inv-kpi-roi" class="ratio-value" style="font-size: 1.8rem;">0%</h3>
+2753:                         </div>
+2754:                         <div class="ratio-summary-card"
+2755:                             style="background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;">
+2756:                             <div class="ratio-label"><i class="fa-solid fa-shield-halved"></i> BIÊN AN TOÀN TRUNG BÌNH
+2757:                             </div>
+2758:                             <h3 id="inv-kpi-mos" class="ratio-value" style="font-size: 1.8rem;">0%</h3>
+2759:                         </div>
+2760:                         <div class="ratio-summary-card"
+2761:                             style="background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%) !important;">
+2762:                             <div class="ratio-label"><i class="fa-solid fa-coins"></i> CỔ TỨC TÍCH LUỸ</div>
+2763:                             <h3 id="inv-kpi-dividends" class="ratio-value" style="font-size: 1.8rem;">0 ₫</h3>
+2764:                         </div>
+2765:                     </div>
+2766: 
+2767: 
+2768:                 </div>
+2769: 
+2770:                 <!-- Owner's Ledger Table -->
+2771:                 <section class="card table-card glassmorphism">
+2772:                     <div class="table-header"
+2773:                         style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 10px;">
+2774:                         <div style="display: flex; align-items: center; gap: 15px;">
+2775:                             <h2 style="margin: 0;"><i class="fa-solid fa-book-open"></i> Danh mục hiện tại</h2>
+2776:                             <span id="inv-last-updated"
+2777:                                 style="font-size: 0.8rem; color: #64748b; font-weight: 500;"></span>
+2778:                             <button id="btn-refresh-inv" class="btn-icon-refresh" title="Làm mới dữ liệu"
+2779:                                 style="background: none; border: none; color: #3b82f6; cursor: pointer; font-size: 1.1rem; transition: transform 0.3s ease;">
+2780:                                 <i class="fa-solid fa-arrows-rotate"></i>
+2781:                             </button>
+2782:                             <button id="btn-exit-demo"
+2783:                                 style="display: none; background: #fff1f2; color: #f43f5e; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; border: 1px solid #fecaca; margin-left: 10px; cursor: pointer; align-items: center; gap: 6px; transition: all 0.2s;">
+2784:                                 <i class="fa-solid fa-right-from-bracket"></i> Thoát Demo
+2785:                             </button>
+2786:                         </div>
+2787:                         <button id="btn-add-investment" class="btn-primary"
+2788:                             style="background: #0f172a; color: #f8fafc; border: none; padding: 10px 20px; font-weight: 700; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.2);">
+2789:                             <i class="fa-solid fa-plus-circle"></i> Thêm Mã Đầu Tư
+2790:                         </button>
+2791:                     </div>
+2792:                     <div class="table-responsive" style="margin-top: 15px;">
+2793:                         <table class="financial-table inv-table" id="inv-portfolio-table" style="width: 100%;">
+2794:                             <thead>
+2795:                                 <tr>
+2796:                                     <th>Mã / Tên<br>Tài Sản</th>
+2797:                                     <th>Số Lượng<br>/Cổ</th>
+2798:                                     <th><span style="color:#eab308;">Đơn Giá<br>Hiện Tại</span></th>
+2799:                                     <th>Vốn<br>Sở Hữu</th>
+2800:                                     <th>Giá Trị<br>Hiện Tại</th>
+2801:                                     <th>Lãi<br>Chênh Lệch</th>
+2802:                                     <th>Thời Gian<br>Nắm Giữ</th>
+2803:                                     <th>Định Giá<br>Lý Thuyết</th>
+2804:                                     <th>Trạng Thái</th>
+2805:                                     <th style="min-width: 100px;">Thao Tác</th>
+2806:                                 </tr>
+2807:                             </thead>
+2808:                             <tbody id="inv-portfolio-body">
+2809:                                 <tr>
+2810:                                     <td colspan="8"
+2811:                                         style="text-align: center; color: var(--text-light); padding: 2rem;">Chưa có
+2812:                                         danh mục đầu tư nào. Bấm "Thêm Mã Đầu Tư" để bắt đầu.</td>
+2813:                                 </tr>
+2814:                             </tbody>
+2815:                         </table>
+2816:                     </div>
+2817:                 </section>
+2818: 
+2819:                 <!-- Investment Analytics Section -->
+2820:                 <div id="investment-analytics" class="charts-grid"
+2821:                     style="margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; margin-bottom: 25px;">
+2822:                     <div class="card glassmorphism"
+2823:                         style="padding: 20px; border-radius: 20px; background: rgba(255, 255, 255, 0.7); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);">
+2824:                         <div
+2825:                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+2826:                             <h3 style="margin: 0; font-size: 1.1rem; color: #0f172a; font-weight: 700;">
+2827:                                 <i class="fa-solid fa-chart-line" style="color: #6366f1;"></i> Biến Động Vốn & Tài Sản
+2828:                             </h3>
+2829:                             <span style="font-size: 0.8rem; color: #64748b;">Lũy kế theo thời gian</span>
+2830:                         </div>
+2831:                         <div style="height: 300px; position: relative;">
+2832:                             <canvas id="chart-inv-equity"></canvas>
+2833:                         </div>
+2834:                     </div>
+2835: 
+2836:                     <div class="card glassmorphism"
+2837:                         style="padding: 20px; border-radius: 20px; background: rgba(255, 255, 255, 0.7); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);">
+2838:                         <div
+2839:                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+2840:                             <h3 style="margin: 0; font-size: 1.1rem; color: #0f172a; font-weight: 700;">
+2841:                                 <i class="fa-solid fa-chart-bar" style="color: #10b981;"></i> Hiệu Suất Đầu Tư (Hàng
+2842:                                 Năm)
+2843:                             </h3>
+2844:                             <div style="display: flex; gap: 10px; align-items: center;">
+2845:                                 <script>
+2846:                                     // Check if demo mode is active and show/hide exit button accordingly
+2847:                                     document.write(localStorage.getItem('inv_demo_mode') === 'true' ?
+2848:                                         `<button onclick="exitInvestmentDemoMode()" class="btn-primary" style="background: rgba(244, 63, 94, 0.1); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.3); padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; cursor: pointer;">
+2849:                                                 <i class="fa-solid fa-arrow-right-from-bracket"></i> Thoát Demo
+2850:                                             </button>` : ''
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

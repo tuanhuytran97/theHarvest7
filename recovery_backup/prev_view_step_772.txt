@@ -1,0 +1,36 @@
+Created At: 2026-06-25T00:49:37Z
+Completed At: 2026-06-25T00:49:37Z
+File Path: `file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html`
+Total Lines: 4345
+Total Bytes: 318766
+Showing lines 3201 to 3260
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+3201:                                 <span id="form-progress-val" style="font-weight:700; color:#6366f1;">0%</span>
+3202:                             </div>
+3203:                             <div style="display: flex; align-items: center; gap: 10px;">
+3204:                                 <input type="range" id="book-form-progress" min="0" max="100" value="0" style="flex: 1; cursor: pointer; height: 6px; accent-color: #6366f1;">
+3205:                             </div>
+3206:                         </div>
+3207: 
+3208:                         <div class="form-group">
+3209:                             <label for="book-form-summary">Tóm Tắt Cốt Lõi (Ngắn Gọn)</label>
+3210:                             <textarea id="book-form-summary" rows="2" placeholder="Nhập tóm tắt sơ lược của sách..." style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px 12px; font-family: inherit; font-size: 0.9rem; outline: none; resize: vertical; box-sizing: border-box;"></textarea>
+3211:                         </div>
+3212: 
+3213:                         <div class="form-group">
+3214:                             <label for="book-form-content-directory">Danh Mục Nội Dung (Table of Contents / Outlines)</label>
+3215:                             <textarea id="book-form-content-directory" rows="4" placeholder="Nhập mục lục hoặc danh mục nội dung chi tiết của sách (hỗ trợ định dạng gạch đầu dòng, markdown để hiển thị đẹp mắt)..." style="width: 100%; border: 1px solid var(--
+<truncated 3519 bytes>
+und: white; border-radius: 24px; width: 100%; max-width: 900px; height: 85vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.8); animation: slideInUpPremium 0.4s ease; position: relative;">
+3250:                     <!-- Loading Spinner for AI Synthesis -->
+3251:                     <div id="category-summary-loading" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 10; align-items: center; justify-content: center; flex-direction: column; gap: 1rem;">
+3252:                         <i class="fa-solid fa-brain fa-bounce" style="font-size: 3.5rem; color: #8b5cf6;"></i>
+3253:                         <div style="font-weight: 800; color: #6d28d9; font-size: 1.1rem; text-align:center; padding: 0 2rem;" id="category-summary-loading-text">Gemini AI đang liên kết toàn bộ bài học và đúc kết triết lý...</div>
+3254:                     </div>
+3255:                     
+3256:                     <!-- Header -->
+3257:                     <div style="padding: 1.25rem 2rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+3258:                         <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b;" id="category-summary-modal-title">Tổng Hợp Tinh Hoa Lĩnh Vực</h3>
+3259:                         <button onclick="closeCategorySummaryModal()" style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 1.5rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; hover: background: #f1f5f9;"><i class="fa-solid fa-xmark"></i></button>
+3260:                     </div>
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

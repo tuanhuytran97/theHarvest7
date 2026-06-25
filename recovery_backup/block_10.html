@@ -1,0 +1,129 @@
+{"step_index":46,"source":"MODEL","type":"PLANNER_RESPONSE","status":"DONE","created_at":"2026-06-25T10:25:29Z","content":"I will search for `book-content-directory` in [styles.css](file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/styles.css) to check its styling.","tool_calls":[{"name":"grep_search","args":{"CaseInsensitive":"true","IsRegex":"false","MatchPerLine":"true","Query":"\"book-content-directory\"","SearchPath":"\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\styles.css\""}}]}
+{"step_index":47,"source":"MODEL","type":"GREP_SEARCH","status":"DONE","created_at":"2026-06-25T10:25:34Z","content":"Created At: 2026-06-25T10:25:34Z\nCompleted At: 2026-06-25T10:25:34Z\nNo results found"}
+{"step_index":48,"source":"MODEL","type":"PLANNER_RESPONSE","status":"DONE","created_at":"2026-06-25T10:25:34Z","content":"I will search for `markdown-` classes in [styles.css](file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/styles.css) to find the styling rules applied to the parsed Table of Contents elements.","tool_calls":[{"name":"grep_search","args":{"CaseInsensitive":"true","IsRegex":"false","MatchPerLine":"true","Query":"\"markdown-\"","SearchPath":"\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\styles.css\""}}]}
+{"step_index":49,"source":"MODEL","type":"GREP_SEARCH","status":"DONE","created_at":"2026-06-25T10:25:40Z","content":"Created At: 2026-06-25T10:25:40Z\nCompleted At: 2026-06-25T10:25:40Z\nNo results found"}
+{"step_index":50,"source":"MODEL","type":"PLANNER_RESPONSE","status":"DONE","created_at":"2026-06-25T10:25:40Z","content":"I will search the entire workspace for `markdown-` to locate any styling defined for markdown tags.","tool_calls":[{"name":"grep_search","args":{"CaseInsensitive":"true","IsRegex":"false","MatchPerLine":"true","Query":"\"markdown-\"","SearchPath":"\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\""}}]}
+{"step_index":51,"source":"MODEL","type":"GREP_SEARCH","status":"DONE","created_at":"2026-06-25T10:25:43Z","content":"Created At: 2026-06-25T10:25:43Z\nCompleted At: 2026-06-25T10:25:43Z\n{\"File\":\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\styles.css\",\"LineNumber\":5272,\"LineContent\":\".markdown-h1 {\"}\n{\"File\":\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\styles.css\",\"LineNumber\":5281,\"LineContent\":\".markdown-h2 {\"}\n{\"File\":\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\styles.css\",\"LineNumber\":5290,\"LineContent\":\".markdown-h3 {\"}\n{\"File\":\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\styles.css\",\"LineNumber\":5302,\"LineContent\":\".markdown-p {\"}\n{\"File\":\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\styles.css\",\"LineNumber\":5310,\"LineContent\":\".markdown-strong {\"}\n{\"File\":\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\styles.css\",\"LineNumber\":5318,\"LineContent\":\".markdown-hr {\"}\n{\"File\":\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\styles.css\",\"LineNumber\":5325,\"LineContent\":\".markdown-ul {\"}\n{\"File\":\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\styles.css\",\"LineNumber\":5331,\"LineContent\":\".markdown-li {\"}\n{\"File\":\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\styles.css\",\"LineNumber\":5340,\"LineContent\":\".markdown-li::before {\"}\n{\"File\":\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\styles.css\",\"LineNumber\":5352,\"LineContent\":\".markdown-spacer {\"}\n{\"File\":\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\styles.css\",\"LineNumber\":5357,\"LineContent\":\".markdown-details {\"}\n{\"File\":\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\styles.css\",\"LineNumber\":5365,\"LineContent\":\".markdown-details[open] {\"}\n{\"File\":\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\styles.css\",\"LineNumber\":5369,\"LineContent\":\".markdown-summary {\"}\n{\"File\":\"c:\\\\Users\\\\NC\\\\.gemini\\\\antigravity\\\\scratch\\\\farm-management\\\\st
+{"step_index":8,"source":"MODEL","type":"PLANNER_RESPONSE","status":"DONE","created_at":"2026-06-25T10:20:24Z","conte
+{"step_index":9,"source":"MODEL","type":"VIEW_FILE","status":"DONE","created_at":"2026-06-25T10:20:26Z","content":"Cr
+{"step_index":11,"source":"MODEL","type":"GREP_SEARCH","status":"DONE","created_at":"2026-06-25T10:20:28Z","content"
+const fs = require('fs');
+
+// Fix 1: detail-contents-text in index.html - remove white-space: pre-wrap
+let html = fs.readFileSync('c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html', 'utf8');
+
+const oldDetailContents = '<div id="detail-contents-text" style="color: #475569; line-height: 1.7; font-size: 0.95rem; white-space: pre-wrap;">';
+const newDetailContents = '<div id="detail-contents-text" class="book-content-directory">';
+
+if (html.indexOf(oldDetailContents) !== -1) {
+    html = html.replace(oldDetailContents, newDetailContents);
+    fs.writeFileSync('c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html', html, 'utf8');
+    console.log('Fix 1: Fixed detail-contents-text element');
+} else {
+    console.log('Fix 1: Target already changed or not found');
+}
+
+// Fix 2: Remove `open` from all markdown-details in parseMarkdownToHtml in books.js
+// so chapters start collapsed - user can click to expand
+let booksJs = fs.readFileSync('c:/Users/NC/.gemini/antigravity/scratch/farm-management/books.js', 'utf8');
+
+// Change `<details class="markdown-details" open>` to `<details class="markdown-details">`
+const oldDetailsOpen = '<details class="markdown-details" open>';
+const newDetails = '<details class="markdown-details">';
+
+if (booksJs.indexOf(oldDetailsOpen) !== -1) {
+    booksJs = booksJs.split(oldDetailsOpen).join(newDetails);
+    fs.writeFileSync('c:/Users/NC/.gemini/antigravity/scratch/farm-management/books.js', booksJs, 'utf8');
+    console.log('Fix 2: Removed open attribute from details elements');
+} else {
+    console.log('Fix 2: open attribute not found');
+}
+
+console.log('All fixes applied!');
+
+const fs = require('fs');
+const path = 'c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html';
+
+let html = fs.readFileSync(path, 'utf8');
+
+// Update the contents tab header to be more descriptive
+const oldContentsTab = `<div id="tab-contents" class="book-tab-content">
+                                    <h4 style="margin: 0 0 10px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Danh m\u1ee5c \u0026 N\u1ed9i dung chi ti\u1ebft</h4>
+                                    <div id="detail-contents-text" class="book-content-directory">
+                                        <!-- Will populate parsed content directory here -->
+                                    </div>
+                                </div>`;
+
+const newContentsTab = `<div id="tab-contents" class="book-tab-content">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+                                        <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <i class="fa-solid fa-list-ol" style="color: white; font-size: 0.85rem;"></i>
+                                        </div>
+                                        <div>
+                                            <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">M\u1ee5c l\u1ee5c n\u1ed9i dung</h4>
+                                            <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #94a3b8; font-weight: 500;">Click v\xe0o m\u1ed7i ch\u01b0\u01a1ng \u0111\u1ec3 m\u1edf r\u1ed9ng chi ti\u1ebft</p>
+                                        </div>
+                                    </div>
+                                    <div id="detail-contents-text" class="book-content-directory">
+                                        <!-- Will populate parsed content directory here -->
+                                    </div>
+                                </div>`;
+
+if (html.indexOf(oldContentsTab) !== -1) {
+    html = html.replace(oldContentsTab, newContentsTab);
+    fs.writeFileSync(path, html, 'utf8');
+    console.log('Updated contents tab header');
+} else {
+    console.log('WARNING: Could not find old contents tab. Trying alternative...');
+    // Try to find just the h4 line
+    const altSearch = 'Danh m';
+    const idx = html.indexOf(altSearch);
+    if (idx !== -1) {
+        console.log('Found Danh m at idx:', idx);
+        console.log('Context:', JSON.stringify(html.substring(idx-100, idx+300)));
+    }
+}
+
+const fs = require('fs');
+const path = 'c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html';
+
+let html = fs.readFileSync(path, 'utf8');
+
+// The file uses CRLF line endings, so we match with \r\n
+// The old h4 for tab-contents
+const oldH4 = '<h4 style="margin: 0 0 10px 0; font-size: 1rem; font-weight: 800; color: #1e293b;">Danh m\u1ee5c & N\u1ed9i dung chi ti\u1ebft</h4>';
+
+// Check if we can find it with different encoding approach
+const idx = html.indexOf('Danh m');
+console.log('idx of Danh m:', idx);
+console.log('Context at tab-contents h4:', JSON.stringify(html.substring(
+    html.indexOf('tab-contents') + 'tab-contents"'.length,
+    html.indexOf('tab-contents') + 'tab-contents"'.length + 300
+)));
+
+// Try to find the h4 within the tab-contents div
+const tabContentsStart = html.indexOf('<div id="tab-contents" class="book-tab-content">');
+if (tabContentsStart === -1) {
+    console.log('Cannot find tab-contents div');
+    process.exit(1);
+}
+
+const h4Start = html.indexOf('<h4', tabContentsStart);
+const h4End = html.indexOf('</h4>', h4Start) + '</h4>'.length;
+console.log('h4 from', h4Start, 'to', h4End);
+console.log('h4 content:', JSON.stringify(html.substring(h4Start, h4End)));
+
+// Replace the h4 with nicer header
+const newHeader = `<div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+                                        <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <i class="fa-solid fa-list-ol" style="color: white; font-size: 0.85rem;"></i>
+                                        </div>
+                                        <div>
+                                            <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #1e293b;">M\u1ee5c l\u1ee5c n\u1ed9i dung</h4>
+                                            <p style="margin: 2px 0 0 0; font-size: 0.78rem; color: #94a3b8; font-weight: 500;">Click v\xe0o m\u1ed7i ch\u01b0\u01a1ng \u0111\u1ec3 m\u1edf r\u1ed9ng chi ti\u1ebft</p>
+                                        </div>
+                                    </div>`;
+
+const newHtml = html.substring(0, h4Start) + newHeader + html.substring(h4End);
+fs.writeFileSync(path, newHtml, 'utf8');
+console.log('Updated h4 in tab-contents to a nicer header');

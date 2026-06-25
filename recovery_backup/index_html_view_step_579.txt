@@ -1,0 +1,25 @@
+Created At: 2026-06-25T11:04:08Z
+Completed At: 2026-06-25T11:04:08Z
+File Path: `file:///C:/Users/NC/.gemini/antigravity-ide/brain/1bf74721-f193-43f9-a444-6344e20f79f7/scratch/print_multi.ps1`
+Total Lines: 17
+Total Bytes: 698
+Showing lines 1 to 17
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: $json = Get-Content "c:\Users\NC\.gemini\antigravity\scratch\farm-management\html_changes.json" | ConvertFrom-Json
+2: foreach ($j in $json) {
+3:     if ($j.tool_calls) {
+4:         foreach ($tc in $j.tool_calls) {
+5:             if ($tc.name -eq "multi_replace_file_content" -and $tc.args.TargetFile -like "*index.html*") {
+6:                 Write-Output "=== MULTI REPLACE ==="
+7:                 foreach ($chunk in $tc.args.ReplacementChunks) {
+8:                     Write-Output "--- TARGET ---"
+9:                     Write-Output $chunk.TargetContent
+10:                     Write-Output "--- REPLACEMENT ---"
+11:                     Write-Output $chunk.ReplacementContent
+12:                 }
+13:             }
+14:         }
+15:     }
+16: }
+17: 
+The above content shows the entire, complete file contents of the requested file.

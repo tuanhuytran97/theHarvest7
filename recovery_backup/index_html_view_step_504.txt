@@ -1,0 +1,58 @@
+Created At: 2026-06-25T11:01:55Z
+Completed At: 2026-06-25T11:01:55Z
+File Path: `file:///C:/Users/NC/.gemini/antigravity-ide/brain/3b505c62-b5f1-4511-8f3f-bf8a53d88296/walkthrough.md`
+Total Lines: 50
+Total Bytes: 3540
+Showing lines 1 to 50
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: # Tài liệu bàn giao (Walkthrough) - Thanh tích sản "Hành Trình Tích Sản"
+2: 
+3: Đã hoàn thành việc phát triển và tích hợp thanh tích sản **"Hành Trình Tích Sản"** vào mục Báo cáo tài chính của ứng dụng quản lý nông trại với thiết kế cao cấp, nổi bật.
+4: 
+5: ---
+6: 
+7: ## Các thay đổi đã thực hiện
+8: 
+9: ### 1. Style & CSS
+10: - **File sửa đổi**: [styles.css](file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/styles.css)
+11: - **Mô tả**: Bổ sung và tinh chỉnh định dạng cho `.accumulation-journey-card`:
+12:   - Nền màu tối cao cấp (dark theme gradient) để tạo sự tương phản cực mạnh với các phần còn lại.
+13:   - Đường viền mỏng màu vàng hoàng gia (`rgba(251, 191, 36, 0.2)`) đi kèm hiệu ứng đổ bóng phát sáng nhẹ (`0 0 25px rgba(99, 102, 241, 0.15)`).
+14:   - Thẻ chỉ số phụ `.accumulation-metric-card` được phủ lớp gương tối mờ (semi-transparent dark) đem lại cảm giác tối tân và chuyên nghiệp.
+15:   - Tăng tốc độ hoạt ảnh lướt sáng (`shimmer-shine`) lên `2.5s` và tăng độ hiển thị để thanh tiến độ lấp lánh sinh động hơn.
+16: 
+17: ### 2. Giao diện người dùng (HTML)
+18: - **File sửa đổi**: [index.html](file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/index.html)
+19: - **Mô tả**: Thiết lập cấu trúc giao diện tương thích với bảng màu tối:
+20:   - Loại bỏ các inline styles tối màu cũ trên text để thay bằng màu chữ sáng nổi bật (trắng, vàng kim, xanh neon).
+21:   - Tăng nhẹ chiều cao thanh tiến độ lên `26px`, sử dụng dải màu gradient neon ấn tượng (từ Indigo -> Blue -> Emerald).
+22:   - Gắn icon cúp vàng phát sáng ở đầu tiêu đề.
+23: 
+24: ### 3. Logic xử lý dữ liệu (Javascript)
+25: - **File sửa đổi**: [app.js](file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/app.js)
+26: - **Mô tả**: 
+27:   - Khởi tạo hàm `updateAccumulationJourney(years, equityRow)` tìm kiếm năm lớn nhất trong danh sách cột dữ liệu, trích xuất giá trị VCSH tương ứng, nhân quy đổi về đơn vị đồng (VND) thực tế.
+28:   - Tính toán tỷ lệ hoàn thành mục tiêu: `VCSH_Hiện_Tại / 10_Tỷ * 100`.
+29:   - Cập nhật linh hoạt giao diện: chiều rộng thanh tiến độ, hiển thị số tiền còn thiếu (hoặc biểu tượng hoàn thành mục tiêu nếu VCSH đã lớn hơn hoặc bằng 10 tỷ).
+30:   - Tự động kích hoạt khi load bảng báo cáo tài chính thành công (cả từ cache cục bộ hoặc khi đồng bộ từ Google Sheets).
+31: 
+32: ### 4. Cache Service Worker
+33: - **File sửa đổi**: [sw.js](file:///c:/Users/NC/.gemini/antigravity/scratch/farm-management/sw.js)
+34: - **Mô tả**: Nâng phiên bản cache từ `v1` lên `v3` để cưỡng chế trình duyệt cập nhật các file CSS, HTML và JS mới nhất.
+35: 
+36: ---
+37: 
+38: ## Xác thực dữ liệu (Validation)
+39: 
+40: - **Số liệu đầu vào**:
+41:   - Năm gần nhất: `2026`
+42:   - Vốn chủ sở hữu năm `2026`: `1.325` (Triệu VND)
+43:   - Mục tiêu: `10.000` (Triệu VND)
+44: - **Số liệu tính toán**:
+45:   - VCSH thực tế: `1.325.000.000 ₫`
+46:   - Phần trăm tiến độ: `1.325 / 10.000 * 100 = 13.25%` (Làm tròn hiển thị: `13,3%`)
+47:   - Số tiền còn thiếu: `8.675.000.000 ₫`
+48: - **Kết quả hiển thị**: Các thẻ HTML và thanh tiến độ được điền và hiển thị khớp 100% với số liệu trên.
+49: 
+50: 
+The above content shows the entire, complete file contents of the requested file.
