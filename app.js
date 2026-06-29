@@ -3740,7 +3740,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const isMonth = val === 'month';
             const isQuarter = val.startsWith('q');
 
-            monthSelectContainer.style.display = isMonth ? 'flex' : 'none';
+            monthSelectContainer.style.display = (isMonth || val === 'ytd') ? 'flex' : 'none';
 
             // Adjust chart displays
             document.getElementById('yearly-report-charts').style.display = (isMonth || isQuarter) ? 'none' : 'grid';
@@ -3748,13 +3748,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const chartTitleSpan = document.querySelector('#monthly-report-charts h2 span');
             if (chartTitleSpan) {
-                chartTitleSpan.innerText = isMonth ? 'Báo Cáo Chi Tiết Tháng' : 'Báo Cáo Chi Tiết Quý';
+                if (val === 'month') {
+                    chartTitleSpan.innerText = 'Báo Cáo Kết Quả Kinh Doanh Tháng';
+                } else if (val === 'ytd') {
+                    chartTitleSpan.innerText = 'Báo Cáo Kết Quả Kinh Doanh Luỹ Kế (YTD)';
+                } else if (val.startsWith('q')) {
+                    chartTitleSpan.innerText = 'Báo Cáo Kết Quả Kinh Doanh Quý';
+                } else {
+                    chartTitleSpan.innerText = 'Báo Cáo Kết Quả Kinh Doanh Năm';
+                }
             }
 
             const kpiLabels = document.querySelectorAll('.kpi-cards h3');
             kpiLabels.forEach(label => {
-                let context = isMonth ? 'T.Tháng' : (isQuarter ? 'T.Quý' : 'T.Năm');
-                label.innerText = label.innerText.replace(/T\.(Tháng|Năm|Quý)/g, context);
+                let context = val === 'month' ? 'T.Tháng' : (val.startsWith('q' ) ? 'T.Quý' : (val === 'ytd' ? 'Luỹ Kế (YTD)' : 'T.Năm'));
+                label.innerText = label.innerText.replace(/T\.(Tháng|Năm|Quý)|Luỹ Kế \(YTD\)/g, context);
             });
             updateDashboard();
             syncMainToComparison();
@@ -3974,6 +3982,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (selectedMonth < curMonth) return true;
                 if (selectedMonth > curMonth) return false;
                 return rowDay <= curDay;
+            } else if (rangeVal === 'ytd') {
+                if (rowMonth < curMonth) return true;
+                if (rowMonth === curMonth) return rowDay <= curDay;
+                return false;
             } else if (rangeVal.startsWith('q')) {
                 const qNum = parseInt(rangeVal.substring(1));
                 const curQ = Math.ceil(curMonth / 3);
@@ -4012,6 +4024,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const rangeVal = rangeSelect ? rangeSelect.value : 'month';
         const isMonthlyRange = rangeVal === 'month';
         const isQuarterRange = rangeVal.startsWith('q');
+        const isYtdRange = rangeVal === 'ytd';
 
         // Baseline determination (default is same period last year)
         let baselineYear = selectedYear - 1;
@@ -4024,7 +4037,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const mPrev = document.getElementById('report-month-prev');
             const qPrev = document.getElementById('report-quarter-prev');
             if (yPrev) baselineYear = parseInt(yPrev.value);
-            if (mPrev && isMonthlyRange) baselineMonth = parseInt(mPrev.value);
+            if (mPrev && (isMonthlyRange || isYtdRange)) baselineMonth = parseInt(mPrev.value);
             if (qPrev && isQuarterRange) baselineQuarter = qPrev.value;
         }
 
@@ -4076,6 +4089,9 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (isMonthlyRange) {
                 if (rowYear === selectedYear && rowMonth === selectedMonth) isCurr = true;
                 if (rowYear === baselineYear && rowMonth === baselineMonth) isPrev = true;
+            } else if (isYtdRange) {
+                if (rowYear === selectedYear && rowMonth >= 1 && rowMonth <= selectedMonth) isCurr = true;
+                if (rowYear === baselineYear && rowMonth >= 1 && rowMonth <= baselineMonth) isPrev = true;
             } else { // Yearly
                 if (rowYear === selectedYear) isCurr = true;
                 if (rowYear === baselineYear) isPrev = true;
@@ -4631,7 +4647,7 @@ document.addEventListener("DOMContentLoaded", () => {
             el.innerHTML = `<i class="fa-solid ${icon}"></i> ${Math.abs(diffPct).toFixed(1)}% <span style="font-size: 0.85em; margin-left: 4px; opacity: 0.9;">(${prevFormatted} vs ${compTitle})</span>`;
         }
 
-        const compTitle = isMonthlyRange ? `T${baselineMonth}/${baselineYear}` : (isQuarterRange ? `Quý ${(baselineQuarter || rangeVal).substring(1).toUpperCase()} ${baselineYear}` : `Năm ${baselineYear}`);
+        const compTitle = isMonthlyRange ? `T${baselineMonth}/${baselineYear}` : (isQuarterRange ? `Quý ${(baselineQuarter || rangeVal).substring(1).toUpperCase()} ${baselineYear}` : (isYtdRange ? `YTD T${selectedMonth}/${baselineYear}` : `Năm ${baselineYear}`));
         updateGrowth('growth-qty', totalQty, prevQty, compTitle, '');
         updateGrowth('growth-revenue', totalRevenue, prevRevenue, compTitle, '₫');
         updateGrowth('growth-expense', totalExpense, prevExpense, compTitle, '₫', true);
@@ -4640,8 +4656,18 @@ document.addEventListener("DOMContentLoaded", () => {
         renderDetailedStatement(statement, totalRevenue, totalExpense, totalProfit);
 
         if (!isMonthlyRange && !isQuarterRange) {
-            const labels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
-            renderYearlyCharts(labels, yearlyMonthlyData, selectedYear);
+            if (isYtdRange) {
+                const labels = [];
+                const ytdData = [];
+                for (let m = 0; m < selectedMonth; m++) {
+                    labels.push(`T${m + 1}`);
+                    ytdData.push(yearlyMonthlyData[m]);
+                }
+                renderYearlyCharts(labels, ytdData, selectedYear);
+            } else {
+                const labels = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
+                renderYearlyCharts(labels, yearlyMonthlyData, selectedYear);
+            }
         } else if (isMonthlyRange) {
             const filteredDays = [];
             dailyData.forEach((d, i) => {
@@ -5547,6 +5573,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     return inCurrQ && rowYear === selectedYear;
                 } else if (rangeVal === 'month') {
                     return rowYear === selectedYear && rowMonth === parseInt(selectedMonthStr);
+                } else if (rangeVal === 'ytd') {
+                    return rowYear === selectedYear && rowMonth >= 1 && rowMonth <= parseInt(selectedMonthStr);
                 } else { // Yearly
                     return rowYear === selectedYear;
                 }
