@@ -1226,6 +1226,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const vuaPackCostInput = document.getElementById('vua-packing-cost');
     const vuaTotalCostInput = document.getElementById('vua-total-cost');
     const vuaTotalCollectInput = document.getElementById('vua-total-collect');
+    const vuaOutsideFlowerCostInput = document.getElementById('vua-outside-flower-cost');
+    const vuaOutsideFlowerNoteInput = document.getElementById('vua-outside-flower-note');
 
     const expenseFields = document.getElementById('expense-fields');
     const addExpenseBtn = document.getElementById('add-expense-btn');
@@ -1558,8 +1560,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const shipping = parseMoney(vuaShipCostInput ? vuaShipCostInput.value : "0");
         const vattu = parseMoney(vuaVattuCostInput ? vuaVattuCostInput.value : "0");
         const packing = parseMoney(vuaPackCostInput ? vuaPackCostInput.value : "0");
+        const outsideFlowerCost = parseMoney(vuaOutsideFlowerCostInput ? vuaOutsideFlowerCostInput.value : "0");
 
-        let totalCollect = totalCost + shipping + vattu + packing;
+        let totalCollect = totalCost + shipping + vattu + outsideFlowerCost + packing;
 
         if (vuaTotalCollectInput) {
             vuaTotalCollectInput.value = formatMoneyStr(totalCollect);
@@ -1604,7 +1607,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const targetCollect = roundedPrice * totalBundles;
                 const shipping = parseMoney(vuaShipCostInput ? vuaShipCostInput.value : "0");
                 const vattu = parseMoney(vuaVattuCostInput ? vuaVattuCostInput.value : "0");
-                const newPacking = targetCollect - (sumCost + shipping + vattu);
+                const outsideFlowerCost = parseMoney(vuaOutsideFlowerCostInput ? vuaOutsideFlowerCostInput.value : "0");
+                const newPacking = targetCollect - (sumCost + shipping + vattu + outsideFlowerCost);
 
                 if (suggestBox && suggestBtn && newPacking >= 0) {
                     suggestBox.style.display = 'block';
@@ -1769,6 +1773,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (vuaShipCostInput) vuaShipCostInput.addEventListener('input', calculateVuaTotals);
     if (vuaVattuCostInput) vuaVattuCostInput.addEventListener('input', calculateVuaTotals);
     if (vuaPackCostInput) vuaPackCostInput.addEventListener('input', calculateVuaTotals);
+    if (vuaOutsideFlowerCostInput) vuaOutsideFlowerCostInput.addEventListener('input', calculateVuaTotals);
     if (vuaTotalCollectInput) vuaTotalCollectInput.addEventListener('input', () => {
         const userCollect = parseMoney(vuaTotalCollectInput.value);
         let sumCost = 0;
@@ -1780,9 +1785,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const shipping = parseMoney(vuaShipCostInput ? vuaShipCostInput.value : "0");
         const vattu = parseMoney(vuaVattuCostInput ? vuaVattuCostInput.value : "0");
+        const outsideFlowerCost = parseMoney(vuaOutsideFlowerCostInput ? vuaOutsideFlowerCostInput.value : "0");
 
         // Auto update Packing Cost based on Total Collect changes
-        const newPacking = userCollect - (sumCost + shipping + vattu);
+        const newPacking = userCollect - (sumCost + shipping + vattu + outsideFlowerCost);
         if (vuaPackCostInput) vuaPackCostInput.value = formatMoneyStr(Math.max(0, newPacking));
 
         calculateBundlesAndPrice(vuaTotalCollectInput.value);
@@ -2464,7 +2470,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
                 if (statusInput) updates["Status"] = statusInput.value;
-                if (noteInput) updates["Ghi Chú"] = noteInput.value;
+                if (noteInput) {
+                    updates["Ghi Chú"] = noteInput.value;
+                    updates["Ghi Chú Chi Phí"] = noteInput.value;
+                }
 
                 // Auto-calculate flower revenue for completeness
                 if (qtyInput && priceInput) {
@@ -8188,6 +8197,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const vattuCost = parseMoney(vuaVattuCostInput.value);
             const packingCost = parseMoney(document.getElementById('vua-packing-cost') ? document.getElementById('vua-packing-cost').value : "0");
             const totalCollect = parseMoney(vuaTotalCollectInput.value);
+            const outsideFlowerCost = parseMoney(vuaOutsideFlowerCostInput ? vuaOutsideFlowerCostInput.value : "0");
+            const outsideFlowerNote = vuaOutsideFlowerNoteInput ? vuaOutsideFlowerNoteInput.value.trim() : "";
             const items = flowerItemsContainer.querySelectorAll('.flower-item');
 
             let sumCost = 0;
@@ -8228,6 +8239,48 @@ document.addEventListener("DOMContentLoaded", () => {
                     "Tiền Phải Thu": index === 0 ? totalCollect : 0, "Chi Phí": index === 0 ? shipCost : 0, "Doanh Thu Khác": index === 0 ? expectedRevenue : 0
                 });
             });
+
+            // Add outside flower cost row if greater than 0
+            if (outsideFlowerCost > 0) {
+                const noteCP = outsideFlowerNote || "Mua bông ngoài";
+                payloadRowsStr.push({
+                    "Ngày": dateStr,
+                    "Status": statusVal,
+                    "Người Mua": buyerVal,
+                    "Số lượng": "0",
+                    "Giá": "0",
+                    "Doanh Thu Bông": "0",
+                    "Phân Loại Bông": "",
+                    "Ghi Chú": noteCP,
+                    "Đã Thu": "",
+                    "Tiền Phải Thu": "",
+                    "Ghi Chú Vựa thu": "",
+                    "Doanh Thu Khác": "",
+                    "Loại DT": "Vựa",
+                    "Chi Phí": outsideFlowerCost.toString(),
+                    "Loại CP": "Mua Bông",
+                    "Ghi Chú Chi Phí": noteCP
+                });
+
+                payloadRowsParsed.push({
+                    "Ngày": dateStr,
+                    "Status": statusVal,
+                    "Người Mua": buyerVal,
+                    "Phân Loại Bông": "",
+                    "Ghi Chú": noteCP,
+                    "Loại DT": "Vựa",
+                    "Loại CP": "Mua Bông",
+                    "Ghi Chú Chi Phí": noteCP,
+                    parsedDate: dInput,
+                    "Số lượng": 0,
+                    "Giá": 0,
+                    "Doanh Thu Bông": 0,
+                    "Đã Thu": 0,
+                    "Tiền Phải Thu": 0,
+                    "Chi Phí": outsideFlowerCost,
+                    "Doanh Thu Khác": 0
+                });
+            }
         } else if (entryMode === 'expense') {
             const expItems = expenseItemsContainer.querySelectorAll('.expense-item');
 
