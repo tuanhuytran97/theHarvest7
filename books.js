@@ -2509,14 +2509,68 @@ function initCongQuaCach() {
                 return;
             }
 
+            // Helper for description similarity check
+            const getCleanDesc = (text) => {
+                return text.toLowerCase()
+                    .replace(/[.,\/#!$%\^&\*;:{}=\-_\`~()?]/g, "")
+                    .replace(/\s+/g, " ")
+                    .trim();
+            };
+
+            const isSimilar = (str1, str2) => {
+                const clean1 = getCleanDesc(str1);
+                const clean2 = getCleanDesc(str2);
+                if (clean1 === clean2) return true;
+                if (clean1.length > 6 && clean2.length > 6) {
+                    if (clean1.includes(clean2) || clean2.includes(clean1)) return true;
+                }
+                return false;
+            };
+
+            // Calculate progressive points for repeat occurrences within 7 days
+            const cleanNew = getCleanDesc(desc);
+            const inputDate = new Date(date);
+            
+            const recentMatches = (congQuaCachCache || []).filter(item => {
+                if (item.type !== 'qua') return false;
+                if (!isSimilar(item.description, desc)) return false;
+                
+                const itemDate = new Date(item.date);
+                const diffTime = Math.abs(inputDate - itemDate);
+                const diffDays = diffTime / (1000 * 60 * 60 * 24);
+                return diffDays <= 7;
+            });
+
+            const matchCount = recentMatches.length;
+            let finalPoints = points;
+            let progressive = null;
+            
+            if (matchCount > 0) {
+                let multiplier = 1.0;
+                if (matchCount === 1) {
+                    multiplier = 1.5;
+                } else if (matchCount === 2) {
+                    multiplier = 2.0;
+                } else {
+                    multiplier = 3.0;
+                }
+                finalPoints = Math.round(points * multiplier);
+                progressive = {
+                    matchCount: matchCount,
+                    originalPoints: points,
+                    multiplier: multiplier
+                };
+            }
+
             const record = {
                 id: 'CQC_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
                 type: 'qua',
                 description: desc,
                 area: area,
-                points: points,
+                points: finalPoints,
                 date: date,
                 lesson: lesson,
+                progressive: progressive,
                 createdAt: new Date().toLocaleString('vi-VN')
             };
 
@@ -2528,7 +2582,11 @@ function initCongQuaCach() {
                 document.getElementById('cqc-input-lesson-qua').value = '';
             }
             if (window.showToast) {
-                window.showToast("Đã ghi nhận lỗi lầm & bài học sửa mình! 🧘", "warning");
+                if (progressive) {
+                    window.showToast(`Phát hiện lỗi lặp lại lần ${matchCount + 1} trong 7 ngày! Lũy tiến ${progressive.multiplier}x (Trừ ${finalPoints} điểm) 🧘`, "warning");
+                } else {
+                    window.showToast("Đã ghi nhận lỗi lầm & bài học sửa mình! 🧘", "warning");
+                }
             }
         };
     }
@@ -2936,6 +2994,16 @@ function renderCongQuaCachLogs() {
             }
         }
         
+        let progressiveHtml = '';
+        if (item.progressive) {
+            const multText = `${item.progressive.multiplier}x`;
+            progressiveHtml = `
+                <span style="display: inline-block; font-size: 0.65rem; font-weight: 800; background: #fff1f2; color: #e11d48; padding: 1px 4px; border-radius: 4px; margin-left: 6px; border: 1.5px solid rgba(225, 29, 72, 0.2);" title="Lũy tiến do lặp lại lỗi">
+                    <i class="fa-solid fa-triangle-exclamation" style="margin-right: 2px;"></i>Lặp lần ${item.progressive.matchCount + 1} (${multText})
+                </span>
+            `;
+        }
+
         return `
             <div class="cqc-log-item ${typeClass}" style="padding: 10px; margin-bottom: 6px;">
                 <div class="cqc-log-icon cqc-log-icon-${item.area}" title="${AREA_LABELS[item.area]}" style="width: 28px; height: 28px; font-size: 0.75rem;">
@@ -2948,7 +3016,10 @@ function renderCongQuaCachLogs() {
                     </div>
                     <p style="margin: 2px 0 0 0; font-size: 0.8rem; font-weight: 600; color: #334155; line-height: 1.35; word-break: break-word;">${escapeHtml(item.description)}</p>
                     <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 4px;">
-                        <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; background: #f1f5f9; color: #64748b; padding: 1px 4px; border-radius: 4px;">${AREA_LABELS[item.area]}</span>
+                        <div style="display: flex; align-items: center;">
+                            <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; background: #f1f5f9; color: #64748b; padding: 1px 4px; border-radius: 4px;">${AREA_LABELS[item.area]}</span>
+                            ${progressiveHtml}
+                        </div>
                     </div>
                     ${lessonHtml}
                 </div>
