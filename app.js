@@ -8461,7 +8461,7 @@ document.addEventListener("DOMContentLoaded", () => {
     currentLimit = 20;
 
     // Restore saved view on load (Centralized initialization)
-    const savedView = localStorage.getItem("active_app_view") || 'todo';
+    const savedView = localStorage.getItem("active_app_view") || 'books';
     switchView(savedView);
 
     if (entryTypeSelect) {

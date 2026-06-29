@@ -640,7 +640,8 @@
                 </div>
             </div>
             <nav>
-                <a href="#" id="menu-todo" class="active"><i class="fa-solid fa-list-check"></i> <span>Công
+                <a href="#" id="menu-books" class="active"><i class="fa-solid fa-book-open"></i> <span>Tủ Sách Tinh Hoa</span></a>
+                <a href="#" id="menu-todo"><i class="fa-solid fa-list-check"></i> <span>Công
                         Việc</span></a>
                 <a href="#" id="menu-data"><i class="fa-solid fa-table"></i> <span>Nhập Liệu</span></a>
                 <a href="#" id="menu-report"><i class="fa-solid fa-chart-pie"></i> <span>Báo Cáo Chi Tiết</span></a>
@@ -652,7 +653,6 @@
                 <a href="#" id="menu-financial"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Báo Cáo Tài
                         Chính</span></a>
                 <a href="#" id="menu-formulas"><i class="fa-solid fa-calculator"></i> <span>Công Thức</span></a>
-                <a href="#" id="menu-books"><i class="fa-solid fa-book-open"></i> <span>Tủ Sách Tinh Hoa</span></a>
             </nav>
         </aside>
 
@@ -3100,7 +3100,7 @@
                                         <label for="cqc-input-desc-cong" style="font-size: 0.76rem; font-weight: 700; color: #475569;">Hôm nay bạn làm việc tốt gì? (Ý nghĩ thiện/Giúp đỡ)</label>
                                         <textarea id="cqc-input-desc-cong" rows="2" required placeholder="Nhập hành động thiện lương..." style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; font-family: inherit; font-size: 0.85rem; outline: none; box-sizing: border-box; background: white; color: var(--text-dark);"></textarea>
                                     </div>
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div class="cqc-form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                                         <div style="display: flex; flex-direction: column; gap: 4px;">
                                             <label for="cqc-input-area-cong" style="font-size: 0.76rem; font-weight: 700; color: #475569;">Vùng trách nhiệm</label>
                                             <select id="cqc-input-area-cong" style="padding: 8px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.85rem; outline: none; background: white; cursor: pointer; color: var(--text-dark);">
@@ -3170,7 +3170,7 @@
                                         <label for="cqc-input-desc-qua" style="font-size: 0.76rem; font-weight: 700; color: #475569;">Hôm nay bạn có lỗi lầm gì? (Nổi giận/Ích kỷ/Trì hoãn)</label>
                                         <textarea id="cqc-input-desc-qua" rows="2" required placeholder="Thành thật tự nhận lỗi sai..." style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; font-family: inherit; font-size: 0.85rem; outline: none; box-sizing: border-box; background: white; color: var(--text-dark);"></textarea>
                                     </div>
-                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div class="cqc-form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                                         <div style="display: flex; flex-direction: column; gap: 4px;">
                                             <label for="cqc-input-area-qua" style="font-size: 0.76rem; font-weight: 700; color: #475569;">Vùng trách nhiệm</label>
                                             <select id="cqc-input-area-qua" style="padding: 8px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.85rem; outline: none; background: white; cursor: pointer; color: var(--text-dark);">
@@ -3401,11 +3401,15 @@
 
     <!-- MOBILE BOTTOM NAVIGATION -->
     <nav class="mobile-nav">
+        <a href="#" class="mobile-nav-item active" data-view="books">
+            <i class="fa-solid fa-book-open"></i>
+            <span>Tủ Sách</span>
+        </a>
         <a href="#" class="mobile-nav-item" data-view="todo">
             <i class="fa-solid fa-list-check"></i>
             <span>Công Việc</span>
         </a>
-        <a href="#" class="mobile-nav-item active" data-view="data">
+        <a href="#" class="mobile-nav-item" data-view="data">
             <i class="fa-solid fa-table"></i>
             <span>Nhập Liệu</span>
         </a>

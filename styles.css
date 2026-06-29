@@ -5846,3 +5846,62 @@ tr.swiping td:first-child::before {
   pointer-events: none;
 }
 
+/* Responsive adjustments for Cong Qua Cách on mobile */
+@media (max-width: 576px) {
+  .cqc-zone-cong,
+  .cqc-zone-qua {
+    padding: 1rem !important;
+    border-radius: 16px !important;
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .cqc-main-grid {
+    gap: 1rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .cqc-zone-cong select,
+  .cqc-zone-qua select {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+    font-size: 0.8rem !important;
+  }
+
+  .cqc-form-row {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  
+  /* Sửa lỗi tràn form card */
+  .cqc-zone-cong .card,
+  .cqc-zone-qua .card {
+    padding: 1rem !important;
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+.cqc-suggest-pill {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+  white-space: normal !important;
+  text-align: left !important;
+  height: auto !important;
+}
+
+.cqc-suggest-pill span:first-child {
+  flex: 1;
+  min-width: 0;
+  white-space: normal !important;
+  word-break: break-word;
+  padding-right: 8px;
+}
+
+
