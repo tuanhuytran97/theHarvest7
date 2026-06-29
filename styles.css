@@ -5697,3 +5697,152 @@ tr.swiping td:first-child::before {
   margin: 0 !important;
   line-height: 1.2 !important;
 }
+
+/* ==========================================
+   CÔNG QUÁ CÁCH TRACKER STYLES
+   ========================================== */
+@media (min-width: 1024px) {
+  .cqc-main-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .cqc-philosophies-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+.cqc-type-btn {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.cqc-type-btn:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: var(--text-dark) !important;
+}
+
+.cqc-subtab-btn {
+  transition: all 0.2s ease;
+}
+.cqc-subtab-btn:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.03) !important;
+  color: var(--text-dark) !important;
+}
+.cqc-subtab-btn.active {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+}
+
+.cqc-suggest-pill {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: white;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.cqc-suggest-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.05);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+.cqc-suggest-pill-cong {
+  border-left: 4px solid #10b981;
+}
+.cqc-suggest-pill-qua {
+  border-left: 4px solid #f59e0b;
+}
+
+.cqc-suggest-points {
+  font-size: 0.74rem;
+  font-weight: 850;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+.cqc-suggest-points-cong {
+  background: #ecfdf5;
+  color: #059669;
+}
+.cqc-suggest-points-qua {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+/* Timeline Log items */
+.cqc-log-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.01);
+  transition: all 0.25s ease;
+  position: relative;
+}
+.cqc-log-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.04);
+}
+.cqc-log-item-cong {
+  border-left: 4.5px solid #10b981;
+}
+.cqc-log-item-qua {
+  border-left: 4.5px solid #f59e0b;
+}
+
+.cqc-log-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.cqc-log-icon-ban-than { background: #e0f2fe; color: #0284c7; }
+.cqc-log-icon-gia-dinh { background: #fef3c7; color: #d97706; }
+.cqc-log-icon-xa-hoi { background: #dcfce7; color: #16a34a; }
+.cqc-log-icon-dat-nuoc { background: #fee2e2; color: #dc2626; }
+
+.cqc-log-points {
+  font-size: 0.82rem;
+  font-weight: 850;
+  padding: 2px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.cqc-log-points-cong { background: #ecfdf5; color: #059669; }
+.cqc-log-points-qua { background: #fffbeb; color: #d97706; }
+
+.cqc-log-delete-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+.cqc-log-delete-btn:hover {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.destiny-card::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(217,119,6,0.06) 0%, transparent 70%);
+  z-index: 1;
+  pointer-events: none;
+}
+

@@ -1167,6 +1167,90 @@ function doPost(e) {
             return returnJson({ "status": "success" });
         }
 
+        else if (action === "get_cong_qua_cach_data") {
+            let cqcSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("CongQuaCach");
+            if (!cqcSheet) {
+                cqcSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("CongQuaCach");
+                const headers = ["ID", "Type", "Description", "Area", "Points", "Date", "CreatedAt", "Lesson"];
+                cqcSheet.getRange(1, 1, 1, headers.length).setValues([headers])
+                        .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+            }
+            const cqcData = cqcSheet.getDataRange().getValues();
+            const formattedData = cqcData.map(function(row) {
+                return row.map(function(cell) {
+                    if (Object.prototype.toString.call(cell) === '[object Date]') {
+                        return Utilities.formatDate(cell, "GMT+7", "yyyy-MM-dd");
+                    }
+                    return cell;
+                });
+            });
+            return returnJson({ "status": "success", "data": formattedData });
+
+        } else if (action === "save_cong_qua_cach_record") {
+            let cqcSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("CongQuaCach");
+            if (!cqcSheet) {
+                cqcSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("CongQuaCach");
+                const headers = ["ID", "Type", "Description", "Area", "Points", "Date", "CreatedAt", "Lesson"];
+                cqcSheet.getRange(1, 1, 1, headers.length).setValues([headers])
+                        .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+            }
+            const cqcData = cqcSheet.getDataRange().getValues();
+            const log = params.data;
+            const logId = log.id;
+
+            let rowIndex = -1;
+            if (logId) {
+                for (let i = 1; i < cqcData.length; i++) {
+                    if (String(cqcData[i][0]) === String(logId)) {
+                        rowIndex = i + 1;
+                        break;
+                    }
+                }
+            }
+
+            const now = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
+            const rowData = [
+                logId || "CQC_" + new Date().getTime(),
+                log.type || "",
+                log.description || "",
+                log.area || "",
+                log.points || 0,
+                log.date || "",
+                rowIndex > -1 ? (cqcData[rowIndex-1][6] || now) : now,
+                log.lesson || ""
+            ];
+
+            if (rowIndex > -1) {
+                cqcSheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
+            } else {
+                cqcSheet.appendRow(rowData);
+            }
+            return returnJson({ "status": "success", "id": rowData[0] });
+
+        } else if (action === "delete_cong_qua_cach_record") {
+            const cqcSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("CongQuaCach");
+            if (!cqcSheet) return returnJson({ "status": "error", "message": "Sheet CongQuaCach không tồn tại" });
+            const cqcData = cqcSheet.getDataRange().getValues();
+            const logId = params.id;
+            for (let i = 1; i < cqcData.length; i++) {
+                if (String(cqcData[i][0]) === String(logId)) {
+                    cqcSheet.deleteRow(i + 1);
+                    return returnJson({ "status": "success" });
+                }
+            }
+            return returnJson({ "status": "error", "message": "Không tìm thấy ghi nhận" });
+
+        } else if (action === "reset_cong_qua_cach") {
+            const cqcSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("CongQuaCach");
+            if (cqcSheet) {
+                const lastRow = cqcSheet.getLastRow();
+                if (lastRow >= 2) {
+                    cqcSheet.deleteRows(2, lastRow - 1);
+                }
+            }
+            return returnJson({ "status": "success" });
+        }
+
     } catch (err) {
         return returnJson({ "status": "error", "message": err.toString() });
     }

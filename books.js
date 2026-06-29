@@ -202,15 +202,23 @@ function initBooksTab() {
             const view = btn.getAttribute('data-view');
             const bookshelfWrapper = document.getElementById('books-grid-wrapper');
             const wisdomWrapper = document.getElementById('categories-summary-wrapper');
+            const congQuaCachWrapper = document.getElementById('cong-qua-cach-wrapper');
             
             if (view === 'bookshelf') {
                 if (bookshelfWrapper) bookshelfWrapper.style.display = 'block';
                 if (wisdomWrapper) wisdomWrapper.style.display = 'none';
+                if (congQuaCachWrapper) congQuaCachWrapper.style.display = 'none';
                 renderBooks();
-            } else {
+            } else if (view === 'wisdom-hub') {
                 if (bookshelfWrapper) bookshelfWrapper.style.display = 'none';
                 if (wisdomWrapper) wisdomWrapper.style.display = 'block';
+                if (congQuaCachWrapper) congQuaCachWrapper.style.display = 'none';
                 renderCategorySummaries();
+            } else if (view === 'cong-qua-cach') {
+                if (bookshelfWrapper) bookshelfWrapper.style.display = 'none';
+                if (wisdomWrapper) wisdomWrapper.style.display = 'none';
+                if (congQuaCachWrapper) congQuaCachWrapper.style.display = 'block';
+                initCongQuaCach();
             }
         });
     });
@@ -640,6 +648,9 @@ async function loadBookData() {
     }
     // Load category summaries
     loadCategorySummaries();
+    
+    // Load Cong Qua Cach logs
+    loadCongQuaCachData();
     
     // Fetch from Google Sheet
     const res = await callBooksApi("get_book_data");
@@ -2343,6 +2354,57 @@ async function processBooksQueue() {
                 console.warn('[BooksQueue] Network error syncing category summary:', e.message);
                 break;
             }
+        } else if (item.action === 'cong_qua_cach_save') {
+            try {
+                const res = await callBooksApi('save_cong_qua_cach_record', { data: item.data });
+                if (res && res.status === 'success') {
+                    const updatedQueue = JSON.parse(localStorage.getItem('books_sync_queue') || '[]');
+                    localStorage.setItem('books_sync_queue', JSON.stringify(
+                        updatedQueue.filter(x => x.clientId !== item.clientId)
+                    ));
+                    console.log('[BooksQueue] Synced cong qua cach log:', item.data.id);
+                } else {
+                    console.warn('[BooksQueue] Failed to sync cong qua cach log:', item.data.id, res);
+                    break;
+                }
+            } catch(e) {
+                console.warn('[BooksQueue] Network error syncing cong qua cach log:', e.message);
+                break;
+            }
+        } else if (item.action === 'cong_qua_cach_delete') {
+            try {
+                const res = await callBooksApi('delete_cong_qua_cach_record', { id: item.data.id });
+                if (res && res.status === 'success') {
+                    const updatedQueue = JSON.parse(localStorage.getItem('books_sync_queue') || '[]');
+                    localStorage.setItem('books_sync_queue', JSON.stringify(
+                        updatedQueue.filter(x => x.clientId !== item.clientId)
+                    ));
+                    console.log('[BooksQueue] Synced delete cong qua cach log:', item.data.id);
+                } else {
+                    console.warn('[BooksQueue] Failed to sync delete cong qua cach log:', item.data.id, res);
+                    break;
+                }
+            } catch(e) {
+                console.warn('[BooksQueue] Network error syncing delete cong qua cach log:', e.message);
+                break;
+            }
+        } else if (item.action === 'cong_qua_cach_reset') {
+            try {
+                const res = await callBooksApi('reset_cong_qua_cach');
+                if (res && res.status === 'success') {
+                    const updatedQueue = JSON.parse(localStorage.getItem('books_sync_queue') || '[]');
+                    localStorage.setItem('books_sync_queue', JSON.stringify(
+                        updatedQueue.filter(x => x.clientId !== item.clientId)
+                    ));
+                    console.log('[BooksQueue] Synced reset cong qua cach');
+                } else {
+                    console.warn('[BooksQueue] Failed to sync reset cong qua cach:', res);
+                    break;
+                }
+            } catch(e) {
+                console.warn('[BooksQueue] Network error syncing reset cong qua cach:', e.message);
+                break;
+            }
         }
     }
     
@@ -2360,6 +2422,659 @@ window.addEventListener('online', () => {
     setTimeout(processBooksQueue, 1000);
 });
 
+// =========================================================================
+// CÔNG QUÁ CÁCH (LEDGER OF MERITS & DEMERITS) MODULE IMPLEMENTATION
+// =========================================================================
+
+let congQuaCachCache = [];
+
+const QUICK_SUGGESTIONS_CONG = [
+    { text: "Giúp đỡ người gặp khó khăn hoạn nạn", points: 3, area: "xa-hoi" },
+    { text: "Lắng nghe ôn hòa, cẩn trọng khi bị phê bình", points: 2, area: "ban-than" },
+    { text: "Sống tiết kiệm, giản dị, không hoang phí của cải", points: 1, area: "ban-than" },
+    { text: "Quan tâm hỏi han, chăm sóc cha mẹ, gia đình", points: 5, area: "gia-dinh" },
+    { text: "Làm việc có ích cho cộng đồng, không mưu cầu báo đáp", points: 3, area: "xa-hoi" },
+    { text: "Kiên quyết cắt bỏ thói quen xấu, suy nghĩ độc hại", points: 5, area: "ban-than" }
+];
+
+const QUICK_SUGGESTIONS_QUA = [
+    { text: "Nổi nóng vô cớ, cáu giận gây mệt mỏi cho người khác", points: 30, area: "ban-than", lesson: "Hít sâu 3 nhịp trước khi phản ứng, học cách lắng nghe ôn hòa và quản trị cơn giận." },
+    { text: "Nói dối, nói lời ác ý gây tổn thương hoặc hiểu lầm", points: 30, area: "xa-hoi", lesson: "Nói lời chân thật, ái ngữ, cẩn trọng lời nói để xây dựng niềm tin." },
+    { text: "Lười biếng, sa ngã vào thói quen độc hại, trì hoãn", points: 20, area: "ban-than", lesson: "Bắt tay vào việc ngay trong 5 giây đầu tiên, rèn luyện tính kỷ luật tự thân." },
+    { text: "Lãng phí đồ ăn, thức uống, tiền bạc vô ích", points: 10, area: "ban-than", lesson: "Sử dụng của cải vừa đủ, trân quý thực phẩm và chi tiêu đúng mục đích." },
+    { text: "Bất kính, vô lễ hoặc thiếu tôn trọng người lớn tuổi/cha mẹ", points: 50, area: "gia-dinh", lesson: "Giữ thái độ khiêm nhường, hiếu kính, lắng nghe lời dạy bảo của người lớn." },
+    { text: "Ích kỷ, thờ ơ không giúp đỡ khi người khác gặp nạn", points: 30, area: "xa-hoi", lesson: "Mở lòng nhân ái, sẵn sàng chia sẻ và giúp đỡ mọi người xung quanh." }
+];
+
+function initCongQuaCach() {
+    // 1. Initialise form dates
+    const dateInputCong = document.getElementById('cqc-input-date-cong');
+    const dateInputQua = document.getElementById('cqc-input-date-qua');
+    const todayStr = new Date().toISOString().substring(0, 10);
+    if (dateInputCong && !dateInputCong.value) dateInputCong.value = todayStr;
+    if (dateInputQua && !dateInputQua.value) dateInputQua.value = todayStr;
+
+    // 2. Render quick suggestions
+    renderQuickSuggestions();
+
+    // 3. Register Form Submit for Tích Đức
+    const addFormCong = document.getElementById('cqc-add-form-cong');
+    if (addFormCong) {
+        addFormCong.onsubmit = (e) => {
+            e.preventDefault();
+            const desc = document.getElementById('cqc-input-desc-cong').value.trim();
+            const area = document.getElementById('cqc-input-area-cong').value;
+            const points = parseInt(document.getElementById('cqc-input-points-cong').value) || 1;
+            const date = document.getElementById('cqc-input-date-cong').value;
+            
+            if (!desc) {
+                alert("Vui lòng nhập chi tiết hành vi!");
+                return;
+            }
+
+            const record = {
+                id: 'CQC_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+                type: 'cong',
+                description: desc,
+                area: area,
+                points: points,
+                date: date,
+                createdAt: new Date().toLocaleString('vi-VN')
+            };
+
+            saveCongQuaCachLog(record);
+            
+            // Clear description
+            document.getElementById('cqc-input-desc-cong').value = '';
+            if (window.showToast) {
+                window.showToast("Đã lưu việc thiện! Lành thay! 🙏", "success");
+            }
+        };
+    }
+
+    // 4. Register Form Submit for Sửa Mình
+    const addFormQua = document.getElementById('cqc-add-form-qua');
+    if (addFormQua) {
+        addFormQua.onsubmit = (e) => {
+            e.preventDefault();
+            const desc = document.getElementById('cqc-input-desc-qua').value.trim();
+            const area = document.getElementById('cqc-input-area-qua').value;
+            let points = parseInt(document.getElementById('cqc-input-points-qua').value) || 10;
+            if (points < 10) points = 10; // Trừ tối thiểu 10 điểm
+            const lesson = document.getElementById('cqc-input-lesson-qua') ? document.getElementById('cqc-input-lesson-qua').value.trim() : '';
+            const date = document.getElementById('cqc-input-date-qua').value;
+            
+            if (!desc) {
+                alert("Vui lòng nhập chi tiết lỗi lầm!");
+                return;
+            }
+
+            const record = {
+                id: 'CQC_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+                type: 'qua',
+                description: desc,
+                area: area,
+                points: points,
+                date: date,
+                lesson: lesson,
+                createdAt: new Date().toLocaleString('vi-VN')
+            };
+
+            saveCongQuaCachLog(record);
+            
+            // Clear description and lesson
+            document.getElementById('cqc-input-desc-qua').value = '';
+            if (document.getElementById('cqc-input-lesson-qua')) {
+                document.getElementById('cqc-input-lesson-qua').value = '';
+            }
+            if (window.showToast) {
+                window.showToast("Đã ghi nhận lỗi lầm & bài học sửa mình! 🧘", "warning");
+            }
+        };
+    }
+
+    // 5. Register Reset Destiny button
+    const resetBtn = document.getElementById('btn-reset-destiny');
+    if (resetBtn) {
+        resetBtn.onclick = () => {
+            if (!confirm("Bạn có chắc chắn muốn 'Reset cuộc đời'?\nHành động này sẽ xóa sạch toàn bộ lịch sử điểm Công đức và Lỗi lầm để bạn bắt đầu lại từ đầu.")) return;
+            if (!confirm("XÁC NHẬN LẦN CUỐI: Toàn bộ dữ liệu của bạn sẽ bị xóa vĩnh viễn khỏi trình duyệt (và đám mây sau khi đồng bộ). Bạn vẫn muốn tiếp tục?")) return;
+            
+            resetCongQuaCach();
+        };
+    }
+
+    // Load initial logs
+    loadCongQuaCachData();
+}
+
+function renderQuickSuggestions() {
+    const cContainer = document.getElementById('cqc-suggestions-cong');
+    const qContainer = document.getElementById('cqc-suggestions-qua');
+    
+    if (cContainer) {
+        cContainer.innerHTML = QUICK_SUGGESTIONS_CONG.map(s => {
+            return `
+                <button type="button" class="cqc-suggest-pill cqc-suggest-pill-cong" onclick="prefillCqcForm('cong', '${escapeHtml(s.text)}', '${s.area}', ${s.points})">
+                    <span>${escapeHtml(s.text)}</span>
+                    <span class="cqc-suggest-points cqc-suggest-points-cong">+${s.points}</span>
+                </button>
+            `;
+        }).join('');
+    }
+    
+    if (qContainer) {
+        qContainer.innerHTML = QUICK_SUGGESTIONS_QUA.map(s => {
+            return `
+                <button type="button" class="cqc-suggest-pill cqc-suggest-pill-qua" onclick="prefillCqcForm('qua', '${escapeHtml(s.text)}', '${s.area}', ${s.points}, '${escapeHtml(s.lesson || '')}')">
+                    <span>${escapeHtml(s.text)}</span>
+                    <span class="cqc-suggest-points cqc-suggest-points-qua">-${s.points}</span>
+                </button>
+            `;
+        }).join('');
+    }
+}
+
+function prefillCqcForm(type, text, area, points, lesson = '') {
+    if (type === 'cong') {
+        const descTextarea = document.getElementById('cqc-input-desc-cong');
+        if (descTextarea) {
+            descTextarea.value = text;
+            descTextarea.focus();
+        }
+        const areaSelect = document.getElementById('cqc-input-area-cong');
+        if (areaSelect) areaSelect.value = area;
+        
+        const pointsSelect = document.getElementById('cqc-input-points-cong');
+        if (pointsSelect) pointsSelect.value = points;
+    } else {
+        const descTextarea = document.getElementById('cqc-input-desc-qua');
+        if (descTextarea) {
+            descTextarea.value = text;
+            descTextarea.focus();
+        }
+        const areaSelect = document.getElementById('cqc-input-area-qua');
+        if (areaSelect) areaSelect.value = area;
+        
+        const pointsSelect = document.getElementById('cqc-input-points-qua');
+        if (pointsSelect) pointsSelect.value = points;
+        
+        const lessonTextarea = document.getElementById('cqc-input-lesson-qua');
+        if (lessonTextarea) {
+            lessonTextarea.value = lesson;
+        }
+    }
+    
+    if (window.showToast) {
+        window.showToast("Đã điền gợi ý nhanh — hãy bấm nút Lưu tương ứng để hoàn tất!", "info");
+    }
+}
+
+async function loadCongQuaCachData() {
+    // 1. Load from local cache
+    const cached = localStorage.getItem('cong_qua_cach_logs');
+    if (cached) {
+        try {
+            congQuaCachCache = JSON.parse(cached);
+        } catch(e) {
+            congQuaCachCache = [];
+        }
+    } else {
+        congQuaCachCache = [];
+    }
+    
+    renderCongQuaCach();
+    
+    // 2. Fetch from cloud
+    if (navigator.onLine) {
+        try {
+            const res = await callBooksApi("get_cong_qua_cach_data");
+            if (res && res.status === "success" && Array.isArray(res.data)) {
+                const rawData = res.data;
+                const parsed = [];
+                if (rawData && rawData.length > 1) {
+                    for (let i = 1; i < rawData.length; i++) {
+                        const r = rawData[i];
+                        if (!r[0]) continue;
+                        parsed.push({
+                            id: r[0],
+                            type: r[1],
+                            description: r[2],
+                            area: r[3],
+                            points: parseInt(r[4]) || 0,
+                            date: r[5],
+                            createdAt: r[6],
+                            lesson: r[7] || ""
+                        });
+                    }
+                    congQuaCachCache = parsed;
+                    localStorage.setItem('cong_qua_cach_logs', JSON.stringify(congQuaCachCache));
+                    renderCongQuaCach();
+                }
+            }
+        } catch(e) {
+            console.warn("Failed to fetch cong qua cach from cloud:", e.message);
+        }
+    }
+}
+
+function saveCongQuaCachLog(record) {
+    congQuaCachCache.unshift(record);
+    localStorage.setItem('cong_qua_cach_logs', JSON.stringify(congQuaCachCache));
+    renderCongQuaCach();
+    
+    try {
+        const queue = JSON.parse(localStorage.getItem('books_sync_queue') || '[]');
+        const filtered = queue.filter(item => !(item.action === 'cong_qua_cach_save' && item.data.id === record.id));
+        filtered.push({
+            action: 'cong_qua_cach_save',
+            clientId: 'CQC_SAVE_' + record.id + '_' + Date.now(),
+            data: record,
+            addedAt: new Date().toISOString()
+        });
+        localStorage.setItem('books_sync_queue', JSON.stringify(filtered));
+    } catch(e) {
+        console.warn("Failed to queue save:", e);
+    }
+    
+    setTimeout(() => {
+        if (typeof processBooksQueue === 'function') processBooksQueue();
+    }, 100);
+}
+
+async function deleteCongQuaCachLog(id) {
+    if (!confirm("Bạn có chắc chắn muốn xóa ghi nhận này?")) return;
+    
+    congQuaCachCache = congQuaCachCache.filter(item => item.id !== id);
+    localStorage.setItem('cong_qua_cach_logs', JSON.stringify(congQuaCachCache));
+    renderCongQuaCach();
+    
+    try {
+        const queue = JSON.parse(localStorage.getItem('books_sync_queue') || '[]');
+        queue.push({
+            action: 'cong_qua_cach_delete',
+            clientId: 'CQC_DEL_' + id + '_' + Date.now(),
+            data: { id: id },
+            addedAt: new Date().toISOString()
+        });
+        localStorage.setItem('books_sync_queue', JSON.stringify(queue));
+    } catch(e) {
+        console.warn("Failed to queue delete:", e);
+    }
+    
+    setTimeout(() => {
+        if (typeof processBooksQueue === 'function') processBooksQueue();
+    }, 100);
+}
+
+function resetCongQuaCach() {
+    congQuaCachCache = [];
+    localStorage.setItem('cong_qua_cach_logs', JSON.stringify(congQuaCachCache));
+    renderCongQuaCach();
+    
+    try {
+        const queue = JSON.parse(localStorage.getItem('books_sync_queue') || '[]');
+        const filtered = queue.filter(item => !item.action.startsWith('cong_qua_cach_'));
+        filtered.push({
+            action: 'cong_qua_cach_reset',
+            clientId: 'CQC_RESET_' + Date.now(),
+            addedAt: new Date().toISOString()
+        });
+        localStorage.setItem('books_sync_queue', JSON.stringify(filtered));
+    } catch(e) {
+        console.warn("Failed to queue reset:", e);
+    }
+    
+    if (window.showToast) {
+        window.showToast("Đã Reset cuộc đời thành công! Đang đồng bộ... ☁️", "success");
+    }
+    
+    setTimeout(() => {
+        if (typeof processBooksQueue === 'function') processBooksQueue();
+    }, 100);
+}
+
+let cqcTargetGoal = parseInt(localStorage.getItem('cqc_target_goal')) || 3000;
+
+function changeCqcTargetGoal() {
+    const newGoal = prompt("Nhập mục tiêu tích lũy thiện nghiệp (số việc tốt mong muốn):", cqcTargetGoal);
+    if (newGoal === null) return;
+    const val = parseInt(newGoal);
+    if (isNaN(val) || val <= 0) {
+        alert("Mục tiêu phải là một số nguyên lớn hơn 0!");
+        return;
+    }
+    cqcTargetGoal = val;
+    localStorage.setItem('cqc_target_goal', val);
+    renderCongQuaCach();
+    if (window.showToast) {
+        window.showToast("Đã cập nhật mục tiêu phát nguyện mới!", "success");
+    }
+}
+
+function renderCongQuaCach() {
+    const totalMeritsEl = document.getElementById('cqc-total-merits');
+    const totalDemeritsEl = document.getElementById('cqc-total-demerits');
+    const meritsCountEl = document.getElementById('cqc-merits-count');
+    const demeritsCountEl = document.getElementById('cqc-demerits-count');
+    const scoreEl = document.getElementById('cqc-destiny-score');
+    const badgeEl = document.getElementById('cqc-destiny-badge');
+    const adviceEl = document.getElementById('cqc-destiny-advice');
+    const progressBar = document.getElementById('cqc-destiny-progress-bar');
+
+    // Goal elements
+    const goalTextEl = document.getElementById('cqc-target-goal-text');
+    const goalProgressTextEl = document.getElementById('cqc-goal-progress-text');
+    const goalPctTextEl = document.getElementById('cqc-goal-pct-text');
+    const goalProgressBar = document.getElementById('cqc-goal-progress-bar');
+    
+    let sumCong = 0;
+    let countCong = 0;
+    let sumQua = 0;
+    let countQua = 0;
+    
+    congQuaCachCache.forEach(item => {
+        if (item.type === 'cong') {
+            sumCong += item.points;
+            countCong++;
+        } else {
+            sumQua += item.points;
+            countQua++;
+        }
+    });
+    
+    const score = sumCong - sumQua;
+    
+    if (totalMeritsEl) totalMeritsEl.innerText = '+' + sumCong;
+    if (totalDemeritsEl) totalDemeritsEl.innerText = '-' + sumQua;
+    if (meritsCountEl) meritsCountEl.innerText = countCong + ' lượt';
+    if (demeritsCountEl) demeritsCountEl.innerText = countQua + ' lượt';
+    
+    if (scoreEl) {
+        scoreEl.innerText = (score >= 0 ? '+' : '') + score;
+        if (score > 100) {
+            scoreEl.style.background = 'linear-gradient(135deg, #7c3aed, #d97706)';
+        } else if (score >= 21) {
+            scoreEl.style.background = 'linear-gradient(135deg, #059669, #fbbf24)';
+        } else if (score >= 0) {
+            scoreEl.style.background = 'linear-gradient(135deg, #0284c7, #10b981)';
+        } else {
+            scoreEl.style.background = 'linear-gradient(135deg, #dc2626, #ef4444)';
+        }
+        scoreEl.style.webkitBackgroundClip = 'text';
+    }
+    
+    let badgeText = "Khởi Sự Tích Phúc 🌱";
+    let badgeBg = "rgba(14, 165, 233, 0.15)";
+    let badgeColor = "#0284c7";
+    let adviceText = `"Phúc họa vô môn, duy nhân tự triệu." Hãy bắt đầu gieo hạt thiện lành.`;
+    
+    if (score < 0) {
+        badgeText = "Trầm Tư Sửa Mình ⚠️";
+        badgeBg = "rgba(239, 68, 68, 0.15)";
+        badgeColor = "#ef4444";
+        adviceText = `"Người không biết lỗi sai của mình cả đời không có tiến bộ." Hãy kiên quyết sửa đổi!`;
+    } else if (score > 100) {
+        badgeText = "Tự Lập Số Mệnh 🌟";
+        badgeBg = "rgba(139, 92, 246, 0.15)";
+        badgeColor = "#8b5cf6";
+        adviceText = `"Đức năng thắng số." Bạn đã đập vỡ cái khung định sẵn để tự lập số mệnh!`;
+    } else if (score >= 21) {
+        badgeText = "Tích Lũy Nhân Tâm 🏵️";
+        badgeBg = "rgba(245, 158, 11, 0.15)";
+        badgeColor = "#d97706";
+        adviceText = `Năng lượng phúc đức tích lũy đang làm thay đổi số mệnh của bạn mỗi ngày.`;
+    }
+    
+    if (badgeEl) {
+        badgeEl.innerText = badgeText;
+        badgeEl.style.background = badgeBg;
+        badgeEl.style.color = badgeColor;
+    }
+    if (adviceEl) adviceEl.innerText = adviceText;
+    
+    // Destiny Progress Bar
+    if (progressBar) {
+        const total = sumCong + sumQua;
+        let percentage = 50;
+        if (total > 0) {
+            percentage = Math.round((sumCong / total) * 100);
+        }
+        progressBar.style.width = percentage + '%';
+        if (percentage > 70) {
+            progressBar.style.background = 'linear-gradient(90deg, #10b981, #8b5cf6)';
+        } else if (percentage >= 50) {
+            progressBar.style.background = 'linear-gradient(90deg, #0ea5e9, #10b981)';
+        } else {
+            progressBar.style.background = 'linear-gradient(90deg, #dc2626, #f59e0b)';
+        }
+    }
+
+    // Goal Progress Calculations
+    if (goalTextEl) goalTextEl.innerText = cqcTargetGoal;
+    if (goalProgressTextEl) goalProgressTextEl.innerText = countCong;
+    const goalPct = Math.min(100, Math.round((countCong / cqcTargetGoal) * 100));
+    if (goalPctTextEl) goalPctTextEl.innerText = goalPct + '%';
+    if (goalProgressBar) {
+        goalProgressBar.style.width = goalPct + '%';
+    }
+    
+    renderCongQuaCachLogs();
+    renderCqcLessonsList();
+}
+
+function renderCongQuaCachLogs() {
+    const congContainer = document.getElementById('cqc-logs-list-cong');
+    const quaContainer = document.getElementById('cqc-logs-list-qua');
+    const congBadge = document.getElementById('cqc-list-count-badge-cong');
+    const quaBadge = document.getElementById('cqc-list-count-badge-qua');
+    
+    if (!congContainer || !quaContainer) return;
+
+    // Filtered lists
+    const congLogs = congQuaCachCache.filter(item => item.type === 'cong');
+    const quaLogs = congQuaCachCache.filter(item => item.type === 'qua');
+
+    // Sort function
+    const sortLogs = (list) => {
+        return list.sort((a, b) => {
+            if (a.date !== b.date) {
+                return b.date.localeCompare(a.date);
+            }
+            return b.id.localeCompare(a.id);
+        });
+    };
+
+    const sortedCong = sortLogs(congLogs);
+    const sortedQua = sortLogs(quaLogs);
+
+    if (congBadge) congBadge.innerText = sortedCong.length + ' bản ghi';
+    if (quaBadge) quaBadge.innerText = sortedQua.length + ' bản ghi';
+
+    const AREA_LABELS = {
+        'ban-than': '🌱 Bản thân',
+        'gia-dinh': '👨‍👩‍👧‍👦 Gia đình',
+        'xa-hoi': '🤝 Xã hội',
+        'dat-nuoc': '🇻🇳 Đất nước'
+    };
+    
+    const AREA_ICONS = {
+        'ban-than': 'fa-user',
+        'gia-dinh': 'fa-house-user',
+        'xa-hoi': 'fa-users',
+        'dat-nuoc': 'fa-flag'
+    };
+
+    // Render helper
+    const buildLogHtml = (item) => {
+        const dateObj = new Date(item.date);
+        const formattedDate = isNaN(dateObj.getTime()) ? item.date : dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const typeClass = item.type === 'cong' ? 'cqc-log-item-cong' : 'cqc-log-item-qua';
+        const pointsClass = item.type === 'cong' ? 'cqc-log-points-cong' : 'cqc-log-points-qua';
+        const pointsSign = item.type === 'cong' ? '+' : '-';
+        const iconName = AREA_ICONS[item.area] || 'fa-heart';
+        
+        let lessonHtml = '';
+        if (item.type === 'qua') {
+            if (item.lesson && item.lesson.trim() !== '') {
+                lessonHtml = `
+                    <div style="margin-top: 6px; padding: 6px 8px; background: #f0f9ff; border-left: 3px solid #0ea5e9; border-radius: 4px; font-size: 0.75rem; color: #0369a1; font-weight: 500; display: flex; justify-content: space-between; align-items: flex-start; gap: 6px;">
+                        <span style="line-height: 1.3;"><i class="fa-solid fa-lightbulb" style="color: #0ea5e9; margin-right: 4px;"></i><strong>Bài học:</strong> ${escapeHtml(item.lesson)}</span>
+                        <button type="button" onclick="editCqcLesson('${item.id}')" style="background: none; border: none; color: #0284c7; cursor: pointer; padding: 0 2px;" title="Sửa bài học">
+                            <i class="fa-solid fa-pencil" style="font-size: 0.65rem;"></i>
+                        </button>
+                    </div>
+                `;
+            } else {
+                lessonHtml = `
+                    <div style="margin-top: 6px;">
+                        <button type="button" onclick="editCqcLesson('${item.id}')" style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; color: #64748b; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.background='#f1f5f9'; this.style.color='#475569';" onmouseout="this.style.background='#f8fafc'; this.style.color='#64748b';">
+                            <i class="fa-solid fa-plus" style="font-size: 0.65rem;"></i> Rút ra bài học sửa mình
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        return `
+            <div class="cqc-log-item ${typeClass}" style="padding: 10px; margin-bottom: 6px;">
+                <div class="cqc-log-icon cqc-log-icon-${item.area}" title="${AREA_LABELS[item.area]}" style="width: 28px; height: 28px; font-size: 0.75rem;">
+                    <i class="fa-solid ${iconName}"></i>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                        <span style="font-size: 0.72rem; font-weight: 700; color: #94a3b8;">${formattedDate}</span>
+                        <span class="cqc-log-points ${pointsClass}" style="font-size: 0.75rem; padding: 1px 6px;">${pointsSign}${item.points}</span>
+                    </div>
+                    <p style="margin: 2px 0 0 0; font-size: 0.8rem; font-weight: 600; color: #334155; line-height: 1.35; word-break: break-word;">${escapeHtml(item.description)}</p>
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 4px;">
+                        <span style="display: inline-block; font-size: 0.65rem; font-weight: 700; background: #f1f5f9; color: #64748b; padding: 1px 4px; border-radius: 4px;">${AREA_LABELS[item.area]}</span>
+                    </div>
+                    ${lessonHtml}
+                </div>
+                <button type="button" class="cqc-log-delete-btn" onclick="deleteCongQuaCachLog('${item.id}')" title="Xóa ghi chép" style="padding: 2px 6px;">
+                    <i class="fa-solid fa-trash-can" style="font-size: 0.75rem;"></i>
+                </button>
+            </div>
+        `;
+    };
+
+    // Populate Cong Container
+    if (sortedCong.length === 0) {
+        congContainer.innerHTML = `
+            <div style="text-align: center; padding: 1.5rem 1rem; color: #94a3b8; font-weight: 500; font-size: 0.78rem;">
+                <i class="fa-solid fa-seedling" style="font-size: 1.5rem; color: #cbd5e1; margin-bottom: 6px; display:block;"></i>
+                Chưa ghi nhận việc thiện nào.
+            </div>
+        `;
+    } else {
+        congContainer.innerHTML = sortedCong.map(buildLogHtml).join('');
+    }
+
+    // Populate Qua Container
+    if (sortedQua.length === 0) {
+        quaContainer.innerHTML = `
+            <div style="text-align: center; padding: 1.5rem 1rem; color: #94a3b8; font-weight: 500; font-size: 0.78rem;">
+                <i class="fa-solid fa-spa" style="font-size: 1.5rem; color: #cbd5e1; margin-bottom: 6px; display:block;"></i>
+                Tuyệt vời! Không có lỗi lầm nào bị ghi nhận.
+            </div>
+        `;
+    } else {
+        quaContainer.innerHTML = sortedQua.map(buildLogHtml).join('');
+    }
+}
+
+let currentLessonFilter = 'all';
+
+function filterCqcLessons(area) {
+    currentLessonFilter = area;
+    const buttons = document.querySelectorAll('.btn-filter-lesson');
+    buttons.forEach(btn => {
+        const onClickAttr = btn.getAttribute('onclick');
+        if (onClickAttr && onClickAttr.includes(`'${area}'`)) {
+            btn.classList.add('active');
+            btn.style.background = '#0284c7';
+            btn.style.color = 'white';
+        } else {
+            btn.classList.remove('active');
+            btn.style.background = '#f1f5f9';
+            btn.style.color = '#475569';
+        }
+    });
+    renderCqcLessonsList();
+}
+
+function renderCqcLessonsList() {
+    const container = document.getElementById('cqc-lessons-list');
+    const badge = document.getElementById('cqc-lessons-count-badge');
+    if (!container) return;
+
+    // Filter items that have type === 'qua' and a non-empty lesson
+    const allLessons = congQuaCachCache.filter(item => item.type === 'qua' && item.lesson && item.lesson.trim() !== "");
+    const filteredLessons = currentLessonFilter === 'all' 
+        ? allLessons 
+        : allLessons.filter(item => item.area === currentLessonFilter);
+
+    if (badge) badge.innerText = allLessons.length + ' bài học';
+
+    if (filteredLessons.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 1.5rem 1rem; color: #94a3b8; font-weight: 500; font-size: 0.78rem;">
+                <i class="fa-solid fa-lightbulb" style="font-size: 1.5rem; color: #cbd5e1; margin-bottom: 6px; display:block;"></i>
+                Chưa có bài học nào được rút ra trong mục này.
+            </div>
+        `;
+        return;
+    }
+
+    const AREA_LABELS = {
+        'ban-than': '🌱 Bản thân',
+        'gia-dinh': '👨‍👩‍👧‍👦 Gia đình',
+        'xa-hoi': '🤝 Xã hội',
+        'dat-nuoc': '🇻🇳 Đất nước'
+    };
+
+    container.innerHTML = filteredLessons.map(item => {
+        const dateObj = new Date(item.date);
+        const formattedDate = isNaN(dateObj.getTime()) ? item.date : dateObj.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        return `
+            <div style="padding: 10px; background: white; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.68rem; font-weight: 700; color: #94a3b8;">${formattedDate} • ${AREA_LABELS[item.area] || item.area}</span>
+                    <span style="font-size: 0.68rem; font-weight: 700; background: #fee2e2; color: #ef4444; padding: 1px 6px; border-radius: 4px;">-${item.points}đ</span>
+                </div>
+                <div style="font-size: 0.78rem; color: #64748b; border-left: 2px solid #cbd5e1; padding-left: 6px; font-style: italic; line-height: 1.3;">
+                    Lỗi: ${escapeHtml(item.description)}
+                </div>
+                <div style="font-size: 0.8rem; font-weight: 600; color: #0284c7; display: flex; align-items: flex-start; gap: 4px; line-height: 1.35;">
+                    <i class="fa-solid fa-circle-check" style="color: #0284c7; margin-top: 2px; font-size: 0.85rem;"></i>
+                    <span>Bài học: ${escapeHtml(item.lesson)}</span>
+                </div>
+                <div style="display: flex; justify-content: flex-end;">
+                    <button type="button" onclick="editCqcLesson('${item.id}')" style="background: none; border: none; color: #0284c7; font-size: 0.7rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 2px; padding: 2px 6px; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='none'">
+                        <i class="fa-solid fa-pen-to-square"></i> Cập nhật bài học
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function editCqcLesson(id) {
+    const item = congQuaCachCache.find(x => x.id === id);
+    if (!item) return;
+
+    const newLesson = prompt("Nhập bài học rút ra & hành động sửa mình để hoàn thiện bản thân:", item.lesson || "");
+    if (newLesson === null) return;
+
+    item.lesson = newLesson.trim();
+    saveCongQuaCachLog(item);
+    
+    if (window.showToast) {
+        window.showToast("Đã cập nhật bài học rút ra! Cố gắng tinh tấn thực hiện! 💪", "success");
+    }
+}
+
 // Bind to window for HTML accessibility
 window.closeBookDetail = closeBookDetail;
 window.closeBookForm = closeBookForm;
@@ -2373,5 +3088,20 @@ window.triggerAutoCoverFetch = triggerAutoCoverFetch;
 window.closeCategorySummaryModal = closeCategorySummaryModal;
 window.openCategorySummaryDetail = openCategorySummaryDetail;
 window.processBooksQueue = processBooksQueue;
+
+// Cong Qua Cach binds
+window.initCongQuaCach = initCongQuaCach;
+window.prefillCqcForm = prefillCqcForm;
+window.deleteCongQuaCachLog = deleteCongQuaCachLog;
+window.renderCongQuaCachLogs = renderCongQuaCachLogs;
+window.loadCongQuaCachData = loadCongQuaCachData;
+window.saveCongQuaCachLog = saveCongQuaCachLog;
+window.resetCongQuaCach = resetCongQuaCach;
+window.renderCongQuaCach = renderCongQuaCach;
+window.changeCqcTargetGoal = changeCqcTargetGoal;
+window.filterCqcLessons = filterCqcLessons;
+window.renderCqcLessonsList = renderCqcLessonsList;
+window.editCqcLesson = editCqcLesson;
+
 
 

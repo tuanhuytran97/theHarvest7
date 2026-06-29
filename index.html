@@ -2929,6 +2929,9 @@
                     <button type="button" class="segmented-tab-btn" data-view="wisdom-hub" style="padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 0.9rem; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s; background: transparent; color: var(--text-light);">
                         <i class="fa-solid fa-brain"></i> Đúc Kết Chủ Đề
                     </button>
+                    <button type="button" class="segmented-tab-btn" data-view="cong-qua-cach" style="padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 0.9rem; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s; background: transparent; color: var(--text-light);">
+                        <i class="fa-solid fa-scale-balanced"></i> Công Quá Cách
+                    </button>
                 </div>
 
                 <!-- KPI Dashboard Cards -->
@@ -3004,10 +3007,268 @@
                     </div>
                 </div>
 
-                <!-- Theme Wisdom Hub Grid Wrapper (Hidden by default) -->
-                <div id="categories-summary-wrapper" style="display: none; margin-bottom: 2rem;">
-                    <div id="categories-summary-grid" class="categories-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
-                        <!-- Rendered dynamically inside books.js -->
+                </div>
+
+                <!-- Công Quá Cách Tracker Wrapper (Hidden by default) -->
+                <div id="cong-qua-cach-wrapper" style="display: none; margin-bottom: 2rem;">
+                    <!-- Top Summary Dashboard -->
+                    <div class="kpi-cards" style="margin-bottom: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;">
+                        <!-- Destiny Card -->
+                        <div class="card glassmorphism destiny-card" style="position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(217, 119, 6, 0.12) 100%); border: 1.5px solid rgba(139, 92, 246, 0.25);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                                <div class="kpi-icon" style="background: linear-gradient(135deg, #8b5cf6, #d97706); color: white;"><i class="fa-solid fa-star-and-crescent"></i></div>
+                                <button type="button" id="btn-reset-destiny" title="Khởi tạo lại tâm hồn (Reset cuộc đời)" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; border-radius: 8px; padding: 6px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-rotate-left"></i> Reset Cuộc Đời</button>
+                            </div>
+                            <div class="kpi-info" style="margin-top: 1rem; width: 100%;">
+                                <span class="kpi-label" style="font-weight: 600; color: #475569; font-size: 0.82rem;">Tích Lũy Số Mệnh</span>
+                                <div style="display: flex; align-items: baseline; gap: 8px; margin: 4px 0;">
+                                    <h2 id="cqc-destiny-score" class="kpi-value" style="margin: 0; font-size: 2.2rem; font-weight: 900; background: linear-gradient(135deg, #7c3aed, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">0</h2>
+                                    <span id="cqc-destiny-badge" style="font-size: 0.85rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; background: rgba(99, 102, 241, 0.15); color: #4f46e5;">Đang tính...</span>
+                                </div>
+                                <div class="cqc-progress-container" style="width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-top: 10px; position: relative;">
+                                    <div id="cqc-destiny-progress-bar" style="width: 50%; height: 100%; background: linear-gradient(90deg, #10b981, #8b5cf6); transition: width 0.4s ease;"></div>
+                                </div>
+                                <p id="cqc-destiny-advice" style="margin: 8px 0 0 0; font-size: 0.75rem; color: #64748b; font-style: italic; line-height: 1.3;">"Phúc họa vô môn, duy nhân tự triệu." (Phúc họa không cửa, do người tự vời)</p>
+
+                                <!-- Goal Tracker Section -->
+                                <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed rgba(139, 92, 246, 0.15); display: flex; flex-direction: column; gap: 6px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-size: 0.78rem; font-weight: 700; color: #5b21b6; display: flex; align-items: center; gap: 4px;">
+                                            <i class="fa-solid fa-bullseye"></i> Mục tiêu phát nguyện:
+                                        </span>
+                                        <button type="button" id="cqc-goal-edit-btn" style="background: none; border: none; color: #8b5cf6; font-size: 0.78rem; font-weight: 800; cursor: pointer; padding: 0; text-decoration: underline; display: flex; align-items: center; gap: 3px;" onclick="changeCqcTargetGoal()">
+                                            <span id="cqc-target-goal-text">3000</span> việc thiện
+                                        </button>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #475569; font-weight: 600;">
+                                        <span>Đã tích lũy: <strong id="cqc-goal-progress-text" style="color: #059669; font-weight: 800;">0</strong> việc tốt</span>
+                                        <span id="cqc-goal-pct-text" style="font-weight: 800; color: #8b5cf6;">0%</span>
+                                    </div>
+                                    <div class="cqc-progress-container" style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; position: relative; margin-top: 2px;">
+                                        <div id="cqc-goal-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #10b981, #059669); transition: width 0.4s ease;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Merits Card (Công) -->
+                        <div class="card glassmorphism kpi-card" style="border-left: 5px solid #10b981;">
+                            <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.12); color: #10b981;"><i class="fa-solid fa-circle-plus"></i></div>
+                            <div class="kpi-info">
+                                <span class="kpi-label">Tổng việc thiện (Công)</span>
+                                <h2 id="cqc-total-merits" class="kpi-value" style="margin:0; color: #059669; font-weight: 900;">0</h2>
+                                <span id="cqc-merits-count" style="font-size: 0.76rem; color: #64748b; font-weight: 500;">0 lượt ghi nhận</span>
+                            </div>
+                        </div>
+
+                        <!-- Demerits Card (Quá) -->
+                        <div class="card glassmorphism kpi-card" style="border-left: 5px solid #f59e0b;">
+                            <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;"><i class="fa-solid fa-circle-minus"></i></div>
+                            <div class="kpi-info">
+                                <span class="kpi-label">Tổng lỗi lầm (Quá)</span>
+                                <h2 id="cqc-total-demerits" class="kpi-value" style="margin:0; color: #d97706; font-weight: 900;">0</h2>
+                                <span id="cqc-demerits-count" style="font-size: 0.76rem; color: #64748b; font-weight: 500;">0 lượt ghi nhận</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Redesigned Split Grid Content -->
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem; align-items: start;" class="cqc-main-grid">
+                        
+                        <!-- COLUMN LEFT: TÍCH ĐỨC CÔNG THIỆN -->
+                        <div class="cqc-zone-cong" style="display: flex; flex-direction: column; gap: 1.5rem; background: rgba(240, 253, 244, 0.4); padding: 1.5rem; border-radius: 20px; border: 1.5px solid rgba(16, 185, 129, 0.2);">
+                            <div style="display: flex; align-items: center; gap: 10px; border-bottom: 2.5px solid #10b981; padding-bottom: 8px;">
+                                <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; color: white;">
+                                    <i class="fa-solid fa-leaf" style="font-size: 1rem;"></i>
+                                </div>
+                                <div>
+                                    <h3 style="margin:0; font-size: 1.1rem; font-weight: 850; color: #065f46;">🌱 TÍCH ĐỨC CÔNG THIỆN</h3>
+                                    <span style="font-size: 0.72rem; color: #047857; font-weight: 600;">Gieo nhân lành - Tích âm đức</span>
+                                </div>
+                            </div>
+
+                            <!-- Form Tích Đức -->
+                            <div class="card glassmorphism" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 12px; background: white;">
+                                <h4 style="margin: 0; font-size: 0.88rem; font-weight: 800; color: #1e293b;">Ghi nhận Việc Thiện</h4>
+                                <form id="cqc-add-form-cong" style="display: flex; flex-direction: column; gap: 10px;">
+                                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                                        <label for="cqc-input-desc-cong" style="font-size: 0.76rem; font-weight: 700; color: #475569;">Hôm nay bạn làm việc tốt gì? (Ý nghĩ thiện/Giúp đỡ)</label>
+                                        <textarea id="cqc-input-desc-cong" rows="2" required placeholder="Nhập hành động thiện lương..." style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; font-family: inherit; font-size: 0.85rem; outline: none; box-sizing: border-box; background: white; color: var(--text-dark);"></textarea>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                                            <label for="cqc-input-area-cong" style="font-size: 0.76rem; font-weight: 700; color: #475569;">Vùng trách nhiệm</label>
+                                            <select id="cqc-input-area-cong" style="padding: 8px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.85rem; outline: none; background: white; cursor: pointer; color: var(--text-dark);">
+                                                <option value="ban-than">🌱 Bản thân</option>
+                                                <option value="gia-dinh">👨‍👩‍👧‍👦 Gia đình</option>
+                                                <option value="xa-hoi">🤝 Xã hội</option>
+                                                <option value="dat-nuoc">🇻🇳 Đất nước</option>
+                                            </select>
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                                            <label for="cqc-input-points-cong" style="font-size: 0.76rem; font-weight: 700; color: #475569;">Phúc đức (Công)</label>
+                                            <select id="cqc-input-points-cong" style="padding: 8px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.85rem; outline: none; background: white; cursor: pointer; color: var(--text-dark);">
+                                                <option value="1">+1 (Ý nghĩ thiện / Việc nhỏ)</option>
+                                                <option value="3">+3 (Việc tử tế / Giúp đỡ)</option>
+                                                <option value="5">+5 (Hiếu thảo / Nghĩa hiệp)</option>
+                                                <option value="10">+10 (Bao dung / Vô lợi / Vô hạn)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                                        <label for="cqc-input-date-cong" style="font-size: 0.76rem; font-weight: 700; color: #475569;">Ngày ghi nhận</label>
+                                        <input type="date" id="cqc-input-date-cong" required style="padding: 8px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.85rem; outline: none; background: white; color: var(--text-dark); box-sizing: border-box; width: 100%;">
+                                    </div>
+                                    <button type="submit" class="btn-primary" style="padding: 10px; border-radius: 8px; font-weight: 800; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); font-size: 0.82rem; margin-top: 4px;">
+                                        <i class="fa-solid fa-circle-check"></i> Lưu Việc Thiện
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Quick Suggest Công -->
+                            <div class="card glassmorphism" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 10px; background: white;">
+                                <h4 style="margin: 0; font-size: 0.88rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 4px;"><i class="fa-solid fa-bolt" style="color: #fbbf24; font-size: 0.85rem;"></i> Gợi ý Việc Thiện Nhanh</h4>
+                                <div id="cqc-suggestions-cong" style="display: flex; flex-direction: column; gap: 6px;">
+                                    <!-- Loaded dynamically by books.js -->
+                                </div>
+                            </div>
+
+                            <!-- History Feed Công -->
+                            <div class="card glassmorphism" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 10px; background: white;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 6px;">
+                                    <h4 style="margin: 0; font-size: 0.88rem; font-weight: 800; color: #065f46;">📖 Nhật Ký Thiện Nghiệp</h4>
+                                    <span id="cqc-list-count-badge-cong" style="font-size: 0.7rem; font-weight: 700; background: #d1fae5; color: #065f46; padding: 2px 6px; border-radius: 10px;">0 bản ghi</span>
+                                </div>
+                                <div id="cqc-logs-list-cong" style="display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto; padding-right: 2px;">
+                                    <!-- Rendered dynamically by books.js -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- COLUMN RIGHT: SỬA MÌNH TỰ TỈNH -->
+                        <div class="cqc-zone-qua" style="display: flex; flex-direction: column; gap: 1.5rem; background: rgba(254, 243, 199, 0.4); padding: 1.5rem; border-radius: 20px; border: 1.5px solid rgba(245, 158, 11, 0.25);">
+                            <div style="display: flex; align-items: center; gap: 10px; border-bottom: 2.5px solid #f59e0b; padding-bottom: 8px;">
+                                <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #fbbf24, #f59e0b); display: flex; align-items: center; justify-content: center; color: white;">
+                                    <i class="fa-solid fa-spa" style="font-size: 1rem;"></i>
+                                </div>
+                                <div>
+                                    <h3 style="margin:0; font-size: 1.1rem; font-weight: 850; color: #78350f;">🧘 SỬA MÌNH TỰ TỈNH</h3>
+                                    <span style="font-size: 0.72rem; color: #b45309; font-weight: 600;">Xét lỗi lầm - Trừ nghiệp chướng</span>
+                                </div>
+                            </div>
+
+                            <!-- Form Sửa Mình -->
+                            <div class="card glassmorphism" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 12px; background: white;">
+                                <h4 style="margin: 0; font-size: 0.88rem; font-weight: 800; color: #1e293b;">Ghi nhận Lỗi Lầm</h4>
+                                <form id="cqc-add-form-qua" style="display: flex; flex-direction: column; gap: 10px;">
+                                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                                        <label for="cqc-input-desc-qua" style="font-size: 0.76rem; font-weight: 700; color: #475569;">Hôm nay bạn có lỗi lầm gì? (Nổi giận/Ích kỷ/Trì hoãn)</label>
+                                        <textarea id="cqc-input-desc-qua" rows="2" required placeholder="Thành thật tự nhận lỗi sai..." style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; font-family: inherit; font-size: 0.85rem; outline: none; box-sizing: border-box; background: white; color: var(--text-dark);"></textarea>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                                            <label for="cqc-input-area-qua" style="font-size: 0.76rem; font-weight: 700; color: #475569;">Vùng trách nhiệm</label>
+                                            <select id="cqc-input-area-qua" style="padding: 8px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.85rem; outline: none; background: white; cursor: pointer; color: var(--text-dark);">
+                                                <option value="ban-than">🌱 Bản thân</option>
+                                                <option value="gia-dinh">👨‍👩‍👧‍👦 Gia đình</option>
+                                                <option value="xa-hoi">🤝 Xã hội</option>
+                                                <option value="dat-nuoc">🇻🇳 Đất nước</option>
+                                            </select>
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                                            <label for="cqc-input-points-qua" style="font-size: 0.76rem; font-weight: 700; color: #475569;">Mức độ sai lầm (Quá)</label>
+                                            <select id="cqc-input-points-qua" style="padding: 8px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.85rem; outline: none; background: white; cursor: pointer; color: var(--text-dark);">
+                                                <option value="10">-10 (Ý nghĩ xấu / Lười biếng / Trì hoãn)</option>
+                                                <option value="20">-20 (Lãng phí / Cáu gắt nhẹ)</option>
+                                                <option value="30">-30 (Cáu giận / Nói dối / Tổn thương nhẹ)</option>
+                                                <option value="50">-50 (Nói lời đau lòng / Bất kính nhẹ)</option>
+                                                <option value="100">-100 (Bất hiếu / Tổn hại phúc đức lớn)</option>
+                                                <option value="500">-500 (Phá giới / Tổn hại đại đức / Rất nặng)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                                        <label for="cqc-input-lesson-qua" style="font-size: 0.76rem; font-weight: 700; color: #475569;">Bài học rút ra & Hành động cải thiện (Để sửa mình)</label>
+                                        <textarea id="cqc-input-lesson-qua" rows="2" placeholder="Thành thật đúc rút bài học để không lặp lại lỗi lầm..." style="width: 100%; border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; font-family: inherit; font-size: 0.85rem; outline: none; box-sizing: border-box; background: white; color: var(--text-dark);"></textarea>
+                                    </div>
+                                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                                        <label for="cqc-input-date-qua" style="font-size: 0.76rem; font-weight: 700; color: #475569;">Ngày ghi nhận</label>
+                                        <input type="date" id="cqc-input-date-qua" required style="padding: 8px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 0.85rem; outline: none; background: white; color: var(--text-dark); box-sizing: border-box; width: 100%;">
+                                    </div>
+                                    <button type="submit" class="btn-primary" style="padding: 10px; border-radius: 8px; font-weight: 800; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.2); font-size: 0.82rem; margin-top: 4px;">
+                                        <i class="fa-solid fa-triangle-exclamation"></i> Lưu Lỗi Lầm
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Quick Suggest Quá -->
+                            <div class="card glassmorphism" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 10px; background: white;">
+                                <h4 style="margin: 0; font-size: 0.88rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 4px;"><i class="fa-solid fa-bolt" style="color: #fbbf24; font-size: 0.85rem;"></i> Gợi ý Sửa Mình Nhanh</h4>
+                                <div id="cqc-suggestions-qua" style="display: flex; flex-direction: column; gap: 6px;">
+                                    <!-- Loaded dynamically by books.js -->
+                                </div>
+                            </div>
+
+                            <!-- History Feed Quá -->
+                            <div class="card glassmorphism" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 10px; background: white;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 6px;">
+                                    <h4 style="margin: 0; font-size: 0.88rem; font-weight: 800; color: #78350f;">📖 Nhật Ký Tự Tỉnh</h4>
+                                    <span id="cqc-list-count-badge-qua" style="font-size: 0.7rem; font-weight: 700; background: #fef3c7; color: #78350f; padding: 2px 6px; border-radius: 10px;">0 bản ghi</span>
+                                </div>
+                                <div id="cqc-logs-list-qua" style="display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto; padding-right: 2px;">
+                                    <!-- Rendered dynamically by books.js -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Section: reverse teachings cards -->
+                    <div style="margin-top: 2rem; display: grid; grid-template-columns: 1fr; gap: 1.5rem;" class="cqc-philosophies-grid">
+                        <div class="card glassmorphism" style="padding: 1.5rem; background: linear-gradient(135deg, rgba(251, 191, 36, 0.06) 0%, rgba(245, 158, 11, 0.06) 100%); border: 1px solid rgba(251, 191, 36, 0.2);">
+                            <h4 style="margin: 0 0 12px 0; color: #b45309; font-weight: 800; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-arrows-spin"></i> QUY TẮC "TRÁI CHIỀU" ĐỂ GIỮ MÌNH KHÔNG SA NGÃ</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                                <div style="background: white; padding: 10px; border-radius: 10px; border: 1px solid rgba(251, 191, 36, 0.15);">
+                                    <strong style="color: #b45309; font-size: 0.78rem; text-transform: uppercase;">1. Dư dả, đủ đầy</strong>
+                                    <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: #475569; line-height: 1.35;">Hãy sống tiết kiệm và giản dị như lúc nghèo khó.</p>
+                                </div>
+                                <div style="background: white; padding: 10px; border-radius: 10px; border: 1px solid rgba(251, 191, 36, 0.15);">
+                                    <strong style="color: #b45309; font-size: 0.78rem; text-transform: uppercase;">2. Được yêu mến, tôn trọng</strong>
+                                    <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: #475569; line-height: 1.35;">Hãy luôn giữ thái độ cẩn trọng, mực thước.</p>
+                                </div>
+                                <div style="background: white; padding: 10px; border-radius: 10px; border: 1px solid rgba(251, 191, 36, 0.15);">
+                                    <strong style="color: #b45309; font-size: 0.78rem; text-transform: uppercase;">3. Địa vị, chỗ đứng cao</strong>
+                                    <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: #475569; line-height: 1.35;">Hãy cư xử khiêm nhường như người bình thường.</p>
+                                </div>
+                                <div style="background: white; padding: 10px; border-radius: 10px; border: 1px solid rgba(251, 191, 36, 0.15);">
+                                    <strong style="color: #b45309; font-size: 0.78rem; text-transform: uppercase;">4. Kiến thức, tài giỏi</strong>
+                                    <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: #475569; line-height: 1.35;">Hãy luôn mở lòng học hỏi như một người mới bắt đầu.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card tổng hợp Bài học từ điểm sai -->
+                        <div class="card glassmorphism" style="padding: 1.5rem; background: linear-gradient(135deg, rgba(2, 132, 199, 0.06) 0%, rgba(16, 185, 129, 0.06) 100%); border: 1px solid rgba(2, 132, 199, 0.2); display: flex; flex-direction: column; gap: 12px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid rgba(2, 132, 199, 0.15); padding-bottom: 6px;">
+                                <h4 style="margin: 0; color: #0284c7; font-weight: 800; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-lightbulb" style="color: #0ea5e9;"></i> BÀI HỌC CẢI THIỆN TỪ VẤP NGÃ
+                                </h4>
+                                <span id="cqc-lessons-count-badge" style="font-size: 0.7rem; font-weight: 700; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 10px;">0 bài học</span>
+                            </div>
+                            
+                            <!-- Bộ lọc nhanh theo Vùng -->
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px;">
+                                <button type="button" class="btn-filter-lesson active" onclick="filterCqcLessons('all')" style="padding: 4px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; border: none; cursor: pointer; background: #0284c7; color: white; transition: all 0.2s;">Tất cả</button>
+                                <button type="button" class="btn-filter-lesson" onclick="filterCqcLessons('ban-than')" style="padding: 4px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; border: none; cursor: pointer; background: #f1f5f9; color: #475569; transition: all 0.2s;">🌱 Bản thân</button>
+                                <button type="button" class="btn-filter-lesson" onclick="filterCqcLessons('gia-dinh')" style="padding: 4px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; border: none; cursor: pointer; background: #f1f5f9; color: #475569; transition: all 0.2s;">👨‍👩‍👧‍👦 Gia đình</button>
+                                <button type="button" class="btn-filter-lesson" onclick="filterCqcLessons('xa-hoi')" style="padding: 4px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; border: none; cursor: pointer; background: #f1f5f9; color: #475569; transition: all 0.2s;">🤝 Xã hội</button>
+                                <button type="button" class="btn-filter-lesson" onclick="filterCqcLessons('dat-nuoc')" style="padding: 4px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; border: none; cursor: pointer; background: #f1f5f9; color: #475569; transition: all 0.2s;">🇻🇳 Đất nước</button>
+                            </div>
+                            
+                            <!-- Danh sách bài học -->
+                            <div id="cqc-lessons-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 2px;">
+                                <!-- Rendered dynamically by books.js -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div> <!-- End of VIEW-BOOKS -->
