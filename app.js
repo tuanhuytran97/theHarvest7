@@ -7083,6 +7083,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (hoveredLabels.some(l => l && l.includes("Chi Phí"))) {
             const expenseDetails = filtered.filter(r => (r["Chi Phí"] || 0) > 0);
             if (expenseDetails.length > 0) {
+                expenseDetails.sort((a, b) => (parseFloat(b["Chi Phí"]) || 0) - (parseFloat(a["Chi Phí"]) || 0));
                 let lines = ["", "────── 💸 CHI TIẾT CHI PHÍ ──────"];
                 expenseDetails.forEach(r => {
                     const cat = (r["Loại CP"] || "Khác").trim();
@@ -7108,6 +7109,11 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             let lines = [];
             if (revItems.length > 0) {
+                revItems.sort((a, b) => {
+                    const amtA = (parseFloat(a["Doanh Thu Bông"]) || 0) + (parseFloat(a["Doanh Thu Khác"]) || 0);
+                    const amtB = (parseFloat(b["Doanh Thu Bông"]) || 0) + (parseFloat(b["Doanh Thu Khác"]) || 0);
+                    return amtB - amtA;
+                });
                 lines.push("", "────── 🌾 CHI TIẾT FARM ──────");
                 revItems.forEach(r => {
                     lines.push(formatDetailLine(r));
@@ -7120,6 +7126,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 return (type === "vựa" || type === "vua") && (parseFloat(r["Số lượng"]) > 0 || (r["Doanh Thu Khác"] || 0) > 0);
             });
             if (vuaItems.length > 0) {
+                vuaItems.sort((a, b) => {
+                    const amtA = (parseFloat(a["Doanh Thu Bông"]) || 0) + (parseFloat(a["Doanh Thu Khác"]) || 0);
+                    const amtB = (parseFloat(b["Doanh Thu Bông"]) || 0) + (parseFloat(b["Doanh Thu Khác"]) || 0);
+                    return amtB - amtA;
+                });
                 lines.push("", "────── 🏘️ CHI TIẾT VỰA ──────");
                 vuaItems.forEach(r => {
                     lines.push(formatDetailLine(r));
@@ -7135,6 +7146,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 return (type === "vựa" || type === "vua") && (parseFloat(r["Số lượng"]) > 0 || (r["Doanh Thu Khác"] || 0) > 0);
             });
             if (revItems.length > 0) {
+                revItems.sort((a, b) => {
+                    const amtA = (parseFloat(a["Doanh Thu Bông"]) || 0) + (parseFloat(a["Doanh Thu Khác"]) || 0);
+                    const amtB = (parseFloat(b["Doanh Thu Bông"]) || 0) + (parseFloat(b["Doanh Thu Khác"]) || 0);
+                    return amtB - amtA;
+                });
                 let lines = ["", "────── 🏘️ CHI TIẾT VỰA ──────"];
                 revItems.forEach(r => {
                     lines.push(formatDetailLine(r));
