@@ -1421,11 +1421,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (flowerDivider) flowerDivider.style.display = "block";
                 if (flowerPillsContainer) flowerPillsContainer.style.display = "flex";
                 if (labelBuyerInput) labelBuyerInput.innerText = "Khách Hàng (Tên Khách)";
+                const importTextBtn = document.getElementById('import-text-btn');
+                if (importTextBtn) importTextBtn.style.display = "flex";
                 if (buyerInput) { buyerInput.value = ""; buyerInput.required = true; }
                 if (vuaTotalCollectInput) vuaTotalCollectInput.required = false;
                 toggleFlowerReq(true);
                 toggleExpenseReq(false);
-
+ 
                 // Premium visual styling
                 if (entryCard) {
                     entryCard.style.borderTop = "6px solid #10b981";
@@ -1459,6 +1461,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (flowerDivider) flowerDivider.style.display = "block";
                 if (flowerPillsContainer) flowerPillsContainer.style.display = "flex";
                 if (labelBuyerInput) labelBuyerInput.innerText = "Đối Soát Vựa (Tên Vựa)";
+                const importTextBtn = document.getElementById('import-text-btn');
+                if (importTextBtn) importTextBtn.style.display = "none";
                 if (buyerInput) { buyerInput.value = "Đoan CR"; buyerInput.required = true; }
                 if (vuaTotalCollectInput) vuaTotalCollectInput.required = true;
                 toggleFlowerReq(true);
@@ -9952,6 +9956,500 @@ document.addEventListener("DOMContentLoaded", () => {
         updateConnectionStatus();
         processSyncQueue();
     }, 1500);
+
+    // --- QUICK IMPORT MULTIPLE DAYS LOGIC ---
+    let parsedImportRows = [];
+    let activeImportTab = 'text'; // 'text' or 'image'
+    let uploadedImageBase64 = null;
+    let uploadedImageMimeType = null;
+
+    const importTextBtn = document.getElementById('import-text-btn');
+    const importTextModal = document.getElementById('import-text-modal');
+    const closeImportBtn = document.getElementById('close-import-modal-btn');
+    const closeImportBtn2 = document.getElementById('close-import-modal-btn2');
+    const btnParseImport = document.getElementById('btn-parse-import');
+    const btnSaveImport = document.getElementById('btn-save-import');
+    const importTextArea = document.getElementById('import-text-area');
+    const modalImportBuyer = document.getElementById('modal-import-buyer');
+    const modalImportStatus = document.getElementById('modal-import-status');
+    const importPreviewContainer = document.getElementById('import-preview-container');
+    const importPreviewBody = document.getElementById('import-preview-body');
+    const importCountSpan = document.getElementById('import-count');
+
+    // Tab buttons and wrappers
+    const tabImportText = document.getElementById('tab-import-text');
+    const tabImportImage = document.getElementById('tab-import-image');
+    const importTextWrapper = document.getElementById('import-text-wrapper');
+    const importImageWrapper = document.getElementById('import-image-wrapper');
+
+    // Image upload elements
+    const importImageFile = document.getElementById('import-image-file');
+    const importImageDropzone = document.getElementById('import-image-dropzone');
+    const importImageStatus = document.getElementById('import-image-status');
+    const importImagePreviewWrapper = document.getElementById('import-image-preview-wrapper');
+    const importImagePreview = document.getElementById('import-image-preview');
+    const btnRemoveImportImage = document.getElementById('btn-remove-import-image');
+
+    if (tabImportText && tabImportImage && importTextWrapper && importImageWrapper) {
+        tabImportText.addEventListener('click', () => {
+            activeImportTab = 'text';
+            tabImportText.style.borderBottom = '3px solid var(--primary-color)';
+            tabImportText.style.color = 'var(--primary-color)';
+            tabImportImage.style.borderBottom = 'none';
+            tabImportImage.style.color = '#64748b';
+            importTextWrapper.style.display = 'block';
+            importImageWrapper.style.display = 'none';
+        });
+
+        tabImportImage.addEventListener('click', () => {
+            activeImportTab = 'image';
+            tabImportImage.style.borderBottom = '3px solid var(--primary-color)';
+            tabImportImage.style.color = 'var(--primary-color)';
+            tabImportText.style.borderBottom = 'none';
+            tabImportText.style.color = '#64748b';
+            importTextWrapper.style.display = 'none';
+            importImageWrapper.style.display = 'block';
+        });
+    }
+
+    const handleImageFile = (file) => {
+        if (!file || !file.type.startsWith('image/')) {
+            alert('Vui lòng chọn tệp hình ảnh hợp lệ!');
+            return;
+        }
+        uploadedImageMimeType = file.type;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const base64Url = e.target.result;
+            uploadedImageBase64 = base64Url.split(',')[1];
+            if (importImagePreview) {
+                importImagePreview.src = base64Url;
+            }
+            if (importImagePreviewWrapper) {
+                importImagePreviewWrapper.style.display = 'block';
+            }
+            if (importImageStatus) {
+                importImageStatus.innerText = `Đã chọn: ${file.name}`;
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    if (importImageFile) {
+        importImageFile.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleImageFile(e.target.files[0]);
+            }
+        });
+    }
+
+    if (importImageDropzone) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+            importImageDropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                importImageDropzone.style.background = 'rgba(59, 130, 246, 0.1)';
+            }, false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            importImageDropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                importImageDropzone.style.background = 'rgba(59, 130, 246, 0.02)';
+            }, false);
+        });
+        importImageDropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files && files[0]) {
+                handleImageFile(files[0]);
+            }
+        }, false);
+    }
+
+    // Clipboard Paste Listener for screenshots (Win + Shift + S -> Ctrl + V)
+    document.addEventListener('paste', (e) => {
+        if (importTextModal && importTextModal.style.display === 'flex' && activeImportTab === 'image') {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    const blob = item.getAsFile();
+                    const file = new File([blob], `Screenshot_${new Date().toISOString().replace(/[:.]/g, '-')}.png`, { type: blob.type });
+                    handleImageFile(file);
+                    e.preventDefault();
+                    break;
+                }
+            }
+        }
+    });
+
+    if (btnRemoveImportImage) {
+        btnRemoveImportImage.addEventListener('click', () => {
+            if (importImageFile) importImageFile.value = '';
+            if (importImagePreview) importImagePreview.src = '';
+            if (importImagePreviewWrapper) importImagePreviewWrapper.style.display = 'none';
+            if (importImageStatus) importImageStatus.innerText = 'Kéo thả ảnh hoặc click để chọn ảnh';
+            uploadedImageBase64 = null;
+            uploadedImageMimeType = null;
+        });
+    }
+
+    if (importTextBtn && importTextModal) {
+        importTextBtn.addEventListener('click', () => {
+            const buyerInput = document.getElementById('buyer-input');
+            const statusInput = document.getElementById('status-input');
+            if (modalImportBuyer && buyerInput) {
+                modalImportBuyer.value = buyerInput.value;
+            }
+            if (modalImportStatus && statusInput) {
+                modalImportStatus.value = statusInput.value;
+            }
+            importTextModal.style.display = 'flex';
+        });
+    }
+
+    const closeImportModal = () => {
+        if (importTextModal) importTextModal.style.display = 'none';
+        if (importTextArea) importTextArea.value = '';
+        if (importPreviewContainer) importPreviewContainer.style.display = 'none';
+        if (importPreviewBody) importPreviewBody.innerHTML = '';
+        if (btnSaveImport) btnSaveImport.disabled = true;
+        if (btnRemoveImportImage) btnRemoveImportImage.click();
+        
+        // Reset to text tab by default
+        if (tabImportText) tabImportText.click();
+
+        parsedImportRows = [];
+    };
+
+    if (closeImportBtn) closeImportBtn.addEventListener('click', closeImportModal);
+    if (closeImportBtn2) closeImportBtn2.addEventListener('click', closeImportModal);
+
+    if (btnParseImport) {
+        btnParseImport.addEventListener('click', async () => {
+            if (activeImportTab === 'text') {
+                const text = importTextArea ? importTextArea.value : '';
+                if (!text.trim()) {
+                    alert('Vui lòng nhập nội dung tin nhắn cần phân tích!');
+                    return;
+                }
+                parsedImportRows = parseImportText(text);
+                renderImportPreview();
+            } else {
+                if (!uploadedImageBase64) {
+                    alert('Vui lòng kéo thả hoặc chọn một hình ảnh tin nhắn / hóa đơn trước!');
+                    return;
+                }
+
+                const originalBtnText = btnParseImport.innerHTML;
+                btnParseImport.disabled = true;
+                btnParseImport.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích bằng Gemini AI...';
+
+                try {
+                    parsedImportRows = await parseImportImageWithAI(uploadedImageBase64, uploadedImageMimeType);
+                    renderImportPreview();
+                } catch (err) {
+                    console.error("Gemini AI OCR error:", err);
+                    alert("Lỗi khi phân tích hình ảnh bằng AI: " + err.message);
+                } finally {
+                    btnParseImport.disabled = false;
+                    btnParseImport.innerHTML = originalBtnText;
+                }
+            }
+        });
+    }
+
+    async function parseImportImageWithAI(base64Data, mimeType) {
+        const apiKey = (typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "") || "";
+        if (!apiKey) {
+            throw new Error("Chưa cấu hình GEMINI_API_KEY trong file config.js!");
+        }
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const prompt = `Bạn là trợ lý đắc lực bóc tách dữ liệu giao bông từ hình ảnh hóa đơn hoặc tin nhắn chụp màn hình.
+Hãy trích xuất thông tin giao bông thành một mảng các đối tượng JSON có cấu trúc sau:
+[
+  {
+    "date": "YYYY-MM-DD", // Ngày giao bông (ví dụ: ngày 3-7 của năm 2026 sẽ là 2026-07-03). Hãy lấy năm hiện tại là 2026 nếu không có thông tin năm.
+    "type": "tên loại hoa", // ví dụ: "Ô Hồng", "Xô ngoại", "Xô nội", "Ecuador", "Pháp", "Trắng ủ", "Quốc Vương", "Vàng Hà Lan", "Kem", "Simmo", "Victor Vàng", "Lạc Thần", "Hỷ Trứng", "Capu", "Xô Đỏ". Nếu loại hoa viết tắt, hãy tự động chuyển đổi: "ôhg" -> "Ô Hồng", "ohg" -> "Ô Hồng", "ô hồng" -> "Ô Hồng", "ecu" -> "Ecuador", "xo" -> "Xô ngoại", "xo noi" -> "Xô nội", "xo ngoai" -> "Xô ngoại".
+    "qty": số lượng, // Số lượng hoa dạng số.
+    "price": đơn giá // Đơn giá thực tế cho mỗi bông. Nếu trên ảnh ghi là "x 10" hoặc "x 12" nghĩa là đơn giá chục (ví dụ 10k hoặc 12k cho 10 bông), hãy tự động quy đổi thành đơn giá trên mỗi bông (ví dụ "50 ôhg x 10" nghĩa là số lượng 50, đơn giá chục là 10, nên đơn giá thực tế là 1.000đ/bông. "60 ôhg x 12" nghĩa là số lượng 60, đơn giá chục là 12, nên đơn giá thực tế là 1.200đ/bông). Nếu ghi giá chẵn (ví dụ "1000", "1200", "1.8k" thì giữ nguyên giá trị quy đổi, ví dụ 1.8k = 1800).
+  }
+]
+
+Quy tắc:
+- Chỉ trả về mảng JSON hợp lệ theo đúng cấu trúc trên.
+- Không bao quanh bằng markdown block, không giải thích gì thêm.`;
+
+        const payload = {
+            contents: [{
+                parts: [
+                    { text: prompt },
+                    {
+                        inline_data: {
+                            mime_type: mimeType || "image/png",
+                            data: base64Data
+                        }
+                    }
+                ]
+            }],
+            generationConfig: {
+                responseMimeType: "application/json"
+            }
+        };
+
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        let text = result.candidates[0].content.parts[0].text.trim();
+        
+        const items = JSON.parse(text);
+        if (!Array.isArray(items)) {
+            throw new Error("Dữ liệu AI trả về không phải là một danh sách hợp lệ.");
+        }
+
+        return items.map(item => {
+            const dateParts = item.date.split('-');
+            const yr = parseInt(dateParts[0]) || new Date().getFullYear();
+            const mo = parseInt(dateParts[1]) || 1;
+            const dy = parseInt(dateParts[2]) || 1;
+            const parsedDate = new Date(yr, mo - 1, dy);
+
+            return {
+                date: parsedDate,
+                qty: parseFloat(item.qty) || 0,
+                type: item.type || "Bông",
+                price: parseFloat(item.price) || 0,
+                total: (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0)
+            };
+        });
+    }
+
+    function parseImportText(text) {
+        const lines = text.split('\n');
+        let currentDate = null;
+        const parsedRows = [];
+        const currentYear = new Date().getFullYear();
+
+        const flowerMap = {
+            'ôhg': 'Ô Hồng',
+            'ohg': 'Ô Hồng',
+            'ô hồng': 'Ô Hồng',
+            'o hong': 'Ô Hồng',
+            'ôh': 'Ô Hồng',
+            'oh': 'Ô Hồng',
+            'xô ngoại': 'Xô ngoại',
+            'xo ngoai': 'Xô ngoại',
+            'xngoai': 'Xô ngoại',
+            'xô nội': 'Xô nội',
+            'xo noi': 'Xô nội',
+            'xnoi': 'Xô nội',
+            'ecu': 'Ecuador',
+            'ecuador': 'Ecuador',
+            'pháp': 'Pháp',
+            'phap': 'Pháp',
+            'trắng ủ': 'Trắng ủ',
+            'trang u': 'Trắng ủ',
+            'qv': 'Quốc Vương',
+            'quốc vương': 'Quốc Vương',
+            'quoc vuong': 'Quốc Vương',
+            'vàng hà lan': 'Vàng Hà Lan',
+            'vang ha lan': 'Vàng Hà Lan',
+            'vhl': 'Vàng Hà Lan',
+            'kem': 'Kem',
+            'simmo': 'Simmo',
+            'victor vàng': 'Victor Vàng',
+            'victor vang': 'Victor Vàng',
+            'victor': 'Victor Vàng',
+            'lạc thần': 'Lạc Thần',
+            'lac than': 'Lạc Thần',
+            'hỷ trứng': 'Hỷ Trứng',
+            'hy trung': 'Hỷ Trứng',
+            'hỷ trùng': 'Hỷ Trứng',
+            'capu': 'Capu',
+            'xô đỏ': 'Xô Đỏ',
+            'xo do': 'Xô Đỏ'
+        };
+
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            if (!trimmed) return;
+
+            const cleanLine = trimmed.replace(/^ngày\s+/i, '').trim();
+            const dateMatch = cleanLine.match(/^(\d{1,2})[\s\-\/]+(\d{1,2})(?:[\s\-\/]+(\d{4}))?$/);
+            if (dateMatch) {
+                const day = parseInt(dateMatch[1]);
+                const month = parseInt(dateMatch[2]);
+                const year = dateMatch[3] ? parseInt(dateMatch[3]) : currentYear;
+                currentDate = new Date(year, month - 1, day);
+                return;
+            }
+
+            const itemMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s+([^x\d]+)\s*[xX]\s*(\d+(?:\.\d+)?k?)/);
+            if (itemMatch && currentDate) {
+                const qty = parseFloat(itemMatch[1]);
+                const rawType = itemMatch[2].trim().toLowerCase();
+                let priceRaw = itemMatch[3].trim().toLowerCase();
+                
+                let resolvedType = flowerMap[rawType] || itemMatch[2].trim();
+                if (!flowerMap[rawType]) {
+                    resolvedType = resolvedType.charAt(0).toUpperCase() + resolvedType.slice(1);
+                }
+
+                let priceVal = 0;
+                if (priceRaw.endsWith('k')) {
+                    priceVal = parseFloat(priceRaw.slice(0, -1)) * 1000;
+                } else {
+                    priceVal = parseFloat(priceRaw);
+                    if (priceVal < 100) {
+                        priceVal = priceVal * 100;
+                    }
+                }
+
+                parsedRows.push({
+                    date: new Date(currentDate),
+                    qty: qty,
+                    type: resolvedType,
+                    price: priceVal,
+                    total: qty * priceVal
+                });
+            }
+        });
+
+        return parsedRows;
+    }
+
+    function renderImportPreview() {
+        if (!importPreviewBody || !importPreviewContainer || !btnSaveImport || !importCountSpan) return;
+
+        importPreviewBody.innerHTML = '';
+        if (parsedImportRows.length === 0) {
+            importPreviewContainer.style.display = 'none';
+            btnSaveImport.disabled = true;
+            alert('Không tìm thấy dữ liệu phù hợp. Vui lòng kiểm tra lại!');
+            return;
+        }
+
+        importPreviewContainer.style.display = 'block';
+        btnSaveImport.disabled = false;
+        importCountSpan.innerText = parsedImportRows.length;
+
+        parsedImportRows.forEach((row, idx) => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid #e2e8f0';
+            tr.innerHTML = `
+                <td style="padding: 8px 12px;">${formatDateVietnamese(row.date)}</td>
+                <td style="padding: 8px 12px; font-weight: 600;">${row.type}</td>
+                <td style="padding: 8px 12px; text-align: right;">${row.qty.toLocaleString()}</td>
+                <td style="padding: 8px 12px; text-align: right;">${formatCurrency(row.price)}</td>
+                <td style="padding: 8px 12px; text-align: right; font-weight: 700; color: var(--secondary-color);">${formatCurrency(row.total)}</td>
+                <td style="padding: 8px 12px; text-align: center;">
+                    <button type="button" class="action-btn delete-import-row" data-idx="${idx}" style="color: var(--danger); background: none; border: none; cursor: pointer;">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </td>
+            `;
+            importPreviewBody.appendChild(tr);
+        });
+
+        importPreviewBody.querySelectorAll('.delete-import-row').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(btn.getAttribute('data-idx'));
+                parsedImportRows.splice(idx, 1);
+                renderImportPreview();
+            });
+        });
+    }
+
+    if (btnSaveImport) {
+        btnSaveImport.addEventListener('click', async () => {
+            if (parsedImportRows.length === 0) return;
+
+            if (!isAuthorizedForEntry()) {
+                alert("Bạn không có quyền nhập liệu!");
+                return;
+            }
+
+            if (!confirm(`Xác nhận lưu ${parsedImportRows.length} dòng dữ liệu giao bông này?`)) {
+                return;
+            }
+
+            const buyerVal = modalImportBuyer ? modalImportBuyer.value : '';
+            const statusVal = modalImportStatus ? modalImportStatus.value : 'Chưa Xong';
+
+            let payloadRowsStr = [];
+            let payloadRowsParsed = [];
+
+            parsedImportRows.forEach((row, index) => {
+                const dateStr = formatDateVietnamese(row.date);
+                const noteVal = statusVal === 'Xong' ? `Đã thu tiền ngày ${dateStr}` : "";
+                const dtBong = row.total;
+
+                payloadRowsStr.push({
+                    "Ngày": dateStr,
+                    "Status": statusVal,
+                    "Người Mua": buyerVal,
+                    "Số lượng": row.qty.toString(),
+                    "Giá": row.price.toString(),
+                    "Doanh Thu Bông": dtBong.toString(),
+                    "Phân Loại Bông": row.type,
+                    "Ghi Chú": noteVal,
+                    "Đã Thu": statusVal === 'Xong' ? dtBong.toString() : "",
+                    "Tiền Phải Thu": "", "Ghi Chú Vựa thu": "", "Doanh Thu Khác": "",
+                    "Loại DT": "Farm", "Chi Phí": "", "Loại CP": "", "Ghi Chú Chi Phí": ""
+                });
+
+                payloadRowsParsed.push({
+                    "Ngày": dateStr, "Status": statusVal, "Người Mua": buyerVal, "Phân Loại Bông": row.type, "Ghi Chú": noteVal,
+                    parsedDate: row.date, "Số lượng": row.qty, "Giá": row.price, "Doanh Thu Bông": dtBong,
+                    "Đã Thu": statusVal === 'Xong' ? dtBong : 0,
+                    "Chi Phí": 0, "Tiền Phải Thu": 0, "Doanh Thu Khác": 0, "Loại DT": "Farm"
+                });
+            });
+
+            if (!isConfigured()) {
+                alert("Vui lòng cấu hình WEB_APP_URL! Dữ liệu hiện tại chỉ lưu tạm.");
+                payloadRowsParsed.forEach(p => farmData.unshift(p));
+                applyFiltersAndRender();
+                closeImportModal();
+                return;
+            }
+
+            let queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+            const timestampId = "OFFLINE_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+
+            payloadRowsStr.forEach((p, pIdx) => {
+                const rowClientId = `${timestampId}_${pIdx}`;
+                queue.push({ action: 'add', payload: { action: 'add', data: p }, clientId: rowClientId });
+
+                if (payloadRowsParsed[pIdx]) {
+                    payloadRowsParsed[pIdx]._sheetRowNumber = rowClientId;
+                }
+            });
+
+            localStorage.setItem('harvest_sync_queue', JSON.stringify(queue));
+
+            payloadRowsParsed.forEach(p => farmData.unshift(p));
+            applyFiltersAndRender();
+            populateYears();
+            if (typeof updateConnectionStatus === 'function') updateConnectionStatus();
+            if (document.getElementById('view-report').style.display === 'block') updateDashboard();
+
+            showToast(`Đang lưu ${parsedImportRows.length} giao dịch vào danh sách chờ...`, "success");
+            
+            closeImportModal();
+            processSyncQueue();
+        });
+    }
 
     window.updateConnectionStatus = updateConnectionStatus;
     window.processSyncQueue = processSyncQueue;
