@@ -7118,6 +7118,32 @@ document.addEventListener("DOMContentLoaded", () => {
             return lineStr.trim();
         }
 
+        function sortRevenueItemsByBuyer(items) {
+            const getBuyerKey = r => (r["Người Mua"] || "").trim() || "Khách lẻ";
+            const buyerTotals = {};
+            items.forEach(r => {
+                const buyer = getBuyerKey(r);
+                const amt = (parseFloat(r["Doanh Thu Bông"]) || 0) + (parseFloat(r["Doanh Thu Khác"]) || 0);
+                buyerTotals[buyer] = (buyerTotals[buyer] || 0) + amt;
+            });
+
+            items.sort((a, b) => {
+                const buyerA = getBuyerKey(a);
+                const buyerB = getBuyerKey(b);
+                const totalA = buyerTotals[buyerA];
+                const totalB = buyerTotals[buyerB];
+                if (totalB !== totalA) {
+                    return totalB - totalA;
+                }
+                if (buyerA !== buyerB) {
+                    return buyerA.localeCompare(buyerB);
+                }
+                const amtA = (parseFloat(a["Doanh Thu Bông"]) || 0) + (parseFloat(a["Doanh Thu Khác"]) || 0);
+                const amtB = (parseFloat(b["Doanh Thu Bông"]) || 0) + (parseFloat(b["Doanh Thu Khác"]) || 0);
+                return amtB - amtA;
+            });
+        }
+
         const year = document.getElementById('report-year').value;
         const reportMonth = document.getElementById('report-month').value;
         const range = document.getElementById('report-range').value;
@@ -7189,11 +7215,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             let lines = [];
             if (revItems.length > 0) {
-                revItems.sort((a, b) => {
-                    const amtA = (parseFloat(a["Doanh Thu Bông"]) || 0) + (parseFloat(a["Doanh Thu Khác"]) || 0);
-                    const amtB = (parseFloat(b["Doanh Thu Bông"]) || 0) + (parseFloat(b["Doanh Thu Khác"]) || 0);
-                    return amtB - amtA;
-                });
+                sortRevenueItemsByBuyer(revItems);
                 lines.push("", "────── 🌾 CHI TIẾT FARM ──────");
                 revItems.forEach(r => {
                     lines.push(formatDetailLine(r));
@@ -7206,11 +7228,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return (type === "vựa" || type === "vua") && (parseFloat(r["Số lượng"]) > 0 || (r["Doanh Thu Khác"] || 0) > 0);
             });
             if (vuaItems.length > 0) {
-                vuaItems.sort((a, b) => {
-                    const amtA = (parseFloat(a["Doanh Thu Bông"]) || 0) + (parseFloat(a["Doanh Thu Khác"]) || 0);
-                    const amtB = (parseFloat(b["Doanh Thu Bông"]) || 0) + (parseFloat(b["Doanh Thu Khác"]) || 0);
-                    return amtB - amtA;
-                });
+                sortRevenueItemsByBuyer(vuaItems);
                 lines.push("", "────── 🏘️ CHI TIẾT VỰA ──────");
                 vuaItems.forEach(r => {
                     lines.push(formatDetailLine(r));
@@ -7226,11 +7244,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return (type === "vựa" || type === "vua") && (parseFloat(r["Số lượng"]) > 0 || (r["Doanh Thu Khác"] || 0) > 0);
             });
             if (revItems.length > 0) {
-                revItems.sort((a, b) => {
-                    const amtA = (parseFloat(a["Doanh Thu Bông"]) || 0) + (parseFloat(a["Doanh Thu Khác"]) || 0);
-                    const amtB = (parseFloat(b["Doanh Thu Bông"]) || 0) + (parseFloat(b["Doanh Thu Khác"]) || 0);
-                    return amtB - amtA;
-                });
+                sortRevenueItemsByBuyer(revItems);
                 let lines = ["", "────── 🏘️ CHI TIẾT VỰA ──────"];
                 revItems.forEach(r => {
                     lines.push(formatDetailLine(r));
@@ -10245,7 +10259,7 @@ document.addEventListener("DOMContentLoaded", () => {
 Hãy trích xuất thông tin giao bông thành một mảng các đối tượng JSON có cấu trúc sau:
 [
   {
-    "date": "YYYY-MM-DD", // Ngày giao bông (ví dụ: ngày 3-7 của năm 2026 sẽ là 2026-07-03). Hãy lấy năm hiện tại là 2026 nếu không có thông tin năm.
+    "date": "YYYY-MM-DD", // Ngày giao bông (ví dụ: ngày 3-7 của năm 2026 sẽ là 2026-07-03). Hãy lấy năm hiện tại là 2026 nếu không có thông tin năm. Nếu trong hình ảnh hoàn toàn không đề cập đến thông tin ngày, tháng thì hãy để giá trị là null.
     "type": "tên loại hoa", // ví dụ: "Ô Hồng", "Xô ngoại", "Xô nội", "Ecuador", "Pháp", "Trắng ủ", "Quốc Vương", "Vàng Hà Lan", "Kem", "Simmo", "Victor Vàng", "Lạc Thần", "Hỷ Trứng", "Capu", "Xô Đỏ". Nếu loại hoa viết tắt, hãy tự động chuyển đổi: "ôhg" -> "Ô Hồng", "ohg" -> "Ô Hồng", "ô hồng" -> "Ô Hồng", "ecu" -> "Ecuador", "xo" -> "Xô ngoại", "xo noi" -> "Xô nội", "xo ngoai" -> "Xô ngoại".
     "qty": số lượng, // Số lượng hoa dạng số.
     "price": đơn giá // Đơn giá thực tế cho mỗi bông. Nếu trên ảnh ghi là "x 10" hoặc "x 12" nghĩa là đơn giá chục (ví dụ 10k hoặc 12k cho 10 bông), hãy tự động quy đổi thành đơn giá trên mỗi bông (ví dụ "50 ôhg x 10" nghĩa là số lượng 50, đơn giá chục là 10, nên đơn giá thực tế là 1.000đ/bông. "60 ôhg x 12" nghĩa là số lượng 60, đơn giá chục là 12, nên đơn giá thực tế là 1.200đ/bông). Nếu ghi giá chẵn (ví dụ "1000", "1200", "1.8k" thì giữ nguyên giá trị quy đổi, ví dụ 1.8k = 1800).
@@ -10294,11 +10308,20 @@ Quy tắc:
         }
 
         return items.map(item => {
-            const dateParts = item.date.split('-');
-            const yr = parseInt(dateParts[0]) || new Date().getFullYear();
-            const mo = parseInt(dateParts[1]) || 1;
-            const dy = parseInt(dateParts[2]) || 1;
-            const parsedDate = new Date(yr, mo - 1, dy);
+            let parsedDate;
+            if (item.date && typeof item.date === 'string' && item.date.trim() !== '') {
+                const dateParts = item.date.split('-');
+                if (dateParts.length >= 3) {
+                    const yr = parseInt(dateParts[0]) || new Date().getFullYear();
+                    const mo = parseInt(dateParts[1]) || 1;
+                    const dy = parseInt(dateParts[2]) || 1;
+                    parsedDate = new Date(yr, mo - 1, dy);
+                } else {
+                    parsedDate = new Date();
+                }
+            } else {
+                parsedDate = new Date();
+            }
 
             return {
                 date: parsedDate,
@@ -10312,7 +10335,7 @@ Quy tắc:
 
     function parseImportText(text) {
         const lines = text.split('\n');
-        let currentDate = null;
+        let currentDate = new Date();
         const parsedRows = [];
         const currentYear = new Date().getFullYear();
 
@@ -10423,7 +10446,9 @@ Quy tắc:
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid #e2e8f0';
             tr.innerHTML = `
-                <td style="padding: 8px 12px;">${formatDateVietnamese(row.date)}</td>
+                <td style="padding: 6px 12px;">
+                    <input type="date" class="import-row-date-input input-modern" data-idx="${idx}" value="${formatDateInput(row.date)}" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; max-width: 140px; box-sizing: border-box;" />
+                </td>
                 <td style="padding: 8px 12px; font-weight: 600;">${row.type}</td>
                 <td style="padding: 8px 12px; text-align: right;">${row.qty.toLocaleString()}</td>
                 <td style="padding: 8px 12px; text-align: right;">${formatCurrency(row.price)}</td>
@@ -10437,11 +10462,47 @@ Quy tắc:
             importPreviewBody.appendChild(tr);
         });
 
+        // Calculate and display summary row
+        let totalQty = 0;
+        let totalAmount = 0;
+        parsedImportRows.forEach(row => {
+            totalQty += row.qty;
+            totalAmount += row.total;
+        });
+
+        const summaryTr = document.createElement('tr');
+        summaryTr.style.background = '#f8fafc';
+        summaryTr.style.fontWeight = 'bold';
+        summaryTr.style.borderTop = '2px solid #cbd5e1';
+        summaryTr.style.borderBottom = '2px solid #cbd5e1';
+        summaryTr.innerHTML = `
+            <td style="padding: 8px 12px; font-weight: 800; color: #1e293b;" colspan="2">Tổng cộng</td>
+            <td style="padding: 8px 12px; text-align: right; font-weight: 800; color: #1e293b;">${totalQty.toLocaleString()}</td>
+            <td style="padding: 8px 12px;"></td>
+            <td style="padding: 8px 12px; text-align: right; font-weight: 800; color: var(--secondary-color);">${formatCurrency(totalAmount)}</td>
+            <td style="padding: 8px 12px;"></td>
+        `;
+        importPreviewBody.appendChild(summaryTr);
+
         importPreviewBody.querySelectorAll('.delete-import-row').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const idx = parseInt(btn.getAttribute('data-idx'));
                 parsedImportRows.splice(idx, 1);
                 renderImportPreview();
+            });
+        });
+
+        importPreviewBody.querySelectorAll('.import-row-date-input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const idx = parseInt(input.getAttribute('data-idx'));
+                const val = e.target.value;
+                if (val) {
+                    const parts = val.split('-');
+                    const yr = parseInt(parts[0]);
+                    const mo = parseInt(parts[1]);
+                    const dy = parseInt(parts[2]);
+                    parsedImportRows[idx].date = new Date(yr, mo - 1, dy);
+                }
             });
         });
     }
