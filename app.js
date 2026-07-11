@@ -2888,6 +2888,16 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('debt-master-view').style.display = 'none';
         document.getElementById('debt-detail-view').style.display = 'block';
 
+        const btnCreateOrder = document.getElementById('btn-create-farm-order');
+        if (btnCreateOrder) {
+            btnCreateOrder.style.display = buyerObj.isVua ? 'none' : 'flex';
+        }
+
+        const btnCreateVuaOrder = document.getElementById('btn-create-vua-order');
+        if (btnCreateVuaOrder) {
+            btnCreateVuaOrder.style.display = buyerObj.isVua ? 'flex' : 'none';
+        }
+
         document.getElementById('detail-buyer-name').innerHTML = `<i class="fa-solid fa-user-circle"></i> ${buyerObj.name}`;
 
         const txList = document.getElementById('detail-transaction-list');
@@ -3154,6 +3164,72 @@ document.addEventListener("DOMContentLoaded", () => {
             currentSelectedBuyer = null;
             document.getElementById('debt-master-view').style.display = 'grid';
             document.getElementById('debt-detail-view').style.display = 'none';
+        });
+    }
+
+    // New Order button listener for Farm buyer
+    const btnCreateOrder = document.getElementById('btn-create-farm-order');
+    if (btnCreateOrder) {
+        btnCreateOrder.addEventListener('click', () => {
+            if (currentSelectedBuyer) {
+                // 1. Switch to 'data' view
+                switchView('data');
+
+                // 2. Select 'farm' entry type
+                const entryTypeSelect = document.getElementById('entry-type');
+                if (entryTypeSelect) {
+                    entryTypeSelect.value = 'farm';
+                    entryTypeSelect.dispatchEvent(new Event('change'));
+                }
+
+                // 3. Populate buyer name
+                const buyerInput = document.getElementById('buyer-input');
+                if (buyerInput) {
+                    buyerInput.value = currentSelectedBuyer.name;
+                    // Trigger input and change events so listeners can catch the change
+                    buyerInput.dispatchEvent(new Event('input'));
+                    buyerInput.dispatchEvent(new Event('change'));
+                }
+
+                // 4. Scroll to entry-card
+                const entryCard = document.querySelector('.entry-card');
+                if (entryCard) {
+                    entryCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        });
+    }
+
+    // New Order button listener for Vựa buyer
+    const btnCreateVuaOrder = document.getElementById('btn-create-vua-order');
+    if (btnCreateVuaOrder) {
+        btnCreateVuaOrder.addEventListener('click', () => {
+            if (currentSelectedBuyer) {
+                // 1. Switch to 'data' view
+                switchView('data');
+
+                // 2. Select 'vua' entry type
+                const entryTypeSelect = document.getElementById('entry-type');
+                if (entryTypeSelect) {
+                    entryTypeSelect.value = 'vua';
+                    entryTypeSelect.dispatchEvent(new Event('change'));
+                }
+
+                // 3. Populate buyer name
+                const buyerInput = document.getElementById('buyer-input');
+                if (buyerInput) {
+                    buyerInput.value = currentSelectedBuyer.name;
+                    // Trigger input and change events so listeners can catch the change
+                    buyerInput.dispatchEvent(new Event('input'));
+                    buyerInput.dispatchEvent(new Event('change'));
+                }
+
+                // 4. Scroll to entry-card
+                const entryCard = document.querySelector('.entry-card');
+                if (entryCard) {
+                    entryCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
         });
     }
 

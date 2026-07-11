@@ -87,8 +87,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Save Button
     document.getElementById('save-task-btn')?.addEventListener('click', saveTask);
 
-    // Task Category Visibility Trigger
-    document.getElementById('task-category')?.addEventListener('change', toggleStickerFieldVisibility);
+    // Task Category Visibility & Auto-fill Trigger
+    document.getElementById('task-category')?.addEventListener('change', () => {
+        toggleStickerFieldVisibility();
+        autoFillTaskNamePrefix();
+        autoFillStickersSuffix();
+    });
 
     // Modal Delete Button
     document.getElementById('delete-task-btn')?.addEventListener('click', async () => {
@@ -166,7 +170,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Attach change event listener to all sticker checkboxes
     document.querySelectorAll('.sticker-checkbox').forEach(cb => {
-        cb.addEventListener('change', updateStickerLabel);
+        cb.addEventListener('change', () => {
+            updateStickerLabel();
+            autoFillStickersSuffix();
+        });
     });
 
     // Filter Controls
@@ -1468,6 +1475,82 @@ function toggleStickerFieldVisibility() {
         document.querySelectorAll('.sticker-checkbox').forEach(cb => cb.checked = false);
         updateStickerLabel();
     }
+}
+
+function autoFillTaskNamePrefix() {
+    const category = document.getElementById('task-category')?.value;
+    const taskNameInput = document.getElementById('task-name');
+    if (!taskNameInput) return;
+
+    let val = taskNameInput.value;
+    if (category === "Farm I") {
+        if (val.startsWith("Vườn II - ")) {
+            taskNameInput.value = "Vườn I - " + val.substring("Vườn II - ".length);
+        } else if (!val.startsWith("Vườn I - ")) {
+            taskNameInput.value = "Vườn I - " + val;
+        }
+    } else if (category === "Farm II") {
+        if (val.startsWith("Vườn I - ")) {
+            taskNameInput.value = "Vườn II - " + val.substring("Vườn I - ".length);
+        } else if (!val.startsWith("Vườn II - ")) {
+            taskNameInput.value = "Vườn II - " + val;
+        }
+    } else {
+        if (val.startsWith("Vườn I - ")) {
+            taskNameInput.value = val.substring("Vườn I - ".length);
+        } else if (val.startsWith("Vườn II - ")) {
+            taskNameInput.value = val.substring("Vườn II - ".length);
+        }
+    }
+}
+
+function autoFillStickersSuffix() {
+    const taskNameInput = document.getElementById('task-name');
+    if (!taskNameInput) return;
+
+    const stickerElements = document.querySelectorAll('.sticker-checkbox');
+    const allStickers = Array.from(stickerElements).map(cb => cb.value);
+    const selectedCheckboxes = document.querySelectorAll('.sticker-checkbox:checked');
+    const selectedStickers = Array.from(selectedCheckboxes).map(cb => cb.value);
+
+    let val = taskNameInput.value;
+
+    // 1. Strip any existing sticker suffixes from the end of the task name
+    let changed = true;
+    while (changed) {
+        changed = false;
+        val = val.trimEnd();
+        for (const sticker of allStickers) {
+            const suffixWithSpace = " - " + sticker;
+            if (val.endsWith(suffixWithSpace)) {
+                val = val.substring(0, val.length - suffixWithSpace.length);
+                changed = true;
+                break;
+            }
+            if (val.endsWith(sticker)) {
+                val = val.substring(0, val.length - sticker.length);
+                changed = true;
+                break;
+            }
+        }
+    }
+
+    // 2. Append currently selected stickers
+    if (selectedStickers.length > 0) {
+        const suffix = selectedStickers.join(" - ");
+        val = val.trimEnd();
+        if (val === "" || val.endsWith("-")) {
+            if (val.endsWith("-")) {
+                val = val + " " + suffix;
+            } else {
+                val = suffix;
+            }
+        } else {
+            val = val + " - " + suffix;
+        }
+    }
+
+    taskNameInput.value = val;
 }
 
 function updateStickerLabel() {
