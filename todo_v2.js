@@ -28,6 +28,29 @@ function isRestricted() {
     return false;
 }
 
+window.toggleMultidayFields = function() {
+    const isMultiday = document.getElementById('task-is-multiday')?.checked;
+    const startDateGroup = document.getElementById('start-date-group');
+    const deadlineLabel = document.getElementById('deadline-label');
+    const grid = document.getElementById('date-category-grid');
+    
+    if (isMultiday) {
+        if (startDateGroup) startDateGroup.style.display = 'block';
+        if (deadlineLabel) deadlineLabel.innerText = 'Đến ngày';
+        if (grid) grid.classList.add('grid-3-cols');
+        
+        const startDateInput = document.getElementById('task-start-date');
+        const deadlineInput = document.getElementById('task-deadline');
+        if (startDateInput && deadlineInput && !startDateInput.value) {
+            startDateInput.value = deadlineInput.value;
+        }
+    } else {
+        if (startDateGroup) startDateGroup.style.display = 'none';
+        if (deadlineLabel) deadlineLabel.innerText = 'Deadline at';
+        if (grid) grid.classList.remove('grid-3-cols');
+    }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     // Tab Navigation (Updated for new Premium UI)
     const navButtons = document.querySelectorAll('.todo-nav-btn');
@@ -86,6 +109,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Save Button
     document.getElementById('save-task-btn')?.addEventListener('click', saveTask);
+
+    // Multiday Toggle Listener
+    document.getElementById('task-is-multiday')?.addEventListener('change', toggleMultidayFields);
 
     // Task Category Visibility & Auto-fill Trigger
     document.getElementById('task-category')?.addEventListener('change', () => {
@@ -469,6 +495,7 @@ async function loadTodoData() {
             todoCache.forEach(t => {
                 if (t.deadlineDate) t.deadlineDate = new Date(t.deadlineDate);
                 if (t.createdDate) t.createdDate = new Date(t.createdDate);
+                if (t.startDateDate) t.startDateDate = new Date(t.startDateDate);
             });
             renderActiveView();
         } catch (e) {
@@ -501,7 +528,9 @@ async function loadTodoData() {
                     note: r[6],
                     createdAt: r[7],
                     createdDate: parseLocalDate(r[7]), // Pre-parse for speed
-                    sticker: r[8] || ""
+                    sticker: r[8] || "",
+                    startDate: r[9] || r[2],
+                    startDateDate: parseLocalDate(r[9] || r[2])
                 });
             }
         }
@@ -677,7 +706,7 @@ function renderTable() {
 
         tr.innerHTML = `
             <td>${isDone ? '<i class="fa-solid fa-check" style="color: var(--secondary-color); margin-right: 8px;"></i>' : ''}${escapeHtml(t.task)}${stickerTagHtml}${delayHtml}</td>
-            <td>${t.deadline ? formatDate(t.deadline) : '-'}</td>
+            <td>${t.startDate && t.startDate !== t.deadline ? formatDate(t.startDate) + ' - ' + formatDate(t.deadline) : (t.deadline ? formatDate(t.deadline) : '-')}</td>
             <td>${daysLeftHtml}</td>
             <td><span class="badge ${getPriorityClass(t.priority)}">${t.priority}</span></td>
             <td>
@@ -776,13 +805,20 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
     const m = date.getMonth();
     const y = date.getFullYear();
 
-    // Find tasks: Tasks due on this date OR (if cell is today) overdue tasks
+    // Find tasks: Tasks active on this date OR (if cell is today) overdue tasks
     const dayTasks = todoCache.filter(t => {
         if (!t.deadline) return false;
         const dl = parseLocalDate(t.deadline);
         if (!dl) return false;
 
-        const isSameDay = dl.getDate() === dayNum && dl.getMonth() === m && dl.getFullYear() === y;
+        let sd = t.startDate ? parseLocalDate(t.startDate) : null;
+        if (!sd) sd = dl;
+
+        const cellTime = date.getTime();
+        const startTime = sd.getTime();
+        const endTime = dl.getTime();
+
+        const isSameDay = cellTime >= startTime && cellTime <= endTime;
 
         // Logic for Overdue/Delayed: if this cell is TODAY, show all past incomplete tasks
         const isTodayCell = date.getTime() === today.getTime();
@@ -891,12 +927,19 @@ function renderFocus() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // 1. Filter Việc Hôm Nay: tasks of selected day + overdue if today is selected
+    // 1. Filter Việc Hôm Nay: tasks active on selected day + overdue if today is selected
     const todayTasks = todoCache.filter(t => {
         const dl = t.deadlineDate;
         if (!dl) return false;
 
-        const isSameDay = dl.getTime() === selectedFocusDate.getTime();
+        let sd = t.startDate ? parseLocalDate(t.startDate) : null;
+        if (!sd) sd = dl;
+
+        const cellTime = selectedFocusDate.getTime();
+        const startTime = sd.getTime();
+        const endTime = dl.getTime();
+
+        const isSameDay = cellTime >= startTime && cellTime <= endTime;
 
         // If viewing TODAY, also show overdue tasks
         const isPast = dl.getTime() < today.getTime();
@@ -1017,7 +1060,7 @@ function createFocusItemHTML(t, borderColor) {
         <div class="focus-item" style="border-left-color: ${borderColor}; opacity: ${isCompleted ? 0.6 : 1}" onclick="if(!isRestricted()) editTask('${t.id}')">
             <div class="focus-item-title" style="${titleStyle}">${escapeHtml(t.task)}${stickerTag}${delayHtml}</div>
             <div class="focus-item-meta">
-                <span><i class="fa-regular fa-clock"></i> ${t.deadline ? formatDate(t.deadline) : 'Không hạn'}</span>
+                <span><i class="fa-regular fa-clock"></i> ${t.startDate && t.startDate !== t.deadline ? formatDate(t.startDate) + ' - ' + formatDate(t.deadline) : (t.deadline ? formatDate(t.deadline) : 'Không hạn')}</span>
                 <span class="badge ${getStatusClass(t.status)}">${t.status}</span>
             </div>
         </div>
@@ -1064,7 +1107,14 @@ function renderDashboard() {
         else if (t.status === 'Đang thực hiện') inProgress++;
         else pending++;
 
-        if (t.deadlineDate && t.deadlineDate.getTime() === now.getTime()) todayCount++;
+        if (t.deadlineDate) {
+            let sd = t.startDate ? parseLocalDate(t.startDate) : null;
+            if (!sd) sd = t.deadlineDate;
+            const todayTime = now.getTime();
+            if (todayTime >= sd.getTime() && todayTime <= t.deadlineDate.getTime()) {
+                todayCount++;
+            }
+        }
 
         priorityMap[t.priority] = (priorityMap[t.priority] || 0) + 1;
         statusMap[t.status] = (statusMap[t.status] || 0) + 1;
@@ -1190,6 +1240,13 @@ function resetModal() {
     document.getElementById('task-id').value = "";
     document.getElementById('task-name').value = "";
     document.getElementById('task-deadline').value = todayStr;
+    
+    const multidayCb = document.getElementById('task-is-multiday');
+    if (multidayCb) multidayCb.checked = false;
+    const startDateInput = document.getElementById('task-start-date');
+    if (startDateInput) startDateInput.value = todayStr;
+    toggleMultidayFields();
+
     document.getElementById('task-category').value = "Farm";
     document.getElementById('task-note').value = "";
     document.getElementById('task-priority').value = "Cao";
@@ -1211,7 +1268,10 @@ window.openAddTaskModalWithDate = function (date) {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
-    document.getElementById('task-deadline').value = `${y}-${m}-${d}`;
+    const dateStr = `${y}-${m}-${d}`;
+    document.getElementById('task-deadline').value = dateStr;
+    const startDateInput = document.getElementById('task-start-date');
+    if (startDateInput) startDateInput.value = dateStr;
 
     if (isRestricted()) return;
     document.getElementById('todo-modal').style.display = 'flex';
@@ -1226,12 +1286,32 @@ window.editTask = function (id) {
     document.getElementById('modal-title').innerText = "Chỉnh Sửa Công Việc";
     document.getElementById('task-id').value = t.id;
     document.getElementById('task-name').value = t.task;
+    
     if (t.deadline) {
         const d = parseLocalDate(t.deadline);
         if (d) {
             document.getElementById('task-deadline').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         }
     }
+    
+    const multidayCb = document.getElementById('task-is-multiday');
+    const startDateInput = document.getElementById('task-start-date');
+    if (t.startDate && t.startDate !== t.deadline) {
+        if (multidayCb) multidayCb.checked = true;
+        const sd = parseLocalDate(t.startDate);
+        if (sd && startDateInput) {
+            startDateInput.value = sd.getFullYear() + '-' + String(sd.getMonth() + 1).padStart(2, '0') + '-' + String(sd.getDate()).padStart(2, '0');
+        }
+    } else {
+        if (multidayCb) multidayCb.checked = false;
+        if (t.deadline && startDateInput) {
+            const d = parseLocalDate(t.deadline);
+            if (d) {
+                startDateInput.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+            }
+        }
+    }
+    toggleMultidayFields();
     document.getElementById('task-category').value = t.category || "";
     document.getElementById('task-note').value = t.note || "";
     document.getElementById('task-priority').value = t.priority || "Trung bình";
@@ -1270,8 +1350,21 @@ async function saveTask() {
         return;
     }
 
-    const taskObj = { id, task, deadline, category, note, priority, status, sticker };
+    const isMultiday = document.getElementById('task-is-multiday')?.checked;
+    const startDate = isMultiday ? document.getElementById('task-start-date').value : deadline;
+    
+    if (isMultiday && startDate && deadline) {
+        const sdObj = parseLocalDate(startDate);
+        const dlObj = parseLocalDate(deadline);
+        if (sdObj && dlObj && sdObj.getTime() > dlObj.getTime()) {
+            alert("Ngày bắt đầu không thể sau ngày kết thúc!");
+            return;
+        }
+    }
+
+    const taskObj = { id, task, deadline, category, note, priority, status, sticker, startDate };
     taskObj.deadlineDate = parseLocalDate(deadline);
+    taskObj.startDateDate = parseLocalDate(startDate);
 
     // Optimistic UI updates
     if (!id) {

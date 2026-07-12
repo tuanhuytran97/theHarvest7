@@ -1124,6 +1124,21 @@ tr:hover {
     min-height: 200px;
 }
 
+/* Responsive grid for modal dates & category */
+.modal-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+@media (max-width: 576px) {
+    .modal-form-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+
 
 
 

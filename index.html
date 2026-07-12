@@ -3956,13 +3956,22 @@
                         style="width: 100%; padding: 12px; border-radius: 10px;"
                         placeholder="VD: Thu hoạch hoa hồng...">
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
-                    <div class="form-group">
-                        <label style="display: block; font-weight: 700; margin-bottom: 6px;">Deadline at</label>
+                <div class="form-group" style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="task-is-multiday" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
+                    <label for="task-is-multiday" style="margin-bottom: 0; cursor: pointer; font-weight: 700; color: #334155;">Công việc diễn ra trong nhiều ngày</label>
+                </div>
+                <div id="date-category-grid" class="modal-form-grid">
+                    <div class="form-group" id="start-date-group" style="display: none; margin-bottom: 0;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 6px;">Ngày bắt đầu</label>
+                        <input type="date" id="task-start-date" class="input-modern"
+                            style="width: 100%; padding: 12px; border-radius: 10px;">
+                    </div>
+                    <div class="form-group" id="deadline-group" style="margin-bottom: 0;">
+                        <label id="deadline-label" style="display: block; font-weight: 700; margin-bottom: 6px;">Deadline at</label>
                         <input type="date" id="task-deadline" class="input-modern"
                             style="width: 100%; padding: 12px; border-radius: 10px;">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="category-group" style="margin-bottom: 0;">
                         <label style="display: block; font-weight: 700; margin-bottom: 6px;">Phân loại</label>
                         <select id="task-category" class="input-modern"
                             style="width: 100%; padding: 12px; border-radius: 10px;">

@@ -11,9 +11,17 @@ const CONFIG_SHEET_NAME = "Config";
 const FINANCIAL_REPORT_SHEET = "FinancialReport";
 const TODO_SHEET_NAME = "ToDoTracker";
 
+function getTodoSheet() {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName(TODO_SHEET_NAME);
+    if (!sheet) sheet = ss.getSheetByName("Công_Việc_Cần_Làm");
+    if (!sheet) sheet = ss.getSheetByName("Công Việc Cần Làm");
+    return sheet;
+}
+
 function getUsersFromConfig(config) {
     const users = {};
-    
+
     // Default legacy users for backward compatibility
     const defaultAdminUser = String(config["user_admin_username"] || "admin").trim();
     users[defaultAdminUser] = {
@@ -23,7 +31,7 @@ function getUsersFromConfig(config) {
         name: config["user_admin_name"] || "Huy Trần",
         role: "ADMIN"
     };
-    
+
     const defaultEmp1User = String(config["user_emp1_username"] || "emp1").trim();
     users[defaultEmp1User] = {
         id: "emp1",
@@ -32,7 +40,7 @@ function getUsersFromConfig(config) {
         name: config["user_emp1_name"] || "Nhân viên 1",
         role: "EMP_LV1"
     };
-    
+
     const defaultEmp2User = String(config["user_emp2_username"] || "emp2").trim();
     users[defaultEmp2User] = {
         id: "emp2",
@@ -41,17 +49,17 @@ function getUsersFromConfig(config) {
         name: config["user_emp2_name"] || "Nhân viên 2",
         role: "EMP_LV2"
     };
-    
+
     // Scan config for keys matching user_[ID]_username (preferred) or user_[ID]_password
     for (let key in config) {
         if (key.indexOf("user_") === 0) {
             if (key.indexOf("_username") > 0) {
                 const id = key.substring(5, key.indexOf("_username"));
                 if (id === "admin" || id === "emp1" || id === "emp2") continue;
-                
+
                 const username = String(config[key] || "").trim();
                 if (!username) continue;
-                
+
                 users[username] = {
                     id: id,
                     username: username,
@@ -62,10 +70,10 @@ function getUsersFromConfig(config) {
             } else if (key.indexOf("_password") > 0) {
                 const id = key.substring(5, key.indexOf("_password"));
                 if (id === "admin" || id === "emp1" || id === "emp2") continue;
-                
+
                 const username = String(config["user_" + id + "_username"] || id).trim();
                 if (users[username]) continue; // Already processed
-                
+
                 users[username] = {
                     id: id,
                     username: username,
@@ -76,7 +84,7 @@ function getUsersFromConfig(config) {
             }
         }
     }
-    
+
     return users;
 }
 
@@ -91,14 +99,14 @@ function doPost(e) {
         if (action === "login") {
             const username = params.username ? params.username.trim() : "";
             const password = params.password ? String(params.password).trim() : "";
-            
+
             const userObj = users[username];
             if (userObj && userObj.password === password) {
-                return returnJson({ 
-                    "status": "success", 
-                    "role": userObj.role, 
-                    "userName": userObj.name, 
-                    "userLogin": userObj.username 
+                return returnJson({
+                    "status": "success",
+                    "role": userObj.role,
+                    "userName": userObj.name,
+                    "userLogin": userObj.username
                 });
             } else {
                 return returnJson({ "status": "error", "message": "Tên đăng nhập hoặc mật khẩu không đúng!" });
@@ -108,25 +116,25 @@ function doPost(e) {
             const password = params.password ? String(params.password).trim() : "";
             const name = params.name ? params.name.trim() : "";
             const role = params.role ? params.role.trim() : "EMP_LV2";
-            
+
             if (!username || !password || !name) {
                 return returnJson({ "status": "error", "message": "Vui lòng nhập đầy đủ thông tin!" });
             }
-            
+
             if (users[username]) {
                 return returnJson({ "status": "error", "message": "Tên đăng nhập đã tồn tại trên hệ thống!" });
             }
-            
+
             if (config["request_" + username + "_status"] === "PENDING") {
                 return returnJson({ "status": "error", "message": "Yêu cầu đăng ký tài khoản này đang chờ Admin phê duyệt!" });
             }
-            
+
             writeConfig("request_" + username + "_username", username);
             writeConfig("request_" + username + "_password", password);
             writeConfig("request_" + username + "_name", name);
             writeConfig("request_" + username + "_role", role);
             writeConfig("request_" + username + "_status", "PENDING");
-            
+
             return returnJson({ "status": "success", "message": "Đã gửi yêu cầu đăng ký. Vui lòng đợi Admin phê duyệt!" });
         }
 
@@ -135,12 +143,12 @@ function doPost(e) {
         let isAuthorized = false;
         let userRole = null;
         let loggedInUser = null;
-        
+
         if (token.indexOf(":") !== -1) {
             const tokenParts = token.split(":");
             const tokenUser = tokenParts[0];
             const tokenPw = tokenParts[1];
-            
+
             const userObj = users[tokenUser];
             if (userObj && userObj.password === tokenPw) {
                 isAuthorized = true;
@@ -158,7 +166,7 @@ function doPost(e) {
                 }
             }
         }
-        
+
         if (!isAuthorized) {
             return returnJson({ "status": "error", "message": "Phiên làm việc hết hạn hoặc không có quyền!" });
         }
@@ -194,7 +202,7 @@ function doPost(e) {
 
         } else if (action === "get_pending_users") {
             if (userRole !== "ADMIN") return returnJson({ "status": "error", "message": "Chỉ ADMIN mới có quyền duyệt tài khoản!" });
-            
+
             const pending = [];
             for (let key in config) {
                 if (key.indexOf("request_") === 0 && key.indexOf("_username") > 0) {
@@ -213,27 +221,27 @@ function doPost(e) {
 
         } else if (action === "approve_user") {
             if (userRole !== "ADMIN") return returnJson({ "status": "error", "message": "Chỉ ADMIN mới có quyền duyệt tài khoản!" });
-            
+
             const reqUsername = params.username ? params.username.trim() : "";
             const isApproved = params.approve === true;
-            
+
             if (!reqUsername) return returnJson({ "status": "error", "message": "Thiếu tên tài khoản phê duyệt!" });
-            
+
             if (isApproved) {
                 const reqPassword = config["request_" + reqUsername + "_password"] || "";
                 const reqName = config["request_" + reqUsername + "_name"] || reqUsername;
                 const reqRole = config["request_" + reqUsername + "_role"] || "EMP_LV2";
-                
+
                 writeConfig("user_" + reqUsername + "_username", reqUsername);
                 writeConfig("user_" + reqUsername + "_password", reqPassword);
                 writeConfig("user_" + reqUsername + "_name", reqName);
                 writeConfig("user_" + reqUsername + "_role", reqRole);
-                
+
                 deleteConfigPrefix("request_" + reqUsername + "_");
             } else {
                 deleteConfigPrefix("request_" + reqUsername + "_");
             }
-            
+
             return returnJson({ "status": "success" });
 
         } else if (action === "update_profile") {
@@ -241,14 +249,14 @@ function doPost(e) {
             if (!userObj) {
                 return returnJson({ "status": "error", "message": "Xác thực không hợp lệ!" });
             }
-            
+
             // Verify old password
             if (String(params.oldPassword).trim() !== userObj.password) {
                 return returnJson({ "status": "error", "message": "Mật khẩu cũ không chính xác!" });
             }
-            
+
             const userId = userObj.id; // e.g. "admin", "emp1", "emp2", or custom ID
-            
+
             if (params.newName) {
                 writeConfig("user_" + userId + "_name", params.newName.trim());
             }
@@ -258,28 +266,28 @@ function doPost(e) {
             if (params.newPassword) {
                 writeConfig("user_" + userId + "_password", params.newPassword.trim());
             }
-            
+
             return returnJson({ "status": "success" });
 
         } else if (action === "save_adjustment") {
             const displayValues = sheet.getDataRange().getDisplayValues();
-            const colNgay    = getColumnIdx(headers, "Ngày");
-            const colStatus  = getColumnIdx(headers, "Status");
-            const colLoaiDT  = getColumnIdx(headers, "Loại DT");
-            const colDTBong  = getColumnIdx(headers, "Doanh Thu Bông");
-            const colAdjVal  = getColumnIdx(headers, "Khoản Thu Chi Bất Thường");
+            const colNgay = getColumnIdx(headers, "Ngày");
+            const colStatus = getColumnIdx(headers, "Status");
+            const colLoaiDT = getColumnIdx(headers, "Loại DT");
+            const colDTBong = getColumnIdx(headers, "Doanh Thu Bông");
+            const colAdjVal = getColumnIdx(headers, "Khoản Thu Chi Bất Thường");
             const colAdjNote = getColumnIdx(headers, "Ghi Chú Thu Chi Bất Thường");
-            
+
             const idxR = colAdjVal > -1 ? colAdjVal : 17;
             const idxS = colAdjNote > -1 ? colAdjNote : 18;
 
             let rowIndexToFill = -1;
             for (let i = displayValues.length - 1; i >= Math.max(1, displayValues.length - 10); i--) {
-                 if (displayValues[i][colNgay] === data["Ngày"] && 
-                     String(displayValues[i][idxR]) === String(data["amount"]) && 
-                     displayValues[i][idxS] === data["Ghi Chú"]) {
-                     return returnJson({ "status": "success", "message": "Duplicate skipped" });
-                 }
+                if (displayValues[i][colNgay] === data["Ngày"] &&
+                    String(displayValues[i][idxR]) === String(data["amount"]) &&
+                    displayValues[i][idxS] === data["Ghi Chú"]) {
+                    return returnJson({ "status": "success", "message": "Duplicate skipped" });
+                }
             }
 
             for (let i = displayValues.length - 1; i >= 1; i--) {
@@ -296,10 +304,10 @@ function doPost(e) {
                 sheet.getRange(rowIndexToFill, idxS + 1).setValue(data["Ghi Chú"] || "");
             } else {
                 const adjRow = new Array(headers.length).fill("");
-                adjRow[colNgay]   = data["Ngày"] || "";
+                adjRow[colNgay] = data["Ngày"] || "";
                 if (colStatus > -1) adjRow[colStatus] = "Xong";
-                adjRow[idxR]      = parseFloat(data["amount"]) || 0;
-                adjRow[idxS]      = data["Ghi Chú"] || "";
+                adjRow[idxR] = parseFloat(data["amount"]) || 0;
+                adjRow[idxS] = data["Ghi Chú"] || "";
                 if (colLoaiDT > -1) adjRow[colLoaiDT] = "";
                 if (colDTBong > -1) adjRow[colDTBong] = "";
                 sheet.appendRow(adjRow);
@@ -312,13 +320,13 @@ function doPost(e) {
 
 
 
-        // 5. MUTATION ACTIONS
+            // 5. MUTATION ACTIONS
         } else if (action === "add") {
             const displayValues = sheet.getDataRange().getDisplayValues();
             let rowIndexToFill = -1;
-            const colNgay   = getColumnIdx(headers, "Ngày");
+            const colNgay = getColumnIdx(headers, "Ngày");
             const colLoaiDT = getColumnIdx(headers, "Loại DT");
-            const colSL     = getColumnIdx(headers, "Số lượng");
+            const colSL = getColumnIdx(headers, "Số lượng");
 
             const isVuaEntry = String(data["Loại DT"]).trim() === "V\u1ef1a";
 
@@ -343,11 +351,11 @@ function doPost(e) {
                         // Tìm data key khớp với h (không phân biệt hoa thường)
                         let val = data[h];
                         if (val === undefined) {
-                           const matchKey = Object.keys(data).find(k => normalizeString(k) === normH);
-                           if (matchKey) val = data[matchKey];
+                            const matchKey = Object.keys(data).find(k => normalizeString(k) === normH);
+                            if (matchKey) val = data[matchKey];
                         }
                         if (val !== undefined && val !== null && val !== "") {
-                           sheet.getRange(rowIndexToFill, idx + 1).setValue(val);
+                            sheet.getRange(rowIndexToFill, idx + 1).setValue(val);
                         }
                     }
                 });
@@ -411,13 +419,13 @@ function doPost(e) {
                 sheet.deleteRow(rowNumber);
             } else {
                 // Partial delete logic: Clear specific fields instead of whole row if borrowed
-                const colAdjVal  = getColumnIdx(headers, "Khoản Thu Chi Bất Thường");
+                const colAdjVal = getColumnIdx(headers, "Khoản Thu Chi Bất Thường");
                 const colAdjNote = getColumnIdx(headers, "Ghi Chú Thu Chi Bất Thường");
-                const colChiPhi  = getColumnIdx(headers, "Chi Phí");
-                const colLoaiCP  = getColumnIdx(headers, "Loại CP");
-                const colNoteCP  = getColumnIdx(headers, "Ghi Chú Chi Phí") > -1 ? getColumnIdx(headers, "Ghi Chú Chi Phí") : getColumnIdx(headers, "Ghi Chú Chi Phí2");
-                const colSL      = getColumnIdx(headers, "Số lượng");
-                const colLoaiDT  = getColumnIdx(headers, "Loại DT");
+                const colChiPhi = getColumnIdx(headers, "Chi Phí");
+                const colLoaiCP = getColumnIdx(headers, "Loại CP");
+                const colNoteCP = getColumnIdx(headers, "Ghi Chú Chi Phí") > -1 ? getColumnIdx(headers, "Ghi Chú Chi Phí") : getColumnIdx(headers, "Ghi Chú Chi Phí2");
+                const colSL = getColumnIdx(headers, "Số lượng");
+                const colLoaiDT = getColumnIdx(headers, "Loại DT");
 
                 if (context === "adjustment") {
                     if (colAdjVal > -1) sheet.getRange(rowNumber, colAdjVal + 1).clearContent();
@@ -450,9 +458,9 @@ function doPost(e) {
         } else if (action === "add_expense") {
             const displayValues = sheet.getDataRange().getDisplayValues();
             let rowIndexToFill = -1;
-            const colNgay    = getColumnIdx(headers, "Ngày");
-            const colLoaiDT  = getColumnIdx(headers, "Loại DT");
-            const colChiPhi  = getColumnIdx(headers, "Chi Phí");
+            const colNgay = getColumnIdx(headers, "Ngày");
+            const colLoaiDT = getColumnIdx(headers, "Loại DT");
+            const colChiPhi = getColumnIdx(headers, "Chi Phí");
 
             for (let i = displayValues.length - 1; i >= 1; i--) {
                 if (displayValues[i][colNgay] === data["Ngày"] &&
@@ -532,7 +540,7 @@ function doPost(e) {
                 const dispVals = sheet.getDataRange().getDisplayValues();
                 const colNgay = headers.indexOf("Ngày");
                 const colNguoiMua = headers.indexOf("Người Mua");
-                const colLoaiHoa  = headers.indexOf("Loại Hoa");
+                const colLoaiHoa = headers.indexOf("Loại Hoa");
 
                 for (let i = values.length - 1; i >= 1; i--) {
                     if (String(values[i][colNgay]) === String(targetRow["Ngày"]) &&
@@ -557,36 +565,36 @@ function doPost(e) {
 
         } else if (action === "bulkPay") {
             const buyer = (params.buyerName || "").trim();
-            const dateStr   = params.dateStr;
+            const dateStr = params.dateStr;
             const isAllDates = params.isAllDates;
             const now = new Date();
             const fullDateTimeStr = Utilities.formatDate(now, "GMT+7", "dd/MM/yyyy HH:mm:ss");
             const todayStr = Utilities.formatDate(now, "GMT+7", "dd/MM/yyyy");
 
-            const rawValues  = sheet.getDataRange().getValues();
+            const rawValues = sheet.getDataRange().getValues();
             const dispValues = sheet.getDataRange().getDisplayValues();
 
-            const colNgay        = headers.indexOf("Ngày");
-            const colStatus      = headers.indexOf("Status");
-            const colNguoiMua    = headers.indexOf("Người Mua");
-            const colDaThu       = headers.indexOf("Đã Thu");
-            const colGhiChu      = headers.indexOf("Ghi Chú");
-            const colDTBong      = headers.indexOf("Doanh Thu Bông");
+            const colNgay = headers.indexOf("Ngày");
+            const colStatus = headers.indexOf("Status");
+            const colNguoiMua = headers.indexOf("Người Mua");
+            const colDaThu = headers.indexOf("Đã Thu");
+            const colGhiChu = headers.indexOf("Ghi Chú");
+            const colDTBong = headers.indexOf("Doanh Thu Bông");
             const colTienPhaiThu = headers.indexOf("Tiền Phải Thu");
-            const colLoaiDT      = headers.indexOf("Loại DT");
+            const colLoaiDT = headers.indexOf("Loại DT");
 
             let updateCount = 0;
             let totalToPay = 0;
-            let lastLoaiDT = "Farm"; 
+            let lastLoaiDT = "Farm";
             const touchedMonths = new Set();
 
             for (let i = 1; i < rawValues.length; i++) {
                 if (String(rawValues[i][colNguoiMua]).trim() === buyer &&
                     String(rawValues[i][colStatus]).trim().toLowerCase() !== "xong") {
-                    
-                    var isMatched = isAllDates || 
+
+                    var isMatched = isAllDates ||
                         (dispValues[i][colNgay] === dateStr) ||
-                        (typeof dateStr === "string" && dateStr.split(",").map(function(s) { return s.trim(); }).indexOf(dispValues[i][colNgay]) > -1) ||
+                        (typeof dateStr === "string" && dateStr.split(",").map(function (s) { return s.trim(); }).indexOf(dispValues[i][colNgay]) > -1) ||
                         (Array.isArray(dateStr) && dateStr.indexOf(dispValues[i][colNgay]) > -1);
 
                     if (isMatched) {
@@ -627,7 +635,7 @@ function doPost(e) {
                 newRow[colStatus] = "Xong";
                 newRow[colGhiChu] = params.customNote || ("Thanh toán hết ngày " + todayStr);
                 if (colLoaiDT > -1) newRow[colLoaiDT] = lastLoaiDT;
-                
+
                 sheet.appendRow(newRow);
                 touchedMonths.add(`${now.getFullYear()}-${now.getMonth() + 1}`);
             }
@@ -650,15 +658,15 @@ function doPost(e) {
             const now = new Date();
             const todayStr = Utilities.formatDate(now, "GMT+7", "dd/MM/yyyy");
 
-            const rawValues  = sheet.getDataRange().getValues();
+            const rawValues = sheet.getDataRange().getValues();
             const dispValues = sheet.getDataRange().getDisplayValues();
 
-            const colNgay        = headers.indexOf("Ngày");
-            const colStatus      = headers.indexOf("Status");
-            const colNguoiMua    = headers.indexOf("Người Mua");
-            const colDaThu       = headers.indexOf("Đã Thu");
-            const colGhiChu      = headers.indexOf("Ghi Chú");
-            const colLoaiDT      = headers.indexOf("Loại DT");
+            const colNgay = headers.indexOf("Ngày");
+            const colStatus = headers.indexOf("Status");
+            const colNguoiMua = headers.indexOf("Người Mua");
+            const colDaThu = headers.indexOf("Đã Thu");
+            const colGhiChu = headers.indexOf("Ghi Chú");
+            const colLoaiDT = headers.indexOf("Loại DT");
 
             let updateCount = 0;
             let oldestDateStr = "";
@@ -700,7 +708,7 @@ function doPost(e) {
                 newRow[colNguoiMua] = buyer;
                 newRow[colDaThu] = amount;
                 newRow[colStatus] = "Xong";
-                
+
                 const cleanOldestStr = oldestDateStr ? oldestDateStr.split('/').slice(0, 2).join('/') : "";
                 const cleanEndStr = endDateStr ? endDateStr.split('/').slice(0, 2).join('/') : "";
                 let customNote = "Gạch nợ lũy kế";
@@ -711,7 +719,7 @@ function doPost(e) {
                 }
                 newRow[colGhiChu] = customNote;
                 if (colLoaiDT > -1) newRow[colLoaiDT] = lastLoaiDT;
-                
+
                 sheet.appendRow(newRow);
                 touchedMonths.add(`${now.getFullYear()}-${now.getMonth() + 1}`);
             }
@@ -753,7 +761,7 @@ function doPost(e) {
             for (let i = 1; i < rawValues.length; i++) {
                 if (String(rawValues[i][colNguoiMua]).trim() === buyer &&
                     String(rawValues[i][colStatus]).trim().toLowerCase() !== "xong") {
-                    
+
                     if (dateStr && dispValues[i][colNgay] !== dateStr) continue;
 
                     let revenue = 0;
@@ -810,37 +818,37 @@ function doPost(e) {
 
             return returnJson({ "status": "success", "amount": amount });
 
-        // 6. FINANCIAL REPORT ACTIONS
+            // 6. FINANCIAL REPORT ACTIONS
         } else if (action === "get_financial_report") {
             const fSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(FINANCIAL_REPORT_SHEET);
             if (!fSheet) return returnJson({ "status": "error", "message": "Không tìm thấy Sheet: " + FINANCIAL_REPORT_SHEET });
-            
+
             const range = fSheet.getDataRange();
             const values = range.getValues();
             const notes = fSheet.getRange(1, 1, 1, values[0].length).getNotes()[0]; // Lấy ghi chú của dòng tiêu đề (Năm)
-            
+
             // Trả về kèm ghi chú để xác định trạng thái Lock
             return returnJson({ "status": "success", "data": values, "notes": notes });
 
         } else if (action === "save_financial_report") {
             const fSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(FINANCIAL_REPORT_SHEET);
             if (!fSheet) return returnJson({ "status": "error", "message": "Không tìm thấy Sheet: " + FINANCIAL_REPORT_SHEET });
-            
+
             // params: { yearIndex: 1, rowIndex: 5, value: 500000 }
             const rIdx = parseInt(params.rowIndex) + 1;
             const cIdx = parseInt(params.yearIndex) + 1;
-            
+
             if (rIdx < 1 || cIdx < 1) return returnJson({ "status": "error", "message": "Vị trí dữ liệu không hợp lệ" });
-            
+
             fSheet.getRange(rIdx, cIdx).setValue(params.value);
             return returnJson({ "status": "success" });
 
         } else if (action === "lock_financial_year") {
             if (token !== "huytran97") return returnJson({ "status": "error", "message": "Chỉ ADMIN mới có quyền khóa dữ liệu!" });
-            
+
             const fSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(FINANCIAL_REPORT_SHEET);
             if (!fSheet) return returnJson({ "status": "error", "message": "Không tìm thấy Sheet: " + FINANCIAL_REPORT_SHEET });
-            
+
             // Sử dụng Ghi chú (Note) ở dòng 1 để lưu trạng thái Lock, tránh làm hỏng công thức Sum của USER
             const cIdx = parseInt(params.yearIndex) + 1;
             const headerCell = fSheet.getRange(1, cIdx);
@@ -849,7 +857,7 @@ function doPost(e) {
             } else {
                 headerCell.clearNote();
             }
-            
+
             return returnJson({ "status": "success" });
         } else if (action === "get_investment_data") {
             const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -860,8 +868,8 @@ function doPost(e) {
             }
 
             const dataHist = sheetHist.getDataRange().getValues();
-            return returnJson({ 
-                "status": "success", 
+            return returnJson({
+                "status": "success",
                 "history": dataHist
             });
         } else if (action === "save_investment_event") {
@@ -886,7 +894,7 @@ function doPost(e) {
             const colCurrentPrice = headers.indexOf("Giá Hiện Tại");
             const colType = headers.findIndex(h => h.toLowerCase().includes("loại") || h.toLowerCase().includes("type"));
 
-            if (colSymbol === -1 || colCurrentPrice === -1) 
+            if (colSymbol === -1 || colCurrentPrice === -1)
                 return returnJson({ "status": "error", "message": "Cấu trúc Sheet không đúng." });
 
             let updateCount = 0;
@@ -898,11 +906,11 @@ function doPost(e) {
                     const symbol = String(data[i][colSymbol] || "").trim().toUpperCase();
                     if (!symbol) continue;
                     const type = colType > -1 ? String(data[i][colType] || "").toLowerCase() : "";
-                    if ((type.includes("phiếu") || type.includes("etf") || symbol.length === 3) && !symbolsToFetch.includes(symbol)) { 
+                    if ((type.includes("phiếu") || type.includes("etf") || symbol.length === 3) && !symbolsToFetch.includes(symbol)) {
                         symbolsToFetch.push(symbol);
                     }
                 }
-                
+
                 if (symbolsToFetch.length > 0) {
                     const fetched = fetchVnStockPrices(symbolsToFetch);
                     Object.assign(newPrices, fetched);
@@ -918,42 +926,48 @@ function doPost(e) {
                 }
             }
 
-            return returnJson({ 
-                "status": "success", 
+            return returnJson({
+                "status": "success",
                 "message": "Đã cập nhật " + updateCount + " dòng.",
-                "history": sheetHist.getDataRange().getValues() 
+                "history": sheetHist.getDataRange().getValues()
             });
         }
 
         // --- TODO LIST ACTIONS ---
         else if (action === "get_todo_data") {
-            const todoSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TODO_SHEET_NAME);
-            if (!todoSheet) return returnJson({ "status": "error", "message": "Sheet ToDoTracker không tồn tại" });
+            const todoSheet = getTodoSheet();
+            if (!todoSheet) return returnJson({ "status": "error", "message": "Không tìm thấy Sheet danh sách công việc" });
             const todoData = todoSheet.getDataRange().getValues();
-            
+
             // Convert Dates to strings to avoid timezone shift in JSON
-            const formattedData = todoData.map(function(row) {
-                return row.map(function(cell) {
+            const formattedData = todoData.map(function (row) {
+                return row.map(function (cell) {
                     if (Object.prototype.toString.call(cell) === '[object Date]') {
                         return Utilities.formatDate(cell, "GMT+7", "dd/MM/yyyy");
                     }
                     return cell;
                 });
             });
-            
+
             return returnJson({ "status": "success", "data": formattedData });
 
         } else if (action === "save_todo_task") {
-            const todoSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TODO_SHEET_NAME);
-            if (!todoSheet) return returnJson({ "status": "error", "message": "Sheet ToDoTracker không tồn tại" });
+            const todoSheet = getTodoSheet();
+            if (!todoSheet) return returnJson({ "status": "error", "message": "Không tìm thấy Sheet danh sách công việc" });
             const todoData = todoSheet.getDataRange().getValues();
             const task = params.data;
             const taskId = task.id;
-            
+
             let deadline = task.deadline || "";
             if (deadline && deadline.indexOf("-") > -1) {
                 var p = deadline.split("-"); // YYYY-MM-DD
                 deadline = p[2] + "/" + p[1] + "/" + p[0];
+            }
+
+            let startDate = task.startDate || task.deadline || "";
+            if (startDate && startDate.indexOf("-") > -1) {
+                var p = startDate.split("-"); // YYYY-MM-DD
+                startDate = p[2] + "/" + p[1] + "/" + p[0];
             }
 
             let rowIndex = -1;
@@ -965,11 +979,14 @@ function doPost(e) {
                     }
                 }
             }
-            
+
             if (todoData[0].length < 9) {
                 todoSheet.getRange(1, 9).setValue("Sticker");
             }
-            
+            if (todoData[0].length < 10) {
+                todoSheet.getRange(1, 10).setValue("Start Date");
+            }
+
             const now = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm:ss");
             const rowData = [
                 taskId || "TD_" + new Date().getTime(),
@@ -979,10 +996,11 @@ function doPost(e) {
                 task.status || "Chưa bắt đầu",
                 task.category || "",
                 task.note || "",
-                rowIndex > -1 ? (todoData[rowIndex-1][7] || now) : now,
-                task.sticker || ""
+                rowIndex > -1 ? (todoData[rowIndex - 1][7] || now) : now,
+                task.sticker || "",
+                startDate
             ];
-            
+
             if (rowIndex > -1) {
                 todoSheet.getRange(rowIndex, 1, 1, rowData.length).setValues([rowData]);
             } else {
@@ -991,8 +1009,8 @@ function doPost(e) {
             return returnJson({ "status": "success" });
 
         } else if (action === "delete_todo_task") {
-            const todoSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(TODO_SHEET_NAME);
-            if (!todoSheet) return returnJson({ "status": "error", "message": "Sheet ToDoTracker không tồn tại" });
+            const todoSheet = getTodoSheet();
+            if (!todoSheet) return returnJson({ "status": "error", "message": "Không tìm thấy Sheet danh sách công việc" });
             const todoData = todoSheet.getDataRange().getValues();
             const taskId = params.id;
             for (let i = 1; i < todoData.length; i++) {
@@ -1011,24 +1029,24 @@ function doPost(e) {
                 bookSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("BooksTracker");
                 const headers = ["ID", "Title", "Author", "Category", "Status", "Rating", "Progress", "Summary", "Lessons", "Quotes", "Actions", "CreatedAt", "CoverUrl", "ContentDirectory"];
                 bookSheet.getRange(1, 1, 1, headers.length).setValues([headers])
-                         .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+                    .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
             } else {
                 // Ensure CoverUrl and ContentDirectory columns exist for legacy installations
                 const lastCol = bookSheet.getLastColumn();
                 const headers = bookSheet.getRange(1, 1, 1, lastCol).getValues()[0];
                 if (headers.indexOf("CoverUrl") === -1) {
                     bookSheet.getRange(1, lastCol + 1).setValue("CoverUrl")
-                             .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+                        .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
                 }
                 const updatedHeaders = bookSheet.getRange(1, 1, 1, bookSheet.getLastColumn()).getValues()[0];
                 if (updatedHeaders.indexOf("ContentDirectory") === -1) {
                     bookSheet.getRange(1, bookSheet.getLastColumn() + 1).setValue("ContentDirectory")
-                             .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+                        .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
                 }
             }
             const bookData = bookSheet.getDataRange().getValues();
-            const formattedData = bookData.map(function(row) {
-                return row.map(function(cell) {
+            const formattedData = bookData.map(function (row) {
+                return row.map(function (cell) {
                     if (Object.prototype.toString.call(cell) === '[object Date]') {
                         return Utilities.formatDate(cell, "GMT+7", "dd/MM/yyyy");
                     }
@@ -1043,19 +1061,19 @@ function doPost(e) {
                 bookSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("BooksTracker");
                 const headers = ["ID", "Title", "Author", "Category", "Status", "Rating", "Progress", "Summary", "Lessons", "Quotes", "Actions", "CreatedAt", "CoverUrl", "ContentDirectory"];
                 bookSheet.getRange(1, 1, 1, headers.length).setValues([headers])
-                         .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+                    .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
             } else {
                 // Ensure CoverUrl and ContentDirectory columns exist for legacy installations
                 const lastCol = bookSheet.getLastColumn();
                 const headers = bookSheet.getRange(1, 1, 1, lastCol).getValues()[0];
                 if (headers.indexOf("CoverUrl") === -1) {
                     bookSheet.getRange(1, lastCol + 1).setValue("CoverUrl")
-                             .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+                        .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
                 }
                 const updatedHeaders = bookSheet.getRange(1, 1, 1, bookSheet.getLastColumn()).getValues()[0];
                 if (updatedHeaders.indexOf("ContentDirectory") === -1) {
                     bookSheet.getRange(1, bookSheet.getLastColumn() + 1).setValue("ContentDirectory")
-                             .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+                        .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
                 }
             }
             const bookData = bookSheet.getDataRange().getValues();
@@ -1085,7 +1103,7 @@ function doPost(e) {
                 book.lessons || "",
                 book.quotes || "",
                 book.actions || "",
-                rowIndex > -1 ? (bookData[rowIndex-1][11] || now) : now,
+                rowIndex > -1 ? (bookData[rowIndex - 1][11] || now) : now,
                 book.coverUrl || "",
                 book.contentDirectory || ""
             ];
@@ -1116,11 +1134,11 @@ function doPost(e) {
                 catSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("CategorySummaries");
                 const headers = ["Category", "UserSummary", "AiSummary", "UpdatedAt"];
                 catSheet.getRange(1, 1, 1, headers.length).setValues([headers])
-                         .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+                    .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
             }
             const catData = catSheet.getDataRange().getValues();
-            const formattedData = catData.map(function(row) {
-                return row.map(function(cell) {
+            const formattedData = catData.map(function (row) {
+                return row.map(function (cell) {
                     if (Object.prototype.toString.call(cell) === '[object Date]') {
                         return Utilities.formatDate(cell, "GMT+7", "dd/MM/yyyy");
                     }
@@ -1135,7 +1153,7 @@ function doPost(e) {
                 catSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("CategorySummaries");
                 const headers = ["Category", "UserSummary", "AiSummary", "UpdatedAt"];
                 catSheet.getRange(1, 1, 1, headers.length).setValues([headers])
-                         .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+                    .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
             }
             const catData = catSheet.getDataRange().getValues();
             const payload = params.data;
@@ -1173,11 +1191,11 @@ function doPost(e) {
                 cqcSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("CongQuaCach");
                 const headers = ["ID", "Type", "Description", "Area", "Points", "Date", "CreatedAt", "Lesson"];
                 cqcSheet.getRange(1, 1, 1, headers.length).setValues([headers])
-                        .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+                    .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
             }
             const cqcData = cqcSheet.getDataRange().getValues();
-            const formattedData = cqcData.map(function(row) {
-                return row.map(function(cell) {
+            const formattedData = cqcData.map(function (row) {
+                return row.map(function (cell) {
                     if (Object.prototype.toString.call(cell) === '[object Date]') {
                         return Utilities.formatDate(cell, "GMT+7", "yyyy-MM-dd");
                     }
@@ -1192,7 +1210,7 @@ function doPost(e) {
                 cqcSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("CongQuaCach");
                 const headers = ["ID", "Type", "Description", "Area", "Points", "Date", "CreatedAt", "Lesson"];
                 cqcSheet.getRange(1, 1, 1, headers.length).setValues([headers])
-                        .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+                    .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
             }
             const cqcData = cqcSheet.getDataRange().getValues();
             const log = params.data;
@@ -1216,7 +1234,7 @@ function doPost(e) {
                 log.area || "",
                 log.points || 0,
                 log.date || "",
-                rowIndex > -1 ? (cqcData[rowIndex-1][6] || now) : now,
+                rowIndex > -1 ? (cqcData[rowIndex - 1][6] || now) : now,
                 log.lesson || ""
             ];
 
@@ -1258,59 +1276,59 @@ function doPost(e) {
 
 // ─── DATE HELPER ──────────────────────────────────────────────────────────────
 function migrateToUnifiedSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheetDM = ss.getSheetByName("DauTu_DanhMuc");
-  const sheetDT = ss.getSheetByName("DauTu_DongTien");
-  
-  initInvestmentSheets();
-  const sheetHist = ss.getSheetByName("InvestingHistoricalData");
-  if (!sheetHist || !sheetDT) return "Missing sheets for migration";
-  
-  const dataDT = sheetDT.getDataRange().getValues();
-  const headersDT = dataDT[0];
-  const dataDM = sheetDM ? sheetDM.getDataRange().getValues() : [];
-  const headersDM = dataDM.length > 0 ? dataDM[0] : [];
-  
-  const headersHist = ["Ngày", "Mã/Tên", "Loại Sự Kiện", "Số Lượng", "Đơn Giá", "Số Tiền", "Phân Loại", "Định Giá Lý Thuyết", "Giá Hiện Tại", "Luận Điểm Đầu Tư", "Ghi Chú"];
-  
-  // Map Portfolio for metadata
-  const metaMap = {};
-  if (dataDM.length > 1) {
-    dataDM.slice(1).forEach(row => {
-      const symbol = row[headersDM.indexOf("Mã/Tên")];
-      metaMap[symbol] = {
-        type: row[headersDM.indexOf("Phân Loại")],
-        intrinsic: row[headersDM.indexOf("Định Giá Lý Thuyết")],
-        price: row[headersDM.indexOf("Giá Hiện Tại")],
-        thesis: row[headersDM.indexOf("Luận Điểm Đầu Tư")]
-      };
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetDM = ss.getSheetByName("DauTu_DanhMuc");
+    const sheetDT = ss.getSheetByName("DauTu_DongTien");
+
+    initInvestmentSheets();
+    const sheetHist = ss.getSheetByName("InvestingHistoricalData");
+    if (!sheetHist || !sheetDT) return "Missing sheets for migration";
+
+    const dataDT = sheetDT.getDataRange().getValues();
+    const headersDT = dataDT[0];
+    const dataDM = sheetDM ? sheetDM.getDataRange().getValues() : [];
+    const headersDM = dataDM.length > 0 ? dataDM[0] : [];
+
+    const headersHist = ["Ngày", "Mã/Tên", "Loại Sự Kiện", "Số Lượng", "Đơn Giá", "Số Tiền", "Phân Loại", "Định Giá Lý Thuyết", "Giá Hiện Tại", "Luận Điểm Đầu Tư", "Ghi Chú"];
+
+    // Map Portfolio for metadata
+    const metaMap = {};
+    if (dataDM.length > 1) {
+        dataDM.slice(1).forEach(row => {
+            const symbol = row[headersDM.indexOf("Mã/Tên")];
+            metaMap[symbol] = {
+                type: row[headersDM.indexOf("Phân Loại")],
+                intrinsic: row[headersDM.indexOf("Định Giá Lý Thuyết")],
+                price: row[headersDM.indexOf("Giá Hiện Tại")],
+                thesis: row[headersDM.indexOf("Luận Điểm Đầu Tư")]
+            };
+        });
+    }
+
+    const newRows = [];
+    dataDT.slice(1).forEach(row => {
+        const symbol = row[headersDT.indexOf("Mã/Tên")];
+        const meta = metaMap[symbol] || {};
+        const newRow = [
+            row[headersDT.indexOf("Ngày")],
+            symbol,
+            row[headersDT.indexOf("Loại Giao Dịch")],
+            row[headersDT.indexOf("Số Lượng")],
+            row[headersDT.indexOf("Đơn Giá")],
+            row[headersDT.indexOf("Số Tiền")],
+            meta.type || "",
+            meta.intrinsic || "",
+            meta.price || "",
+            meta.thesis || "",
+            row[headersDT.indexOf("Ghi Chú")]
+        ];
+        newRows.push(newRow);
     });
-  }
-  
-  const newRows = [];
-  dataDT.slice(1).forEach(row => {
-    const symbol = row[headersDT.indexOf("Mã/Tên")];
-    const meta = metaMap[symbol] || {};
-    const newRow = [
-      row[headersDT.indexOf("Ngày")],
-      symbol,
-      row[headersDT.indexOf("Loại Giao Dịch")],
-      row[headersDT.indexOf("Số Lượng")],
-      row[headersDT.indexOf("Đơn Giá")],
-      row[headersDT.indexOf("Số Tiền")],
-      meta.type || "",
-      meta.intrinsic || "",
-      meta.price || "",
-      meta.thesis || "",
-      row[headersDT.indexOf("Ghi Chú")]
-    ];
-    newRows.push(newRow);
-  });
-  
-  if (newRows.length > 0) {
-    sheetHist.getRange(2, 1, newRows.length, headersHist.length).setValues(newRows);
-  }
-  return "Migration complete: " + newRows.length + " rows moved.";
+
+    if (newRows.length > 0) {
+        sheetHist.getRange(2, 1, newRows.length, headersHist.length).setValues(newRows);
+    }
+    return "Migration complete: " + newRows.length + " rows moved.";
 }
 
 // ─── MONTHLY LEDGER RECALCULATION ────────────────────────────────────────────
@@ -1319,23 +1337,23 @@ function migrateToUnifiedSheet() {
  * Normalizes string for robust header comparison (lowercase, trimmed, no accents)
  */
 function normalizeString(str) {
-  if (!str) return "";
-  return String(str)
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, ""); // Remove accents
+    if (!str) return "";
+    return String(str)
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, ""); // Remove accents
 }
 
 /**
  * Finds column index by name (case-insensitive, accent-insensitive)
  */
 function getColumnIdx(headers, name) {
-  const normName = normalizeString(name);
-  for (let i = 0; i < headers.length; i++) {
-    if (normalizeString(headers[i]) === normName) return i;
-  }
-  return -1;
+    const normName = normalizeString(name);
+    for (let i = 0; i < headers.length; i++) {
+        if (normalizeString(headers[i]) === normName) return i;
+    }
+    return -1;
 }
 
 /**
@@ -1372,7 +1390,7 @@ function recalculateFromDate(sheet, headers, date) {
     }
 
     // ── READ ONCE ──────────────────────────────────────────────────────────────
-    const rawRange  = sheet.getDataRange();
+    const rawRange = sheet.getDataRange();
     const rawValues = rawRange.getValues();
 
     // Build column map once
@@ -1466,16 +1484,16 @@ function recalculateMonthCash(monthRows, colMap, openingBalance, allUpdates) {
     monthRows.sort((a, b) => a.date - b.date || a.rowIdx - b.rowIdx);
 
     // 2. Calculate and collect updates
-    const cPaid = colMap["Đã Thu"]   > -1 ? colMap["Đã Thu"]   : 8;
-    const cExp  = colMap["Chi Phí"]  > -1 ? colMap["Chi Phí"]  : 13;
+    const cPaid = colMap["Đã Thu"] > -1 ? colMap["Đã Thu"] : 8;
+    const cExp = colMap["Chi Phí"] > -1 ? colMap["Chi Phí"] : 13;
     const cLoai = colMap["Loại DT"];
-    const cOth  = colMap["Doanh Thu Khác"] > -1 ? colMap["Doanh Thu Khác"] : 11;
-    const cAdj  = colMap["Khoản Thu Chi Bất Thường"] > -1 ? colMap["Khoản Thu Chi Bất Thường"] : 17;
+    const cOth = colMap["Doanh Thu Khác"] > -1 ? colMap["Doanh Thu Khác"] : 11;
+    const cAdj = colMap["Khoản Thu Chi Bất Thường"] > -1 ? colMap["Khoản Thu Chi Bất Thường"] : 17;
 
     let running = openingBalance;
     for (const row of monthRows) {
         const loaiDT = String(row.values[cLoai] || "").trim();
-        const valR   = parseFloat(row.values[cAdj]) || 0;
+        const valR = parseFloat(row.values[cAdj]) || 0;
 
         if (loaiDT === "ADJ") {
             running += valR;
@@ -1551,29 +1569,29 @@ function doGet(e) {
 // Run this ONCE to create the structure
 // ==========================================
 function initInvestmentSheets() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  
-  // 1. Create Unified Historical Data Sheet
-  let sheetHist = ss.getSheetByName("InvestingHistoricalData");
-  if (!sheetHist) {
-    sheetHist = ss.insertSheet("InvestingHistoricalData");
-    const headers = [
-      "Ngày", "Mã/Tên", "Loại Sự Kiện", "Số Lượng", "Đơn Giá", "Số Tiền", 
-      "Phân Loại", "Định Giá Lý Thuyết", "Giá Hiện Tại", "Luận Điểm Đầu Tư", "Ghi Chú"
-    ];
-    sheetHist.getRange(1, 1, 1, headers.length).setValues([headers])
-             .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
-    
-    // Formatting
-    sheetHist.getRange("D:F").setNumberFormat("#,##0");
-    sheetHist.getRange("H:I").setNumberFormat("#,##0");
-    
-    // Demo Data
-    sheetHist.appendRow(["15/01/2024", "VNM", "Mua", 700, 71428, 50000000, "Cổ Phiếu", 85000, 68000, "Độc quyền sữa, biên an toàn cao.", "Bắt đầu rót vốn"]);
-    sheetHist.getRange("B2").setFontWeight("bold");
-  }
-  
-  Browser.msgBox("Đã khởi tạo xong Sheet: InvestingHistoricalData!");
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    // 1. Create Unified Historical Data Sheet
+    let sheetHist = ss.getSheetByName("InvestingHistoricalData");
+    if (!sheetHist) {
+        sheetHist = ss.insertSheet("InvestingHistoricalData");
+        const headers = [
+            "Ngày", "Mã/Tên", "Loại Sự Kiện", "Số Lượng", "Đơn Giá", "Số Tiền",
+            "Phân Loại", "Định Giá Lý Thuyết", "Giá Hiện Tại", "Luận Điểm Đầu Tư", "Ghi Chú"
+        ];
+        sheetHist.getRange(1, 1, 1, headers.length).setValues([headers])
+            .setBackground("#0f172a").setFontColor("#fbbf24").setFontWeight("bold");
+
+        // Formatting
+        sheetHist.getRange("D:F").setNumberFormat("#,##0");
+        sheetHist.getRange("H:I").setNumberFormat("#,##0");
+
+        // Demo Data
+        sheetHist.appendRow(["15/01/2024", "VNM", "Mua", 700, 71428, 50000000, "Cổ Phiếu", 85000, 68000, "Độc quyền sữa, biên an toàn cao.", "Bắt đầu rót vốn"]);
+        sheetHist.getRange("B2").setFontWeight("bold");
+    }
+
+    Browser.msgBox("Đã khởi tạo xong Sheet: InvestingHistoricalData!");
 }
 
 /**
@@ -1582,95 +1600,95 @@ function initInvestmentSheets() {
  * @returns {Object} { "VNM": 68000, ... }
  */
 function fetchVnStockPrices(symbols) {
-  const prices = {};
-  if (!symbols || symbols.length === 0) return prices;
-  
-  // Try TCBS API (Sieu on dinh)
-  symbols.forEach(s => {
-    try {
-      const urlTCBS = "https://api-price.tcbs.com.vn/stock/info?symbol=" + s;
-      const res = UrlFetchApp.fetch(urlTCBS, { "muteHttpExceptions": true });
-      if (res.getResponseCode() === 200) {
-        const json = JSON.parse(res.getContentText());
-        // TCBS returns lastPrice as full value (e.g. 61300) or thousands (61.3)
-        let p = json.lastPrice || json.closePrice || json.price || 0;
-        if (p > 0 && p < 1000) p *= 1000;
-        if (p > 0) prices[s] = p;
-      }
-    } catch(e) {}
-  });
+    const prices = {};
+    if (!symbols || symbols.length === 0) return prices;
 
-  // Try SSI iBoard API (Fallback 1)
-  if (Object.keys(prices).length < symbols.length) {
-    try {
-      const urlSSI = "https://iboard-query.ssi.com.vn/stock/config/all";
-      const resSSI = UrlFetchApp.fetch(urlSSI, { "muteHttpExceptions": true });
-      if (resSSI.getResponseCode() === 200) {
-        const fullData = JSON.parse(resSSI.getContentText());
-        if (fullData && fullData.data) {
-          symbols.forEach(s => {
-            if (!prices[s]) {
-              const match = fullData.data.find(item => item.s === s);
-              if (match && match.l) { // l is last price
-                 let p = match.l;
-                 if (p < 1000) p *= 1000;
-                 prices[s] = p;
-              }
+    // Try TCBS API (Sieu on dinh)
+    symbols.forEach(s => {
+        try {
+            const urlTCBS = "https://api-price.tcbs.com.vn/stock/info?symbol=" + s;
+            const res = UrlFetchApp.fetch(urlTCBS, { "muteHttpExceptions": true });
+            if (res.getResponseCode() === 200) {
+                const json = JSON.parse(res.getContentText());
+                // TCBS returns lastPrice as full value (e.g. 61300) or thousands (61.3)
+                let p = json.lastPrice || json.closePrice || json.price || 0;
+                if (p > 0 && p < 1000) p *= 1000;
+                if (p > 0) prices[s] = p;
             }
-          });
-        }
-      }
-    } catch(e) {}
-  }
+        } catch (e) { }
+    });
 
-  // Final Try: VNDirect V4 (Fallback 2)
-  if (Object.keys(prices).length < symbols.length) {
-    try {
-      const remaining = symbols.filter(s => !prices[s]);
-      const urlVND = "https://finfo-api.vndirect.com.vn/v4/stock_prices?symbols=" + remaining.join(",");
-      const resVND = UrlFetchApp.fetch(urlVND, { "muteHttpExceptions": true });
-      if (resVND.getResponseCode() === 200) {
-        const json = JSON.parse(resVND.getContentText());
-        if (json && json.data) {
-          json.data.forEach(item => {
-            let p = item.lastPrice || item.basicPrice || 0;
-            if (p > 0 && p < 1000) p *= 1000;
-            if (p > 0) prices[item.symbol] = p;
-          });
-        }
-      }
-    } catch(e) {}
-  }
+    // Try SSI iBoard API (Fallback 1)
+    if (Object.keys(prices).length < symbols.length) {
+        try {
+            const urlSSI = "https://iboard-query.ssi.com.vn/stock/config/all";
+            const resSSI = UrlFetchApp.fetch(urlSSI, { "muteHttpExceptions": true });
+            if (resSSI.getResponseCode() === 200) {
+                const fullData = JSON.parse(resSSI.getContentText());
+                if (fullData && fullData.data) {
+                    symbols.forEach(s => {
+                        if (!prices[s]) {
+                            const match = fullData.data.find(item => item.s === s);
+                            if (match && match.l) { // l is last price
+                                let p = match.l;
+                                if (p < 1000) p *= 1000;
+                                prices[s] = p;
+                            }
+                        }
+                    });
+                }
+            }
+        } catch (e) { }
+    }
 
-  return prices;
+    // Final Try: VNDirect V4 (Fallback 2)
+    if (Object.keys(prices).length < symbols.length) {
+        try {
+            const remaining = symbols.filter(s => !prices[s]);
+            const urlVND = "https://finfo-api.vndirect.com.vn/v4/stock_prices?symbols=" + remaining.join(",");
+            const resVND = UrlFetchApp.fetch(urlVND, { "muteHttpExceptions": true });
+            if (resVND.getResponseCode() === 200) {
+                const json = JSON.parse(resVND.getContentText());
+                if (json && json.data) {
+                    json.data.forEach(item => {
+                        let p = item.lastPrice || item.basicPrice || 0;
+                        if (p > 0 && p < 1000) p *= 1000;
+                        if (p > 0) prices[item.symbol] = p;
+                    });
+                }
+            }
+        } catch (e) { }
+    }
+
+    return prices;
 }
 
 /**
  * Helper to parse date strings (DD/MM/YYYY) or Date objects from Sheets
  */
 function parseDisplayDate(val) {
-  if (!val) return null;
-  if (val instanceof Date) return val;
-  const s = String(val).trim();
-  
-  // Handle DD/MM/YYYY or DD-MM-YYYY or YYYY-MM-DD
-  const parts = s.split(/[\/\-]/);
-  if (parts.length === 3) {
-    if (parts[0].length === 4) { // YYYY-MM-DD
-       return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    if (!val) return null;
+    if (val instanceof Date) return val;
+    const s = String(val).trim();
+
+    // Handle DD/MM/YYYY or DD-MM-YYYY or YYYY-MM-DD
+    const parts = s.split(/[\/\-]/);
+    if (parts.length === 3) {
+        if (parts[0].length === 4) { // YYYY-MM-DD
+            return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        }
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        let year = parseInt(parts[2], 10);
+        if (year < 100) year += 2000;
+        return new Date(year, month, day);
     }
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1;
-    let year = parseInt(parts[2], 10);
-    if (year < 100) year += 2000;
-    return new Date(year, month, day);
-  }
-  
-  // Fallback for other formats
-  const d = new Date(s);
-  if (d && !isNaN(d.getTime())) {
-    if (d.getFullYear() < 100) d.setFullYear(d.getFullYear() + 2000);
-    return d;
-  }
-  return null;
+
+    // Fallback for other formats
+    const d = new Date(s);
+    if (d && !isNaN(d.getTime())) {
+        if (d.getFullYear() < 100) d.setFullYear(d.getFullYear() + 2000);
+        return d;
+    }
+    return null;
 }
