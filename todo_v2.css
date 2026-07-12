@@ -1139,8 +1139,20 @@ tr:hover {
 }
 
 /* Modern Switch Toggle */
+.switch-modern .slider-modern {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: .3s;
+    border-radius: 24px;
+}
+
 .switch-modern input:checked + .slider-modern {
-    background-color: #6366f1;
+    background-color: #22c55e !important; /* Green switch when active */
 }
 
 .switch-modern .slider-modern::before {
@@ -1158,6 +1170,17 @@ tr:hover {
 
 .switch-modern input:checked + .slider-modern::before {
     transform: translateX(20px);
+}
+
+/* Multiday Toggle Container active state */
+.multiday-toggle-container {
+    transition: all 0.3s ease;
+}
+
+.multiday-toggle-container:has(input:checked),
+.multiday-toggle-container.active-multiday {
+    background: #f0fdf4 !important; /* light green */
+    border-color: #bbf7d0 !important; /* green border */
 }
 
 

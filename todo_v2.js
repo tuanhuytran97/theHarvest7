@@ -34,6 +34,15 @@ window.toggleMultidayFields = function() {
     const deadlineLabel = document.getElementById('deadline-label');
     const grid = document.getElementById('date-category-grid');
     
+    const container = document.querySelector('.multiday-toggle-container');
+    if (container) {
+        if (isMultiday) {
+            container.classList.add('active-multiday');
+        } else {
+            container.classList.remove('active-multiday');
+        }
+    }
+    
     if (isMultiday) {
         if (startDateGroup) startDateGroup.style.display = 'block';
         if (deadlineLabel) deadlineLabel.innerText = 'Đến ngày';
