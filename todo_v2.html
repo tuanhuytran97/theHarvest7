@@ -587,9 +587,15 @@
                     <label>Tên Công Việc</label>
                     <input type="text" id="task-name" class="input-modern" placeholder="VD: Thu hoạch hoa hồng...">
                 </div>
-                <div class="form-group" style="margin-bottom: 0.75rem; display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="task-is-multiday" style="width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer;">
-                    <label for="task-is-multiday" style="margin-bottom: 0; cursor: pointer; font-weight: 600; color: #334155;">Công việc diễn ra trong nhiều ngày</label>
+                <div class="form-group" style="margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 10px 14px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <span style="font-size: 0.9rem; font-weight: 700; color: #334155; text-align: left;">Công việc diễn ra trong nhiều ngày</span>
+                        <span style="font-size: 0.75rem; color: #64748b; text-align: left;">Cho phép thiết lập khoảng thời gian bắt đầu và kết thúc</span>
+                    </div>
+                    <label class="switch-modern" style="position: relative; display: inline-block; width: 44px; height: 24px; margin-bottom: 0; flex-shrink: 0;">
+                        <input type="checkbox" id="task-is-multiday" style="opacity: 0; width: 0; height: 0;">
+                        <span class="slider-modern" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 24px;"></span>
+                    </label>
                 </div>
                 <div id="date-category-grid" class="modal-form-grid">
                     <div class="form-group" id="start-date-group" style="display: none; margin-bottom: 0;">
