@@ -10450,9 +10450,13 @@ Quy tắc:
                     <input type="date" class="import-row-date-input input-modern" data-idx="${idx}" value="${formatDateInput(row.date)}" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; max-width: 140px; box-sizing: border-box;" />
                 </td>
                 <td style="padding: 8px 12px; font-weight: 600;">${row.type}</td>
-                <td style="padding: 8px 12px; text-align: right;">${row.qty.toLocaleString()}</td>
-                <td style="padding: 8px 12px; text-align: right;">${formatCurrency(row.price)}</td>
-                <td style="padding: 8px 12px; text-align: right; font-weight: 700; color: var(--secondary-color);">${formatCurrency(row.total)}</td>
+                <td style="padding: 6px 12px; text-align: right;">
+                    <input type="number" class="import-row-qty-input input-modern" data-idx="${idx}" value="${row.qty}" style="padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; max-width: 75px; text-align: right; box-sizing: border-box;" min="0" step="any" />
+                </td>
+                <td style="padding: 6px 12px; text-align: right;">
+                    <input type="number" class="import-row-price-input input-modern" data-idx="${idx}" value="${row.price}" style="padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; max-width: 100px; text-align: right; box-sizing: border-box;" min="0" step="any" />
+                </td>
+                <td style="padding: 8px 12px; text-align: right; font-weight: 700; color: var(--secondary-color);" class="import-row-total-cell">${formatCurrency(row.total)}</td>
                 <td style="padding: 8px 12px; text-align: center;">
                     <button type="button" class="action-btn delete-import-row" data-idx="${idx}" style="color: var(--danger); background: none; border: none; cursor: pointer;">
                         <i class="fa-solid fa-trash-can"></i>
@@ -10477,12 +10481,29 @@ Quy tắc:
         summaryTr.style.borderBottom = '2px solid #cbd5e1';
         summaryTr.innerHTML = `
             <td style="padding: 8px 12px; font-weight: 800; color: #1e293b;" colspan="2">Tổng cộng</td>
-            <td style="padding: 8px 12px; text-align: right; font-weight: 800; color: #1e293b;">${totalQty.toLocaleString()}</td>
+            <td style="padding: 8px 12px; text-align: right; font-weight: 800; color: #1e293b;" class="import-summary-qty">${totalQty.toLocaleString()}</td>
             <td style="padding: 8px 12px;"></td>
-            <td style="padding: 8px 12px; text-align: right; font-weight: 800; color: var(--secondary-color);">${formatCurrency(totalAmount)}</td>
+            <td style="padding: 8px 12px; text-align: right; font-weight: 800; color: var(--secondary-color);" class="import-summary-total">${formatCurrency(totalAmount)}</td>
             <td style="padding: 8px 12px;"></td>
         `;
         importPreviewBody.appendChild(summaryTr);
+
+        const updateTotals = () => {
+            let currentTotalQty = 0;
+            let currentTotalAmount = 0;
+            parsedImportRows.forEach(row => {
+                currentTotalQty += row.qty;
+                currentTotalAmount += row.total;
+            });
+            const summaryQtyTd = importPreviewBody.querySelector('.import-summary-qty');
+            const summaryTotalTd = importPreviewBody.querySelector('.import-summary-total');
+            if (summaryQtyTd) {
+                summaryQtyTd.innerText = currentTotalQty.toLocaleString();
+            }
+            if (summaryTotalTd) {
+                summaryTotalTd.innerHTML = formatCurrency(currentTotalAmount);
+            }
+        };
 
         importPreviewBody.querySelectorAll('.delete-import-row').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -10503,6 +10524,40 @@ Quy tắc:
                     const dy = parseInt(parts[2]);
                     parsedImportRows[idx].date = new Date(yr, mo - 1, dy);
                 }
+            });
+        });
+
+        importPreviewBody.querySelectorAll('.import-row-qty-input').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const idx = parseInt(input.getAttribute('data-idx'));
+                const qtyVal = parseFloat(e.target.value) || 0;
+                parsedImportRows[idx].qty = qtyVal;
+                parsedImportRows[idx].total = qtyVal * parsedImportRows[idx].price;
+
+                const rowTr = input.closest('tr');
+                const totalTd = rowTr.querySelector('.import-row-total-cell');
+                if (totalTd) {
+                    totalTd.innerHTML = formatCurrency(parsedImportRows[idx].total);
+                }
+
+                updateTotals();
+            });
+        });
+
+        importPreviewBody.querySelectorAll('.import-row-price-input').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const idx = parseInt(input.getAttribute('data-idx'));
+                const priceVal = parseFloat(e.target.value) || 0;
+                parsedImportRows[idx].price = priceVal;
+                parsedImportRows[idx].total = parsedImportRows[idx].qty * priceVal;
+
+                const rowTr = input.closest('tr');
+                const totalTd = rowTr.querySelector('.import-row-total-cell');
+                if (totalTd) {
+                    totalTd.innerHTML = formatCurrency(parsedImportRows[idx].total);
+                }
+
+                updateTotals();
             });
         });
     }
