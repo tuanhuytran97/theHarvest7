@@ -1117,6 +1117,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let annualExpenseChartInstance = null;
     let monthlyCombinedChartInstance = null;
     let financialGrowthChartInstance = null;
+    let capitalAllocationChartInstance = null;
     let expenseDistributionChartInstance = null;
     let cashflowExpenseChartInstance = null;
     let currentCashflowStatement = null;
@@ -4951,6 +4952,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 status: 'annual-year-status',
                 yearText: 'annual-health-year-text'
             });
+            updateCapitalAllocationChart(annualRatiosYearSelect.value);
         });
     }
 
@@ -6430,6 +6432,17 @@ document.addEventListener("DOMContentLoaded", () => {
             if (equityRow && years.length > 0) {
                 updateAccumulationJourney(years, equityRow);
             }
+
+            // Render Capital Allocation Donut Chart
+            const annualRatiosYearSelect = document.getElementById('financial-ratios-year');
+            let selectedYear = annualRatiosYearSelect ? annualRatiosYearSelect.value : "";
+            if (!selectedYear && years.length > 0) {
+                selectedYear = years[years.length - 1]; // Fallback to latest year
+            }
+            if (!selectedYear) {
+                selectedYear = new Date().getFullYear().toString();
+            }
+            updateCapitalAllocationChart(selectedYear, values);
         } catch (err) {
             console.error("Chart Error:", err);
         }
@@ -6508,6 +6521,231 @@ document.addEventListener("DOMContentLoaded", () => {
                     ChartDataLabels: {
                         // Global override handled in datasets
                         display: true
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+    }
+
+    function updateCapitalAllocationChart(year, values = null) {
+        if (!values) {
+            const cacheJson = localStorage.getItem('cached_financial_report');
+            if (cacheJson) {
+                try {
+                    const result = JSON.parse(cacheJson);
+                    values = result.data || [];
+                } catch (e) {
+                    console.error("Error reading cached financial report for donut chart:", e);
+                }
+            }
+        }
+        if (!values || values.length < 1) return;
+
+        const headerRow = values[0] || [];
+        const yearIdx = headerRow.findIndex(cell => String(cell).includes(year));
+        if (yearIdx === -1) {
+            console.warn("No data found for year " + year + " in donut chart");
+            return;
+        }
+
+        const getRowVal = (fallbackIdx, keywords) => {
+            let row = values[fallbackIdx];
+            if (!row || !keywords.some(kw => String(row[0] || "").toUpperCase().includes(kw))) {
+                const found = values.find(r => {
+                    const label = String(r[0] || "").toUpperCase();
+                    return keywords.some(kw => label.includes(kw));
+                });
+                if (found) row = found;
+            }
+            if (!row) return 0;
+            return Number(row[yearIdx]) || 0;
+        };
+
+        const cashVal = getRowVal(1, ["TIỀN MẶT"]);
+        const bizVal = getRowVal(10, ["KINH DOANH"]);
+        const reVal = getRowVal(13, ["BẤT ĐỘNG SẢN"]);
+        const finVal = getRowVal(15, ["KHOẢN ĐẦU TƯ TÀI CHÍNH", "ĐẦU TƯ TÀI CHÍNH", "CỔ PHIẾU", "DÒNG TIỀN"]);
+
+        // Update selected year in HTML
+        const yearText = document.getElementById("allocation-selected-year");
+        if (yearText) yearText.innerText = year;
+
+        renderCapitalAllocationDonutChart(cashVal, bizVal, reVal, finVal);
+    }
+
+    function renderCapitalAllocationDonutChart(cash, business, realEstate, finance) {
+        const canvas = document.getElementById('capital-allocation-chart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (capitalAllocationChartInstance) capitalAllocationChartInstance.destroy();
+
+        const total = cash + business + realEstate + finance;
+        
+        // Define premium colors
+        const tealColor = '#10b981';
+        const indigoColor = '#6366f1';
+        const amberColor = '#f59e0b';
+        const blueColor = '#0ea5e9';
+
+        // Set up canvas gradients for pie slices to make them look stunning and glossy
+        let tealGrad = tealColor;
+        let indigoGrad = indigoColor;
+        let amberGrad = amberColor;
+        let blueGrad = blueColor;
+
+        try {
+            // Cash gradient
+            const g1 = ctx.createLinearGradient(0, 0, 0, 300);
+            g1.addColorStop(0, '#34d399');
+            g1.addColorStop(1, '#059669');
+            tealGrad = g1;
+
+            // Business gradient
+            const g2 = ctx.createLinearGradient(0, 0, 0, 300);
+            g2.addColorStop(0, '#818cf8');
+            g2.addColorStop(1, '#4f46e5');
+            indigoGrad = g2;
+
+            // Real Estate gradient
+            const g3 = ctx.createLinearGradient(0, 0, 0, 300);
+            g3.addColorStop(0, '#fbbf24');
+            g3.addColorStop(1, '#b45309');
+            amberGrad = g3;
+
+            // Financial Investments gradient
+            const g4 = ctx.createLinearGradient(0, 0, 0, 300);
+            g4.addColorStop(0, '#38bdf8');
+            g4.addColorStop(1, '#0284c7');
+            blueGrad = g4;
+        } catch (e) {
+            console.warn("Gradient creation failed, falling back to flat colors:", e);
+        }
+
+        // Define all potential items
+        const allItems = [
+            { label: 'Tiền Mặt', value: cash, bgColor: tealGrad, borderColor: tealColor },
+            { label: 'Kinh Doanh', value: business, bgColor: indigoGrad, borderColor: indigoColor },
+            { label: 'Bất Động Sản', value: realEstate, bgColor: amberGrad, borderColor: amberColor },
+            { label: 'Đầu Tư Tài Chính', value: finance, bgColor: blueGrad, borderColor: blueColor }
+        ];
+
+        // Filter out items with value <= 0
+        const activeItems = allItems.filter(item => item.value > 0);
+
+        const labels = activeItems.map(item => item.label);
+        const dataValues = activeItems.map(item => item.value);
+        const backgroundColors = activeItems.map(item => item.bgColor);
+        const borderColors = activeItems.map(item => item.borderColor);
+
+        // Fallback placeholder if no items are active
+        if (activeItems.length === 0) {
+            labels.push('Không có phân bổ');
+            dataValues.push(1);
+            backgroundColors.push('rgba(203, 213, 225, 0.4)');
+            borderColors.push('#cbd5e1');
+        }
+
+        // Render custom premium legend summary list next to the chart
+        const summaryList = document.getElementById('allocation-summary-list');
+        if (summaryList) {
+            summaryList.innerHTML = '';
+            if (activeItems.length === 0) {
+                summaryList.innerHTML = `
+                    <div style="text-align: center; padding: 2.5rem; color: #94a3b8; font-weight: 600; font-size: 0.85rem; background: white; border-radius: 16px; border: 1px dashed #e2e8f0; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                        <i class="fa-solid fa-folder-open" style="font-size: 1.8rem; margin-bottom: 10px; display: block; color: #cbd5e1;"></i>
+                        Không có dữ liệu phân bổ nguồn vốn.
+                    </div>
+                `;
+            } else {
+                activeItems.forEach(item => {
+                    const pct = total > 0 ? ((item.value / total) * 100).toFixed(1) : '0.0';
+                    const card = document.createElement('div');
+                    card.style.display = 'flex';
+                    card.style.alignItems = 'center';
+                    card.style.justifyContent = 'space-between';
+                    card.style.padding = '14px 18px';
+                    card.style.background = 'white';
+                    card.style.borderRadius = '16px';
+                    card.style.border = '1px solid #f1f5f9';
+                    card.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -1px rgba(0,0,0,0.005)';
+                    card.style.transition = 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+                    card.style.cursor = 'pointer';
+
+                    card.onmouseenter = () => {
+                        card.style.transform = 'translateY(-2px) scale(1.015)';
+                        card.style.boxShadow = '0 10px 15px -3px rgba(0,0,0,0.04), 0 4px 6px -2px rgba(0,0,0,0.01)';
+                        card.style.borderColor = item.borderColor;
+                        card.style.background = 'rgba(248, 250, 252, 0.5)';
+                    };
+                    card.onmouseleave = () => {
+                        card.style.transform = 'none';
+                        card.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.01), 0 2px 4px -1px rgba(0,0,0,0.005)';
+                        card.style.borderColor = '#f1f5f9';
+                        card.style.background = 'white';
+                    };
+
+                    card.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <span style="width: 14px; height: 14px; border-radius: 50%; background: ${item.borderColor}; display: inline-block; box-shadow: 0 0 0 4px rgba(${item.borderColor === '#10b981' ? '16,185,129' : item.borderColor === '#6366f1' ? '99,102,241' : item.borderColor === '#f59e0b' ? '245,158,11' : '14,165,233'}, 0.15)"></span>
+                            <span style="font-weight: 700; color: #334155; font-size: 0.92rem;">${item.label}</span>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="display: block; font-weight: 800; color: #1e293b; font-size: 0.98rem; font-family: 'Courier New', monospace;">${formatNumber(item.value)} tr</span>
+                            <span style="font-size: 0.78rem; font-weight: 700; color: #6366f1; background: rgba(99,102,241,0.08); padding: 2px 8px; border-radius: 12px; display: inline-block; margin-top: 3px;">${pct}%</span>
+                        </div>
+                    `;
+                    summaryList.appendChild(card);
+                });
+            }
+        }
+
+        capitalAllocationChartInstance = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: dataValues,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 2,
+                    hoverOffset: 12
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false // Hide default canvas legend because we have the beautiful HTML legend side-by-side!
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                if (label === 'Không có phân bổ') return ` ${label}`;
+                                const value = context.parsed || 0;
+                                const pct = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                return ` ${label}: ${formatNumber(value)} tr (${pct}%)`;
+                            }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        color: '#ffffff',
+                        font: {
+                            weight: 'bold',
+                            size: 11,
+                            family: 'Inter, Roboto, sans-serif'
+                        },
+                        formatter: (value, context) => {
+                            if (total === 0) return '';
+                            const pct = (value / total) * 100;
+                            const label = context.chart.data.labels[context.dataIndex];
+                            if (label === 'Không có phân bổ') return label;
+                            return `${label}\n${pct.toFixed(1)}%`;
+                        },
+                        textAlign: 'center'
                     }
                 }
             },
