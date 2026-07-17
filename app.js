@@ -10500,7 +10500,7 @@ Hãy trích xuất thông tin giao bông thành một mảng các đối tượn
     "date": "YYYY-MM-DD", // Ngày giao bông (ví dụ: ngày 3-7 của năm 2026 sẽ là 2026-07-03). Hãy lấy năm hiện tại là 2026 nếu không có thông tin năm. Nếu trong hình ảnh hoàn toàn không đề cập đến thông tin ngày, tháng thì hãy để giá trị là null.
     "type": "tên loại hoa", // ví dụ: "Ô Hồng", "Xô ngoại", "Xô nội", "Ecuador", "Pháp", "Trắng ủ", "Quốc Vương", "Vàng Hà Lan", "Kem", "Simmo", "Victor Vàng", "Lạc Thần", "Hỷ Trứng", "Capu", "Xô Đỏ". Nếu loại hoa viết tắt, hãy tự động chuyển đổi: "ôhg" -> "Ô Hồng", "ohg" -> "Ô Hồng", "ô hồng" -> "Ô Hồng", "ecu" -> "Ecuador", "xo" -> "Xô ngoại", "xo noi" -> "Xô nội", "xo ngoai" -> "Xô ngoại".
     "qty": số lượng, // Số lượng hoa dạng số.
-    "price": đơn giá // Đơn giá thực tế cho mỗi bông. Nếu trên ảnh ghi là "x 10" hoặc "x 12" nghĩa là đơn giá chục (ví dụ 10k hoặc 12k cho 10 bông), hãy tự động quy đổi thành đơn giá trên mỗi bông (ví dụ "50 ôhg x 10" nghĩa là số lượng 50, đơn giá chục là 10, nên đơn giá thực tế là 1.000đ/bông. "60 ôhg x 12" nghĩa là số lượng 60, đơn giá chục là 12, nên đơn giá thực tế là 1.200đ/bông). Nếu ghi giá chẵn (ví dụ "1000", "1200", "1.8k" thì giữ nguyên giá trị quy đổi, ví dụ 1.8k = 1800).
+    "price": đơn giá // Đơn giá thực tế cho mỗi bông. Nếu trên ảnh ghi là "x 10" hoặc "x 12" nghĩa là đơn giá chục (ví dụ 10k hoặc 12k cho 10 bông), hãy tự động quy đổi thành đơn giá trên mỗi bông (ví dụ "50 ôhg x 10" nghĩa là số lượng 50, đơn giá chục là 10, nên đơn giá thực tế là 1.000đ/bông. "60 ôhg x 12" nghĩa là số lượng 60, đơn giá chục là 12, nên đơn giá thực tế là 1.200đ/bông). Nếu ghi giá chẵn (ví dụ "1000", "1200", "1.8k" thì giữ nguyên giá trị quy đổi, ví dụ 1.8k = 1800). Nếu trên ảnh hoàn toàn không có thông tin đơn giá (ví dụ chỉ ghi tên bông và số lượng, không có giá), hãy trả về giá trị null.
   }
 ]
 
@@ -10561,12 +10561,15 @@ Quy tắc:
                 parsedDate = new Date();
             }
 
+            const qtyVal = parseFloat(item.qty) || 0;
+            const priceVal = (item.price !== undefined && item.price !== null && item.price !== '') ? parseFloat(item.price) : '';
+
             return {
                 date: parsedDate,
-                qty: parseFloat(item.qty) || 0,
+                qty: qtyVal,
                 type: item.type || "Bông",
-                price: parseFloat(item.price) || 0,
-                total: (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0)
+                price: priceVal,
+                total: priceVal !== '' ? qtyVal * priceVal : ''
             };
         });
     }
@@ -10576,6 +10579,7 @@ Quy tắc:
         let currentDate = new Date();
         const parsedRows = [];
         const currentYear = new Date().getFullYear();
+        let lastParsedType = "Bông";
 
         const flowerMap = {
             'ôhg': 'Ô Hồng',
@@ -10592,6 +10596,7 @@ Quy tắc:
             'xnoi': 'Xô nội',
             'ecu': 'Ecuador',
             'ecuador': 'Ecuador',
+            'e cu': 'Ecuador',
             'pháp': 'Pháp',
             'phap': 'Pháp',
             'trắng ủ': 'Trắng ủ',
@@ -10604,18 +10609,42 @@ Quy tắc:
             'vhl': 'Vàng Hà Lan',
             'kem': 'Kem',
             'simmo': 'Simmo',
+            'sino': 'Simmo',
             'victor vàng': 'Victor Vàng',
             'victor vang': 'Victor Vàng',
             'victor': 'Victor Vàng',
             'lạc thần': 'Lạc Thần',
             'lac than': 'Lạc Thần',
+            'lac t': 'Lạc Thần',
+            'lạc t': 'Lạc Thần',
             'hỷ trứng': 'Hỷ Trứng',
             'hy trung': 'Hỷ Trứng',
             'hỷ trùng': 'Hỷ Trứng',
+            'hỷ': 'Hỷ Trứng',
+            'hy': 'Hỷ Trứng',
             'capu': 'Capu',
             'xô đỏ': 'Xô Đỏ',
-            'xo do': 'Xô Đỏ'
+            'xo do': 'Xô Đỏ',
+            'vịt': 'Vịt',
+            'vit': 'Vịt',
+            'keo': 'Keo',
+            'bày': 'Bày',
+            'bay': 'Bày'
         };
+
+        function evaluateQtyExpression(expr) {
+            if (!expr) return 0;
+            const sanitized = expr.replace(/[^0-9\+\-\s\.]/g, '');
+            const parts = sanitized.split('+');
+            let sum = 0;
+            parts.forEach(part => {
+                const val = parseFloat(part.trim());
+                if (!isNaN(val)) {
+                    sum += val;
+                }
+            });
+            return sum;
+        }
 
         lines.forEach(line => {
             const trimmed = line.trim();
@@ -10631,8 +10660,14 @@ Quy tắc:
                 return;
             }
 
+            let parsedQty = 0;
+            let parsedType = "";
+            let parsedPrice = "";
+            let matched = false;
+
+            // 1. Khớp định dạng chuẩn: qty type x price (ví dụ: "50 ôhg x 10")
             const itemMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s+([^x\d]+)\s*[xX]\s*(\d+(?:\.\d+)?k?)/);
-            if (itemMatch && currentDate) {
+            if (itemMatch) {
                 const qty = parseFloat(itemMatch[1]);
                 const rawType = itemMatch[2].trim().toLowerCase();
                 let priceRaw = itemMatch[3].trim().toLowerCase();
@@ -10651,13 +10686,74 @@ Quy tắc:
                         priceVal = priceVal * 100;
                     }
                 }
+                
+                parsedQty = qty;
+                parsedType = resolvedType;
+                parsedPrice = priceVal;
+                matched = true;
+            }
 
+            // 2. Khớp định dạng: [Tên hoa] [Số lượng] (ví dụ: "phap 100", "lac T 100 + 100")
+            if (!matched) {
+                const nameThenQtyMatch = trimmed.match(/^([^\d\+\-\*\/]+?)\s+([\+\-]?\s*\d+[\d\s\+\-\.]*)$/);
+                if (nameThenQtyMatch) {
+                    let rawType = nameThenQtyMatch[1].trim().toLowerCase();
+                    const qtyExpr = nameThenQtyMatch[2].trim();
+                    
+                    let resolvedType = flowerMap[rawType] || nameThenQtyMatch[1].trim();
+                    if (!flowerMap[rawType]) {
+                        resolvedType = resolvedType.charAt(0).toUpperCase() + resolvedType.slice(1);
+                    }
+                    
+                    if (resolvedType.endsWith(' X') || resolvedType.endsWith(' x')) {
+                        resolvedType = resolvedType.slice(0, -2).trim();
+                    }
+
+                    parsedQty = evaluateQtyExpression(qtyExpr);
+                    parsedType = resolvedType;
+                    parsedPrice = "";
+                    matched = true;
+                }
+            }
+
+            // 3. Khớp định dạng chỉ có biểu thức số lượng (kế thừa loại hoa trước đó, ví dụ: "50")
+            if (!matched) {
+                const qtyOnlyMatch = trimmed.match(/^([\+\-]?\s*\d+[\d\s\+\-\.]*)$/);
+                if (qtyOnlyMatch) {
+                    parsedQty = evaluateQtyExpression(qtyOnlyMatch[1].trim());
+                    parsedType = lastParsedType || "Bông";
+                    parsedPrice = "";
+                    matched = true;
+                }
+            }
+
+            // 4. Khớp định dạng chỉ có tên hoa (số lượng mặc định = 0, ví dụ: "keo")
+            if (!matched) {
+                const nameOnlyMatch = trimmed.match(/^([^\d\+\-\*\/]+)$/);
+                if (nameOnlyMatch) {
+                    const rawType = nameOnlyMatch[1].trim().toLowerCase();
+                    let resolvedType = flowerMap[rawType] || nameOnlyMatch[1].trim();
+                    if (!flowerMap[rawType]) {
+                        resolvedType = resolvedType.charAt(0).toUpperCase() + resolvedType.slice(1);
+                    }
+                    
+                    parsedQty = 0;
+                    parsedType = resolvedType;
+                    parsedPrice = "";
+                    matched = true;
+                }
+            }
+
+            if (matched && currentDate) {
+                if (parsedType) {
+                    lastParsedType = parsedType;
+                }
                 parsedRows.push({
                     date: new Date(currentDate),
-                    qty: qty,
-                    type: resolvedType,
-                    price: priceVal,
-                    total: qty * priceVal
+                    qty: parsedQty,
+                    type: parsedType || "Bông",
+                    price: parsedPrice,
+                    total: parsedPrice !== "" ? parsedQty * parsedPrice : ""
                 });
             }
         });
@@ -10692,9 +10788,9 @@ Quy tắc:
                     <input type="number" class="import-row-qty-input input-modern" data-idx="${idx}" value="${row.qty}" style="padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; max-width: 75px; text-align: right; box-sizing: border-box;" min="0" step="any" />
                 </td>
                 <td style="padding: 6px 12px; text-align: right;">
-                    <input type="number" class="import-row-price-input input-modern" data-idx="${idx}" value="${row.price}" style="padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; max-width: 100px; text-align: right; box-sizing: border-box;" min="0" step="any" />
+                    <input type="number" class="import-row-price-input input-modern" data-idx="${idx}" value="${row.price !== undefined && row.price !== null && row.price !== '' ? row.price : ''}" placeholder="Chưa có giá" style="padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; max-width: 100px; text-align: right; box-sizing: border-box;" min="0" step="any" />
                 </td>
-                <td style="padding: 8px 12px; text-align: right; font-weight: 700; color: var(--secondary-color);" class="import-row-total-cell">${formatCurrency(row.total)}</td>
+                <td style="padding: 8px 12px; text-align: right; font-weight: 700; color: var(--secondary-color);" class="import-row-total-cell">${row.total !== undefined && row.total !== null && row.total !== '' ? formatCurrency(row.total) : ''}</td>
                 <td style="padding: 8px 12px; text-align: center;">
                     <button type="button" class="action-btn delete-import-row" data-idx="${idx}" style="color: var(--danger); background: none; border: none; cursor: pointer;">
                         <i class="fa-solid fa-trash-can"></i>
@@ -10708,8 +10804,8 @@ Quy tắc:
         let totalQty = 0;
         let totalAmount = 0;
         parsedImportRows.forEach(row => {
-            totalQty += row.qty;
-            totalAmount += row.total;
+            totalQty += row.qty || 0;
+            totalAmount += parseFloat(row.total) || 0;
         });
 
         const summaryTr = document.createElement('tr');
@@ -10730,8 +10826,8 @@ Quy tắc:
             let currentTotalQty = 0;
             let currentTotalAmount = 0;
             parsedImportRows.forEach(row => {
-                currentTotalQty += row.qty;
-                currentTotalAmount += row.total;
+                currentTotalQty += row.qty || 0;
+                currentTotalAmount += parseFloat(row.total) || 0;
             });
             const summaryQtyTd = importPreviewBody.querySelector('.import-summary-qty');
             const summaryTotalTd = importPreviewBody.querySelector('.import-summary-total');
@@ -10770,12 +10866,18 @@ Quy tắc:
                 const idx = parseInt(input.getAttribute('data-idx'));
                 const qtyVal = parseFloat(e.target.value) || 0;
                 parsedImportRows[idx].qty = qtyVal;
-                parsedImportRows[idx].total = qtyVal * parsedImportRows[idx].price;
+                
+                const currentPrice = parsedImportRows[idx].price;
+                if (currentPrice === '' || currentPrice === null || currentPrice === undefined) {
+                    parsedImportRows[idx].total = '';
+                } else {
+                    parsedImportRows[idx].total = qtyVal * currentPrice;
+                }
 
                 const rowTr = input.closest('tr');
                 const totalTd = rowTr.querySelector('.import-row-total-cell');
                 if (totalTd) {
-                    totalTd.innerHTML = formatCurrency(parsedImportRows[idx].total);
+                    totalTd.innerHTML = parsedImportRows[idx].total !== '' ? formatCurrency(parsedImportRows[idx].total) : '';
                 }
 
                 updateTotals();
@@ -10785,14 +10887,20 @@ Quy tắc:
         importPreviewBody.querySelectorAll('.import-row-price-input').forEach(input => {
             input.addEventListener('input', (e) => {
                 const idx = parseInt(input.getAttribute('data-idx'));
-                const priceVal = parseFloat(e.target.value) || 0;
-                parsedImportRows[idx].price = priceVal;
-                parsedImportRows[idx].total = parsedImportRows[idx].qty * priceVal;
+                const valStr = e.target.value;
+                if (valStr === '') {
+                    parsedImportRows[idx].price = '';
+                    parsedImportRows[idx].total = '';
+                } else {
+                    const priceVal = parseFloat(valStr) || 0;
+                    parsedImportRows[idx].price = priceVal;
+                    parsedImportRows[idx].total = parsedImportRows[idx].qty * priceVal;
+                }
 
                 const rowTr = input.closest('tr');
                 const totalTd = rowTr.querySelector('.import-row-total-cell');
                 if (totalTd) {
-                    totalTd.innerHTML = formatCurrency(parsedImportRows[idx].total);
+                    totalTd.innerHTML = parsedImportRows[idx].total !== '' ? formatCurrency(parsedImportRows[idx].total) : '';
                 }
 
                 updateTotals();
@@ -10822,26 +10930,30 @@ Quy tắc:
             parsedImportRows.forEach((row, index) => {
                 const dateStr = formatDateVietnamese(row.date);
                 const noteVal = statusVal === 'Xong' ? `Đã thu tiền ngày ${dateStr}` : "";
-                const dtBong = row.total;
+                
+                const hasPrice = row.price !== '' && row.price !== null && row.price !== undefined;
+                const dtBong = hasPrice ? row.total : "";
 
                 payloadRowsStr.push({
                     "Ngày": dateStr,
                     "Status": statusVal,
                     "Người Mua": buyerVal,
                     "Số lượng": row.qty.toString(),
-                    "Giá": row.price.toString(),
+                    "Giá": hasPrice ? row.price.toString() : "",
                     "Doanh Thu Bông": dtBong.toString(),
                     "Phân Loại Bông": row.type,
                     "Ghi Chú": noteVal,
-                    "Đã Thu": statusVal === 'Xong' ? dtBong.toString() : "",
+                    "Đã Thu": (statusVal === 'Xong' && hasPrice) ? dtBong.toString() : "",
                     "Tiền Phải Thu": "", "Ghi Chú Vựa thu": "", "Doanh Thu Khác": "",
                     "Loại DT": "Farm", "Chi Phí": "", "Loại CP": "", "Ghi Chú Chi Phí": ""
                 });
 
                 payloadRowsParsed.push({
                     "Ngày": dateStr, "Status": statusVal, "Người Mua": buyerVal, "Phân Loại Bông": row.type, "Ghi Chú": noteVal,
-                    parsedDate: row.date, "Số lượng": row.qty, "Giá": row.price, "Doanh Thu Bông": dtBong,
-                    "Đã Thu": statusVal === 'Xong' ? dtBong : 0,
+                    parsedDate: row.date, "Số lượng": row.qty, 
+                    "Giá": hasPrice ? row.price : "", 
+                    "Doanh Thu Bông": dtBong !== "" ? dtBong : 0,
+                    "Đã Thu": (statusVal === 'Xong' && hasPrice) ? dtBong : 0,
                     "Chi Phí": 0, "Tiền Phải Thu": 0, "Doanh Thu Khác": 0, "Loại DT": "Farm"
                 });
             });
