@@ -736,9 +736,15 @@ select:focus {
 @media (max-width: 640px) {
     .sched-saved-table-wrapper {
         overflow-x: visible !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
     }
 
     .sched-saved-table {
+        display: block !important;
+        width: 100% !important;
         min-width: unset !important;
         border-collapse: separate !important;
         border-spacing: 0 0.5rem !important;
@@ -765,6 +771,7 @@ select:focus {
         box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
         position: relative !important;
         overflow: hidden !important;
+        box-sizing: border-box !important;
     }
 
     .sched-saved-table td {
@@ -775,6 +782,16 @@ select:focus {
         gap: 6px !important;
         font-size: 0.88rem !important;
         line-height: 1.4 !important;
+        box-sizing: border-box !important;
+    }
+
+    .sched-saved-table td:first-child {
+        position: static !important;
+        background: transparent !important;
+        min-width: unset !important;
+        max-width: unset !important;
+        border-right: none !important;
+        z-index: 1 !important;
     }
 
     .sched-saved-table td::before {
@@ -797,6 +814,7 @@ select:focus {
         border-bottom: 1px solid #f1f5f9 !important;
         padding-bottom: 10px !important;
         margin-bottom: 6px !important;
+        padding-right: 80px !important; /* Tránh đè lên nút edit/xóa ở góc phải */
     }
     .sched-saved-table td[data-label="Giống hoa"]::before {
         display: none !important;
@@ -820,6 +838,7 @@ select:focus {
         right: 0.75rem !important;
         width: auto !important;
         padding: 0 !important;
+        z-index: 10 !important;
     }
     .sched-saved-table td[data-label="Thao tác"]::before {
         display: none !important;

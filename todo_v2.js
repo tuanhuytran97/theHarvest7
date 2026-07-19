@@ -3286,14 +3286,23 @@ window.renderAIScheduler = function () {
             if (actualDate && peakDate && !isNaN(actualDate.getTime()) && !isNaN(peakDate.getTime())) {
                 const diffTime = actualDate.getTime() - peakDate.getTime();
                 const deviationDays = Math.round(diffTime / (24 * 60 * 60 * 1000));
+                const actualCycleDays = totalCycle + deviationDays;
+                
+                const actualBadge = `<span style="color: #334155; font-weight: 800; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid #cbd5e1; display: inline-block; font-size: 0.75rem; margin-left: 6px; font-style: normal; vertical-align: middle;">thực tế: ${actualCycleDays} ngày</span>`;
+                
                 if (deviationDays > 0) {
-                    deviationStr = `<span style="color: #d97706; font-weight: 700;">+${deviationDays} ngày</span>`;
+                    deviationStr = `<span style="color: #d97706; font-weight: 700; vertical-align: middle;">+${deviationDays} ngày</span>${actualBadge}`;
                 } else if (deviationDays < 0) {
-                    deviationStr = `<span style="color: #3b82f6; font-weight: 700;">-${Math.abs(deviationDays)} ngày</span>`;
+                    deviationStr = `<span style="color: #3b82f6; font-weight: 700; vertical-align: middle;">-${Math.abs(deviationDays)} ngày</span>${actualBadge}`;
                 } else {
-                    deviationStr = `<span style="color: #10b981; font-weight: 700;">Chuẩn xác</span>`;
+                    deviationStr = `<span style="color: #10b981; font-weight: 700; vertical-align: middle;">Chuẩn xác</span>${actualBadge}`;
                 }
             }
+        }
+
+        let actualPeakDisplay = actualPeakDateStr;
+        if (actualPeakDateStr && actualPeakDateStr !== "--") {
+            actualPeakDisplay = `<span style="color: #1e3a8a; font-weight: 800; background: #eff6ff; padding: 4px 8px; border-radius: 6px; border: 1px solid #bfdbfe; display: inline-block;">${actualPeakDateStr}</span>`;
         }
 
         html += `
@@ -3303,12 +3312,12 @@ window.renderAIScheduler = function () {
                 <td data-label="Ngày lễ" style="padding: 12px 10px; color: #475569;">${holidayDateStr}</td>
                 <td class="sched-cut-date-col" data-label="Ngày cắt cành" style="padding: 12px 10px; font-weight: 700; color: #6366f1;">${cutDateStr}</td>
                 <td data-label="Ngày rộ hoa" style="padding: 12px 10px; font-weight: 700; color: #10b981;">${peakDateStr}</td>
-                <td class="sched-cycle-col" data-label="Chu kỳ" style="padding: 12px 10px; color: #475569;">
+                <td class="sched-cycle-col" data-label="Chu kỳ dự kiến" style="padding: 12px 10px; color: #475569;">
                     <span class="cycle-display">
-                        ${baseCycle} ngày <span style="font-size:0.75rem; color:#94a3b8; font-style:italic;">(thực tế: ${totalCycle} ngày)</span>
+                        ${baseCycle} ngày <span style="font-size:0.75rem; color:#94a3b8; font-style:italic;">(dự kiến: ${totalCycle} ngày)</span>
                     </span>
                 </td>
-                <td class="sched-actual-date-col" data-label="Rộ thực tế" style="padding: 12px 10px; color: #475569;">${actualPeakDateStr}</td>
+                <td class="sched-actual-date-col" data-label="Rộ thực tế" style="padding: 12px 10px; color: #475569; vertical-align: middle;">${actualPeakDisplay}</td>
                 <td class="sched-deviation-col" data-label="Sai lệch" style="padding: 12px 10px;">${deviationStr}</td>
                 <td data-label="Thao tác" style="padding: 12px 10px; text-align: right; white-space: nowrap;">
                     <div style="display: flex; gap: 8px; justify-content: flex-end;">
@@ -3495,12 +3504,13 @@ window.previewInlineEdit = function (taskId) {
             if (actualDate && peakDate && !isNaN(actualDate.getTime()) && !isNaN(peakDate.getTime())) {
                 const diffTime = actualDate.getTime() - peakDate.getTime();
                 const deviationDays = Math.round(diffTime / (24 * 60 * 60 * 1000));
+                const actualCycleDays = newTotal + deviationDays;
                 if (deviationDays > 0) {
-                    deviationCell.innerHTML = `<span style="color: #d97706; font-weight: 700;">+${deviationDays} ngày</span>`;
+                    deviationCell.innerHTML = `<span style="color: #d97706; font-weight: 700;">+${deviationDays} ngày</span> <span style="font-size:0.75rem; color:#94a3b8; font-weight: normal; font-style:italic;">(thực tế: ${actualCycleDays} ngày)</span>`;
                 } else if (deviationDays < 0) {
-                    deviationCell.innerHTML = `<span style="color: #3b82f6; font-weight: 700;">-${Math.abs(deviationDays)} ngày</span>`;
+                    deviationCell.innerHTML = `<span style="color: #3b82f6; font-weight: 700;">-${Math.abs(deviationDays)} ngày</span> <span style="font-size:0.75rem; color:#94a3b8; font-weight: normal; font-style:italic;">(thực tế: ${actualCycleDays} ngày)</span>`;
                 } else {
-                    deviationCell.innerHTML = `<span style="color: #10b981; font-weight: 700;">Chuẩn xác</span>`;
+                    deviationCell.innerHTML = `<span style="color: #10b981; font-weight: 700;">Chuẩn xác</span> <span style="font-size:0.75rem; color:#94a3b8; font-weight: normal; font-style:italic;">(thực tế: ${actualCycleDays} ngày)</span>`;
                 }
             } else {
                 deviationCell.innerText = "--";
