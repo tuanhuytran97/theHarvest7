@@ -8,8 +8,36 @@ let invHistoryData = [];
 let invPortfolioData = [];
 let invEquityChart = null;
 let invRoiChart = null;
+let usdExchangeRate = 25000; // Default fallback rate (VND per USD)
 window.getInvHistoryData = () => invHistoryData;
 window.getInvPortfolioData = () => invPortfolioData;
+
+// Fetch latest USD/VND exchange rate from open API
+async function fetchUsdExchangeRate() {
+    try {
+        const response = await fetch("https://open.er-api.com/v6/latest/USD");
+        if (response.ok) {
+            const data = await response.json();
+            if (data && data.rates && data.rates.VND) {
+                usdExchangeRate = data.rates.VND;
+                console.log("Dynamically loaded USD exchange rate:", usdExchangeRate);
+                // Update subtitle if element exists
+                const subtitleEl = document.getElementById('inv-chart-subtitle');
+                if (subtitleEl) {
+                    const formattedRate = window.formatNumber ? window.formatNumber(usdExchangeRate) : usdExchangeRate.toLocaleString('vi-VN');
+                    subtitleEl.innerText = `Lũy kế theo thời gian (Tỷ giá: 1 USD = ${formattedRate} VND)`;
+                }
+                // Re-render charts
+                if (invEquityChart) {
+                    updateInvestmentCharts();
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Failed to fetch USD exchange rate, using fallback:", error);
+    }
+}
+fetchUsdExchangeRate();
 
 // --- 0. Rendering & Shorthand Logic (Hoisted) ---
 function renderInvestmentPortfolio() {
@@ -256,13 +284,17 @@ function updateInvestmentCharts() {
     const ctxEquity = document.getElementById('chart-inv-equity');
     if (ctxEquity) {
         if (invEquityChart) invEquityChart.destroy();
+        
+        // Convert VND values in timelineData to USD
+        const chartDataUSD = timelineData.map(d => d.y / usdExchangeRate);
+        
         invEquityChart = new Chart(ctxEquity, {
             type: 'line',
             data: {
                 labels: timelineData.map(d => d.x),
                 datasets: [{
                     label: 'Vốn Đầu Tư Lũy Kế',
-                    data: timelineData.map(d => d.y),
+                    data: chartDataUSD,
                     borderColor: '#6366f1',
                     backgroundColor: 'rgba(99, 102, 241, 0.1)',
                     fill: true,
@@ -273,11 +305,61 @@ function updateInvestmentCharts() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                layout: {
+                    padding: {
+                        top: 24 // Prevent labels at the top from being cut off
+                    }
+                },
+                plugins: { 
+                    legend: { display: false },
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        offset: 6,
+                        formatter: (val) => {
+                            if (val >= 1000) {
+                                return '$' + (val / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+                            }
+                            return '$' + (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1));
+                        },
+                        font: {
+                            weight: 'bold',
+                            size: 11
+                        },
+                        color: '#0f172a' // Darker color for high contrast and readability
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    const val = context.parsed.y;
+                                    if (val >= 1000) {
+                                        label += '$' + (val / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+                                    } else {
+                                        label += '$' + (val % 1 === 0 ? val.toFixed(0) : val.toFixed(1));
+                                    }
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        ticks: { callback: value => (value / 1000000).toFixed(0) + 'M' }
+                        grace: '15%', // Grace space at the top of y-scale
+                        ticks: { 
+                            callback: value => {
+                                if (value >= 1000) {
+                                    return '$' + (value / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+                                }
+                                return '$' + Math.round(value).toLocaleString();
+                            }
+                        }
                     }
                 }
             }
