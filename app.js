@@ -10780,18 +10780,18 @@ Quy tắc:
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid #e2e8f0';
             tr.innerHTML = `
-                <td style="padding: 6px 12px;">
-                    <input type="date" class="import-row-date-input input-modern" data-idx="${idx}" value="${formatDateInput(row.date)}" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; max-width: 140px; box-sizing: border-box;" />
+                <td style="padding: 6px 6px; width: 135px;">
+                    <input type="date" class="import-row-date-input input-modern" data-idx="${idx}" value="${formatDateInput(row.date)}" style="padding: 6px 6px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; width: 100%; max-width: 135px; box-sizing: border-box;" />
                 </td>
-                <td style="padding: 8px 12px; font-weight: 600;">${row.type}</td>
-                <td style="padding: 6px 12px; text-align: right;">
-                    <input type="number" class="import-row-qty-input input-modern" data-idx="${idx}" value="${row.qty}" style="padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; max-width: 75px; text-align: right; box-sizing: border-box;" min="0" step="any" />
+                <td style="padding: 8px 10px; font-weight: 600; min-width: 90px; max-width: 140px; word-break: break-word; white-space: normal; line-height: 1.35;" class="import-flower-type-cell">${row.type}</td>
+                <td style="padding: 6px 6px; text-align: right; width: 90px;">
+                    <input type="number" class="import-row-qty-input input-modern" data-idx="${idx}" value="${row.qty}" style="padding: 6px 6px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; width: 100%; min-width: 75px; text-align: right; box-sizing: border-box;" min="0" step="any" />
                 </td>
-                <td style="padding: 6px 12px; text-align: right;">
-                    <input type="number" class="import-row-price-input input-modern" data-idx="${idx}" value="${row.price !== undefined && row.price !== null && row.price !== '' ? row.price : ''}" placeholder="Chưa có giá" style="padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; max-width: 100px; text-align: right; box-sizing: border-box;" min="0" step="any" />
+                <td style="padding: 6px 6px; text-align: right; width: 105px;">
+                    <input type="number" class="import-row-price-input input-modern" data-idx="${idx}" value="${row.price !== undefined && row.price !== null && row.price !== '' ? row.price : ''}" placeholder="Chưa có giá" style="padding: 6px 6px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; width: 100%; min-width: 85px; text-align: right; box-sizing: border-box;" min="0" step="any" />
                 </td>
-                <td style="padding: 8px 12px; text-align: right; font-weight: 700; color: var(--secondary-color);" class="import-row-total-cell">${row.total !== undefined && row.total !== null && row.total !== '' ? formatCurrency(row.total) : ''}</td>
-                <td style="padding: 8px 12px; text-align: center;">
+                <td style="padding: 8px 10px; text-align: right; font-weight: 700; color: var(--secondary-color); white-space: nowrap; width: 105px;" class="import-row-total-cell">${row.total !== undefined && row.total !== null && row.total !== '' ? formatCurrency(row.total) : ''}</td>
+                <td style="padding: 8px 6px; text-align: center; width: 50px;">
                     <button type="button" class="action-btn delete-import-row" data-idx="${idx}" style="color: var(--danger); background: none; border: none; cursor: pointer;">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>

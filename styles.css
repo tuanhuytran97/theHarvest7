@@ -5923,4 +5923,36 @@ tr.swiping td:first-child::before {
   padding-right: 8px;
 }
 
+/* Fix for Import Preview Table Layout and Number Input Spinner Clipping */
+.import-row-qty-input::-webkit-outer-spin-button,
+.import-row-qty-input::-webkit-inner-spin-button,
+.import-row-price-input::-webkit-outer-spin-button,
+.import-row-price-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.import-row-qty-input,
+.import-row-price-input {
+  -moz-appearance: textfield;
+}
+
+#import-preview-table {
+  table-layout: auto;
+  width: 100%;
+}
+
+#import-preview-table th,
+#import-preview-table td {
+  box-sizing: border-box;
+}
+
+.import-flower-type-cell {
+  max-width: 140px;
+  min-width: 90px;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.35;
+}
+
 
