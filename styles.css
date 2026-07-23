@@ -1392,15 +1392,18 @@ tbody tr:hover {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 70px;
-    background: rgba(255, 255, 255, 0.92);
+    min-height: 64px;
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.96);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid var(--border-color);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
     justify-content: flex-start;
-    align-items: center;
+    align-items: flex-start;
     z-index: 2000;
-    padding-bottom: env(safe-area-inset-bottom);
     overflow-x: auto !important;
     overflow-y: hidden !important; /* Cố định trục Y, tuyệt đối không dịch chuyển lên xuống */
     touch-action: pan-x; /* Khóa cử chỉ cuộn dọc, chỉ cho phép vuốt ngang sang trái/phải */
@@ -1430,13 +1433,13 @@ tbody tr:hover {
     justify-content: center;
     color: var(--text-light);
     text-decoration: none;
-    font-size: 0.6rem; /* Slightly smaller to fit 5 items */
+    font-size: 0.68rem;
     font-weight: 600;
     gap: 3px;
     transition: color 0.2s, background-color 0.2s;
     flex: 0 0 75px; /* Fixed width for scrolling consistency */
-    height: 100%;
-    padding: 5px 0;
+    height: 64px;
+    padding: 6px 2px;
     scroll-snap-align: center;
     box-sizing: border-box;
   }
@@ -1444,21 +1447,28 @@ tbody tr:hover {
   .mobile-nav-item span {
     white-space: nowrap;
     text-overflow: ellipsis;
-    overflow: hidden;
+    overflow: visible;
     max-width: 100%;
-    padding: 0 4px;
+    padding: 0 2px;
+    font-size: 0.68rem;
+    line-height: 1.25;
+    display: block;
+    text-align: center;
   }
 
   .mobile-nav-item i {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
+    line-height: 1;
+    display: block;
   }
 
   .mobile-nav-item.active {
     color: var(--primary-color);
+    font-weight: 700;
   }
 
   .mobile-nav-item.active i {
-    transform: translateY(-2px);
+    transform: scale(1.08);
   }
 
   /* Report Controls on Mobile */

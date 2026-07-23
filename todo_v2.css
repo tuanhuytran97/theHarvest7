@@ -513,11 +513,13 @@ tr:hover {
     }
     
     .calendar-header {
-        flex-direction: row !important; /* Keep month/year side by side */
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
         gap: 0.5rem !important;
         margin-bottom: 1rem !important;
-        position: sticky;
-        left: 0;
+        position: static;
+        width: 100% !important;
     }
     
     .calendar-header .input-modern {
@@ -929,8 +931,12 @@ tr:hover {
 /* Calendar controls responsive grid on mobile to make the Export button visible */
 @media (max-width: 768px) {
     .calendar-header {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
         width: 100% !important;
         max-width: 100% !important;
+        gap: 0.75rem !important;
     }
     
     .calendar-controls {
@@ -963,6 +969,16 @@ tr:hover {
         padding: 6px 10px !important;
         font-size: 0.8rem !important;
         box-shadow: none !important;
+    }
+
+    #calendar-monthly-summary-banner {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-top: 4px !important;
+        box-sizing: border-box !important;
+        padding: 10px 14px !important;
     }
 }
 
