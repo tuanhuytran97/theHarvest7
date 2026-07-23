@@ -902,47 +902,46 @@ function renderMonthlySummaryBanner(month, year) {
     const displayMonth = pad(month + 1);
 
     let html = `
-        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; color: #1e40af; font-size: 0.95rem;">
-                <i class="fa-solid fa-chart-pie" style="color: #3b82f6; font-size: 1.1rem;"></i>
-                <span>📊 TỔNG KẾT THÁNG ${displayMonth}/${year} ${workerFilter ? `(${escapeHtml(workerFilter)})` : ''}</span>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 0.82rem; line-height: 1.4;">
+            <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; color: #1e40af; border-right: 1px solid #93c5fd; padding-right: 10px;">
+                <i class="fa-solid fa-chart-pie" style="color: #2563eb; font-size: 0.9rem;"></i>
+                <span>TỔNG KẾT THÁNG ${displayMonth}/${year} ${workerFilter ? `(${escapeHtml(workerFilter)})` : ''}</span>
             </div>
-            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; font-size: 0.88rem;">
     `;
 
     if (advanceEntries.length > 0) {
         let totalAdvance = 0;
-        let advancesHtml = '<div style="display: flex; align-items: center; gap: 8px;"><span style="font-weight: 800; color: #991b1b;">💳 Ứng tiền thợ:</span>';
+        let advancesHtml = '<div style="display: flex; align-items: center; gap: 6px;"><span style="font-weight: 800; color: #991b1b;">💳 Ứng tiền thợ:</span>';
         const itemStrs = [];
         advanceEntries.forEach(([name, amount]) => {
             totalAdvance += amount;
             const formattedAmt = typeof formatMoneyStr === 'function' ? formatMoneyStr(amount) : amount.toLocaleString('vi-VN');
             itemStrs.push(`<span style="font-weight: 700; color: #7f1d1d;">${escapeHtml(name)}: <b style="color: #b91c1c;">${formattedAmt}đ</b></span>`);
         });
-        advancesHtml += itemStrs.join('<span style="color: #93c5fd; margin: 0 6px;">|</span>');
+        advancesHtml += itemStrs.join('<span style="color: #93c5fd; margin: 0 4px;">|</span>');
         if (advanceEntries.length > 1) {
             const formattedTotal = typeof formatMoneyStr === 'function' ? formatMoneyStr(totalAdvance) : totalAdvance.toLocaleString('vi-VN');
-            advancesHtml += `<span style="font-weight: 800; color: #991b1b; background: rgba(239,68,68,0.1); padding: 2px 8px; border-radius: 6px; margin-left: 6px;">Tổng: ${formattedTotal}đ</span>`;
+            advancesHtml += `<span style="font-weight: 800; color: #991b1b; background: rgba(239,68,68,0.1); padding: 1px 6px; border-radius: 4px; margin-left: 4px;">Tổng: ${formattedTotal}đ</span>`;
         }
         advancesHtml += '</div>';
         html += advancesHtml;
     }
 
     if (leaveEntries.length > 0) {
-        let leavesHtml = '<div style="display: flex; align-items: center; gap: 8px;"><span style="font-weight: 800; color: #1d4ed8;">🏖️ Thợ nghỉ:</span>';
+        if (advanceEntries.length > 0) {
+            html += `<span style="color: #93c5fd; font-weight: 300;">|</span>`;
+        }
+        let leavesHtml = '<div style="display: flex; align-items: center; gap: 6px;"><span style="font-weight: 800; color: #1d4ed8;">🏖️ Thợ nghỉ:</span>';
         const itemStrs = [];
         leaveEntries.forEach(([name, days]) => {
             itemStrs.push(`<span style="font-weight: 700; color: #1e3a8a;">${escapeHtml(name)}: <b style="color: #2563eb;">${days} công</b></span>`);
         });
-        leavesHtml += itemStrs.join('<span style="color: #93c5fd; margin: 0 6px;">|</span>');
+        leavesHtml += itemStrs.join('<span style="color: #93c5fd; margin: 0 4px;">|</span>');
         leavesHtml += '</div>';
         html += leavesHtml;
     }
 
-    html += `
-            </div>
-        </div>
-    `;
+    html += `</div>`;
 
     banner.innerHTML = html;
     banner.style.display = 'block';
