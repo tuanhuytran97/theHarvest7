@@ -1885,6 +1885,9 @@ document.addEventListener("DOMContentLoaded", () => {
         dataToRender.forEach((row, index) => {
             const tr = document.createElement('tr');
             const isDone = row["Status"] === "Xong";
+            if (isDone) {
+                tr.classList.add('row-done');
+            }
             const statusClass = isDone ? "status-badge status-done" : "status-badge status-pending";
 
             const rowDateStr = formatDateInput(row.parsedDate);

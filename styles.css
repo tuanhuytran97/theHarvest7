@@ -906,6 +906,101 @@ th:hover {
   color: var(--text-dark);
 }
 
+/* Make transaction table header stand out */
+#farm-data-table thead th {
+  background: rgba(14, 165, 233, 0.08) !important;
+  color: #0369a1 !important;
+  font-weight: 750 !important;
+  text-transform: uppercase !important;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.05em !important;
+  border-bottom: 3px solid #0ea5e9 !important;
+  padding: 1.1rem 1rem !important;
+  transition: all 0.2s ease !important;
+}
+
+#farm-data-table thead th:first-child {
+  border-top-left-radius: 8px !important;
+}
+
+#farm-data-table thead th:last-child {
+  border-top-right-radius: 8px !important;
+}
+
+#farm-data-table thead th:hover {
+  background: rgba(14, 165, 233, 0.15) !important;
+  color: #0284c7 !important;
+}
+
+#farm-data-table thead th i {
+  color: #0ea5e9 !important;
+  margin-left: 6px !important;
+  font-size: 0.8rem !important;
+  transition: color 0.2s !important;
+}
+
+#farm-data-table thead th:hover i {
+  color: #0284c7 !important;
+}
+
+/* Center alignment for Doanh Thu and Đã Thu columns on Desktop */
+@media (min-width: 769px) {
+  #farm-data-table th[data-sort="Doanh Thu Bông"],
+  #farm-data-table th[data-sort="Doanh Thu Khác"],
+  #farm-data-table th[data-sort="Đã Thu"],
+  #farm-data-table td[data-label="Doanh Thu"],
+  #farm-data-table td[data-label="Đã Thu"] {
+    text-align: center !important;
+  }
+
+  #farm-data-table td[data-label="Doanh Thu"] > div {
+    align-items: center !important;
+  }
+}
+
+/* Continuous unbroken strikethrough line across the ENTIRE row from left to right */
+#farm-data-table tbody tr.row-done {
+  opacity: 0.65;
+}
+
+@media (min-width: 769px) {
+  #farm-data-table tbody tr.row-done td {
+    position: relative;
+  }
+
+  #farm-data-table tbody tr.row-done td::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #475569;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  #farm-data-table tbody tr.row-done td:first-child::after {
+    left: 12px;
+  }
+
+  #farm-data-table tbody tr.row-done td:last-child::after {
+    right: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  #farm-data-table tbody tr.row-done td,
+  #farm-data-table tbody tr.row-done td * {
+    text-decoration: line-through !important;
+  }
+}
+
+
+
+
+
 td {
   padding: 1rem;
   border-bottom: 1px solid var(--border-color);
