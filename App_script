@@ -454,6 +454,22 @@ function doPost(e) {
             if (d) recalculateFromDate(sheet, headers, d);
             return returnJson({ "status": "success" });
 
+        } else if (action === "deleteByRef") {
+            const refTag = params.refTag;
+            if (!refTag) return returnJson({ "status": "error", "message": "Thiếu mã Ref" });
+            const rawValues = sheet.getDataRange().getValues();
+            const colNoteCP = getColumnIdx(headers, "Ghi Chú Chi Phí") > -1 ? getColumnIdx(headers, "Ghi Chú Chi Phí") : getColumnIdx(headers, "Ghi Chú");
+            let deleteCount = 0;
+
+            for (let i = rawValues.length - 1; i >= 1; i--) {
+                const noteStr = colNoteCP > -1 ? String(rawValues[i][colNoteCP]) : "";
+                if (noteStr.indexOf(refTag) !== -1) {
+                    sheet.deleteRow(i + 1);
+                    deleteCount++;
+                }
+            }
+            return returnJson({ "status": "success", "count": deleteCount });
+
 
         } else if (action === "add_expense") {
             const displayValues = sheet.getDataRange().getDisplayValues();
@@ -1691,4 +1707,18 @@ function parseDisplayDate(val) {
         return d;
     }
     return null;
+}
+
+function getColumnIdx(headers, colName) {
+    if (!headers || !Array.isArray(headers)) return -1;
+    const target = normalizeString(colName);
+    for (let i = 0; i < headers.length; i++) {
+        if (normalizeString(headers[i]) === target) return i;
+    }
+    return -1;
+}
+
+function normalizeString(str) {
+    if (!str) return "";
+    return String(str).toLowerCase().trim();
 }

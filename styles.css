@@ -1393,7 +1393,7 @@ tbody tr:hover {
     left: 0;
     right: 0;
     height: 70px;
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-top: 1px solid var(--border-color);
@@ -1401,9 +1401,15 @@ tbody tr:hover {
     align-items: center;
     z-index: 2000;
     padding-bottom: env(safe-area-inset-bottom);
-    overflow-x: auto;
+    overflow-x: auto !important;
+    overflow-y: hidden !important; /* Cố định trục Y, tuyệt đối không dịch chuyển lên xuống */
+    touch-action: pan-x; /* Khóa cử chỉ cuộn dọc, chỉ cho phép vuốt ngang sang trái/phải */
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: none; /* Khóa hiệu ứng nảy rubber-band theo chiều dọc */
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   /* Hide scrollbar for Chrome, Safari and Opera */
@@ -1427,10 +1433,12 @@ tbody tr:hover {
     font-size: 0.6rem; /* Slightly smaller to fit 5 items */
     font-weight: 600;
     gap: 3px;
-    transition: all 0.2s;
+    transition: color 0.2s, background-color 0.2s;
     flex: 0 0 75px; /* Fixed width for scrolling consistency */
+    height: 100%;
     padding: 5px 0;
     scroll-snap-align: center;
+    box-sizing: border-box;
   }
 
   .mobile-nav-item span {

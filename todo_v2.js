@@ -119,6 +119,116 @@ document.addEventListener('DOMContentLoaded', () => {
     // Save Button
     document.getElementById('save-task-btn')?.addEventListener('click', saveTask);
 
+    // Event listeners for Ứng Tiền Thợ
+    const isAdvanceCb = document.getElementById('task-is-advance');
+    const advanceFieldsGrid = document.getElementById('advance-fields-grid');
+    const workerSelect = document.getElementById('task-worker-select');
+    const workerCustom = document.getElementById('task-worker-custom');
+
+    if (isAdvanceCb) {
+        isAdvanceCb.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                if (advanceFieldsGrid) advanceFieldsGrid.style.display = 'grid';
+                const catInput = document.getElementById('task-category');
+                if (catInput) catInput.value = "Farm";
+                
+                // Auto check Sticker "Thợ"
+                document.querySelectorAll('.sticker-checkbox').forEach(cb => {
+                    if (cb.value === "Thợ") cb.checked = true;
+                });
+                updateStickerLabel();
+                toggleStickerFieldVisibility();
+
+                const taskNameInput = document.getElementById('task-name');
+                if (taskNameInput && (!taskNameInput.value.trim() || taskNameInput.value.trim() === 'Thợ')) {
+                    taskNameInput.value = "Ứng tiền thợ";
+                }
+            } else {
+                if (advanceFieldsGrid) advanceFieldsGrid.style.display = 'none';
+            }
+        });
+    }
+
+    if (workerSelect) {
+        workerSelect.addEventListener('change', (e) => {
+            if (e.target.value === '__NEW__') {
+                if (workerCustom) {
+                    workerCustom.style.display = 'block';
+                    workerCustom.focus();
+                }
+            } else {
+                if (workerCustom) workerCustom.style.display = 'none';
+                const taskNameInput = document.getElementById('task-name');
+                if (taskNameInput && e.target.value) {
+                    taskNameInput.value = `Ứng tiền thợ: ${e.target.value}`;
+                }
+            }
+        });
+    }
+
+    // Event listeners for Chấm Công Nghỉ Thợ
+    const isLeaveCb = document.getElementById('task-is-leave');
+    const leaveFieldsGrid = document.getElementById('leave-fields-grid');
+    const leaveWorkerSelect = document.getElementById('task-leave-worker-select');
+    const leaveWorkerCustom = document.getElementById('task-leave-worker-custom');
+    const leaveDaysInput = document.getElementById('task-leave-days');
+
+    function updateLeaveTaskName() {
+        const isLeave = document.getElementById('task-is-leave')?.checked;
+        if (!isLeave) return;
+        const workerSelectVal = document.getElementById('task-leave-worker-select')?.value || "";
+        const workerCustomVal = document.getElementById('task-leave-worker-custom')?.value.trim() || "";
+        const workerName = workerSelectVal === '__NEW__' ? (workerCustomVal || "Thợ mới") : (workerSelectVal || "Thợ");
+        const leaveDaysVal = document.getElementById('task-leave-days')?.value || "1";
+        const taskNameInput = document.getElementById('task-name');
+        if (taskNameInput) {
+            taskNameInput.value = `Thợ nghỉ: ${workerName} (${leaveDaysVal} công)`;
+        }
+    }
+
+    if (isLeaveCb) {
+        isLeaveCb.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                if (leaveFieldsGrid) leaveFieldsGrid.style.display = 'grid';
+                const catInput = document.getElementById('task-category');
+                if (catInput) catInput.value = "Farm";
+                
+                // Auto check Sticker "Thợ"
+                document.querySelectorAll('.sticker-checkbox').forEach(cb => {
+                    if (cb.value === "Thợ") cb.checked = true;
+                });
+                updateStickerLabel();
+                toggleStickerFieldVisibility();
+
+                updateLeaveTaskName();
+            } else {
+                if (leaveFieldsGrid) leaveFieldsGrid.style.display = 'none';
+            }
+        });
+    }
+
+    if (leaveWorkerSelect) {
+        leaveWorkerSelect.addEventListener('change', (e) => {
+            if (e.target.value === '__NEW__') {
+                if (leaveWorkerCustom) {
+                    leaveWorkerCustom.style.display = 'block';
+                    leaveWorkerCustom.focus();
+                }
+            } else {
+                if (leaveWorkerCustom) leaveWorkerCustom.style.display = 'none';
+            }
+            updateLeaveTaskName();
+        });
+    }
+
+    if (leaveWorkerCustom) {
+        leaveWorkerCustom.addEventListener('input', updateLeaveTaskName);
+    }
+
+    if (leaveDaysInput) {
+        leaveDaysInput.addEventListener('input', updateLeaveTaskName);
+    }
+
     // Multiday Toggle Listener
     document.getElementById('task-is-multiday')?.addEventListener('change', toggleMultidayFields);
 
@@ -164,6 +274,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Export Calendar text listener
     document.getElementById('btn-export-text')?.addEventListener('click', openExportTextModal);
     document.getElementById('btn-copy-export')?.addEventListener('click', copyExportText);
+
+    // Worker Filter Select listeners
+    const calWorkerSel = document.getElementById('cal-worker-select');
+    const filterWorkerSel = document.getElementById('filter-worker-select');
+
+    if (calWorkerSel) {
+        calWorkerSel.addEventListener('change', (e) => {
+            if (filterWorkerSel) filterWorkerSel.value = e.target.value;
+            renderActiveView();
+        });
+    }
+
+    if (filterWorkerSel) {
+        filterWorkerSel.addEventListener('change', (e) => {
+            if (calWorkerSel) calWorkerSel.value = e.target.value;
+            renderActiveView();
+        });
+    }
+
+    // Populate worker options for modal and filters
+    populateWorkerSelectOptions();
 
     // Custom Multi-Select Trigger logic
     const msContainer = document.getElementById('cal-category-multiselect');
@@ -473,7 +604,7 @@ async function callApi(action, extraParams = {}) {
     const payload = { action: action, token: token, ...extraParams };
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout for Google Apps Script
 
     try {
         const response = await fetch(CONFIG.WEB_APP_URL, {
@@ -489,7 +620,7 @@ async function callApi(action, extraParams = {}) {
     } catch (error) {
         clearTimeout(timeoutId);
         console.error("API Error:", error);
-        return { status: "error", message: error.name === 'AbortError' ? "Yêu cầu hết thời gian (15s)" : error.message };
+        return { status: "error", message: error.name === 'AbortError' ? "Yêu cầu hết thời gian kết nối (30s)" : error.message };
     }
 }
 
@@ -587,6 +718,9 @@ function updateCategoryFilterOptions() {
 
     // Render custom multi-select checkbox component
     renderCalCategoryMultiSelect(categories);
+
+    // Populate worker dropdown options
+    populateWorkerSelectOptions();
 }
 
 // --- RENDERING: TABLE ---
@@ -642,6 +776,14 @@ function renderTable() {
         const taskStickers = t.sticker ? t.sticker.split(',').map(s => s.trim()).filter(Boolean) : [];
         const matchesSticker = selectedListStickers.length === 0 || taskStickers.some(st => selectedListStickers.includes(st));
 
+        const workerFilter = (document.getElementById('filter-worker-select')?.value || document.getElementById('cal-worker-select')?.value || "").trim();
+        let matchesWorker = true;
+        if (workerFilter) {
+            const tWorker = (t.workerName || "").trim();
+            const tTitle = (t.task || "") + " " + (t.note || "");
+            matchesWorker = (tWorker === workerFilter) || tTitle.includes(workerFilter);
+        }
+
         let matchesMonthYear = true;
         if (t.deadlineDate) {
             if (monthFilter !== '' && t.deadlineDate.getMonth() != monthFilter) matchesMonthYear = false;
@@ -650,7 +792,7 @@ function renderTable() {
             matchesMonthYear = false; // If filter set but no deadline, exclude
         }
 
-        return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesMonthYear && matchesSticker;
+        return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesMonthYear && matchesSticker && matchesWorker;
     });
 
     if (filtered.length === 0) {
@@ -741,12 +883,79 @@ function renderTable() {
     });
 }
 
+function renderMonthlySummaryBanner(month, year) {
+    const banner = document.getElementById('calendar-monthly-summary-banner');
+    if (!banner) return;
+
+    const workerTotals = getMonthlyWorkerAdvances(month, year);
+    const leaveTotals = getMonthlyWorkerLeaveDays(month, year);
+    const advanceEntries = Object.entries(workerTotals);
+    const leaveEntries = Object.entries(leaveTotals);
+
+    if (advanceEntries.length === 0 && leaveEntries.length === 0) {
+        banner.style.display = 'none';
+        return;
+    }
+
+    const workerFilter = (document.getElementById('cal-worker-select')?.value || document.getElementById('filter-worker-select')?.value || "").trim();
+    const pad = (n) => String(n).padStart(2, '0');
+    const displayMonth = pad(month + 1);
+
+    let html = `
+        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; color: #1e40af; font-size: 0.95rem;">
+                <i class="fa-solid fa-chart-pie" style="color: #3b82f6; font-size: 1.1rem;"></i>
+                <span>📊 TỔNG KẾT THÁNG ${displayMonth}/${year} ${workerFilter ? `(${escapeHtml(workerFilter)})` : ''}</span>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; font-size: 0.88rem;">
+    `;
+
+    if (advanceEntries.length > 0) {
+        let totalAdvance = 0;
+        let advancesHtml = '<div style="display: flex; align-items: center; gap: 8px;"><span style="font-weight: 800; color: #991b1b;">💳 Ứng tiền thợ:</span>';
+        const itemStrs = [];
+        advanceEntries.forEach(([name, amount]) => {
+            totalAdvance += amount;
+            const formattedAmt = typeof formatMoneyStr === 'function' ? formatMoneyStr(amount) : amount.toLocaleString('vi-VN');
+            itemStrs.push(`<span style="font-weight: 700; color: #7f1d1d;">${escapeHtml(name)}: <b style="color: #b91c1c;">${formattedAmt}đ</b></span>`);
+        });
+        advancesHtml += itemStrs.join('<span style="color: #93c5fd; margin: 0 6px;">|</span>');
+        if (advanceEntries.length > 1) {
+            const formattedTotal = typeof formatMoneyStr === 'function' ? formatMoneyStr(totalAdvance) : totalAdvance.toLocaleString('vi-VN');
+            advancesHtml += `<span style="font-weight: 800; color: #991b1b; background: rgba(239,68,68,0.1); padding: 2px 8px; border-radius: 6px; margin-left: 6px;">Tổng: ${formattedTotal}đ</span>`;
+        }
+        advancesHtml += '</div>';
+        html += advancesHtml;
+    }
+
+    if (leaveEntries.length > 0) {
+        let leavesHtml = '<div style="display: flex; align-items: center; gap: 8px;"><span style="font-weight: 800; color: #1d4ed8;">🏖️ Thợ nghỉ:</span>';
+        const itemStrs = [];
+        leaveEntries.forEach(([name, days]) => {
+            itemStrs.push(`<span style="font-weight: 700; color: #1e3a8a;">${escapeHtml(name)}: <b style="color: #2563eb;">${days} công</b></span>`);
+        });
+        leavesHtml += itemStrs.join('<span style="color: #93c5fd; margin: 0 6px;">|</span>');
+        leavesHtml += '</div>';
+        html += leavesHtml;
+    }
+
+    html += `
+            </div>
+        </div>
+    `;
+
+    banner.innerHTML = html;
+    banner.style.display = 'block';
+}
+
 // --- RENDERING: CALENDAR ---
 function renderCalendar() {
     const month = parseInt(document.getElementById('cal-month').value);
     const year = parseInt(document.getElementById('cal-year').value);
     const grid = document.getElementById('calendar-grid');
     if (!grid) return;
+
+    renderMonthlySummaryBanner(month, year);
 
     grid.innerHTML = '';
 
@@ -843,7 +1052,16 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
         const taskStickers = t.sticker ? t.sticker.split(',').map(s => s.trim()).filter(Boolean) : [];
         const matchesSticker = selectedCalStickers.length === 0 || taskStickers.some(st => selectedCalStickers.includes(st));
 
-        return matchesCategory && matchesSticker;
+        // Apply Worker filter
+        const workerFilter = (document.getElementById('cal-worker-select')?.value || document.getElementById('filter-worker-select')?.value || "").trim();
+        let matchesWorker = true;
+        if (workerFilter) {
+            const tWorker = (t.workerName || "").trim();
+            const tTitle = (t.task || "") + " " + (t.note || "");
+            matchesWorker = (tWorker === workerFilter) || tTitle.includes(workerFilter);
+        }
+
+        return matchesCategory && matchesSticker && matchesWorker;
     });
 
     // Sort tasks by priority
@@ -920,6 +1138,165 @@ function renderCalendarCell(grid, date, dayNum, isOtherMonth, today) {
     });
 
     grid.appendChild(div);
+}
+
+function extractWorkerNameFromText(text, prefix) {
+    if (!text || !text.includes(prefix)) return "";
+    const idx = text.indexOf(prefix);
+    let sub = text.substring(idx + prefix.length).trim();
+    // Remove trailing parenthetical details like (1.000.000đ) or (0.5 công)
+    sub = sub.replace(/\s*\([^\)]+\).*$/, '').trim();
+    sub = sub.replace(/\s*-\s*.*$/, '').trim();
+    return sub;
+}
+
+function getMonthlyWorkerLeaveDays(month, year) {
+    const totals = {};
+    const activeWorkerFilter = (document.getElementById('cal-worker-select')?.value || document.getElementById('filter-worker-select')?.value || "").trim();
+
+    todoCache.forEach(t => {
+        if (!t.deadline) return;
+        const dl = parseLocalDate(t.deadline);
+        if (!dl || dl.getMonth() !== month || dl.getFullYear() !== year) return;
+
+        let isLeave = !!t.isLeave;
+        let worker = t.workerName || "";
+        let leaveDays = parseFloat(t.leaveDays) || 0;
+
+        const taskText = (t.task || "") + " " + (t.note || "");
+        if (taskText.includes("Thợ nghỉ:") || (taskText.includes("nghỉ") && (t.isLeave || (t.sticker && t.sticker.includes("Thợ"))))) {
+            isLeave = true;
+            if (!worker) {
+                worker = extractWorkerNameFromText(taskText, "Thợ nghỉ:");
+                if (!worker && taskText.includes("nghỉ")) {
+                    const match = taskText.match(/([^\-\(\s]+)\s+nghỉ/);
+                    if (match && match[1]) worker = match[1].trim();
+                }
+            }
+            if (!leaveDays) {
+                const matchDays = taskText.match(/([0-9\.,]+)\s*công/i);
+                if (matchDays && matchDays[1]) leaveDays = parseFloat(matchDays[1].replace(',', '.')) || 0;
+            }
+        }
+
+        if (isLeave && leaveDays <= 0) leaveDays = 1;
+        if (!worker && isLeave) worker = "Thợ";
+
+        // Apply active worker filter if set
+        if (activeWorkerFilter) {
+            const isMatch = (worker && worker.toLowerCase() === activeWorkerFilter.toLowerCase()) ||
+                            (worker && activeWorkerFilter.toLowerCase().includes(worker.toLowerCase())) ||
+                            (worker && worker.toLowerCase().includes(activeWorkerFilter.toLowerCase())) ||
+                            taskText.toLowerCase().includes(activeWorkerFilter.toLowerCase());
+            if (!isMatch) return;
+        }
+
+        if (isLeave && worker && leaveDays > 0) {
+            totals[worker] = (totals[worker] || 0) + leaveDays;
+        }
+    });
+
+    return totals;
+}
+
+function extractAdvanceAmountFromText(text) {
+    if (!text) return 0;
+
+    // Pattern 1: (500.000đ) or (500,000) or (500k)
+    let match = text.match(/\(([0-9\.\,]+)\s*(k|kđ|đ|vnđ)?\)/i);
+    if (match) {
+        let valStr = match[1].replace(/[^\d]/g, '');
+        let num = parseFloat(valStr) || 0;
+        if (match[2] && match[2].toLowerCase().startsWith('k') && num < 10000) num *= 1000;
+        if (num > 0) return num;
+    }
+
+    // Pattern 2: 500k or 500,000đ or 500.000đ
+    match = text.match(/([0-9\.\,]{3,12})\s*(k|kđ|đ|vnđ)/i);
+    if (match) {
+        let valStr = match[1].replace(/[^\d]/g, '');
+        let num = parseFloat(valStr) || 0;
+        if (match[2].toLowerCase().startsWith('k') && num < 10000) num *= 1000;
+        if (num > 0) return num;
+    }
+
+    // Pattern 3: Any standalone number >= 1000 e.g. 500000
+    match = text.match(/([0-9]{4,10})/);
+    if (match) {
+        return parseFloat(match[1]) || 0;
+    }
+
+    return 0;
+}
+
+function getMonthlyWorkerAdvances(month, year) {
+    const totals = {};
+    const activeWorkerFilter = (document.getElementById('cal-worker-select')?.value || document.getElementById('filter-worker-select')?.value || "").trim();
+
+    // 1. From todoCache
+    todoCache.forEach(t => {
+        if (!t.deadline) return;
+        const dl = parseLocalDate(t.deadline);
+        if (!dl || dl.getMonth() !== month || dl.getFullYear() !== year) return;
+
+        let amount = parseFloat(t.advanceAmount) || 0;
+        let worker = t.workerName || "";
+
+        const taskText = (t.task || "") + " " + (t.note || "");
+        if (!worker && taskText.includes("Ứng tiền thợ:")) {
+            worker = extractWorkerNameFromText(taskText, "Ứng tiền thợ:");
+        }
+
+        if (!amount) {
+            amount = extractAdvanceAmountFromText(taskText);
+        }
+
+        if (!worker && (t.isAdvance || (t.sticker && t.sticker.includes("Thợ")))) {
+            worker = "Thợ";
+        }
+
+        // Apply active worker filter if set
+        if (activeWorkerFilter) {
+            const isMatch = (worker && worker.toLowerCase() === activeWorkerFilter.toLowerCase()) ||
+                            (worker && activeWorkerFilter.toLowerCase().includes(worker.toLowerCase())) ||
+                            (worker && worker.toLowerCase().includes(activeWorkerFilter.toLowerCase())) ||
+                            taskText.toLowerCase().includes(activeWorkerFilter.toLowerCase());
+            if (!isMatch) return;
+        }
+
+        if (worker && amount > 0) {
+            totals[worker] = (totals[worker] || 0) + amount;
+        }
+    });
+
+    // 2. From farmData
+    if (typeof farmData !== 'undefined' && Array.isArray(farmData)) {
+        farmData.forEach(row => {
+            const expType = row["Loại CP"] || "";
+            const amount = parseFloat(row["Chi Phí"]) || 0;
+            const note = row["Ghi Chú Chi Phí"] || row["Ghi Chú"] || "";
+            const d = row.parsedDate || parseLocalDate(row["Ngày"]);
+
+            if (expType === "Công" && amount > 0 && d && d.getMonth() === month && d.getFullYear() === year) {
+                if (note.includes("Ứng tiền thợ:")) {
+                    const name = extractWorkerNameFromText(note, "Ứng tiền thợ:");
+                    if (name) {
+                        if (activeWorkerFilter) {
+                            const isMatch = (name.toLowerCase() === activeWorkerFilter.toLowerCase()) ||
+                                            activeWorkerFilter.toLowerCase().includes(name.toLowerCase()) ||
+                                            name.toLowerCase().includes(activeWorkerFilter.toLowerCase());
+                            if (!isMatch) return;
+                        }
+                        if (!totals[name]) {
+                            totals[name] = amount;
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    return totals;
 }
 
 // --- RENDERING: FOCUS VIEW ---
@@ -1242,6 +1619,7 @@ function initChart(id, type, labels, data, colors, filterKey) {
 }
 
 // --- CRUD ACTIONS ---
+// --- CRUD ACTIONS ---
 function resetModal() {
     const now = new Date();
     const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
@@ -1264,9 +1642,115 @@ function resetModal() {
     updateStickerLabel();
     toggleStickerFieldVisibility();
 
+    // Reset Ứng Tiền Thợ fields
+    const isAdvanceCb = document.getElementById('task-is-advance');
+    const advanceFieldsGrid = document.getElementById('advance-fields-grid');
+    if (isAdvanceCb) isAdvanceCb.checked = false;
+    if (advanceFieldsGrid) advanceFieldsGrid.style.display = 'none';
+
+    const workerSelect = document.getElementById('task-worker-select');
+    if (workerSelect) workerSelect.value = "";
+    const workerCustom = document.getElementById('task-worker-custom');
+    if (workerCustom) { workerCustom.value = ""; workerCustom.style.display = 'none'; }
+    const advanceAmountInput = document.getElementById('task-advance-amount');
+    if (advanceAmountInput) advanceAmountInput.value = "";
+
+    // Reset Chấm Công Nghỉ Thợ fields
+    const isLeaveCb = document.getElementById('task-is-leave');
+    const leaveFieldsGrid = document.getElementById('leave-fields-grid');
+    if (isLeaveCb) isLeaveCb.checked = false;
+    if (leaveFieldsGrid) leaveFieldsGrid.style.display = 'none';
+
+    const leaveWorkerSelect = document.getElementById('task-leave-worker-select');
+    if (leaveWorkerSelect) leaveWorkerSelect.value = "";
+    const leaveWorkerCustom = document.getElementById('task-leave-worker-custom');
+    if (leaveWorkerCustom) { leaveWorkerCustom.value = ""; leaveWorkerCustom.style.display = 'none'; }
+    const leaveDaysInput = document.getElementById('task-leave-days');
+    if (leaveDaysInput) leaveDaysInput.value = "1";
+
+    // Populate worker dropdown options dynamically
+    populateWorkerSelectOptions();
+
     // Hide delete button for new tasks
     const delBtn = document.getElementById('delete-task-btn');
     if (delBtn) delBtn.style.display = 'none';
+}
+
+function populateWorkerSelectOptions() {
+    const workerSelect = document.getElementById('task-worker-select');
+    const leaveWorkerSelect = document.getElementById('task-leave-worker-select');
+
+    const defaultWorkers = ["Hiếu", "V/c A. Táo"];
+    const workerSet = new Set(defaultWorkers);
+
+    // Collect workers from todoCache
+    todoCache.forEach(t => {
+        if (t.workerName) workerSet.add(t.workerName);
+        const taskText = (t.task || "") + " " + (t.note || "");
+        if (taskText.includes("Ứng tiền thợ:")) {
+            const w = extractWorkerNameFromText(taskText, "Ứng tiền thợ:");
+            if (w) workerSet.add(w);
+        }
+        if (taskText.includes("Thợ nghỉ:")) {
+            const w = extractWorkerNameFromText(taskText, "Thợ nghỉ:");
+            if (w) workerSet.add(w);
+        }
+    });
+
+    // Collect workers from farmData if loaded
+    if (typeof farmData !== 'undefined' && Array.isArray(farmData)) {
+        farmData.forEach(r => {
+            const note = r["Ghi Chú Chi Phí"] || r["Ghi Chú"] || "";
+            if (note.includes("Ứng tiền thợ:")) {
+                const w = extractWorkerNameFromText(note, "Ứng tiền thợ:");
+                if (w) workerSet.add(w);
+            }
+        });
+    }
+
+    const workerList = Array.from(workerSet).sort();
+
+    if (workerSelect) {
+        const currentVal = workerSelect.value;
+        let html = '<option value="">-- Chọn thợ ứng --</option>';
+        workerList.forEach(w => {
+            html += `<option value="${w}" ${w === currentVal ? 'selected' : ''}>👷 ${w}</option>`;
+        });
+        html += '<option value="__NEW__">+ Nhập tên thợ mới...</option>';
+        workerSelect.innerHTML = html;
+    }
+
+    if (leaveWorkerSelect) {
+        const currentVal = leaveWorkerSelect.value;
+        let html = '<option value="">-- Chọn thợ nghỉ --</option>';
+        workerList.forEach(w => {
+            html += `<option value="${w}" ${w === currentVal ? 'selected' : ''}>👷 ${w}</option>`;
+        });
+        html += '<option value="__NEW__">+ Nhập tên thợ mới...</option>';
+        leaveWorkerSelect.innerHTML = html;
+    }
+
+    // Also populate filter selects in calendar and list view
+    const calWorkerSelect = document.getElementById('cal-worker-select');
+    const filterWorkerSelect = document.getElementById('filter-worker-select');
+
+    if (calWorkerSelect) {
+        const currentVal = calWorkerSelect.value;
+        let html = '<option value="">Tất cả Thợ</option>';
+        workerList.forEach(w => {
+            html += `<option value="${w}" ${w === currentVal ? 'selected' : ''}>👷 ${w}</option>`;
+        });
+        calWorkerSelect.innerHTML = html;
+    }
+
+    if (filterWorkerSelect) {
+        const currentVal = filterWorkerSelect.value;
+        let html = '<option value="">Tất cả Thợ</option>';
+        workerList.forEach(w => {
+            html += `<option value="${w}" ${w === currentVal ? 'selected' : ''}>👷 ${w}</option>`;
+        });
+        filterWorkerSelect.innerHTML = html;
+    }
 }
 
 window.openAddTaskModalWithDate = function (date) {
@@ -1288,7 +1772,7 @@ window.openAddTaskModalWithDate = function (date) {
 
 window.editTask = function (id) {
     if (isRestricted()) return;
-    const t = todoCache.find(x => x.id === id);
+    const t = todoCache.find(x => String(x.id) === String(id));
     if (!t) return;
 
     resetModal();
@@ -1321,7 +1805,7 @@ window.editTask = function (id) {
         }
     }
     toggleMultidayFields();
-    document.getElementById('task-category').value = t.category || "";
+    document.getElementById('task-category').value = t.category || "Farm";
     document.getElementById('task-note').value = t.note || "";
     document.getElementById('task-priority').value = t.priority || "Trung bình";
     document.getElementById('task-status').value = t.status || "Chưa bắt đầu";
@@ -1335,6 +1819,114 @@ window.editTask = function (id) {
     updateStickerLabel();
     toggleStickerFieldVisibility();
 
+    // Populate and restore Advance Money fields if task is worker advance
+    const isAdvanceCb = document.getElementById('task-is-advance');
+    const advanceFieldsGrid = document.getElementById('advance-fields-grid');
+    const workerSelect = document.getElementById('task-worker-select');
+    const advanceAmountInput = document.getElementById('task-advance-amount');
+
+    let isAdvanceTask = !!t.isAdvance;
+    let workerName = t.workerName || "";
+    let advanceAmt = parseFloat(t.advanceAmount) || 0;
+
+    // Smart inference if properties were missing in older task records
+    const taskTitle = (t.task || "") + " " + (t.note || "");
+    if (taskTitle.includes("Ứng tiền thợ:")) {
+        isAdvanceTask = true;
+        if (!workerName) {
+            const match = taskTitle.match(/Ứng tiền thợ:\s*([^\-\(\s]+)/);
+            if (match && match[1]) workerName = match[1].trim();
+        }
+    }
+
+    if (!advanceAmt) {
+        advanceAmt = extractAdvanceAmountFromText(taskTitle);
+    }
+
+    if (!advanceAmt && typeof farmData !== 'undefined' && Array.isArray(farmData)) {
+        const tDate = parseLocalDate(t.deadline);
+        const matchExp = farmData.find(row => {
+            const expDate = row.parsedDate || parseLocalDate(row["Ngày"]);
+            const note = row["Ghi Chú Chi Phí"] || row["Ghi Chú"] || "";
+            const isSameDate = tDate && expDate && tDate.getFullYear() === expDate.getFullYear() && tDate.getMonth() === expDate.getMonth() && tDate.getDate() === expDate.getDate();
+            return row["Loại CP"] === "Công" && note.includes("Ứng tiền thợ:") && (workerName ? note.includes(workerName) : true) && isSameDate;
+        });
+        if (matchExp) {
+            advanceAmt = parseFloat(matchExp["Chi Phí"]) || 0;
+        }
+    }
+
+    if (isAdvanceTask) {
+        if (isAdvanceCb) isAdvanceCb.checked = true;
+        if (advanceFieldsGrid) advanceFieldsGrid.style.display = 'grid';
+        const advanceContainer = document.getElementById('advance-money-container');
+        if (advanceContainer) advanceContainer.style.display = 'block';
+        
+        if (workerSelect) {
+            populateWorkerSelectOptions();
+            if (workerName) {
+                if (!Array.from(workerSelect.options).some(opt => opt.value === workerName)) {
+                    const opt = document.createElement('option');
+                    opt.value = workerName;
+                    opt.innerText = '👷 ' + workerName;
+                    workerSelect.appendChild(opt);
+                }
+                workerSelect.value = workerName;
+            }
+        }
+        if (advanceAmountInput && advanceAmt) {
+            const formatted = typeof formatMoneyStr === 'function' ? formatMoneyStr(advanceAmt) : advanceAmt.toString();
+            advanceAmountInput.value = formatted;
+        }
+    }
+
+    // Populate and restore Chấm Công Nghỉ fields if task is worker leave
+    const isLeaveCb = document.getElementById('task-is-leave');
+    const leaveFieldsGrid = document.getElementById('leave-fields-grid');
+    const leaveWorkerSelect = document.getElementById('task-leave-worker-select');
+    const leaveWorkerCustom = document.getElementById('task-leave-worker-custom');
+    const leaveDaysInput = document.getElementById('task-leave-days');
+
+    const isLeaveTask = !!t.isLeave || (t.task && t.task.includes("Thợ nghỉ:"));
+    if (isLeaveCb) {
+        isLeaveCb.checked = isLeaveTask;
+        if (isLeaveTask) {
+            if (leaveFieldsGrid) leaveFieldsGrid.style.display = 'grid';
+            const leaveContainer = document.getElementById('leave-days-container');
+            if (leaveContainer) leaveContainer.style.display = 'block';
+
+            let lWorker = t.workerName || "";
+            let lDays = parseFloat(t.leaveDays) || 1;
+
+            if (!lWorker && t.task && t.task.includes("Thợ nghỉ:")) {
+                const match = t.task.match(/Thợ nghỉ:\s*([^\-\(\s]+)/);
+                if (match && match[1]) lWorker = match[1].trim();
+            }
+            if (!t.leaveDays && t.task) {
+                const matchDays = t.task.match(/([0-9\.,]+)\s*công/i);
+                if (matchDays && matchDays[1]) lDays = parseFloat(matchDays[1].replace(',', '.')) || 1;
+            }
+
+            if (leaveWorkerSelect) {
+                populateWorkerSelectOptions();
+                if (lWorker) {
+                    if (!Array.from(leaveWorkerSelect.options).some(opt => opt.value === lWorker)) {
+                        const opt = document.createElement('option');
+                        opt.value = lWorker;
+                        opt.innerText = '👷 ' + lWorker;
+                        leaveWorkerSelect.appendChild(opt);
+                    }
+                    leaveWorkerSelect.value = lWorker;
+                }
+            }
+            if (leaveDaysInput) {
+                leaveDaysInput.value = lDays;
+            }
+        } else if (leaveFieldsGrid) {
+            leaveFieldsGrid.style.display = 'none';
+        }
+    }
+
     // Show delete button for existing tasks
     const delBtn = document.getElementById('delete-task-btn');
     if (delBtn) delBtn.style.display = 'flex';
@@ -1345,12 +1937,101 @@ window.editTask = function (id) {
 async function saveTask() {
     if (isRestricted()) return;
     let id = document.getElementById('task-id').value;
-    const task = document.getElementById('task-name').value.trim();
+    const isNewTask = !id;
+    let task = document.getElementById('task-name').value.trim();
     const deadline = document.getElementById('task-deadline').value;
-    const category = document.getElementById('task-category').value.trim();
+    let category = document.getElementById('task-category').value.trim();
     const note = document.getElementById('task-note').value.trim();
     const priority = document.getElementById('task-priority').value;
     const status = document.getElementById('task-status').value;
+    
+    // Check Advance Money toggle & inputs
+    const isAdvance = document.getElementById('task-is-advance')?.checked;
+    const workerSelectVal = document.getElementById('task-worker-select')?.value || "";
+    const workerCustomVal = document.getElementById('task-worker-custom')?.value.trim() || "";
+    const workerName = workerSelectVal === '__NEW__' ? workerCustomVal : workerSelectVal;
+    const advanceAmountRaw = document.getElementById('task-advance-amount')?.value || "0";
+    const advanceAmount = typeof parseMoney === 'function' ? parseMoney(advanceAmountRaw) : (parseFloat(advanceAmountRaw.replace(/[^\d]/g, '')) || 0);
+
+    // Strict Validation for Ứng Tiền Thợ
+    if (isAdvance) {
+        if (!workerName) {
+            alert("Vui lòng chọn hoặc nhập tên Thợ ứng tiền!");
+            const workerSelectEl = document.getElementById('task-worker-select');
+            if (workerSelectEl && workerSelectVal === '__NEW__') {
+                document.getElementById('task-worker-custom')?.focus();
+            } else if (workerSelectEl) {
+                workerSelectEl.focus();
+            }
+            return;
+        }
+        if (!advanceAmountRaw || advanceAmount <= 0) {
+            alert("Vui lòng nhập Số tiền đã ứng (lớn hơn 0đ)!");
+            const advanceAmountInputEl = document.getElementById('task-advance-amount');
+            if (advanceAmountInputEl) advanceAmountInputEl.focus();
+            return;
+        }
+
+        category = "Farm";
+        const catSelect = document.getElementById('task-category');
+        if (catSelect) catSelect.value = "Farm";
+
+        // Auto check sticker "Thợ"
+        document.querySelectorAll('.sticker-checkbox').forEach(cb => {
+            if (cb.value === "Thợ") cb.checked = true;
+        });
+        updateStickerLabel();
+
+        const formattedAmt = typeof formatMoneyStr === 'function' ? formatMoneyStr(advanceAmount) : advanceAmount.toLocaleString('vi-VN');
+        const amtSuffix = advanceAmount > 0 ? ` (${formattedAmt}đ)` : '';
+
+        if (!task || task === "Thợ" || task.startsWith("Ứng tiền thợ")) {
+            task = workerName ? `Ứng tiền thợ: ${workerName}${amtSuffix}` : `Ứng tiền thợ${amtSuffix}`;
+        }
+    }
+
+    // Check Leave Days toggle & inputs
+    const isLeave = document.getElementById('task-is-leave')?.checked;
+    const leaveWorkerSelectVal = document.getElementById('task-leave-worker-select')?.value || "";
+    const leaveWorkerCustomVal = document.getElementById('task-leave-worker-custom')?.value.trim() || "";
+    const leaveWorkerName = leaveWorkerSelectVal === '__NEW__' ? leaveWorkerCustomVal : leaveWorkerSelectVal;
+    const leaveDaysRaw = document.getElementById('task-leave-days')?.value;
+    const leaveDaysVal = parseFloat(leaveDaysRaw) || 0;
+
+    let finalWorkerName = workerName;
+    if (isLeave) {
+        if (!leaveWorkerName) {
+            alert("Vui lòng chọn hoặc nhập tên Thợ nghỉ!");
+            const leaveWorkerSelectEl = document.getElementById('task-leave-worker-select');
+            if (leaveWorkerSelectEl && leaveWorkerSelectVal === '__NEW__') {
+                document.getElementById('task-leave-worker-custom')?.focus();
+            } else if (leaveWorkerSelectEl) {
+                leaveWorkerSelectEl.focus();
+            }
+            return;
+        }
+        if (!leaveDaysRaw || isNaN(leaveDaysVal) || leaveDaysVal <= 0) {
+            alert("Vui lòng nhập Số công nghỉ hợp lệ (lớn hơn 0)!");
+            const leaveDaysInputEl = document.getElementById('task-leave-days');
+            if (leaveDaysInputEl) leaveDaysInputEl.focus();
+            return;
+        }
+
+        category = "Farm";
+        const catSelect = document.getElementById('task-category');
+        if (catSelect) catSelect.value = "Farm";
+
+        document.querySelectorAll('.sticker-checkbox').forEach(cb => {
+            if (cb.value === "Thợ") cb.checked = true;
+        });
+        updateStickerLabel();
+
+        if (leaveWorkerName) finalWorkerName = leaveWorkerName;
+        if (!task || task === "Thợ" || task.startsWith("Thợ nghỉ")) {
+            task = `Thợ nghỉ: ${finalWorkerName || 'Thợ'} (${leaveDaysVal} công)`;
+        }
+    }
+
     const selectedCheckboxes = document.querySelectorAll('.sticker-checkbox:checked');
     const sticker = Array.from(selectedCheckboxes).map(cb => cb.value).join(', ');
 
@@ -1371,14 +2052,43 @@ async function saveTask() {
         }
     }
 
-    const taskObj = { id, task, deadline, category, note, priority, status, sticker, startDate };
+    // Store old task values for edit mode matching
+    let oldWorkerName = "";
+    let oldDeadline = "";
+    let expenseRowId = "";
+    if (id) {
+        const oldTaskObj = todoCache.find(x => String(x.id) === String(id));
+        if (oldTaskObj) {
+            expenseRowId = oldTaskObj.expenseRowId || "";
+            oldWorkerName = oldTaskObj.workerName || "";
+            oldDeadline = oldTaskObj.deadline || "";
+            if (!oldWorkerName && oldTaskObj.task && oldTaskObj.task.includes("Ứng tiền thợ:")) {
+                const match = oldTaskObj.task.match(/Ứng tiền thợ:\s*([^\-\(\s]+)/);
+                if (match && match[1]) oldWorkerName = match[1].trim();
+            }
+        }
+    }
+
+    if ((isAdvance || advanceAmount > 0) && !expenseRowId) {
+        expenseRowId = "OFFLINE_EXP_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+    }
+
+    const taskObj = { 
+        id, task, deadline, category, note, priority, status, sticker, startDate,
+        isAdvance: !!isAdvance,
+        advanceAmount: advanceAmount,
+        isLeave: !!isLeave,
+        leaveDays: isLeave ? leaveDaysVal : 0,
+        workerName: finalWorkerName,
+        expenseRowId: expenseRowId
+    };
     taskObj.deadlineDate = parseLocalDate(deadline);
     taskObj.startDateDate = parseLocalDate(startDate);
 
     // Optimistic UI updates
     if (!id) {
         // Create mode
-        id = "OFFLINE_TODO_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+        id = "TASK_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
         taskObj.id = id;
         const now = new Date();
         const datePart = String(now.getDate()).padStart(2, '0') + '/' + String(now.getMonth() + 1).padStart(2, '0') + '/' + now.getFullYear();
@@ -1388,7 +2098,7 @@ async function saveTask() {
         todoCache.unshift(taskObj);
     } else {
         // Edit mode
-        const idx = todoCache.findIndex(x => x.id === id);
+        const idx = todoCache.findIndex(x => String(x.id) === String(id));
         if (idx > -1) {
             taskObj.createdAt = todoCache[idx].createdAt;
             taskObj.createdDate = todoCache[idx].createdDate;
@@ -1406,16 +2116,219 @@ async function saveTask() {
     queue.push({ action: "save_todo_task", data: taskObj, clientId: id });
     localStorage.setItem('todo_sync_queue', JSON.stringify(queue));
 
-    showToast("Đang lưu công việc trong nền...", "success");
+    // TỰ ĐỘNG GHI NHẬN CHI PHÍ "CÔNG" VÀO SỔ THU CHI KHI TẠO MỚI CÔNG VIỆC
+    if (isNewTask && (isAdvance || advanceAmount > 0)) {
+        saveWorkerAdvanceExpense(taskObj);
+    }
+    // Note: Auto-update/delete when editing or deleting existing tasks is paused as requested.
+
     processTodoSyncQueue();
 }
+
+window.cleanDuplicateWorkerAdvanceExpenses = function() {
+    if (typeof farmData === 'undefined' || !Array.isArray(farmData)) return;
+    const seenRefs = new Set();
+    for (let i = farmData.length - 1; i >= 0; i--) {
+        const row = farmData[i];
+        const note = row["Ghi Chú Chi Phí"] || row["Ghi Chú"] || row["Ghi chú"] || "";
+        const match = note.match(/\[Ref:(TASK_[^\]]+)\]/);
+        if (match && match[1]) {
+            const refId = match[1];
+            if (seenRefs.has(refId)) {
+                // Remove older duplicate row
+                farmData.splice(i, 1);
+            } else {
+                seenRefs.add(refId);
+            }
+        }
+    }
+};
+
+window.saveWorkerAdvanceExpense = function(taskObj) {
+    if (!taskObj || !taskObj.id) return;
+    cleanDuplicateWorkerAdvanceExpenses();
+
+    const deadline = taskObj.deadline;
+    const workerName = taskObj.workerName || "Thợ";
+    const advanceAmount = parseFloat(taskObj.advanceAmount) || 0;
+    const note = taskObj.note || "";
+    const taskId = String(taskObj.id);
+    const expRowId = "TASK_EXP_" + taskId;
+    const refTag = `[Ref:${taskId}]`;
+    const expNote = `Ứng tiền thợ: ${workerName}${note ? ' - ' + note : ''} ${refTag}`;
+    const dInput = parseLocalDate(deadline) || new Date();
+    const formattedAmtStr = typeof formatMoneyStr === 'function' ? formatMoneyStr(advanceAmount) : advanceAmount.toLocaleString('vi-VN');
+
+    if (advanceAmount <= 0) {
+        deleteWorkerAdvanceExpense(taskId, taskObj);
+        return;
+    }
+
+    let harvestQueue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+
+    // 1. Try to find existing matching expense row in-memory
+    let matchRow = null;
+    if (typeof farmData !== 'undefined' && Array.isArray(farmData)) {
+        matchRow = farmData.find(row => {
+            if (String(row._sheetRowNumber) === expRowId) return true;
+            const expType = row["Loại CP"] || "";
+            const rowNote = row["Ghi Chú Chi Phí"] || row["Ghi Chú"] || row["Ghi chú"] || "";
+            const expDate = row.parsedDate || parseLocalDate(row["Ngày"]);
+            const isSameDate = !dInput || !expDate || (dInput.getFullYear() === expDate.getFullYear() && dInput.getMonth() === expDate.getMonth() && dInput.getDate() === expDate.getDate());
+
+            const isRefMatch = rowNote.includes(`[Ref:${taskId}]`) || (taskId && rowNote.includes(taskId)) || (taskObj.expenseRowId && String(row._sheetRowNumber) === String(taskObj.expenseRowId));
+            const isLegacyMatch = expType === "Công" && rowNote.includes("Ứng tiền thợ:") && (workerName ? rowNote.toLowerCase().includes(workerName.toLowerCase()) : true) && isSameDate;
+
+            return isRefMatch || isLegacyMatch;
+        });
+    }
+
+    if (matchRow) {
+        // UPDATE IN-PLACE (guarantees ZERO duplicate creation)
+        matchRow._sheetRowNumber = expRowId;
+        matchRow["Chi Phí"] = advanceAmount;
+        matchRow["Người Mua"] = workerName;
+        matchRow["Ghi Chú Chi Phí"] = expNote;
+        matchRow["Ghi Chú"] = expNote;
+        matchRow["Ngày"] = deadline;
+        matchRow.parsedDate = dInput;
+
+        const queueIdx = harvestQueue.findIndex(x => x.clientId === expRowId);
+        if (queueIdx > -1) {
+            harvestQueue[queueIdx].payload = {
+                action: "add_expense",
+                data: {
+                    "Ngày": deadline, "Status": "Xong", "Người Mua": workerName,
+                    "Chi Phí": advanceAmount.toString(), "Loại CP": "Công", "Ghi Chú Chi Phí": expNote
+                }
+            };
+        } else {
+            const sheetRow = matchRow._sheetRowNumber;
+            if (sheetRow && typeof sheetRow !== 'string') {
+                harvestQueue.push({
+                    action: 'update',
+                    rowNumber: sheetRow,
+                    updates: {
+                        "Chi Phí": advanceAmount, "Người Mua": workerName,
+                        "Ghi Chú Chi Phí": expNote, "Ghi Chú": expNote, "Ngày": deadline
+                    },
+                    clientId: "UPD_EXP_" + Date.now() + "_" + Math.floor(Math.random() * 1000)
+                });
+            } else {
+                harvestQueue.push({
+                    action: 'add',
+                    clientId: expRowId,
+                    payload: {
+                        action: "add_expense",
+                        data: {
+                            "Ngày": deadline, "Status": "Xong", "Người Mua": workerName,
+                            "Chi Phí": advanceAmount.toString(), "Loại CP": "Công", "Ghi Chú Chi Phí": expNote
+                        }
+                    }
+                });
+            }
+        }
+        localStorage.setItem('harvest_sync_queue', JSON.stringify(harvestQueue));
+        if (typeof applyFiltersAndRender === 'function') applyFiltersAndRender();
+        if (typeof processSyncQueue === 'function') processSyncQueue();
+        showToast(`Đã cập nhật Chi Phí "Công" ${formattedAmtStr}đ cho ${workerName}!`, "success");
+    } else {
+        // CREATE NEW ROW WITH DETERMINISTIC expRowId
+        taskObj.expenseRowId = expRowId;
+
+        // Clean out any old items for this clientId from queue first
+        harvestQueue = harvestQueue.filter(x => x.clientId !== expRowId);
+        harvestQueue.push({
+            action: 'add',
+            clientId: expRowId,
+            payload: {
+                action: "add_expense",
+                data: {
+                    "Ngày": deadline, "Status": "Xong", "Người Mua": workerName,
+                    "Chi Phí": advanceAmount.toString(), "Loại CP": "Công", "Ghi Chú Chi Phí": expNote
+                }
+            }
+        });
+        localStorage.setItem('harvest_sync_queue', JSON.stringify(harvestQueue));
+
+        if (typeof farmData !== 'undefined' && Array.isArray(farmData)) {
+            farmData.unshift({
+                "Ngày": deadline, "Status": "Xong", "Người Mua": workerName,
+                "Chi Phí": advanceAmount, "Loại CP": "Công", "Ghi Chú Chi Phí": expNote,
+                parsedDate: dInput, "Số lượng": 0, "Giá": 0, "Doanh Thu Bông": 0, "Tiền Phải Thu": 0, "Doanh Thu Khác": 0,
+                _sheetRowNumber: expRowId
+            });
+            if (typeof applyFiltersAndRender === 'function') {
+                applyFiltersAndRender();
+            }
+        }
+
+        if (typeof processSyncQueue === 'function') {
+            processSyncQueue();
+        }
+
+        showToast(`Đã ghi nhận Chi Phí "Công" ${formattedAmtStr}đ cho ${workerName}!`, "success");
+    }
+};
+
+window.deleteWorkerAdvanceExpense = function(taskId, taskObj) {
+    if (!taskId) return;
+    const sId = String(taskId);
+    const expRowId = "TASK_EXP_" + sId;
+    let harvestQueue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+
+    harvestQueue = harvestQueue.filter(x => x.clientId !== expRowId);
+
+    let tWorker = (taskObj && taskObj.workerName) || "";
+    let tDeadline = (taskObj && taskObj.deadline) || "";
+    let tExpRowId = (taskObj && taskObj.expenseRowId) || "";
+
+    if (!tWorker && taskObj && taskObj.task && taskObj.task.includes("Ứng tiền thợ:")) {
+        const match = taskObj.task.match(/Ứng tiền thợ:\s*([^\-\(\s]+)/);
+        if (match && match[1]) tWorker = match[1].trim();
+    }
+
+    const tDate = tDeadline ? parseLocalDate(tDeadline) : null;
+
+    if (typeof farmData !== 'undefined' && Array.isArray(farmData)) {
+        let deleted = false;
+        for (let i = farmData.length - 1; i >= 0; i--) {
+            const row = farmData[i];
+            const expType = row["Loại CP"] || "";
+            const rowNote = row["Ghi Chú Chi Phí"] || row["Ghi Chú"] || row["Ghi chú"] || "";
+            const expDate = row.parsedDate || parseLocalDate(row["Ngày"]);
+            const isSameDate = !tDate || !expDate || (tDate.getFullYear() === expDate.getFullYear() && tDate.getMonth() === expDate.getMonth() && tDate.getDate() === expDate.getDate());
+
+            const isIdMatch = String(row._sheetRowNumber) === expRowId || rowNote.includes(`[Ref:${sId}]`) || rowNote.includes(sId) || (tExpRowId && String(row._sheetRowNumber) === String(tExpRowId));
+            const isLegacyMatch = expType === "Công" && rowNote.includes("Ứng tiền thợ:") && (tWorker ? rowNote.toLowerCase().includes(tWorker.toLowerCase()) : true) && isSameDate;
+
+            if (isIdMatch || isLegacyMatch) {
+                const sheetRow = row._sheetRowNumber;
+                if (sheetRow && typeof sheetRow !== 'string') {
+                    harvestQueue.push({ action: 'delete', rowNumber: sheetRow, context: 'expense', clientId: "DEL_" + sheetRow });
+                }
+                farmData.splice(i, 1);
+                deleted = true;
+            }
+        }
+        if (deleted) {
+            localStorage.setItem('harvest_sync_queue', JSON.stringify(harvestQueue));
+            if (typeof applyFiltersAndRender === 'function') {
+                applyFiltersAndRender();
+            }
+            if (typeof processSyncQueue === 'function') {
+                processSyncQueue();
+            }
+        }
+    }
+};
 
 window.updateTaskStatus = async function (id, newStatus) {
     if (isRestricted()) {
         renderActiveView(); // Reset select value
         return;
     }
-    const t = todoCache.find(x => x.id === id);
+    const t = todoCache.find(x => String(x.id) === String(id));
     if (!t) return;
 
     // Optimistic update
@@ -1436,8 +2349,10 @@ window.deleteTask = async function (id) {
     if (isRestricted()) return;
     if (!confirm("Bạn có chắc chắn muốn xóa công việc này?")) return;
 
+    const targetTask = todoCache.find(x => String(x.id) === String(id));
+
     // Optimistic update
-    todoCache = todoCache.filter(x => x.id !== id);
+    todoCache = todoCache.filter(x => String(x.id) !== String(id));
     localStorage.setItem('todo_cache_v2', JSON.stringify(todoCache));
 
     const modal = document.getElementById('todo-modal');
@@ -1445,24 +2360,23 @@ window.deleteTask = async function (id) {
 
     renderActiveView();
 
-    // Queue synchronization in the background
+    // Queue synchronization in the background for Todo Task
     let queue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
-
-    // Check if there is a pending save for this offline task in the queue
-    const pendingSaveIndex = queue.findIndex(item => item.action === "save_todo_task" && item.clientId === id);
+    const pendingSaveIndex = queue.findIndex(item => item.action === "save_todo_task" && String(item.clientId) === String(id));
 
     if (pendingSaveIndex > -1) {
-        // If there's a pending save that has not synced yet, remove it from the queue
         queue.splice(pendingSaveIndex, 1);
     } else {
-        // Otherwise, it has already been synced or is a pre-existing task, so delete it from the backend
         queue.push({ action: "delete_todo_task", id: id, clientId: id });
     }
     localStorage.setItem('todo_sync_queue', JSON.stringify(queue));
 
+    // AUTOMATICALLY DELETE CORRESPONDING EXPENSE IN FARM DATA & GOOGLE SHEETS
+    // [TẠM THỜI TẮT] Chức năng tự động xóa chi phí khi xóa công việc (Chờ quay lại xử lý sau)
+    // deleteWorkerAdvanceExpense(id);
     showToast("Đã xóa công việc!", "success");
     processTodoSyncQueue();
-}
+};
 
 // --- ACTION HELPERS ---
 // --- ACTION HELPERS ---
@@ -1564,6 +2478,42 @@ function getStickerEmoji(sticker) {
     }
 }
 
+function toggleAdvanceMoneyContainerVisibility() {
+    const category = document.getElementById('task-category')?.value || "";
+    const advanceContainer = document.getElementById('advance-money-container');
+    const leaveContainer = document.getElementById('leave-days-container');
+
+    const isFarmCategory = category.startsWith("Farm") || category === "Farm I" || category === "Farm II";
+    
+    // Check if sticker "Thợ" is checked
+    const selectedCheckboxes = document.querySelectorAll('.sticker-checkbox:checked');
+    const hasThoSticker = Array.from(selectedCheckboxes).some(cb => cb.value === "Thợ");
+
+    if (isFarmCategory && hasThoSticker) {
+        if (advanceContainer) advanceContainer.style.display = "block";
+        if (leaveContainer) leaveContainer.style.display = "block";
+    } else {
+        if (advanceContainer) {
+            advanceContainer.style.display = "none";
+            const isAdvanceCb = document.getElementById('task-is-advance');
+            if (isAdvanceCb) {
+                isAdvanceCb.checked = false;
+                const advanceFieldsGrid = document.getElementById('advance-fields-grid');
+                if (advanceFieldsGrid) advanceFieldsGrid.style.display = 'none';
+            }
+        }
+        if (leaveContainer) {
+            leaveContainer.style.display = "none";
+            const isLeaveCb = document.getElementById('task-is-leave');
+            if (isLeaveCb) {
+                isLeaveCb.checked = false;
+                const leaveFieldsGrid = document.getElementById('leave-fields-grid');
+                if (leaveFieldsGrid) leaveFieldsGrid.style.display = 'none';
+            }
+        }
+    }
+}
+
 function toggleStickerFieldVisibility() {
     const category = document.getElementById('task-category')?.value;
     const stickerWrapper = document.getElementById('task-sticker-wrapper');
@@ -1577,6 +2527,7 @@ function toggleStickerFieldVisibility() {
         document.querySelectorAll('.sticker-checkbox').forEach(cb => cb.checked = false);
         updateStickerLabel();
     }
+    toggleAdvanceMoneyContainerVisibility();
 }
 
 function autoFillTaskNamePrefix() {
@@ -1670,6 +2621,7 @@ function updateStickerLabel() {
             label.style.color = '#1e293b';
         }
     }
+    toggleAdvanceMoneyContainerVisibility();
 }
 
 function formatDate(dateStr) {
@@ -1825,8 +2777,27 @@ function openExportTextModal() {
         const taskStickers = t.sticker ? t.sticker.split(',').map(s => s.trim()).filter(Boolean) : [];
         const matchesSticker = selectedCalStickers.length === 0 || taskStickers.some(st => selectedCalStickers.includes(st));
 
-        return matchesCategory && matchesSticker;
+        // Match worker filter
+        const workerFilter = (document.getElementById('cal-worker-select')?.value || document.getElementById('filter-worker-select')?.value || "").trim();
+        let matchesWorker = true;
+        if (workerFilter) {
+            const tWorker = (t.workerName || "").trim();
+            const tTitle = (t.task || "") + " " + (t.note || "");
+            matchesWorker = (tWorker === workerFilter) || tTitle.includes(workerFilter);
+        }
+
+        return matchesCategory && matchesSticker && matchesWorker;
     });
+
+    const workerFilter = (document.getElementById('cal-worker-select')?.value || document.getElementById('filter-worker-select')?.value || "").trim();
+    const descEl = document.querySelector('#export-text-modal .modal-body p');
+    if (descEl) {
+        if (workerFilter) {
+            descEl.innerHTML = `Dưới đây là danh sách lịch trình theo tháng hiện tại (<b>Lọc theo thợ: ${escapeHtml(workerFilter)}</b>):`;
+        } else {
+            descEl.innerText = "Dưới đây là danh sách lịch trình theo tháng hiện tại, sắp xếp theo thứ tự ngày từ thấp đến cao:";
+        }
+    }
 
     // Sort chronologically (lowest date to highest date)
     filtered.sort((a, b) => {
@@ -1875,6 +2846,44 @@ function openExportTextModal() {
 
         // Trim trailing newlines
         textResult = textResult.trim();
+    }
+
+    // Append Phần Tổng Kết (Monthly Summary) for Advances & Leave Days
+    // ONLY append summary if selectedCalStickers is empty/all OR includes 'Thợ'
+    const isAllStickers = selectedCalStickers.length === 0 || selectedCalStickers.length >= 9;
+    const hasThoSticker = selectedCalStickers.includes('Thợ');
+    const shouldShowSummary = isAllStickers || hasThoSticker;
+
+    if (shouldShowSummary) {
+        const workerAdvances = getMonthlyWorkerAdvances(month, year);
+        const workerLeaves = getMonthlyWorkerLeaveDays(month, year);
+        const advanceEntries = Object.entries(workerAdvances);
+        const leaveEntries = Object.entries(workerLeaves);
+
+        if (advanceEntries.length > 0 || leaveEntries.length > 0) {
+            textResult += `\n\n----------------------------------------\n`;
+            textResult += `📊 PHẦN TỔNG KẾT THÁNG ${displayMonth}/${year}:\n`;
+
+        if (advanceEntries.length > 0) {
+            let totalAdvance = 0;
+            textResult += `\n💳 Ứng tiền thợ:\n`;
+            advanceEntries.forEach(([name, amt]) => {
+                totalAdvance += amt;
+                const formattedAmt = typeof formatMoneyStr === 'function' ? formatMoneyStr(amt) : amt.toLocaleString('vi-VN');
+                textResult += `  • ${name}: ${formattedAmt}đ\n`;
+            });
+            const formattedTotal = typeof formatMoneyStr === 'function' ? formatMoneyStr(totalAdvance) : totalAdvance.toLocaleString('vi-VN');
+            textResult += `  => Tổng cộng tiền ứng: ${formattedTotal}đ\n`;
+        }
+
+        if (leaveEntries.length > 0) {
+            textResult += `\n🏖️ Thợ nghỉ (công):\n`;
+            leaveEntries.forEach(([name, days]) => {
+                textResult += `  • ${name}: ${days} công\n`;
+            });
+        }
+        textResult += `----------------------------------------`;
+        }
     }
 
     // Set text to textarea
@@ -1979,6 +2988,32 @@ function renderCalStickerMultiSelect() {
     }
 }
 
+function updateWorkerFilterVisibility() {
+    const calWorkerSelect = document.getElementById('cal-worker-select');
+    const filterWorkerSelect = document.getElementById('filter-worker-select');
+
+    const calHasTho = selectedCalStickers.includes("Thợ");
+    const listHasTho = selectedListStickers.includes("Thợ");
+
+    if (calWorkerSelect) {
+        if (calHasTho) {
+            calWorkerSelect.style.display = "inline-block";
+        } else {
+            calWorkerSelect.style.display = "none";
+            calWorkerSelect.value = "";
+        }
+    }
+
+    if (filterWorkerSelect) {
+        if (listHasTho) {
+            filterWorkerSelect.style.display = "inline-block";
+        } else {
+            filterWorkerSelect.style.display = "none";
+            filterWorkerSelect.value = "";
+        }
+    }
+}
+
 window.toggleCalSticker = function (sticker, isChecked) {
     if (isChecked) {
         if (!selectedCalStickers.includes(sticker)) {
@@ -1988,6 +3023,7 @@ window.toggleCalSticker = function (sticker, isChecked) {
         selectedCalStickers = selectedCalStickers.filter(s => s !== sticker);
     }
     updateCalStickerTriggerLabel();
+    updateWorkerFilterVisibility();
     renderCalendar();
 };
 
@@ -2003,6 +3039,7 @@ window.selectAllCalStickers = function (selectBool) {
         selectedCalStickers = [];
     }
     updateCalStickerTriggerLabel();
+    updateWorkerFilterVisibility();
     renderCalendar();
 };
 
@@ -2063,6 +3100,7 @@ window.toggleListSticker = function (sticker, isChecked) {
         selectedListStickers = selectedListStickers.filter(s => s !== sticker);
     }
     updateListStickerTriggerLabel();
+    updateWorkerFilterVisibility();
     renderTable();
 };
 
@@ -2078,6 +3116,7 @@ window.selectAllListStickers = function (selectBool) {
         selectedListStickers = [];
     }
     updateListStickerTriggerLabel();
+    updateWorkerFilterVisibility();
     renderTable();
 };
 

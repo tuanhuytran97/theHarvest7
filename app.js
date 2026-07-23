@@ -5530,7 +5530,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const amountVal = parseMoney(amountInput.value);
         const noteVal = noteInput.value.trim();
-        const rowNumber = parseInt(window.currentEditingCashflow.rowNumber);
+        const rawRow = window.currentEditingCashflow.rowNumber;
+        const rowNumber = parseInt(rawRow) || rawRow;
 
         const updates = {};
         if (window.currentEditingCashflow.type === "Doanh thu Farm") {
@@ -5545,10 +5546,44 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // 1. Optimistically update local farmData in-memory
-        const farmItem = farmData.find(item => item._sheetRowNumber === rowNumber);
+        const farmItem = farmData.find(item => String(item._sheetRowNumber) === String(rawRow));
         if (farmItem) {
             for (const key in updates) {
                 farmItem[key] = updates[key];
+            }
+        }
+
+        // Also update matching Todo Task if this is worker advance expense
+        if (typeof todoCache !== 'undefined' && Array.isArray(todoCache) && farmItem) {
+            const expType = farmItem["Loại CP"] || "";
+            const expNote = farmItem["Ghi Chú Chi Phí"] || farmItem["Ghi Chú"] || "";
+            if (expType === "Công" || expNote.includes("Ứng tiền thợ:")) {
+                const expDate = farmItem.parsedDate || parseLocalDate(farmItem["Ngày"]);
+                const taskIdx = todoCache.findIndex(t => {
+                    const tDate = parseLocalDate(t.deadline);
+                    const isSameDate = tDate && expDate && tDate.getFullYear() === expDate.getFullYear() && tDate.getMonth() === expDate.getMonth() && tDate.getDate() === expDate.getDate();
+                    const tText = (t.task || "") + " " + (t.note || "");
+                    return tText.includes("Ứng tiền thợ:") && isSameDate;
+                });
+
+                if (taskIdx > -1) {
+                    const t = todoCache[taskIdx];
+                    const formattedAmt = typeof formatMoneyStr === 'function' ? formatMoneyStr(amountVal) : amountVal.toLocaleString('vi-VN');
+                    let workerName = t.workerName || "";
+                    if (!workerName && t.task && t.task.includes("Ứng tiền thợ:")) {
+                        const match = t.task.match(/Ứng tiền thợ:\s*([^\-\(\s]+)/);
+                        if (match && match[1]) workerName = match[1].trim();
+                    }
+                    t.advanceAmount = amountVal;
+                    t.task = workerName ? `Ứng tiền thợ: ${workerName} (${formattedAmt}đ)` : `Ứng tiền thợ (${formattedAmt}đ)`;
+
+                    localStorage.setItem('todo_cache_v2', JSON.stringify(todoCache));
+                    if (typeof renderActiveView === 'function') renderActiveView();
+
+                    let todoQueue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
+                    todoQueue.push({ action: "save_todo_task", data: t, clientId: t.id });
+                    localStorage.setItem('todo_sync_queue', JSON.stringify(todoQueue));
+                }
             }
         }
 
@@ -5558,7 +5593,7 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
                 const parsed = JSON.parse(cached);
                 if (parsed && Array.isArray(parsed.data)) {
-                    const rawItem = parsed.data.find(item => item._sheetRowNumber === rowNumber);
+                    const rawItem = parsed.data.find(item => String(item._sheetRowNumber) === String(rawRow));
                     if (rawItem) {
                         for (const key in updates) {
                             rawItem[key] = String(updates[key]);
@@ -5589,15 +5624,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 5. Append update action to the background synchronization queue
         let queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
-        queue.push({
-            action: 'update',
-            rowNumber: rowNumber,
-            updates: updates,
-            clientId: "EDIT_CASHFLOW_" + Date.now() + "_" + Math.floor(Math.random() * 1000)
-        });
+        if (typeof rawRow === 'string' && rawRow.startsWith('OFFLINE_')) {
+            const queueItem = queue.find(x => x.clientId === rawRow);
+            if (queueItem && queueItem.payload && queueItem.payload.data) {
+                if (updates["Chi Phí"] !== undefined) queueItem.payload.data["Chi Phí"] = updates["Chi Phí"].toString();
+                if (updates["Ghi Chú Chi Phí"] !== undefined) queueItem.payload.data["Ghi Chú Chi Phí"] = updates["Ghi Chú Chi Phí"];
+            }
+        } else {
+            queue.push({
+                action: 'update',
+                rowNumber: rowNumber,
+                updates: updates,
+                clientId: "EDIT_CASHFLOW_" + Date.now() + "_" + Math.floor(Math.random() * 1000)
+            });
+        }
         localStorage.setItem('harvest_sync_queue', JSON.stringify(queue));
 
-        showToast("Đang cập nhật dòng tiền...", "success");
+        showToast("Đã cập nhật giao dịch thành công!", "success");
 
         // 6. Process the queue asynchronously
         processSyncQueue();
@@ -5784,6 +5827,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     amount = parseFloat(item["Chi Phí"]) || 0;
                     note = item["Ghi Chú Chi Phí"] || item["Ghi Chú"] || type;
+                }
+
+                // Clean technical [Ref:...] tags for user display
+                if (typeof note === 'string') {
+                    note = note.replace(/\s*\[Ref:[^\]]+\]/gi, '').trim();
                 }
 
                 const amountClass = isRevenue ? 'revenue' : 'expense';
@@ -9670,22 +9718,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 try {
+                    let postBody = null;
                     if (item.action === 'add') {
-                        response = await fetch(CONFIG.WEB_APP_URL, {
-                            method: "POST",
-                            body: JSON.stringify({ ...item.payload, token: getToken() }),
-                            headers: { "Content-Type": "text/plain;charset=utf-8" }
-                        });
+                        postBody = { ...item.payload, token: getToken() };
+                    } else if (item.action === 'add_expense') {
+                        postBody = { action: "add_expense", data: item.data || (item.payload ? item.payload.data : {}), token: getToken() };
                     } else if (item.action === 'delete') {
-                        response = await fetch(CONFIG.WEB_APP_URL, {
-                            method: "POST",
-                            body: JSON.stringify({ action: "deleteByRow", rowNumber: item.rowNumber, context: item.context, token: getToken() }),
-                            headers: { "Content-Type": "text/plain;charset=utf-8" }
-                        });
+                        postBody = { action: "deleteByRow", rowNumber: item.rowNumber, context: item.context, token: getToken() };
+                    } else if (item.action === 'delete_by_ref') {
+                        postBody = { action: "deleteByRef", refTag: item.refTag, token: getToken() };
                     } else if (item.action === 'update') {
+                        postBody = { action: "update", rowNumber: item.rowNumber, updates: item.updates, token: getToken() };
+                    } else if (item.payload) {
+                        postBody = { ...item.payload, token: getToken() };
+                    } else if (item.action) {
+                        postBody = { ...item, token: getToken() };
+                    }
+
+                    if (postBody) {
                         response = await fetch(CONFIG.WEB_APP_URL, {
                             method: "POST",
-                            body: JSON.stringify({ action: "update", rowNumber: item.rowNumber, updates: item.updates, token: getToken() }),
+                            body: JSON.stringify(postBody),
                             headers: { "Content-Type": "text/plain;charset=utf-8" }
                         });
                     }
@@ -9756,12 +9809,22 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             return `Hành động: ${item.action}`;
         } else {
-            if (item.action === 'add') {
+            if (item.action === 'add_expense' || (item.payload && item.payload.action === 'add_expense')) {
+                const data = item.data || (item.payload ? item.payload.data : {}) || {};
+                const amount = parseFloat(data["Chi Phí"]) || 0;
+                const buyer = data["Người Mua"] || "Thợ";
+                const type = data["Loại CP"] || "Chi Phí";
+                const date = data["Ngày"] || "";
+                const note = data["Ghi Chú Chi Phí"] || "";
+                const formattedAmt = typeof formatMoneyStr === 'function' ? formatMoneyStr(amount) : amount.toLocaleString('vi-VN');
+                return `<b>Chi Phí (${type}):</b> ${buyer} - ${formattedAmt}đ (${date})${note ? ' - ' + note : ''}`;
+            } else if (item.action === 'add') {
                 const payload = item.payload || {};
-                const name = payload.buyerName || payload.name || 'Không rõ';
-                const date = payload.date || payload.ngay || '';
-                        const total = payload.totalExpected || payload.total || 0;
-                return `<b>Thêm mới:</b> Khách ${name} (${date}) - ${total.toLocaleString('vi-VN')}đ`;
+                const name = payload.buyerName || payload.name || (payload.data ? payload.data["Người Mua"] : 'Không rõ');
+                const date = payload.date || payload.ngay || (payload.data ? payload.data["Ngày"] : '');
+                const total = payload.totalExpected || payload.total || (payload.data ? parseFloat(payload.data["Chi Phí"] || payload.data["Doanh Thu Bông"] || 0) : 0);
+                const formattedTotal = typeof formatMoneyStr === 'function' ? formatMoneyStr(total) : total.toLocaleString('vi-VN');
+                return `<b>Thêm mới:</b> ${name} (${date}) - ${formattedTotal}đ`;
             } else if (item.action === 'delete') {
                 return `<b>Xóa dòng:</b> Dòng ${item.rowNumber} (Bảng: ${item.context || 'không rõ'})`;
             } else if (item.action === 'update') {
@@ -10495,7 +10558,6 @@ document.addEventListener("DOMContentLoaded", () => {
             throw new Error("Chưa cấu hình GEMINI_API_KEY trong file config.js!");
         }
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         const prompt = `Bạn là trợ lý đắc lực bóc tách dữ liệu giao bông từ hình ảnh hóa đơn hoặc tin nhắn chụp màn hình.
 Hãy trích xuất thông tin giao bông thành một mảng các đối tượng JSON có cấu trúc sau:
 [
@@ -10503,7 +10565,7 @@ Hãy trích xuất thông tin giao bông thành một mảng các đối tượn
     "date": "YYYY-MM-DD", // Ngày giao bông (ví dụ: ngày 3-7 của năm 2026 sẽ là 2026-07-03). Hãy lấy năm hiện tại là 2026 nếu không có thông tin năm. Nếu trong hình ảnh hoàn toàn không đề cập đến thông tin ngày, tháng thì hãy để giá trị là null.
     "type": "tên loại hoa", // ví dụ: "Ô Hồng", "Xô ngoại", "Xô nội", "Ecuador", "Pháp", "Trắng ủ", "Quốc Vương", "Vàng Hà Lan", "Kem", "Simmo", "Victor Vàng", "Lạc Thần", "Hỷ Trứng", "Capu", "Xô Đỏ". Nếu loại hoa viết tắt, hãy tự động chuyển đổi: "ôhg" -> "Ô Hồng", "ohg" -> "Ô Hồng", "ô hồng" -> "Ô Hồng", "ecu" -> "Ecuador", "xo" -> "Xô ngoại", "xo noi" -> "Xô nội", "xo ngoai" -> "Xô ngoại".
     "qty": số lượng, // Số lượng hoa dạng số.
-    "price": đơn giá // Đơn giá thực tế cho mỗi bông. Nếu trên ảnh ghi là "x 10" hoặc "x 12" nghĩa là đơn giá chục (ví dụ 10k hoặc 12k cho 10 bông), hãy tự động quy đổi thành đơn giá trên mỗi bông (ví dụ "50 ôhg x 10" nghĩa là số lượng 50, đơn giá chục là 10, nên đơn giá thực tế là 1.000đ/bông. "60 ôhg x 12" nghĩa là số lượng 60, đơn giá chục là 12, nên đơn giá thực tế là 1.200đ/bông). Nếu ghi giá chẵn (ví dụ "1000", "1200", "1.8k" thì giữ nguyên giá trị quy đổi, ví dụ 1.8k = 1800). Nếu trên ảnh hoàn toàn không có thông tin đơn giá (ví dụ chỉ ghi tên bông và số lượng, không có giá), hãy trả về giá trị null.
+    "price": đơn giá // Đơn giá thực tế cho mỗi bông. QUY TẮC ĐƠN GIÁ BẮT BUỘC: Đơn giá thực tế cho mỗi bông luôn nằm trong khoảng từ 500đ đến 10.000đ (500 <= price <= 10000). Nếu trên ảnh ghi tắt như "x 12" hay "12" nghĩa là 1.200đ/bông. "x 10" hay "10" nghĩa là 1.000đ/bông. "x 8" hay "8" nghĩa là 800đ/bông. "x 15" hay "15" nghĩa là 1.500đ/bông. "x 1.2k" hay "1200" nghĩa là 1.200đ/bông. Tuyệt đối KHÔNG trả về các số đơn giá nhỏ hơn 500 (như 120, 100, 12, 10). Nếu hoàn toàn không có thông tin đơn giá, trả về null.
   }
 ]
 
@@ -10528,16 +10590,43 @@ Quy tắc:
             }
         };
 
-        const response = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
-        });
+        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+        let lastError = null;
+        let response = null;
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        for (const model of modelsToTry) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            for (let attempt = 1; attempt <= 2; attempt++) {
+                try {
+                    response = await fetch(url, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) break;
+
+                    if (response.status === 503 || response.status === 429 || response.status === 500) {
+                        lastError = new Error(`Máy chủ Gemini AI hiện đang quá tải (Lỗi ${response.status}). Vui lòng thử lại sau giây lát.`);
+                        console.warn(`Gemini API returned ${response.status} on model ${model}, attempt ${attempt}. Waiting before retry...`);
+                        await new Promise(r => setTimeout(r, 1500 * attempt));
+                    } else {
+                        throw new Error(`Lỗi kết nối Gemini AI! status: ${response.status}`);
+                    }
+                } catch (err) {
+                    lastError = err;
+                    if (attempt < 2 && (err.message.includes('503') || err.message.includes('429'))) {
+                        await new Promise(r => setTimeout(r, 1500 * attempt));
+                    } else {
+                        break;
+                    }
+                }
+            }
+            if (response && response.ok) break;
+        }
+
+        if (!response || !response.ok) {
+            throw lastError || new Error("Không thể kết nối tới dịch vụ Gemini AI sau nhiều lần thử.");
         }
 
         const result = await response.json();
@@ -10565,7 +10654,8 @@ Quy tắc:
             }
 
             const qtyVal = parseFloat(item.qty) || 0;
-            const priceVal = (item.price !== undefined && item.price !== null && item.price !== '') ? parseFloat(item.price) : '';
+            const rawPrice = (item.price !== undefined && item.price !== null && item.price !== '') ? parseFloat(item.price) : '';
+            const priceVal = normalizeUnitPrice(rawPrice);
 
             return {
                 date: parsedDate,
@@ -10575,6 +10665,18 @@ Quy tắc:
                 total: priceVal !== '' ? qtyVal * priceVal : ''
             };
         });
+    }
+
+    function normalizeUnitPrice(val) {
+        if (val === '' || val === null || val === undefined || isNaN(val)) return '';
+        let p = parseFloat(val);
+        if (p <= 0) return p;
+        // Quy tắc: Đơn giá thực tế cho mỗi bông PHẢI luôn dao động trong khoảng từ 500đ đến 10.000đ
+        // Nếu số ghi tắt như 12, 10, 8, 15, 6.5, 120, 100... thì tự động nhân 10 cho đến khi p >= 500
+        while (p < 500 && p > 0) {
+            p = p * 10;
+        }
+        return p;
     }
 
     function parseImportText(text) {
@@ -10685,10 +10787,8 @@ Quy tắc:
                     priceVal = parseFloat(priceRaw.slice(0, -1)) * 1000;
                 } else {
                     priceVal = parseFloat(priceRaw);
-                    if (priceVal < 100) {
-                        priceVal = priceVal * 100;
-                    }
                 }
+                priceVal = normalizeUnitPrice(priceVal);
                 
                 parsedQty = qty;
                 parsedType = resolvedType;
