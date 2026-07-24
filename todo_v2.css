@@ -416,7 +416,8 @@ tr:hover {
 
 .task-row-done td {
     text-decoration: line-through;
-    opacity: 0.6;
+    opacity: 0.45;
+    transition: opacity 0.2s ease;
 }
 .task-row-done td:last-child {
     text-decoration: none !important;

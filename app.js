@@ -1898,10 +1898,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (currentTableTab === 'expense') {
                 const amount = parseFloat(String(row["Chi Phí"] || "0").replace(/,/g, ''));
                 const isVuaShipping = (row["Loại CP"] === "Vận Chuyển");
-                const opacity = isVuaShipping ? '0.5' : '1';
-                const pointerEvents = isVuaShipping ? 'none' : 'auto';
-
-                tr.style.opacity = opacity;
+                if (isVuaShipping) {
+                    tr.style.opacity = '0.5';
+                }
 
                 tr.innerHTML = `
                     <td data-label="Chọn" style="text-align: center;">

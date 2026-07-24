@@ -958,27 +958,63 @@ th:hover {
   }
 }
 
-/* Continuous unbroken strikethrough line across the ENTIRE row from left to right */
-#farm-data-table tbody tr.row-done {
-  opacity: 0.65;
+/* Continuous unbroken strikethrough line across data columns (excluding THAO TÁC column) */
+#farm-data-table tbody tr.row-done td:not(:last-child),
+#farm-data-table tbody tr.row-done td:not(:last-child) *,
+tr.row-done td:not(:last-child),
+tr.row-done td:not(:last-child) * {
+  color: #94a3b8 !important;
+}
+
+#farm-data-table tbody tr.row-done,
+tr.row-done {
+  transition: opacity 0.2s ease;
+}
+
+/* Keep the action buttons in the THAO TÁC column completely clear, vibrant, and readable */
+#farm-data-table tbody tr.row-done td:last-child,
+#farm-data-table tbody tr.row-done td:last-child *,
+#farm-data-table tbody tr.row-done td[data-label="Thao tác"],
+#farm-data-table tbody tr.row-done td[data-label="Thao tác"] *,
+tr.row-done td:last-child,
+tr.row-done td:last-child * {
+  opacity: 1 !important;
+  text-decoration: none !important;
+  color: initial;
+}
+
+#farm-data-table tbody tr.row-done td:last-child .action-btn[style*="var(--primary-color)"],
+#farm-data-table tbody tr.row-done td:last-child .action-btn i.fa-pen-to-square {
+  color: var(--primary-color, #0284c7) !important;
+  opacity: 1 !important;
+}
+
+#farm-data-table tbody tr.row-done td:last-child .action-btn i.fa-trash {
+  color: #64748b !important;
+  opacity: 1 !important;
+}
+
+#farm-data-table tbody tr.row-done td:last-child .action-btn:hover i.fa-trash {
+  color: var(--danger, #ef4444) !important;
 }
 
 @media (min-width: 769px) {
-  #farm-data-table tbody tr.row-done td {
+  #farm-data-table tbody tr.row-done td:not(:last-child) {
     position: relative;
   }
 
-  #farm-data-table tbody tr.row-done td::after {
+  #farm-data-table tbody tr.row-done td:not(:last-child)::after {
     content: '';
     position: absolute;
     top: 50%;
     left: 0;
     right: 0;
-    height: 2px;
-    background-color: #475569;
+    height: 1.5px;
+    background-color: #94a3b8;
     transform: translateY(-50%);
     pointer-events: none;
     z-index: 5;
+    opacity: 0.8;
   }
 
   #farm-data-table tbody tr.row-done td:first-child::after {
@@ -986,14 +1022,19 @@ th:hover {
   }
 
   #farm-data-table tbody tr.row-done td:last-child::after {
-    right: 12px;
+    display: none !important;
   }
 }
 
 @media (max-width: 768px) {
-  #farm-data-table tbody tr.row-done td,
-  #farm-data-table tbody tr.row-done td * {
+  #farm-data-table tbody tr.row-done td:not(:last-child),
+  #farm-data-table tbody tr.row-done td:not(:last-child) * {
     text-decoration: line-through !important;
+  }
+
+  #farm-data-table tbody tr.row-done td:last-child,
+  #farm-data-table tbody tr.row-done td:last-child * {
+    text-decoration: none !important;
   }
 }
 
