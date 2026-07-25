@@ -736,7 +736,7 @@
             <div class="modal-header"
                 style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
                 <h2 style="font-size: 1.4rem; font-weight: 800; color: #6366f1; margin: 0;">
-                    <i class="fa-solid fa-file-lines" style="margin-right: 8px;"></i>Xuất Lịch Trình Gửi Khách
+                    <i class="fa-solid fa-file-lines" style="margin-right: 8px;"></i><span id="export-text-title">Xuất Dữ Liệu</span>
                 </h2>
                 <button type="button" onclick="document.getElementById('export-text-modal').style.display='none'"
                     class="btn-icon"
@@ -745,7 +745,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p style="font-size: 0.85rem; color: #64748b; margin-top: 0; margin-bottom: 1rem; font-weight: 600;">
+                <p id="export-text-desc" style="font-size: 0.85rem; color: #64748b; margin-top: 0; margin-bottom: 1rem; font-weight: 600;">
                     Dưới đây là danh sách lịch trình theo tháng hiện tại, sắp xếp theo thứ tự ngày từ thấp đến cao:
                 </p>
                 <div class="form-group" style="margin-bottom: 1.5rem;">

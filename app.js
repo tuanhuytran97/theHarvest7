@@ -9289,9 +9289,138 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
+    window.generateDebtTextContent = function () {
+        if (!currentSelectedBuyer) return "";
+
+        const fromVal = (document.getElementById('invoice-date-from') || {}).value;
+        const toVal = (document.getElementById('invoice-date-to') || {}).value;
+        const fromTs = parseDateInputToTs(fromVal);
+        const toTs = toVal ? parseDateInputToTs(toVal) + 86399999 : null;
+
+        const allTx = currentSelectedBuyer.transactions || [];
+        const filteredTx = allTx.filter(t => {
+            const ts = t.rawDate;
+            if (fromTs !== null && ts < fromTs) return false;
+            if (toTs !== null && ts > toTs) return false;
+            return true;
+        });
+
+        let oldDebt = 0;
+        if (fromTs !== null) {
+            allTx.forEach(t => {
+                if (t.rawDate < fromTs) {
+                    oldDebt += ((t.totalExpected || 0) - (t.paid || 0));
+                }
+            });
+        }
+
+        let periodTotal = 0;
+        let periodPaid = 0;
+
+        filteredTx.forEach(t => {
+            periodTotal += (t.totalExpected || 0);
+            periodPaid += (t.paid || 0);
+        });
+
+        const accumulatedDebt = oldDebt + periodTotal - periodPaid;
+        const buyerName = currentSelectedBuyer.name;
+        const divider = `----------------------------------------`;
+
+        let textResult = `${buyerName}\n${divider}\n`;
+
+        if (filteredTx.length === 0) {
+            textResult += `(Không có giao dịch phát sinh)\n`;
+        } else {
+            const sortedTx = [...filteredTx].sort((a, b) => a.rawDate - b.rawDate);
+            sortedTx.forEach(t => {
+                let shortDate = t.dateStr;
+                if (t.dateStr && t.dateStr.length >= 10) {
+                    const parts = t.dateStr.split('/');
+                    if (parts.length === 3) shortDate = `${parts[0]}/${parts[1]}/${parts[2].slice(-2)}`;
+                }
+
+                textResult += `🗓️ Ngày ${shortDate}:\n`;
+                const lines = (t.lines || []).filter(l => l.qty > 0);
+                if (lines.length > 0) {
+                    lines.forEach(l => {
+                        if (currentSelectedBuyer.isVua) {
+                            textResult += `  - ${l.qty} ${l.flowerType}\n`;
+                        } else {
+                            const priceVal = l.price || 0;
+                            const shortPrice = priceVal >= 1000
+                                ? (priceVal / 1000).toLocaleString('en-US', { maximumFractionDigits: 1 }) + 'k'
+                                : priceVal + ' ₫';
+                            const lineTotal = l.total || (l.qty * priceVal);
+                            textResult += `  - ${l.qty} ${l.flowerType} x ${shortPrice} = ${formatCurrency(lineTotal)}\n`;
+                        }
+                    });
+                } else {
+                    textResult += `  - (Thanh toán / Trả tiền)\n`;
+                }
+
+                textResult += `  => Tiền đơn ngày ${shortDate}: ${formatCurrency(t.totalExpected)}\n`;
+                if (t.paid > 0) {
+                    textResult += `  ✅ Đã thu: ${formatCurrency(t.paid)}\n`;
+                }
+            });
+        }
+
+        textResult += `${divider}\n`;
+        if (fromTs !== null && oldDebt !== 0) {
+            textResult += `Nợ cũ: ${formatCurrency(oldDebt)}\n`;
+        }
+        textResult += `Tổng tiền: ${formatCurrency(periodTotal)}\n`;
+        if (periodPaid > 0) {
+            textResult += `Đã thanh toán: ${formatCurrency(periodPaid)}\n`;
+        }
+        if (oldDebt !== 0 || periodPaid > 0) {
+            textResult += `Còn phải thu: ${formatCurrency(accumulatedDebt)}\n`;
+        }
+        textResult += `${divider}`;
+
+        return textResult;
+    };
+
+    window.openExportDebtTextModal = function () {
+        if (!currentSelectedBuyer) {
+            if (typeof showToast === 'function') {
+                showToast("Vui lòng chọn khách hàng để xuất toa phải thu.", "info");
+            } else {
+                alert("Vui lòng chọn khách hàng để xuất toa phải thu.");
+            }
+            return;
+        }
+
+        const modal = document.getElementById('export-text-modal');
+        if (!modal) return;
+
+        const titleEl = document.getElementById('export-text-title');
+        const descEl = document.getElementById('export-text-desc');
+
+        if (titleEl) {
+            titleEl.innerText = "Xuất Toa Phải Thu (Gửi Khách)";
+        }
+        if (descEl) {
+            const safeName = String(currentSelectedBuyer.name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            descEl.innerHTML = `Dưới đây là chi tiết toa hàng / nợ phải thu của khách hàng <b>${safeName}</b>, bạn có thể bấm <b>Sao chép</b> để gửi qua Zalo, Messenger hoặc SMS:`;
+        }
+
+        const contentTextarea = document.getElementById('export-text-content');
+        if (contentTextarea) {
+            contentTextarea.value = window.generateDebtTextContent();
+        }
+
+        modal.style.display = 'flex';
+    };
+
     const btnExportReceipt = document.getElementById('btn-export-receipt');
     if (btnExportReceipt) {
         btnExportReceipt.addEventListener('click', showReceipt);
+    }
+
+    const btnExportDebtText = document.getElementById('btn-export-debt-text');
+    if (btnExportDebtText) {
+        btnExportDebtText.addEventListener('click', window.openExportDebtTextModal);
     }
 
     // --- BỘ LỌC NGÀY XUẤT HÓA ĐƠN ---

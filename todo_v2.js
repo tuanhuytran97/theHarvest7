@@ -2788,8 +2788,13 @@ function openExportTextModal() {
         return matchesCategory && matchesSticker && matchesWorker;
     });
 
+    const titleEl = document.getElementById('export-text-title');
+    if (titleEl) {
+        titleEl.innerText = "Xuất Lịch Trình Gửi Khách";
+    }
+
     const workerFilter = (document.getElementById('cal-worker-select')?.value || document.getElementById('filter-worker-select')?.value || "").trim();
-    const descEl = document.querySelector('#export-text-modal .modal-body p');
+    const descEl = document.getElementById('export-text-desc') || document.querySelector('#export-text-modal .modal-body p');
     if (descEl) {
         if (workerFilter) {
             descEl.innerHTML = `Dưới đây là danh sách lịch trình theo tháng hiện tại (<b>Lọc theo thợ: ${escapeHtml(workerFilter)}</b>):`;

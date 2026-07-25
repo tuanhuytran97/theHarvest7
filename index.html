@@ -2779,6 +2779,11 @@
                                 style="background-color: #6366f1; grid-column: span 2; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;">
                                 <i class="fa-solid fa-camera"></i> 📸 Xuất Hóa Đơn (Gửi khách)
                             </button>
+                            <button id="btn-export-debt-text" class="btn-primary"
+                                style="background-color: #8b5cf6; grid-column: span 2; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700;"
+                                onclick="openExportDebtTextModal()">
+                                <i class="fa-solid fa-copy"></i> 📋 Xuất Text Toa (Sao chép gửi Zalo)
+                            </button>
                             <button id="btn-pay-selected" class="btn-primary"
                                 style="background-color: #3b82f6; display: none; align-items: center; justify-content: center; gap: 6px; grid-column: span 2; font-weight: 700; font-size: 0.9rem;">
                                 <i class="fa-solid fa-file-invoice-dollar"></i> 💵 Thu tiền các ngày đã chọn (<span
@@ -3490,8 +3495,11 @@
             </div>
 
             <div class="receipt-actions-bottom">
-                <p style="color: white; font-size: 0.85rem; margin-bottom: 10px; opacity: 0.8;">Hóa đơn xuất ra PDF
-                    chuẩn, sắc nét (Searchable)</p>
+                <p style="color: white; font-size: 0.85rem; margin-bottom: 10px; opacity: 0.8;">Hóa đơn xuất ra PDF chuẩn hoặc sao chép văn bản gửi Zalo</p>
+                <button class="btn-primary" style="width: 100%; background: #8b5cf6; margin-bottom: 10px; font-weight: 700;"
+                    onclick="openExportDebtTextModal()">
+                    <i class="fa-solid fa-copy"></i> 📋 Sao chép Text Toa (Gửi Zalo/SMS)
+                </button>
                 <button class="btn-primary" style="width: 100%; background: var(--secondary-color);"
                     onclick="downloadPDF()">
                     <i class="fa-solid fa-file-pdf"></i> Tải PDF Hóa đơn
@@ -4274,7 +4282,7 @@
             <div class="modal-header"
                 style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
                 <h2 style="font-size: 1.4rem; font-weight: 800; color: #6366f1; margin: 0;">
-                    <i class="fa-solid fa-file-lines" style="margin-right: 8px;"></i>Xuất Dữ Liệu
+                    <i class="fa-solid fa-file-lines" style="margin-right: 8px;"></i><span id="export-text-title">Xuất Dữ Liệu</span>
                 </h2>
                 <button type="button" onclick="document.getElementById('export-text-modal').style.display='none'"
                     class="btn-icon"
@@ -4283,7 +4291,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p style="font-size: 0.85rem; color: #64748b; margin-top: 0; margin-bottom: 1rem; font-weight: 600;">
+                <p id="export-text-desc" style="font-size: 0.85rem; color: #64748b; margin-top: 0; margin-bottom: 1rem; font-weight: 600;">
                     Dưới đây là danh sách lịch trình theo tháng hiện tại, sắp xếp theo thứ tự ngày từ thấp đến cao:
                 </p>
                 <div class="form-group" style="margin-bottom: 1.5rem;">
