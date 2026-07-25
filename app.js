@@ -9354,13 +9354,16 @@ document.addEventListener("DOMContentLoaded", () => {
                             textResult += `  - ${l.qty} ${l.flowerType} x ${shortPrice} = ${formatCurrency(lineTotal)}\n`;
                         }
                     });
+                    textResult += `Tổng ngày ${shortDate}: ${formatCurrency(t.totalExpected)}\n`;
+                    if (t.paid > 0) {
+                        textResult += `✅ Đã thu: ${formatCurrency(t.paid)}\n`;
+                    }
+                    textResult += `\n`;
                 } else {
-                    textResult += `  - (Thanh toán / Trả tiền)\n`;
-                }
-
-                textResult += `Tổng ngày ${shortDate}: ${formatCurrency(t.totalExpected)}\n\n`;
-                if (t.paid > 0) {
-                    textResult += `  ✅ Đã thu: ${formatCurrency(t.paid)}\n`;
+                    if (t.paid > 0) {
+                        textResult += `✅ Đã thu: ${formatCurrency(t.paid)}\n`;
+                    }
+                    textResult += `\n`;
                 }
             });
         }
@@ -9373,8 +9376,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (periodPaid > 0) {
             textResult += `Đã thanh toán: ${formatCurrency(periodPaid)}\n`;
         }
-        if (oldDebt !== 0 || periodPaid > 0) {
-            textResult += `Còn phải thu: ${formatCurrency(accumulatedDebt)}\n`;
+        if (oldDebt !== 0 || periodPaid > 0 || accumulatedDebt > 0) {
+            textResult += `Còn Nợ: ${formatCurrency(accumulatedDebt)}\n`;
         }
         textResult += `${divider}`;
 
