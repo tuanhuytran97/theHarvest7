@@ -9358,7 +9358,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     textResult += `  - (Thanh toán / Trả tiền)\n`;
                 }
 
-                textResult += `  => Tiền đơn ngày ${shortDate}: ${formatCurrency(t.totalExpected)}\n`;
+                textResult += `  => Tổng ngày ${shortDate}: ${formatCurrency(t.totalExpected)}\n`;
                 if (t.paid > 0) {
                     textResult += `  ✅ Đã thu: ${formatCurrency(t.paid)}\n`;
                 }
