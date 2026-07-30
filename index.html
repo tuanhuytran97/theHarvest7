@@ -3703,12 +3703,21 @@
                     <h3 id="modal-edit-line-title" style="color: white; margin: 0; font-size: 1.15rem;">Chỉnh sửa dòng
                         đơn hàng</h3>
                     <p id="modal-edit-line-subtitle" style="color: #e0e7ff; margin: 2px 0 0 0; font-size: 0.82rem;">Cập
-                        nhật số lượng và đơn giá sản phẩm</p>
+                        nhật loại hoa, số lượng và đơn giá sản phẩm</p>
                 </div>
             </div>
 
             <div class="cash-modal-body"
                 style="padding: 1.5rem !important; display: flex; flex-direction: column; gap: 12px;">
+                <div class="cash-modal-field">
+                    <label
+                        style="font-weight: 700; font-size: 0.8rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                        <i class="fa-solid fa-seedling" style="color: #6366f1;"></i> Tên loại hoa / Sản phẩm
+                    </label>
+                    <input type="text" id="input-edit-flowertype"
+                        style="padding: 10px; border-radius: 8px; border: 1.5px solid #cbd5e1; outline: none; width: 100%; font-size: 0.95rem; font-weight: 600;"
+                        placeholder="Nhập tên loại hoa (ví dụ: Ô Hồng, TC...)">
+                </div>
                 <div class="cash-modal-field">
                     <label
                         style="font-weight: 700; font-size: 0.8rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
@@ -3718,7 +3727,7 @@
                         style="padding: 10px; border-radius: 8px; border: 1.5px solid #cbd5e1; outline: none; width: 100%; font-size: 0.95rem; font-weight: 600;"
                         placeholder="Nhập số lượng">
                 </div>
-                <div class="cash-modal-field" style="margin-top: 8px;">
+                <div class="cash-modal-field" style="margin-top: 4px;">
                     <label
                         style="font-weight: 700; font-size: 0.8rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
                         <i class="fa-solid fa-tag" style="color: #6366f1;"></i> Đơn giá (VNĐ)
@@ -3728,7 +3737,7 @@
                         placeholder="Nhập đơn giá">
                 </div>
                 <div id="box-edit-total"
-                    style="margin-top: 15px; padding: 12px; background: #f5f3ff; border-radius: 8px; border: 1.5px dashed #c084fc; text-align: center; display: flex; flex-direction: column; gap: 2px;">
+                    style="margin-top: 10px; padding: 12px; background: #f5f3ff; border-radius: 8px; border: 1.5px dashed #c084fc; text-align: center; display: flex; flex-direction: column; gap: 2px;">
                     <span
                         style="font-size: 0.72rem; font-weight: 800; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.5px;">Thành
                         tiền tự tính</span>

@@ -3980,29 +3980,17 @@ Trả về kết quả dưới định dạng JSON duy nhất, không kèm markd
 }`;
             }
 
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: { responseMimeType: "application/json" }
-                })
-            });
-
-            if (!response.ok) {
-                let errorMsg = `HTTP ${response.status}`;
-                try {
-                    const errorJson = await response.json();
-                    if (errorJson && errorJson.error && errorJson.error.message) {
-                        errorMsg = errorJson.error.message;
-                    }
-                } catch (_) {}
-                throw new Error(errorMsg);
-            }
-            const apiResult = await response.json();
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { responseMimeType: "application/json" }
+            };
+            const apiResult = await callGeminiAPI(payload, apiKey);
             const responseText = apiResult.candidates[0].content.parts[0].text;
-            const parsed = JSON.parse(responseText.trim());
+            let text = responseText.trim();
+            if (text.startsWith("```json")) text = text.slice(7);
+            else if (text.startsWith("```")) text = text.slice(3);
+            if (text.endsWith("```")) text = text.slice(0, -3);
+            const parsed = JSON.parse(text.trim());
 
             seasonModifier = parseInt(parsed.modifier) || 0;
             weatherReason = parsed.reason + " (🤖 <i>Phân tích real-time bằng Gemini AI</i>)";

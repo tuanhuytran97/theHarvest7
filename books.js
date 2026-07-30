@@ -332,20 +332,10 @@ ${rawText}
 ---`;
         
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }]
             };
-            
-            const response = await fetchWithRetry(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-            
-            await checkResponseOk(response);
-            
-            const result = await response.json();
+            const result = await callGeminiAPI(payload, apiKey);
             let text = result.candidates[0].content.parts[0].text.trim();
             
             // Clean markdown block wrapper if any
@@ -491,20 +481,10 @@ ${rawText}
 ---`;
         
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }]
             };
-            
-            const response = await fetchWithRetry(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-            
-            await checkResponseOk(response);
-            
-            const result = await response.json();
+            const result = await callGeminiAPI(payload, apiKey);
             let text = result.candidates[0].content.parts[0].text.trim();
             
             // Clean markdown block wrapper if any
@@ -1406,7 +1386,6 @@ Lưu ý:
 - Hãy cố gắng lấy các bài học thực sự có chiều sâu của cuốn sách này.`
 
     try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         const payload = {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
@@ -1435,15 +1414,7 @@ Lưu ý:
             }
         };
 
-        const response = await fetchWithRetry(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        await checkResponseOk(response);
-        
-        const result = await response.json();
+        const result = await callGeminiAPI(payload, apiKey);
         let jsonText = result.candidates[0].content.parts[0].text;
         
         // Clean markdown wrapper if any
@@ -1547,7 +1518,6 @@ Lưu ý:
 - Các mục lessons, quotes, actions là mảng chứa các chuỗi thô, KHÔNG bắt đầu bằng dấu gạch ngang '-', dấu sao '*' hay số thứ tự.`;
 
     try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         const payload = {
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
@@ -1578,15 +1548,7 @@ Lưu ý:
             }
         };
 
-        const response = await fetchWithRetry(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        await checkResponseOk(response);
-
-        const result = await response.json();
+        const result = await callGeminiAPI(payload, apiKey);
         let jsonText = result.candidates[0].content.parts[0].text.trim();
 
         // Clean markdown block wrapper
@@ -1678,20 +1640,11 @@ Lưu ý:
 - Chỉ trả về nội dung Markdown đã được định dạng và cấu trúc lại, tuyệt đối không kèm theo bất kỳ lời giới thiệu, lời giải thích hay bất kỳ ký tự nào bên ngoài văn bản, không bao quanh bằng \`\`\`markdown hay \`\`\` hay bất kỳ ký tự nào khác.`;
 
     try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         const payload = {
             contents: [{ parts: [{ text: prompt }] }]
         };
 
-        const response = await fetchWithRetry(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        await checkResponseOk(response);
-
-        const result = await response.json();
+        const result = await callGeminiAPI(payload, apiKey);
         let text = result.candidates[0].content.parts[0].text.trim();
 
         // Clean markdown block wrapper if any
@@ -2140,20 +2093,11 @@ Yêu cầu định dạng:
 - Viết sâu sắc, chặt chẽ, không sáo rỗng. Tránh việc chỉ liệt kê lại từng quyển sách một cách rời rạc, hãy TỔNG HỢP chúng lại thành một triết lý thống nhất.`;
 
     try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         const payload = {
             contents: [{ parts: [{ text: prompt }] }]
         };
 
-        const response = await fetchWithRetry(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        await checkResponseOk(response);
-        
-        const result = await response.json();
+        const result = await callGeminiAPI(payload, apiKey);
         let text = result.candidates[0].content.parts[0].text;
         
         // Clean markdown wrapper

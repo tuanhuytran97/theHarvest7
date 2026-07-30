@@ -2956,7 +2956,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="color: #475569; font-size: 0.88rem;">${l.qty} ${l.flowerType}${unitPriceLabel}</span>
                         <button class="btn-edit-line" data-row="${l.rawRow._sheetRowNumber}" data-qty="${l.qty}" data-price="${l.price}" data-flowertype="${l.flowerType}" data-isvua="${l.isVua}"
-                            style="background: none; border: none; color: #6366f1; cursor: pointer; padding: 2px 6px; font-size: 0.8rem; display: inline-flex; align-items: center; border-radius: 4px; transition: all 0.2s;" title="Chỉnh sửa đơn giá, số lượng">
+                            style="background: none; border: none; color: #6366f1; cursor: pointer; padding: 2px 6px; font-size: 0.8rem; display: inline-flex; align-items: center; border-radius: 4px; transition: all 0.2s;" title="Chỉnh sửa tên loại hoa, số lượng, đơn giá">
                             <i class="fa-solid fa-pen" style="pointer-events: none;"></i>
                         </button>
                     </div>
@@ -3284,6 +3284,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const modal = document.getElementById('modal-edit-line');
+        const inputFlowerType = document.getElementById('input-edit-flowertype');
         const inputQty = document.getElementById('input-edit-qty');
         const inputPrice = document.getElementById('input-edit-price');
         const textTotal = document.getElementById('text-edit-total');
@@ -3292,7 +3293,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const btnCancel = document.getElementById('btn-cancel-edit-line');
 
         // Set initial values
-        subtitleEl.innerText = `Đang sửa đơn: ${lineObj.flowerType}`;
+        subtitleEl.innerText = `Đang sửa đơn: ${lineObj.flowerType || ''}`;
+        if (inputFlowerType) inputFlowerType.value = lineObj.flowerType || '';
         inputQty.value = lineObj.qty;
         inputPrice.value = formatMoneyStr(lineObj.price);
 
@@ -3306,9 +3308,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Show modal
         modal.style.display = 'flex';
-        setTimeout(() => inputQty.focus(), 100);
+        setTimeout(() => {
+            if (inputFlowerType) inputFlowerType.focus();
+            else inputQty.focus();
+        }, 100);
 
-        // Listeners for auto-calculation
+        // Listeners for auto-calculation and subtitle update
+        const onFlowerTypeInput = (e) => {
+            const val = e.target.value.trim();
+            subtitleEl.innerText = `Đang sửa đơn: ${val || lineObj.flowerType || ''}`;
+        };
         const onQtyInput = () => updateModalTotal();
         const onPriceInput = (e) => {
             const val = parseMoney(e.target.value);
@@ -3316,11 +3325,13 @@ document.addEventListener("DOMContentLoaded", () => {
             updateModalTotal();
         };
 
+        if (inputFlowerType) inputFlowerType.addEventListener('input', onFlowerTypeInput);
         inputQty.addEventListener('input', onQtyInput);
         inputPrice.addEventListener('input', onPriceInput);
 
         const closeEditModal = () => {
             modal.style.display = 'none';
+            if (inputFlowerType) inputFlowerType.removeEventListener('input', onFlowerTypeInput);
             inputQty.removeEventListener('input', onQtyInput);
             inputPrice.removeEventListener('input', onPriceInput);
         };
@@ -3333,8 +3344,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     resolve(false);
                     return;
                 }
+                const newFlowerType = inputFlowerType ? inputFlowerType.value.trim() : (lineObj.flowerType || '');
                 const newQty = parseFloat(inputQty.value) || 0;
                 const newPrice = parseMoney(inputPrice.value) || 0;
+
+                if (!newFlowerType) {
+                    alert("Vui lòng nhập tên loại hoa / sản phẩm!");
+                    return;
+                }
 
                 if (newQty <= 0 || newPrice <= 0) {
                     alert("Số lượng và đơn giá phải lớn hơn 0.");
@@ -3348,6 +3365,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     showToast(`Đang cập nhật dòng đơn hàng...`, "info");
 
                     const updates = {
+                        "Phân Loại Bông": newFlowerType,
                         "Số lượng": newQty,
                         "Giá": newPrice
                     };
@@ -10721,47 +10739,17 @@ Quy tắc:
             }
         };
 
-        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
-        let lastError = null;
-        let response = null;
-
-        for (const model of modelsToTry) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-            for (let attempt = 1; attempt <= 2; attempt++) {
-                try {
-                    response = await fetch(url, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (response.ok) break;
-
-                    if (response.status === 503 || response.status === 429 || response.status === 500) {
-                        lastError = new Error(`Máy chủ Gemini AI hiện đang quá tải (Lỗi ${response.status}). Vui lòng thử lại sau giây lát.`);
-                        console.warn(`Gemini API returned ${response.status} on model ${model}, attempt ${attempt}. Waiting before retry...`);
-                        await new Promise(r => setTimeout(r, 1500 * attempt));
-                    } else {
-                        throw new Error(`Lỗi kết nối Gemini AI! status: ${response.status}`);
-                    }
-                } catch (err) {
-                    lastError = err;
-                    if (attempt < 2 && (err.message.includes('503') || err.message.includes('429'))) {
-                        await new Promise(r => setTimeout(r, 1500 * attempt));
-                    } else {
-                        break;
-                    }
-                }
-            }
-            if (response && response.ok) break;
-        }
-
-        if (!response || !response.ok) {
-            throw lastError || new Error("Không thể kết nối tới dịch vụ Gemini AI sau nhiều lần thử.");
-        }
-
-        const result = await response.json();
+        const result = await callGeminiAPI(payload, apiKey);
         let text = result.candidates[0].content.parts[0].text.trim();
+        if (text.startsWith("```json")) {
+            text = text.substring(7);
+        } else if (text.startsWith("```")) {
+            text = text.substring(3);
+        }
+        if (text.endsWith("```")) {
+            text = text.substring(0, text.length - 3);
+        }
+        text = text.trim();
         
         const items = JSON.parse(text);
         if (!Array.isArray(items)) {
