@@ -327,8 +327,22 @@ function doPost(e) {
             const colNgay = getColumnIdx(headers, "Ngày");
             const colLoaiDT = getColumnIdx(headers, "Loại DT");
             const colSL = getColumnIdx(headers, "Số lượng");
+            const colNguoiMua = getColumnIdx(headers, "Người Mua");
+            const colLoaiHoa = getColumnIdx(headers, "Phân Loại Bông");
+            const colDTBong = getColumnIdx(headers, "Doanh Thu Bông");
 
-            const isVuaEntry = String(data["Loại DT"]).trim() === "V\u1ef1a";
+            // Anti-duplicate check: Check if identical row was recently appended in the last 20 rows
+            for (let i = displayValues.length - 1; i >= Math.max(1, displayValues.length - 20); i--) {
+                if (displayValues[i][colNgay] === String(data["Ngày"]) &&
+                    displayValues[i][colNguoiMua] === String(data["Người Mua"] || "") &&
+                    displayValues[i][colLoaiHoa] === String(data["Phân Loại Bông"] || "") &&
+                    String(displayValues[i][colSL]) === String(data["Số lượng"] || "") &&
+                    String(displayValues[i][colDTBong]) === String(data["Doanh Thu Bông"] || "")) {
+                    return returnJson({ "status": "success", "message": "Duplicate skipped" });
+                }
+            }
+
+            const isVuaEntry = String(data["Loại DT"]).trim() === "Vụa" || String(data["Loại DT"]).trim() === "Vựa";
 
             // Nếu KHÔNG phải đơn Vựa, mới tìm dòng trống để điền vào
             if (!isVuaEntry) {
@@ -477,6 +491,18 @@ function doPost(e) {
             const colNgay = getColumnIdx(headers, "Ngày");
             const colLoaiDT = getColumnIdx(headers, "Loại DT");
             const colChiPhi = getColumnIdx(headers, "Chi Phí");
+            const colLoaiCPCheck = getColumnIdx(headers, "Loại CP");
+            const colNguoiMuaCheck = getColumnIdx(headers, "Người Mua");
+
+            // Anti-duplicate check for expense
+            for (let i = displayValues.length - 1; i >= Math.max(1, displayValues.length - 20); i--) {
+                if (displayValues[i][colNgay] === String(data["Ngày"]) &&
+                    displayValues[i][colNguoiMuaCheck] === String(data["Người Mua"] || "") &&
+                    displayValues[i][colLoaiCPCheck] === String(data["Loại CP"] || "") &&
+                    String(displayValues[i][colChiPhi]) === String(data["Chi Phí"] || "")) {
+                    return returnJson({ "status": "success", "message": "Duplicate skipped" });
+                }
+            }
 
             for (let i = displayValues.length - 1; i >= 1; i--) {
                 if (displayValues[i][colNgay] === data["Ngày"] &&

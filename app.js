@@ -9904,33 +9904,35 @@ document.addEventListener("DOMContentLoaded", () => {
                     console.error("Network error during queue sync:", err);
                 }
 
-                if (success) {
-                    let updatedQueue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
-                    if (updatedQueue.length > 0) {
-                        const first = updatedQueue[0];
-                        // Double check it's the same item before shifting to avoid any array mutations
-                        if ((item.clientId && first.clientId === item.clientId) || 
-                            (item.rowNumber && first.rowNumber === item.rowNumber)) {
-                            updatedQueue.shift();
-                        } else {
-                            updatedQueue = updatedQueue.filter(x => {
-                                if (item.clientId && x.clientId === item.clientId) return false;
-                                if (item.rowNumber && x.rowNumber === item.rowNumber) return false;
-                                return true;
-                            });
-                        }
-                        localStorage.setItem('harvest_sync_queue', JSON.stringify(updatedQueue));
+                // ALWAYS remove item from queue after processing attempt (success OR failure)
+                // to enforce strict single-sync guarantee and prevent duplicate writes on retry
+                let updatedQueue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+                if (updatedQueue.length > 0) {
+                    const first = updatedQueue[0];
+                    if ((item.clientId && first.clientId === item.clientId) || 
+                        (item.rowNumber && first.rowNumber === item.rowNumber)) {
+                        updatedQueue.shift();
+                    } else {
+                        updatedQueue = updatedQueue.filter(x => {
+                            if (item.clientId && x.clientId === item.clientId) return false;
+                            if (item.rowNumber && x.rowNumber === item.rowNumber) return false;
+                            return true;
+                        });
                     }
-                } else {
-                    // Break loop on failure to prevent infinite retries of a failing item
-                    break;
+                    localStorage.setItem('harvest_sync_queue', JSON.stringify(updatedQueue));
+                }
+
+                if (!success) {
+                    console.warn("Item sync failed or encountered error. Removed from queue to prevent duplicate writes on retry.");
+                    const errMsg = (response && response.message) ? response.message : "Không thể phản hồi từ server";
+                    showToast(`Đồng bộ 1 mục không thành công (${errMsg}). Đã loại khỏi hàng chờ để tránh trùng dữ liệu.`, "warning");
                 }
             }
 
-            // Once the queue is fully cleared, trigger a sync refresh to get actual Sheet row IDs
+            // Trigger sync refresh if queue is cleared
             let checkQueue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
             if (checkQueue.length === 0) {
-                showToast("Đồng bộ dữ liệu lên Cloud thành công!", "success");
+                showToast("Đồng bộ dữ liệu Farm lên Cloud hoàn tất!", "success");
                 const syncBtn = document.getElementById('sync-gsheet-btn');
                 if (syncBtn) {
                     syncBtn.click();
@@ -10089,14 +10091,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const btnRetryQueue = document.getElementById('btn-retry-queue');
-    if (btnRetryQueue) {
-        btnRetryQueue.addEventListener('click', () => {
+    if (btnRetryQueue && !btnRetryQueue.dataset.boundApp) {
+        btnRetryQueue.dataset.boundApp = 'true';
+        btnRetryQueue.addEventListener('click', async () => {
+            if (isProcessingQueue) {
+                showToast('Hệ thống đang đồng bộ dữ liệu, vui lòng chờ...', 'warning');
+                return;
+            }
+            btnRetryQueue.disabled = true;
+            btnRetryQueue.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang đồng bộ...';
             showToast('Đang thực hiện đồng bộ lại...', 'info');
             document.getElementById('queue-manager-modal').style.display = 'none';
-            
-            processSyncQueue();
-            if (window.processTodoSyncQueue) {
-                window.processTodoSyncQueue();
+
+            try {
+                await processSyncQueue();
+                if (window.processTodoSyncQueue) {
+                    await window.processTodoSyncQueue();
+                }
+            } finally {
+                btnRetryQueue.disabled = false;
+                btnRetryQueue.innerHTML = '<i class="fa-solid fa-rotate"></i> Đồng bộ lại';
             }
         });
     }

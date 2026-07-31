@@ -3254,27 +3254,28 @@ async function processTodoSyncQueue() {
                 console.error("Error during todo queue item sync:", err);
             }
 
-            if (success) {
-                let updatedQueue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
-                if (updatedQueue.length > 0) {
-                    const first = updatedQueue[0];
-                    if (first.clientId === item.clientId) {
-                        updatedQueue.shift();
-                    } else {
-                        updatedQueue = updatedQueue.filter(x => x.clientId !== item.clientId);
-                    }
-                    localStorage.setItem('todo_sync_queue', JSON.stringify(updatedQueue));
+            // ALWAYS remove item from queue after processing attempt (success OR failure)
+            // to enforce strict single-sync guarantee and prevent duplicate writes on retry
+            let updatedQueue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
+            if (updatedQueue.length > 0) {
+                const first = updatedQueue[0];
+                if (first && first.clientId === item.clientId) {
+                    updatedQueue.shift();
+                } else {
+                    updatedQueue = updatedQueue.filter(x => x.clientId !== item.clientId);
                 }
-            } else {
+                localStorage.setItem('todo_sync_queue', JSON.stringify(updatedQueue));
+            }
+
+            if (!success) {
                 const errMsg = (response && response.message) ? response.message : "Lỗi kết nối mạng hoặc server Google Sheets.";
-                showToast(`Đồng bộ thất bại: ${errMsg}`, "error");
-                break;
+                showToast(`Đồng bộ 1 công việc không thành công (${errMsg}). Đã loại khỏi hàng chờ để tránh trùng dữ liệu.`, "warning");
             }
         }
 
         let checkQueue = JSON.parse(localStorage.getItem('todo_sync_queue') || '[]');
         if (checkQueue.length === 0) {
-            showToast("Đồng bộ công việc lên Cloud thành công!", "success");
+            showToast("Đồng bộ công việc lên Cloud hoàn tất!", "success");
             await loadTodoData();
         }
     } catch (e) {
