@@ -5039,37 +5039,73 @@ placeholder="Ví dụ:&#10;Ngày 3-7&#10;50 ôhg x 10&#10;Ngày 4-7&#10;60 ôhg 
 
                 <!-- Image upload area -->
                 <div id="import-image-wrapper" class="form-group" style="display: none;">
-                    <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Tải lên hoặc kéo thả ảnh tin nhắn / hóa đơn</label>
+                    <label style="display: block; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem; color: #475569;">Tải lên hoặc kéo thả / dán (Ctrl+V) nhiều ảnh tin nhắn / hóa đơn cùng lúc</label>
                     <div id="import-image-dropzone" style="border: 2px dashed var(--primary-color); border-radius: 12px; padding: 2rem 1.5rem; text-align: center; background: rgba(59, 130, 246, 0.02); cursor: pointer; transition: all 0.2s; position: relative;">
-                        <input type="file" id="import-image-file" accept="image/*" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
+                        <input type="file" id="import-image-file" accept="image/*" multiple style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;">
                         <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 8px;"></i>
-                        <p style="margin: 0; font-size: 0.85rem; font-weight: 700; color: #475569;" id="import-image-status">Kéo thả ảnh hoặc click để chọn ảnh</p>
-                        <p style="margin: 4px 0 0 0; font-size: 0.75rem; color: #94a3b8;">Hỗ trợ định dạng PNG, JPG, JPEG</p>
+                        <p style="margin: 0; font-size: 0.85rem; font-weight: 700; color: #475569;" id="import-image-status">Kéo thả, chọn nhiều ảnh hoặc bấm Ctrl+V để dán ảnh từ bộ nhớ tạm</p>
+                        <p style="margin: 4px 0 0 0; font-size: 0.75rem; color: #94a3b8;">Hỗ trợ dán nhiều hình ảnh PNG, JPG, JPEG cùng lúc</p>
                     </div>
-                    <!-- Preview of uploaded image -->
-                    <div id="import-image-preview-wrapper" style="display: none; margin-top: 15px; position: relative; text-align: center;">
-                        <img id="import-image-preview" style="max-height: 250px; max-width: 100%; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 4px 10px rgba(0,0,0,0.15);" />
-                        <button type="button" id="btn-remove-import-image" style="position: absolute; top: -10px; right: -10px; background: #ef4444; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: background 0.2s;"><i class="fa-solid fa-xmark" style="font-size: 0.9rem;"></i></button>
+                    <!-- Preview of uploaded images (Multi-image gallery) -->
+                    <div id="import-image-preview-wrapper" style="display: none; margin-top: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span id="import-image-count-title" style="font-size: 0.85rem; font-weight: 700; color: #475569;">Ảnh đã chọn (0):</span>
+                            <button type="button" id="btn-clear-all-images" style="background: none; border: none; color: #ef4444; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                <i class="fa-solid fa-trash-can"></i> Xóa tất cả ảnh
+                            </button>
+                        </div>
+                        <div id="import-image-list" style="display: flex; flex-wrap: wrap; gap: 10px; max-height: 220px; overflow-y: auto; padding: 4px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+                            <!-- Dynamically populated thumbnails -->
+                        </div>
                     </div>
                 </div>
 
+                <!-- Flower Datalist for edit suggestions -->
+                <datalist id="flower-suggestions">
+                    <option value="Ô Hồng"></option>
+                    <option value="Hỷ Trứng"></option>
+                    <option value="Trắng ủ"></option>
+                    <option value="Victor Vàng"></option>
+                    <option value="Lạc Thần"></option>
+                    <option value="Kem"></option>
+                    <option value="Simmo"></option>
+                    <option value="Capu"></option>
+                    <option value="Xô ngoại"></option>
+                    <option value="Xô nội"></option>
+                    <option value="Xô Đỏ"></option>
+                    <option value="Ecuador"></option>
+                    <option value="Pháp"></option>
+                    <option value="Quốc Vương"></option>
+                    <option value="Vàng Hà Lan"></option>
+                    <option value="Vịt"></option>
+                    <option value="Keo"></option>
+                    <option value="Bày"></option>
+                </datalist>
 
                 <!-- Parse Action -->
-                <div style="display: flex; justify-content: flex-start;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
                     <button type="button" id="btn-parse-import" class="btn-primary" style="padding: 10px 18px; border-radius: 8px; background: linear-gradient(135deg, var(--primary-color) 0%, #1d4ed8 100%); color: white; font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);">
                         <i class="fa-solid fa-wand-magic-sparkles"></i> Phân Tích Dữ Liệu
+                    </button>
+                    <button type="button" id="btn-add-import-row-top" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; border-radius: 8px; padding: 8px 14px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                        <i class="fa-solid fa-plus"></i> Thêm Dòng Thủ Công
                     </button>
                 </div>
 
                 <!-- Preview Area -->
                 <div id="import-preview-container" style="display: none; border-top: 1px solid #e2e8f0; padding-top: 1rem;">
-                    <h4 style="margin: 0 0 10px 0; color: #1e293b; font-size: 0.95rem; font-weight: 800;">📋 Kết quả phân tích (<span id="import-count">0</span> dòng)</h4>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h4 style="margin: 0; color: #1e293b; font-size: 0.95rem; font-weight: 800;">📋 Kết quả phân tích (<span id="import-count">0</span> dòng)</h4>
+                        <button type="button" id="btn-add-import-row" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; border-radius: 6px; padding: 5px 12px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
+                            <i class="fa-solid fa-plus"></i> Thêm Dòng
+                        </button>
+                    </div>
                     <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
                         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;" id="import-preview-table">
                             <thead>
                                 <tr style="background: #f1f5f9; border-bottom: 1px solid #cbd5e1; font-weight: 700; color: #475569;">
                                     <th style="padding: 8px 8px; width: 135px;">Ngày</th>
-                                    <th style="padding: 8px 10px; min-width: 90px; max-width: 140px;">Loại Hoa</th>
+                                    <th style="padding: 8px 10px; min-width: 110px; max-width: 150px;">Loại Hoa</th>
                                     <th style="padding: 8px 6px; text-align: right; width: 90px;">SL</th>
                                     <th style="padding: 8px 6px; text-align: right; width: 105px;">Đơn Giá</th>
                                     <th style="padding: 8px 10px; text-align: right; width: 105px;">Thành Tiền</th>

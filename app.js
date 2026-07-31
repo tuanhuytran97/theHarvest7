@@ -9342,7 +9342,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const accumulatedDebt = oldDebt + periodTotal - periodPaid;
         const buyerName = currentSelectedBuyer.name;
-        const divider = `----------------------------------------`;
+        const divider = `--------------------------`;
 
         let textResult = `${buyerName}\n${divider}\n`;
 
@@ -10503,14 +10503,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- QUICK IMPORT MULTIPLE DAYS LOGIC ---
     let parsedImportRows = [];
     let activeImportTab = 'text'; // 'text' or 'image'
-    let uploadedImageBase64 = null;
-    let uploadedImageMimeType = null;
+    let uploadedImages = []; // Array of { id, base64Data, mimeType, name, previewUrl }
 
     const importTextBtn = document.getElementById('import-text-btn');
     const importTextModal = document.getElementById('import-text-modal');
     const closeImportBtn = document.getElementById('close-import-modal-btn');
     const closeImportBtn2 = document.getElementById('close-import-modal-btn2');
     const btnParseImport = document.getElementById('btn-parse-import');
+    const btnAddImportRowTop = document.getElementById('btn-add-import-row-top');
+    const btnAddImportRow = document.getElementById('btn-add-import-row');
     const btnSaveImport = document.getElementById('btn-save-import');
     const importTextArea = document.getElementById('import-text-area');
     const modalImportBuyer = document.getElementById('modal-import-buyer');
@@ -10530,8 +10531,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const importImageDropzone = document.getElementById('import-image-dropzone');
     const importImageStatus = document.getElementById('import-image-status');
     const importImagePreviewWrapper = document.getElementById('import-image-preview-wrapper');
-    const importImagePreview = document.getElementById('import-image-preview');
-    const btnRemoveImportImage = document.getElementById('btn-remove-import-image');
+    const importImageList = document.getElementById('import-image-list');
+    const importImageCountTitle = document.getElementById('import-image-count-title');
+    const btnClearAllImages = document.getElementById('btn-clear-all-images');
 
     if (tabImportText && tabImportImage && importTextWrapper && importImageWrapper) {
         tabImportText.addEventListener('click', () => {
@@ -10555,33 +10557,89 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    const handleImageFile = (file) => {
-        if (!file || !file.type.startsWith('image/')) {
-            alert('Vui lòng chọn tệp hình ảnh hợp lệ!');
+    const handleMultipleImageFiles = (files) => {
+        if (!files || files.length === 0) return;
+        const validFiles = Array.from(files).filter(file => file && file.type && file.type.startsWith('image/'));
+        if (validFiles.length === 0) {
+            alert('Vui lòng chọn hoặc dán tệp hình ảnh hợp lệ!');
             return;
         }
-        uploadedImageMimeType = file.type;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const base64Url = e.target.result;
-            uploadedImageBase64 = base64Url.split(',')[1];
-            if (importImagePreview) {
-                importImagePreview.src = base64Url;
-            }
-            if (importImagePreviewWrapper) {
-                importImagePreviewWrapper.style.display = 'block';
-            }
-            if (importImageStatus) {
-                importImageStatus.innerText = `Đã chọn: ${file.name}`;
-            }
-        };
-        reader.readAsDataURL(file);
+
+        let loadedCount = 0;
+        validFiles.forEach((file) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64Url = e.target.result;
+                const base64Data = base64Url.split(',')[1];
+                uploadedImages.push({
+                    id: Date.now() + "_" + Math.random().toString(36).substr(2, 9),
+                    name: file.name || `Ảnh ${uploadedImages.length + 1}`,
+                    mimeType: file.type || 'image/png',
+                    base64Data: base64Data,
+                    previewUrl: base64Url
+                });
+                loadedCount++;
+                if (loadedCount === validFiles.length) {
+                    renderUploadedImagesPreview();
+                }
+            };
+            reader.readAsDataURL(file);
+        });
     };
+
+    const renderUploadedImagesPreview = () => {
+        if (!importImagePreviewWrapper || !importImageList || !importImageCountTitle) return;
+
+        if (uploadedImages.length === 0) {
+            importImagePreviewWrapper.style.display = 'none';
+            importImageList.innerHTML = '';
+            if (importImageStatus) {
+                importImageStatus.innerText = 'Kéo thả, chọn nhiều ảnh hoặc bấm Ctrl+V để dán ảnh từ bộ nhớ tạm';
+            }
+            return;
+        }
+
+        importImagePreviewWrapper.style.display = 'block';
+        if (importImageStatus) {
+            importImageStatus.innerText = `Đã chọn ${uploadedImages.length} hình ảnh`;
+        }
+        importImageCountTitle.innerText = `Ảnh đã chọn (${uploadedImages.length}):`;
+
+        importImageList.innerHTML = '';
+        uploadedImages.forEach((imgObj) => {
+            const card = document.createElement('div');
+            card.style.cssText = 'position: relative; width: 85px; height: 85px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1; box-shadow: 0 2px 6px rgba(0,0,0,0.1); background: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0;';
+            card.innerHTML = `
+                <img src="${imgObj.previewUrl}" style="width: 100%; height: 100%; object-fit: cover;" title="${imgObj.name}" />
+                <button type="button" class="btn-remove-single-image" data-id="${imgObj.id}" style="position: absolute; top: 3px; right: 3px; background: rgba(239, 68, 68, 0.9); color: white; border: none; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s;" title="Xóa ảnh này">
+                    <i class="fa-solid fa-xmark" style="font-size: 0.75rem;"></i>
+                </button>
+            `;
+            importImageList.appendChild(card);
+        });
+
+        importImageList.querySelectorAll('.btn-remove-single-image').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const idToRemove = btn.getAttribute('data-id');
+                uploadedImages = uploadedImages.filter(img => img.id !== idToRemove);
+                renderUploadedImagesPreview();
+            });
+        });
+    };
+
+    if (btnClearAllImages) {
+        btnClearAllImages.addEventListener('click', () => {
+            uploadedImages = [];
+            if (importImageFile) importImageFile.value = '';
+            renderUploadedImagesPreview();
+        });
+    }
 
     if (importImageFile) {
         importImageFile.addEventListener('change', (e) => {
-            if (e.target.files && e.target.files[0]) {
-                handleImageFile(e.target.files[0]);
+            if (e.target.files && e.target.files.length > 0) {
+                handleMultipleImageFiles(e.target.files);
             }
         });
     }
@@ -10602,39 +10660,31 @@ document.addEventListener("DOMContentLoaded", () => {
         importImageDropzone.addEventListener('drop', (e) => {
             const dt = e.dataTransfer;
             const files = dt.files;
-            if (files && files[0]) {
-                handleImageFile(files[0]);
+            if (files && files.length > 0) {
+                handleMultipleImageFiles(files);
             }
         }, false);
     }
 
-    // Clipboard Paste Listener for screenshots (Win + Shift + S -> Ctrl + V)
+    // Clipboard Paste Listener for multiple screenshots/images (Ctrl + V)
     document.addEventListener('paste', (e) => {
         if (importTextModal && importTextModal.style.display === 'flex' && activeImportTab === 'image') {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            const pastedFiles = [];
             for (let i = 0; i < items.length; i++) {
                 const item = items[i];
                 if (item.kind === 'file' && item.type.startsWith('image/')) {
                     const blob = item.getAsFile();
-                    const file = new File([blob], `Screenshot_${new Date().toISOString().replace(/[:.]/g, '-')}.png`, { type: blob.type });
-                    handleImageFile(file);
-                    e.preventDefault();
-                    break;
+                    const file = new File([blob], `Screenshot_${new Date().toISOString().replace(/[:.]/g, '-')}_${i}.png`, { type: blob.type });
+                    pastedFiles.push(file);
                 }
+            }
+            if (pastedFiles.length > 0) {
+                handleMultipleImageFiles(pastedFiles);
+                e.preventDefault();
             }
         }
     });
-
-    if (btnRemoveImportImage) {
-        btnRemoveImportImage.addEventListener('click', () => {
-            if (importImageFile) importImageFile.value = '';
-            if (importImagePreview) importImagePreview.src = '';
-            if (importImagePreviewWrapper) importImagePreviewWrapper.style.display = 'none';
-            if (importImageStatus) importImageStatus.innerText = 'Kéo thả ảnh hoặc click để chọn ảnh';
-            uploadedImageBase64 = null;
-            uploadedImageMimeType = null;
-        });
-    }
 
     if (importTextBtn && importTextModal) {
         importTextBtn.addEventListener('click', () => {
@@ -10656,7 +10706,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (importPreviewContainer) importPreviewContainer.style.display = 'none';
         if (importPreviewBody) importPreviewBody.innerHTML = '';
         if (btnSaveImport) btnSaveImport.disabled = true;
-        if (btnRemoveImportImage) btnRemoveImportImage.click();
+        if (importImageFile) importImageFile.value = '';
+        uploadedImages = [];
+        renderUploadedImagesPreview();
         
         // Reset to text tab by default
         if (tabImportText) tabImportText.click();
@@ -10667,6 +10719,28 @@ document.addEventListener("DOMContentLoaded", () => {
     if (closeImportBtn) closeImportBtn.addEventListener('click', closeImportModal);
     if (closeImportBtn2) closeImportBtn2.addEventListener('click', closeImportModal);
 
+    const handleAddImportRow = () => {
+        let lastDate = new Date();
+        if (parsedImportRows.length > 0) {
+            lastDate = new Date(parsedImportRows[parsedImportRows.length - 1].date);
+        }
+        parsedImportRows.push({
+            date: lastDate,
+            type: "Bông",
+            qty: 100,
+            price: "",
+            total: ""
+        });
+        renderImportPreview();
+    };
+
+    if (btnAddImportRow) {
+        btnAddImportRow.addEventListener('click', handleAddImportRow);
+    }
+    if (btnAddImportRowTop) {
+        btnAddImportRowTop.addEventListener('click', handleAddImportRow);
+    }
+
     if (btnParseImport) {
         btnParseImport.addEventListener('click', async () => {
             if (activeImportTab === 'text') {
@@ -10675,21 +10749,34 @@ document.addEventListener("DOMContentLoaded", () => {
                     alert('Vui lòng nhập nội dung tin nhắn cần phân tích!');
                     return;
                 }
-                parsedImportRows = parseImportText(text);
+                const newRows = parseImportText(text);
+                parsedImportRows = [...parsedImportRows, ...newRows];
                 renderImportPreview();
             } else {
-                if (!uploadedImageBase64) {
-                    alert('Vui lòng kéo thả hoặc chọn một hình ảnh tin nhắn / hóa đơn trước!');
+                if (uploadedImages.length === 0) {
+                    alert('Vui lòng kéo thả, chọn hoặc dán (Ctrl+V) ít nhất một hình ảnh tin nhắn / hóa đơn trước!');
                     return;
                 }
 
                 const originalBtnText = btnParseImport.innerHTML;
                 btnParseImport.disabled = true;
-                btnParseImport.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích bằng Gemini AI...';
 
+                let allRowsExtracted = [];
                 try {
-                    parsedImportRows = await parseImportImageWithAI(uploadedImageBase64, uploadedImageMimeType);
-                    renderImportPreview();
+                    for (let i = 0; i < uploadedImages.length; i++) {
+                        btnParseImport.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích ảnh ${i + 1}/${uploadedImages.length} bằng Gemini AI...`;
+                        const img = uploadedImages[i];
+                        const rows = await parseImportImageWithAI(img.base64Data, img.mimeType);
+                        if (Array.isArray(rows)) {
+                            allRowsExtracted.push(...rows);
+                        }
+                    }
+                    if (allRowsExtracted.length === 0) {
+                        alert('Không nhận diện được dữ liệu từ các hình ảnh đã chọn!');
+                    } else {
+                        parsedImportRows = [...parsedImportRows, ...allRowsExtracted];
+                        renderImportPreview();
+                    }
                 } catch (err) {
                     console.error("Gemini AI OCR error:", err);
                     alert("Lỗi khi phân tích hình ảnh bằng AI: " + err.message);
@@ -10987,16 +11074,20 @@ Quy tắc:
         if (!importPreviewBody || !importPreviewContainer || !btnSaveImport || !importCountSpan) return;
 
         importPreviewBody.innerHTML = '';
+        importPreviewContainer.style.display = 'block';
+        importCountSpan.innerText = parsedImportRows.length;
+        btnSaveImport.disabled = parsedImportRows.length === 0;
+
         if (parsedImportRows.length === 0) {
-            importPreviewContainer.style.display = 'none';
-            btnSaveImport.disabled = true;
-            alert('Không tìm thấy dữ liệu phù hợp. Vui lòng kiểm tra lại!');
+            const emptyTr = document.createElement('tr');
+            emptyTr.innerHTML = `
+                <td colspan="6" style="padding: 2rem; text-align: center; color: #94a3b8; font-weight: 600;">
+                    Chưa có dòng dữ liệu nào. Bấm nút "Thêm Dòng Thủ Công" ở trên để thêm dòng mới.
+                </td>
+            `;
+            importPreviewBody.appendChild(emptyTr);
             return;
         }
-
-        importPreviewContainer.style.display = 'block';
-        btnSaveImport.disabled = false;
-        importCountSpan.innerText = parsedImportRows.length;
 
         parsedImportRows.forEach((row, idx) => {
             const tr = document.createElement('tr');
@@ -11005,7 +11096,9 @@ Quy tắc:
                 <td style="padding: 6px 6px; width: 135px;">
                     <input type="date" class="import-row-date-input input-modern" data-idx="${idx}" value="${formatDateInput(row.date)}" style="padding: 6px 6px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; width: 100%; max-width: 135px; box-sizing: border-box;" />
                 </td>
-                <td style="padding: 8px 10px; font-weight: 600; min-width: 90px; max-width: 140px; word-break: break-word; white-space: normal; line-height: 1.35;" class="import-flower-type-cell">${row.type}</td>
+                <td style="padding: 6px 6px; min-width: 110px; max-width: 150px;">
+                    <input type="text" class="import-row-type-input input-modern" data-idx="${idx}" value="${row.type || 'Bông'}" list="flower-suggestions" placeholder="Tên loại hoa" style="padding: 6px 6px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; width: 100%; box-sizing: border-box;" />
+                </td>
                 <td style="padding: 6px 6px; text-align: right; width: 90px;">
                     <input type="number" class="import-row-qty-input input-modern" data-idx="${idx}" value="${row.qty}" style="padding: 6px 6px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.85rem; color: #334155; outline: none; background: white; width: 100%; min-width: 75px; text-align: right; box-sizing: border-box;" min="0" step="any" />
                 </td>
@@ -11014,7 +11107,7 @@ Quy tắc:
                 </td>
                 <td style="padding: 8px 10px; text-align: right; font-weight: 700; color: var(--secondary-color); white-space: nowrap; width: 105px;" class="import-row-total-cell">${row.total !== undefined && row.total !== null && row.total !== '' ? formatCurrency(row.total) : ''}</td>
                 <td style="padding: 8px 6px; text-align: center; width: 50px;">
-                    <button type="button" class="action-btn delete-import-row" data-idx="${idx}" style="color: var(--danger); background: none; border: none; cursor: pointer;">
+                    <button type="button" class="action-btn delete-import-row" data-idx="${idx}" style="color: var(--danger); background: none; border: none; cursor: pointer;" title="Xóa dòng này">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </td>
@@ -11080,6 +11173,13 @@ Quy tắc:
                     const dy = parseInt(parts[2]);
                     parsedImportRows[idx].date = new Date(yr, mo - 1, dy);
                 }
+            });
+        });
+
+        importPreviewBody.querySelectorAll('.import-row-type-input').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const idx = parseInt(input.getAttribute('data-idx'));
+                parsedImportRows[idx].type = e.target.value.trim() || 'Bông';
             });
         });
 
