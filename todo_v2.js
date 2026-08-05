@@ -315,6 +315,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Custom Multi-Select Category Trigger logic in modal
+    const modalCategoryContainer = document.getElementById('task-category-multiselect');
+    if (modalCategoryContainer) {
+        const trigger = modalCategoryContainer.querySelector('.multiselect-trigger');
+        const dropdown = modalCategoryContainer.querySelector('.multiselect-dropdown');
+        if (trigger && dropdown) {
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = dropdown.style.display === 'block';
+                dropdown.style.display = isOpen ? 'none' : 'block';
+            });
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#task-category-multiselect')) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        }
+    }
+
+    // Attach change event listener to all category checkboxes
+    document.querySelectorAll('.category-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => {
+            updateCategoryLabel();
+            toggleStickerFieldVisibility();
+            autoFillTaskNamePrefix();
+            autoFillStickersSuffix();
+        });
+    });
+
     // Custom Multi-Select Sticker Trigger logic in modal
     const modalStickerContainer = document.getElementById('task-sticker-multiselect');
     if (modalStickerContainer) {
@@ -1633,7 +1662,7 @@ function resetModal() {
     if (startDateInput) startDateInput.value = todayStr;
     toggleMultidayFields();
 
-    document.getElementById('task-category').value = "Farm";
+    setTaskCategory("Farm");
     document.getElementById('task-note').value = "";
     document.getElementById('task-priority').value = "Cao";
     document.getElementById('task-status').value = "Chưa bắt đầu";
@@ -1804,7 +1833,7 @@ window.editTask = function (id) {
         }
     }
     toggleMultidayFields();
-    document.getElementById('task-category').value = t.category || "Farm";
+    setTaskCategory(t.category || "Farm");
     document.getElementById('task-note').value = t.note || "";
     document.getElementById('task-priority').value = t.priority || "Trung bình";
     document.getElementById('task-status').value = t.status || "Chưa bắt đầu";
@@ -1939,7 +1968,7 @@ async function saveTask() {
     const isNewTask = !id;
     let task = document.getElementById('task-name').value.trim();
     const deadline = document.getElementById('task-deadline').value;
-    let category = document.getElementById('task-category').value.trim();
+    let category = getSelectedTaskCategory();
     const note = document.getElementById('task-note').value.trim();
     const priority = document.getElementById('task-priority').value;
     const status = document.getElementById('task-status').value;
@@ -1972,8 +2001,7 @@ async function saveTask() {
         }
 
         category = "Farm";
-        const catSelect = document.getElementById('task-category');
-        if (catSelect) catSelect.value = "Farm";
+        setTaskCategory("Farm");
 
         // Auto check sticker "Thợ"
         document.querySelectorAll('.sticker-checkbox').forEach(cb => {
@@ -2017,8 +2045,7 @@ async function saveTask() {
         }
 
         category = "Farm";
-        const catSelect = document.getElementById('task-category');
-        if (catSelect) catSelect.value = "Farm";
+        setTaskCategory("Farm");
 
         document.querySelectorAll('.sticker-checkbox').forEach(cb => {
             if (cb.value === "Thợ") cb.checked = true;
@@ -2477,12 +2504,46 @@ function getStickerEmoji(sticker) {
     }
 }
 
+function getSelectedTaskCategory() {
+    const checked = document.querySelectorAll('.category-checkbox:checked');
+    if (checked.length === 0) return "Farm";
+    return Array.from(checked).map(cb => cb.value).join(', ');
+}
+
+function setTaskCategory(catStr) {
+    const cats = (catStr || "Farm").split(',').map(s => s.trim()).filter(Boolean);
+    document.querySelectorAll('.category-checkbox').forEach(cb => {
+        cb.checked = cats.includes(cb.value);
+    });
+    // If none matched, fallback to checking Farm
+    if (document.querySelectorAll('.category-checkbox:checked').length === 0) {
+        const farmCb = Array.from(document.querySelectorAll('.category-checkbox')).find(cb => cb.value === "Farm");
+        if (farmCb) farmCb.checked = true;
+    }
+    updateCategoryLabel();
+}
+
+function updateCategoryLabel() {
+    const selectedCheckboxes = document.querySelectorAll('.category-checkbox:checked');
+    const label = document.getElementById('task-category-label');
+    if (label) {
+        if (selectedCheckboxes.length === 0) {
+            label.innerText = 'Chọn phân loại...';
+            label.style.color = '#64748b';
+        } else {
+            const texts = Array.from(selectedCheckboxes).map(cb => cb.value);
+            label.innerText = texts.join(', ');
+            label.style.color = '#1e293b';
+        }
+    }
+}
+
 function toggleAdvanceMoneyContainerVisibility() {
-    const category = document.getElementById('task-category')?.value || "";
+    const category = getSelectedTaskCategory();
     const advanceContainer = document.getElementById('advance-money-container');
     const leaveContainer = document.getElementById('leave-days-container');
 
-    const isFarmCategory = category.startsWith("Farm") || category === "Farm I" || category === "Farm II";
+    const isFarmCategory = category.includes("Farm") || category.includes("Farm I") || category.includes("Farm II");
     
     // Check if sticker "Thợ" is checked
     const selectedCheckboxes = document.querySelectorAll('.sticker-checkbox:checked');
@@ -2514,11 +2575,12 @@ function toggleAdvanceMoneyContainerVisibility() {
 }
 
 function toggleStickerFieldVisibility() {
-    const category = document.getElementById('task-category')?.value;
+    const category = getSelectedTaskCategory();
     const stickerWrapper = document.getElementById('task-sticker-wrapper');
     if (!stickerWrapper) return;
 
-    const isFarmCategory = category === "Farm" || category === "Farm I" || category === "Farm II";
+    const cats = category.split(',').map(s => s.trim());
+    const isFarmCategory = cats.some(c => c === "Farm" || c === "Farm I" || c === "Farm II");
     if (isFarmCategory) {
         stickerWrapper.style.display = "grid";
     } else {
@@ -2530,29 +2592,32 @@ function toggleStickerFieldVisibility() {
 }
 
 function autoFillTaskNamePrefix() {
-    const category = document.getElementById('task-category')?.value;
+    const category = getSelectedTaskCategory();
+    const cats = category.split(',').map(s => s.trim());
     const taskNameInput = document.getElementById('task-name');
     if (!taskNameInput) return;
 
     let val = taskNameInput.value;
-    if (category === "Farm I") {
-        if (val.startsWith("Vườn II - ")) {
-            taskNameInput.value = "Vườn I - " + val.substring("Vườn II - ".length);
-        } else if (!val.startsWith("Vườn I - ")) {
-            taskNameInput.value = "Vườn I - " + val;
+    const hasFarm1 = cats.includes("Farm I");
+    const hasFarm2 = cats.includes("Farm II");
+
+    const prefixes = ["Vườn I & Vườn II - ", "Vườn I & II - ", "Vườn I - ", "Vườn II - "];
+    let stripped = val;
+    for (const p of prefixes) {
+        if (stripped.startsWith(p)) {
+            stripped = stripped.substring(p.length);
+            break;
         }
-    } else if (category === "Farm II") {
-        if (val.startsWith("Vườn I - ")) {
-            taskNameInput.value = "Vườn II - " + val.substring("Vườn I - ".length);
-        } else if (!val.startsWith("Vườn II - ")) {
-            taskNameInput.value = "Vườn II - " + val;
-        }
+    }
+
+    if (hasFarm1 && hasFarm2) {
+        taskNameInput.value = "Vườn I & II - " + stripped;
+    } else if (hasFarm1) {
+        taskNameInput.value = "Vườn I - " + stripped;
+    } else if (hasFarm2) {
+        taskNameInput.value = "Vườn II - " + stripped;
     } else {
-        if (val.startsWith("Vườn I - ")) {
-            taskNameInput.value = val.substring("Vườn I - ".length);
-        } else if (val.startsWith("Vườn II - ")) {
-            taskNameInput.value = val.substring("Vườn II - ".length);
-        }
+        taskNameInput.value = stripped;
     }
 }
 
