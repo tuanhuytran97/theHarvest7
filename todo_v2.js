@@ -2601,14 +2601,8 @@ function autoFillTaskNamePrefix() {
     const hasFarm1 = cats.includes("Farm I");
     const hasFarm2 = cats.includes("Farm II");
 
-    const prefixes = ["Vườn I & Vườn II - ", "Vườn I & II - ", "Vườn I - ", "Vườn II - "];
-    let stripped = val;
-    for (const p of prefixes) {
-        if (stripped.startsWith(p)) {
-            stripped = stripped.substring(p.length);
-            break;
-        }
-    }
+    // Clean all existing garden prefixes (handles duplicates, variations, hyphens/dashes, extra spaces)
+    let stripped = val.trimStart().replace(/^(Vườn\s*(I\s*&\s*Vườn\s*II|I\s*&\s*II|I|II|1\s*&\s*2|1|2)\s*[\-\–\—]\s*)+/gi, '').trimStart();
 
     if (hasFarm1 && hasFarm2) {
         taskNameInput.value = "Vườn I & II - " + stripped;
