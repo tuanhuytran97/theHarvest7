@@ -1511,10 +1511,46 @@
             <!-- VIEW 1: DATA MANAGEMENT -->
             <div id="view-data" class="app-view">
 
-                <!-- CASH STATUS BAR moved to cashflow tab -->
+                <!-- CASH STATUS BAR — Full width in Data Entry tab -->
+                <div class="cash-status-bar-container" style="width: 100%; margin: 0 0 1.25rem 0;">
+                    <div class="cash-card-premium">
+                        <!-- Left: Current Balance -->
+                        <div class="cash-info-group">
+                            <div class="cash-icon-wrapper">
+                                <i class="fa-solid fa-wallet"></i>
+                            </div>
+                            <div class="cash-labels">
+                                <span class="cash-label">TỒN QUỸ TIỀN MẶT</span>
+                                <h2 class="cash-value" style="cursor:pointer;" onclick="document.querySelector('[data-view=\'cashflow\']')?.click()" id="entry-kpi-cash-hand">0 ₫</h2>
+                            </div>
+                        </div>
 
+                        <!-- Middle: Breakdown -->
+                        <div class="cash-breakdown">
+                            <div class="cash-break-row">
+                                <span id="entry-cash-opening-label" class="cash-break-label">💰 Đầu tháng:</span>
+                                <span id="entry-cash-opening" class="cash-break-val" style="color:#94a3b8;">0 ₫</span>
+                            </div>
+                            <div class="cash-break-row">
+                                <span class="cash-break-label">⬆ Đã thu:</span>
+                                <span id="entry-cash-in-total" class="cash-break-val" style="color:#10b981;">0 ₫</span>
+                            </div>
+                            <div class="cash-break-row">
+                                <span class="cash-break-label">⬇ Đã chi:</span>
+                                <span id="entry-cash-out-total" class="cash-break-val" style="color:#ef4444;">0 ₫</span>
+                            </div>
+                            <div class="cash-break-row">
+                                <span class="cash-break-label">↕ Chênh lệch:</span>
+                                <span id="entry-cash-diff-total" class="cash-break-val" style="color:#10b981;">0 ₫</span>
+                            </div>
+                        </div>
 
-
+                        <!-- Right: info note -->
+                        <div class="cash-actions" style="font-size: 0.8rem; color: #94a3b8; font-style: italic; align-self: center;">
+                            <i class="fa-solid fa-circle-info" style="margin-right: 4px;"></i> Số liệu tháng hiện tại
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Data Entry Section -->
                 <section class="card entry-card glassmorphism">

@@ -8145,6 +8145,34 @@ document.addEventListener("DOMContentLoaded", () => {
         // Show/hide admin buttons
         const adminActions = document.getElementById('cash-admin-actions');
         if (adminActions) adminActions.style.display = getRole() === 'ADMIN' ? 'flex' : 'none';
+
+        // ── Sync mini cash bar in Data Entry tab ──────────────────────────────
+        const entryCashEl = document.getElementById('entry-kpi-cash-hand');
+        const entryOpenEl = document.getElementById('entry-cash-opening');
+        const entryInEl   = document.getElementById('entry-cash-in-total');
+        const entryOutEl  = document.getElementById('entry-cash-out-total');
+        const entryDiffEl = document.getElementById('entry-cash-diff-total');
+
+        if (entryCashEl) {
+            entryCashEl.innerText = formatCurrency(currentCash);
+            entryCashEl.style.color = currentCash >= 0 ? '#10b981' : '#ef4444';
+        }
+        if (entryOpenEl) entryOpenEl.innerText = formatCurrency(openingBalance);
+        if (entryInEl)   entryInEl.innerText   = formatCurrency(cashIn);
+        if (entryOutEl)  entryOutEl.innerText  = formatCurrency(cashOut);
+        if (entryDiffEl) {
+            const cashDiff2 = cashIn - cashOut + adjTotal;
+            if (cashDiff2 > 0) {
+                entryDiffEl.innerText = '+' + formatCurrency(cashDiff2);
+                entryDiffEl.style.color = '#10b981';
+            } else if (cashDiff2 < 0) {
+                entryDiffEl.innerText = formatCurrency(cashDiff2);
+                entryDiffEl.style.color = '#ef4444';
+            } else {
+                entryDiffEl.innerText = '0 ₫';
+                entryDiffEl.style.color = '#94a3b8';
+            }
+        }
     }
 
     // Modal Opening Balance removed per user request.
