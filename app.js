@@ -9139,14 +9139,20 @@ document.addEventListener("DOMContentLoaded", () => {
         const fromTs = parseDateInputToTs(fromVal);
         const toTs = toVal ? parseDateInputToTs(toVal) + 86399999 : null; // end of day
 
-        // Lọc giao dịch theo khoảng ngày
+        // Lọc giao dịch theo khoảng ngày và checkbox được chọn (nếu có)
         const allTx = currentSelectedBuyer.transactions;
-        const filteredTx = allTx.filter(t => {
+        let filteredTx = allTx.filter(t => {
             const ts = t.rawDate;
             if (fromTs !== null && ts < fromTs) return false;
             if (toTs !== null && ts > toTs) return false;
             return true;
         });
+
+        const checkedBoxes = Array.from(document.querySelectorAll('.tx-select-checkbox:checked'));
+        if (checkedBoxes.length > 0) {
+            const checkedKeys = checkedBoxes.map(cb => cb.getAttribute('data-txkey'));
+            filteredTx = filteredTx.filter(t => checkedKeys.includes(t.key));
+        }
 
         // Tính toán nợ cũ mang sang (các giao dịch diễn ra trước khoảng ngày lọc)
         let oldDebt = 0;
@@ -9344,12 +9350,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const toTs = toVal ? parseDateInputToTs(toVal) + 86399999 : null;
 
         const allTx = currentSelectedBuyer.transactions || [];
-        const filteredTx = allTx.filter(t => {
+        let filteredTx = allTx.filter(t => {
             const ts = t.rawDate;
             if (fromTs !== null && ts < fromTs) return false;
             if (toTs !== null && ts > toTs) return false;
             return true;
         });
+
+        // Kiểm tra xem có checkbox ngày nào đang được chọn không (select box chọn từng ngày / nhiều ngày)
+        const checkedBoxes = Array.from(document.querySelectorAll('.tx-select-checkbox:checked'));
+        if (checkedBoxes.length > 0) {
+            const checkedKeys = checkedBoxes.map(cb => cb.getAttribute('data-txkey'));
+            filteredTx = filteredTx.filter(t => checkedKeys.includes(t.key));
+        }
 
         let oldDebt = 0;
         if (fromTs !== null) {
@@ -9451,7 +9464,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (descEl) {
             const safeName = String(currentSelectedBuyer.name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            descEl.innerHTML = `Dưới đây là chi tiết toa hàng / nợ phải thu của khách hàng <b>${safeName}</b>, bạn có thể bấm <b>Sao chép</b> để gửi qua Zalo, Messenger hoặc SMS:`;
+            const checkedBoxes = Array.from(document.querySelectorAll('.tx-select-checkbox:checked'));
+            if (checkedBoxes.length > 0) {
+                descEl.innerHTML = `Dưới đây là chi tiết toa hàng / nợ phải thu của khách hàng <b>${safeName}</b> cho <b>${checkedBoxes.length} ngày đã chọn</b>, bạn có thể bấm <b>Sao chép</b> để gửi qua Zalo, Messenger hoặc SMS:`;
+            } else {
+                descEl.innerHTML = `Dưới đây là chi tiết toa hàng / nợ phải thu của khách hàng <b>${safeName}</b>, bạn có thể bấm <b>Sao chép</b> để gửi qua Zalo, Messenger hoặc SMS:`;
+            }
         }
 
         const contentTextarea = document.getElementById('export-text-content');
