@@ -2548,6 +2548,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const menuCashFlow = document.getElementById('menu-cashflow'); // NEW
     const menuFinancial = document.getElementById('menu-financial');
     const menuInvestment = document.getElementById('menu-investment');
+    const menuMultiYear = document.getElementById('menu-multiyear');
     const menuFormulas = document.getElementById('menu-formulas'); // NEW
     const menuBooks = document.getElementById('menu-books');
     const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
@@ -2559,6 +2560,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const viewCashFlow = document.getElementById('view-cashflow'); // NEW
     const viewFinancial = document.getElementById('view-financial');
     const viewInvestment = document.getElementById('view-investment');
+    const viewMultiYear = document.getElementById('view-multiyear');
     const viewFormulas = document.getElementById('view-formulas'); // NEW
     const viewBooks = document.getElementById('view-books');
 
@@ -2570,6 +2572,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (menuCashFlow) menuCashFlow.classList.remove('active');
         if (menuFinancial) menuFinancial.classList.remove('active');
         if (menuInvestment) menuInvestment.classList.remove('active');
+        if (menuMultiYear) menuMultiYear.classList.remove('active');
         if (menuFormulas) menuFormulas.classList.remove('active');
         if (menuBooks) menuBooks.classList.remove('active');
 
@@ -2582,6 +2585,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (viewCashFlow) viewCashFlow.style.display = 'none';
         if (viewFinancial) viewFinancial.style.display = 'none';
         if (viewInvestment) viewInvestment.style.display = 'none';
+        if (viewMultiYear) viewMultiYear.style.display = 'none';
         if (viewFormulas) viewFormulas.style.display = 'none';
         if (viewBooks) viewBooks.style.display = 'none';
     }
@@ -2642,6 +2646,11 @@ document.addEventListener("DOMContentLoaded", () => {
             syncMobileNav('investment');
             if (viewInvestment) viewInvestment.style.display = 'block';
             if (typeof fetchInvestmentData === 'function') fetchInvestmentData();
+        } else if (viewId === 'multiyear') {
+            if (menuMultiYear) menuMultiYear.classList.add('active');
+            syncMobileNav('multiyear');
+            if (viewMultiYear) viewMultiYear.style.display = 'block';
+            if (typeof initMultiYearPlanner === 'function') initMultiYearPlanner();
         } else if (viewId === 'formulas') {
             if (menuFormulas) menuFormulas.classList.add('active');
             syncMobileNav('formulas');
@@ -2702,6 +2711,13 @@ document.addEventListener("DOMContentLoaded", () => {
         menuFinancial.addEventListener('click', (e) => {
             e.preventDefault();
             switchView('financial');
+        });
+    }
+
+    if (menuMultiYear) {
+        menuMultiYear.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchView('multiyear');
         });
     }
 
@@ -4154,6 +4170,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let totalQty = 0, totalRevenue = 0, totalExpense = 0;
         let prevQty = 0, prevRevenue = 0, prevExpense = 0;
         let prevQtyToDate = 0, prevRevenueToDate = 0, prevExpenseToDate = 0;
+        let prevSalaryFull = 0, prevSalaryToDate = 0;
 
         const statement = {
             revFarm: 0, revCompany: 0, revVua: 0,
@@ -4292,10 +4309,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             } else if (isPrev) {
                 prevQty += q; prevRevenue += rev; prevExpense += exp;
+                const loaiCPLow = loaiCP.toLowerCase();
+                const isSalary = (loaiCPLow === "công" || loaiCPLow === "cong");
+                if (isSalary) prevSalaryFull += chiPhi;
+
                 if (checkIsBeforeOrOnRelativeDay(d, selectedYear, selectedMonth, rangeVal)) {
                     prevQtyToDate += q;
                     prevRevenueToDate += rev;
                     prevExpenseToDate += exp;
+                    if (isSalary) prevSalaryToDate += chiPhi;
                 }
             }
         });
@@ -4452,7 +4474,10 @@ document.addEventListener("DOMContentLoaded", () => {
             prevQtyToDate: prevQtyToDate,
             prevRevenueToDate: prevRevenueToDate,
             prevExpenseToDate: prevExpenseToDate,
-            prevAvgPriceToDate: prevQtyToDate > 0 ? prevRevenueToDate / prevQtyToDate : 0
+            prevAvgPriceToDate: prevQtyToDate > 0 ? prevRevenueToDate / prevQtyToDate : 0,
+            actualSalary: statement.luong,
+            prevSalary: prevSalaryFull,
+            prevSalaryToDate: prevSalaryToDate
         };
 
         function calculateNetProfitEstimate() {
@@ -4475,20 +4500,98 @@ document.addEventListener("DOMContentLoaded", () => {
                 prevQtyToDate: 0,
                 prevRevenueToDate: 0,
                 prevExpenseToDate: 0,
-                prevAvgPriceToDate: 0
+                prevAvgPriceToDate: 0,
+                actualSalary: 0,
+                prevSalary: 0,
+                prevSalaryToDate: 0
             };
+
+            // Helpers for Salary Projection (Fixed 30M on the 30th of each month)
+            function getActualSalaryForMonth(yr, mnth) {
+                let actualSalary = 0;
+                farmData.forEach(row => {
+                    const d = row.parsedDate;
+                    if (!d || isNaN(d.getTime())) return;
+                    if (d.getFullYear() === yr && (d.getMonth() + 1) === mnth) {
+                        const loaiCP = (row["Loại CP"] || "").trim().toLowerCase();
+                        if (loaiCP === "công" || loaiCP === "cong") {
+                            actualSalary += parseFloat(row["Chi Phí"]) || 0;
+                        }
+                    }
+                });
+                return actualSalary;
+            }
+
+            function getExpectedSalaryForMonth(yr, mnth) {
+                const now = new Date();
+                const curYear = now.getFullYear();
+                const curMonth = now.getMonth() + 1;
+                const curDay = now.getDate();
+
+                if (yr < curYear || (yr === curYear && mnth < curMonth)) {
+                    return getActualSalaryForMonth(yr, mnth);
+                }
+                if (yr > curYear || (yr === curYear && mnth > curMonth)) {
+                    return 30000000;
+                }
+                const actual = getActualSalaryForMonth(yr, mnth);
+                if (curDay < 30) {
+                    return 30000000;
+                } else {
+                    return Math.max(actual, 30000000);
+                }
+            }
+
+            function getMonthsInPeriod(yr, mnth, range) {
+                const months = [];
+                if (range === 'month') {
+                    months.push({ year: yr, month: mnth });
+                } else if (range.startsWith('q')) {
+                    const qNum = parseInt(range.substring(1));
+                    const qStartMonth = (qNum - 1) * 3 + 1;
+                    for (let m = qStartMonth; m < qStartMonth + 3; m++) {
+                        months.push({ year: yr, month: m });
+                    }
+                } else if (range === 'ytd') {
+                    for (let m = 1; m <= mnth; m++) {
+                        months.push({ year: yr, month: m });
+                    }
+                } else {
+                    for (let m = 1; m <= 12; m++) {
+                        months.push({ year: yr, month: m });
+                    }
+                }
+                return months;
+            }
+
+            // Calculate expected salary for the current period
+            let expectedSalary = 0;
+            const monthsInPeriod = getMonthsInPeriod(selectedYear, selectedMonth, rangeVal);
+            monthsInPeriod.forEach(m => {
+                expectedSalary += getExpectedSalaryForMonth(m.year, m.month);
+            });
 
             // --- Smart Projection Logic ---
             // Base: Linear run-rate (always reliable: current_pace * full_period)
             const linearRevenue = totals.elapsedRatio > 0 ? totals.totalRevenue / totals.elapsedRatio : totals.totalRevenue;
-            const linearExpense = totals.elapsedRatio > 0 ? totals.totalExpense / totals.elapsedRatio : totals.totalExpense;
             const linearQty = totals.elapsedRatio > 0 ? totals.totalQty / totals.elapsedRatio : totals.totalQty;
+
+            // Isolate salary from general linear scaling
+            const actualSalary = totals.actualSalary || 0;
+            const actualOtherExpense = totals.totalExpense - actualSalary;
+            const linearOtherExpense = totals.elapsedRatio > 0 ? actualOtherExpense / totals.elapsedRatio : actualOtherExpense;
+            const linearExpense = linearOtherExpense + expectedSalary;
 
             // YoY growth rates (current-to-date vs same period last year)
             const revGrowthRate = (totals.prevRevenueToDate > 0 && totals.totalRevenue >= 0)
                 ? totals.totalRevenue / totals.prevRevenueToDate : null;
-            const expGrowthRate = (totals.prevExpenseToDate > 0 && totals.totalExpense >= 0)
-                ? totals.totalExpense / totals.prevExpenseToDate : null;
+
+            // Isolate salary for YoY expense growth rate
+            const prevSalaryToDate = totals.prevSalaryToDate || 0;
+            const prevOtherExpenseToDate = totals.prevExpenseToDate - prevSalaryToDate;
+            const expGrowthRate = (prevOtherExpenseToDate > 0 && actualOtherExpense >= 0)
+                ? actualOtherExpense / prevOtherExpenseToDate : null;
+
             const qtyGrowthRate = (totals.prevQtyToDate > 0 && totals.totalQty >= 0)
                 ? totals.totalQty / totals.prevQtyToDate : null;
 
@@ -4507,7 +4610,13 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const yoyRevenue = safeYoY(revGrowthRate, totals.prevRevenue, totals.prevRevenueToDate, linearRevenue);
-            const yoyExpense = safeYoY(expGrowthRate, totals.prevExpense, totals.prevExpenseToDate, linearExpense);
+
+            // Calculate YoY for other expenses, then add expectedSalary
+            const prevSalaryFull = totals.prevSalary || 0;
+            const prevOtherExpenseFull = totals.prevExpense - prevSalaryFull;
+            const yoyOtherExpense = safeYoY(expGrowthRate, prevOtherExpenseFull, prevOtherExpenseToDate, linearOtherExpense);
+            const yoyExpense = yoyOtherExpense !== null ? (yoyOtherExpense + expectedSalary) : null;
+
             const yoyQty = safeYoY(qtyGrowthRate, totals.prevQty, totals.prevQtyToDate, linearQty);
 
             // Blend weight: 0% YoY at elapsed=0, up to 60% YoY when elapsed=100%
@@ -4610,6 +4719,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 prevExpenseToDate: totals.prevExpenseToDate,
                 totalRevenue: totals.totalRevenue,
                 totalExpense: totals.totalExpense,
+                expectedSalary: expectedSalary
             };
             if (typeof recalcBreakEven === 'function') {
                 recalcBreakEven();
@@ -4673,6 +4783,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div style="font-weight:700; color:#047857; margin-bottom:3px;">Kết quả chiếu đến cuối kỳ:</div>
                         <div>DT dự báo = ${formatCurrency(meta.projRevenue)}</div>
                         <div>CP dự báo = ${formatCurrency(meta.projExpense)}</div>
+                        <div style="color:#64748b; font-size:0.75rem; padding-left: 10px;">• Quyết toán lương cố định: ${formatCurrency(meta.expectedSalary)}</div>
                         <div>(-) Khấu Hao ${meta.deprRate}% = ${formatCurrency(meta.projDepr)}</div>
                         <div style="border-top:1px solid #bbf7d0; margin-top:4px; padding-top:4px; font-weight:800;">
                             LN Ròng ≈ ${formatCurrency(meta.projNetProfit)}
@@ -4680,9 +4791,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
 
                     <div style="font-size:0.72rem; color:#94a3b8; line-height:1.5; border-top:1px solid #f1f5f9; padding-top:6px;">
-                        <b>Công thức:</b><br>
-                        • <b>Linear:</b> Giá trị thực ÷ % tiến độ<br>
-                        • <b>YoY:</b> Cùng kỳ năm trước × tỷ lệ tăng trưởng<br>
+                        <b>Công thức &amp; Logic:</b><br>
+                        • <b>Chi phí lương:</b> Quyết toán lương cố định (~30tr/tháng mỗi ngày 30) được tách biệt khỏi tỷ lệ tuyến tính để dự báo chính xác hơn.<br>
+                        • <b>Linear:</b> Giá trị thực tế (trừ lương) ÷ % tiến độ + Lương dự kiến.<br>
+                        • <b>YoY:</b> CP cùng kỳ năm trước (trừ lương) × tỷ lệ tăng trưởng + Lương dự kiến.<br>
                         • YoY chỉ áp dụng khi ≥20% kỳ trôi qua &amp; tăng trưởng 0.5×–3×
                     </div>
                 `;

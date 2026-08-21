@@ -687,6 +687,7 @@
                 <a href="#" id="menu-investment"><i class="fa-solid fa-seedling"></i> <span>Báo Cáo Đầu Tư</span></a>
                 <a href="#" id="menu-financial"><i class="fa-solid fa-file-invoice-dollar"></i> <span>Báo Cáo Tài
                         Chính</span></a>
+                <a href="#" id="menu-multiyear"><i class="fa-solid fa-chart-line"></i> <span>Kế Hoạch Đa Năm</span></a>
                 <a href="#" id="menu-formulas"><i class="fa-solid fa-calculator"></i> <span>Công Thức</span></a>
             </nav>
         </aside>
@@ -3019,6 +3020,166 @@
                 </div>
             </div> <!-- End of VIEW-INVESTMENT -->
 
+            <!-- VIEW: KẾ HOẠCH TÀI CHÍNH ĐA NĂM (MULTI-YEAR FINANCIAL PLANNER) -->
+            <div id="view-multiyear" class="app-view" style="display: none; padding: 0 0 5rem 0;">
+                <div class="view-header" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h2 style="font-size: 1.6rem; font-weight: 700; color: var(--text-color); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fa-solid fa-chart-line" style="color: #10b981;"></i> Lập Kế Hoạch Tài Chính Đa Năm
+                        </h2>
+                        <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.25rem;">
+                            Mô phỏng doanh thu, chi phí, trả nợ vay, tái đầu tư & tích lũy tài sản từ 3 - 10 năm
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <label for="myp-scenario" style="font-weight: 600; font-size: 0.9rem; color: #475569;">Kịch bản:</label>
+                        <select id="myp-scenario" style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #cbd5e1; background: white; font-weight: 600; cursor: pointer; color: #0f172a;">
+                            <option value="base" selected>🟡 Cơ sở (Base Case)</option>
+                            <option value="bull">🟢 Tích cực (Bull Case)</option>
+                            <option value="bear">🔴 Thận trọng (Bear Case)</option>
+                        </select>
+                        <button id="myp-btn-calculate" class="btn-primary" style="background: #10b981; border: none; padding: 0.5rem 1rem; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            <i class="fa-solid fa-calculator"></i> Tính Toán
+                        </button>
+                        <button id="myp-btn-reset" class="btn-secondary" style="background: #64748b; color: white; border: none; padding: 0.5rem 0.75rem; border-radius: 8px; cursor: pointer;">
+                            <i class="fa-solid fa-rotate-left"></i> Đặt lại
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CONTROL PANEL INPUTS -->
+                <div style="background: var(--card-bg, #ffffff); border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 1.5rem; border: 1px solid rgba(226, 232, 240, 0.8);">
+                    <h3 style="font-size: 1.1rem; font-weight: 600; color: #334155; margin-bottom: 1rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 0.5rem;">
+                        ⚙️ Giả Định & Tham Số Đầu Vào
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem;">
+                        <div>
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.35rem;">💰 Vốn ban đầu (VND):</label>
+                            <input type="number" id="myp-initial-capital" value="1000000000" step="50000000" style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.35rem;">📈 Doanh thu Năm 1 (VND):</label>
+                            <input type="number" id="myp-initial-revenue" value="500000000" step="50000000" style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.35rem;">🗓️ Thời gian mô phỏng (Năm):</label>
+                            <select id="myp-years" style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
+                                <option value="3">3 năm</option>
+                                <option value="5" selected>5 năm</option>
+                                <option value="7">7 năm</option>
+                                <option value="10">10 năm</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">🚀 Tăng trưởng DT hàng năm:</label>
+                                <span id="myp-rev-growth-val" style="font-size: 0.85rem; font-weight: 700; color: #10b981;">15%</span>
+                            </div>
+                            <input type="range" id="myp-rev-growth" class="myp-input" data-suffix="%" min="0" max="50" value="15" style="width: 100%; margin-top: 0.4rem;">
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">📉 Tỷ lệ Chi phí vận hành (% DT):</label>
+                                <span id="myp-opex-ratio-val" style="font-size: 0.85rem; font-weight: 700; color: #ef4444;">60%</span>
+                            </div>
+                            <input type="range" id="myp-opex-ratio" class="myp-input" data-suffix="%" min="20" max="90" value="60" style="width: 100%; margin-top: 0.4rem;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.35rem;">🏦 Số tiền vay nợ ban đầu (VND):</label>
+                            <input type="number" id="myp-debt-amount" value="300000000" step="50000000" style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">💳 Lãi suất vay (%/năm):</label>
+                                <span id="myp-debt-interest-val" style="font-size: 0.85rem; font-weight: 700; color: #f59e0b;">9.5%</span>
+                            </div>
+                            <input type="range" id="myp-debt-interest" class="myp-input" data-suffix="%" min="0" max="20" step="0.5" value="9.5" style="width: 100%; margin-top: 0.4rem;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.35rem;">⏳ Thời hạn vay (Năm):</label>
+                            <input type="number" id="myp-debt-term" value="5" min="1" max="10" style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">🔄 Tái đầu tư mở rộng (% Lợi nhuận):</label>
+                                <span id="myp-reinvest-rate-val" style="font-size: 0.85rem; font-weight: 700; color: #3b82f6;">40%</span>
+                            </div>
+                            <input type="range" id="myp-reinvest-rate" class="myp-input" data-suffix="%" min="0" max="100" value="40" style="width: 100%; margin-top: 0.4rem;">
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <label style="font-size: 0.85rem; font-weight: 600; color: #475569;">🛡️ Quỹ dự phòng rủi ro (% Lợi nhuận):</label>
+                                <span id="myp-reserve-rate-val" style="font-size: 0.85rem; font-weight: 700; color: #64748b;">20%</span>
+                            </div>
+                            <input type="range" id="myp-reserve-rate" class="myp-input" data-suffix="%" min="0" max="50" value="20" style="width: 100%; margin-top: 0.4rem;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.85rem; font-weight: 600; color: #475569; display: block; margin-bottom: 0.35rem;">🏛️ Thù lao / Thuế ước tính (%):</label>
+                            <input type="number" id="myp-tax-rate" value="10" min="0" max="30" style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPI CARDS SUMMARY -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
+                        <div style="font-size: 0.85rem; opacity: 0.9; font-weight: 600;">💰 Tổng Lợi Nhuận Lũy Kế</div>
+                        <div id="myp-kpi-total-profit" style="font-size: 1.6rem; font-weight: 800; margin-top: 0.5rem;">0 ₫</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);">
+                        <div style="font-size: 0.85rem; opacity: 0.9; font-weight: 600;">🏛️ Giá Trị Tài Sản Cuối Kỳ</div>
+                        <div id="myp-kpi-final-asset" style="font-size: 1.6rem; font-weight: 800; margin-top: 0.5rem;">0 ₫</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);">
+                        <div style="font-size: 0.85rem; opacity: 0.9; font-weight: 600;">📉 Tổng Lãi Vay Trả Ngân Hàng</div>
+                        <div id="myp-kpi-total-interest" style="font-size: 1.6rem; font-weight: 800; margin-top: 0.5rem;">0 ₫</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 1.25rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);">
+                        <div style="font-size: 0.85rem; opacity: 0.9; font-weight: 600;">🔄 Tổng Vốn Tái Đầu Tư</div>
+                        <div id="myp-kpi-total-reinvest" style="font-size: 1.6rem; font-weight: 800; margin-top: 0.5rem;">0 ₫</div>
+                    </div>
+                </div>
+
+                <!-- CHARTS SECTION -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                    <div style="background: var(--card-bg, #ffffff); border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid rgba(226, 232, 240, 0.8);">
+                        <h4 style="font-size: 1rem; font-weight: 700; color: #334155; margin-bottom: 1rem;">📊 Doanh Thu vs Chi Phí vs Lợi Nhuận</h4>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="myp-chart-rev-profit"></canvas>
+                        </div>
+                    </div>
+                    <div style="background: var(--card-bg, #ffffff); border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid rgba(226, 232, 240, 0.8);">
+                        <h4 style="font-size: 1rem; font-weight: 700; color: #334155; margin-bottom: 1rem;">📈 Tăng Trưởng Tài Sản vs Dư Nợ</h4>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="myp-chart-asset-debt"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FINANCIAL TABLE -->
+                <div style="background: var(--card-bg, #ffffff); border-radius: 12px; padding: 1.25rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow-x: auto; border: 1px solid rgba(226, 232, 240, 0.8);">
+                    <h4 style="font-size: 1rem; font-weight: 700; color: #334155; margin-bottom: 1rem;">📋 Bảng Kế Hoạch Tài Chính Chi Tiết Qua Các Năm</h4>
+                    <table class="table" style="width: 100%; border-collapse: collapse; min-width: 800px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 2px solid #cbd5e1; text-align: right; font-size: 0.85rem; color: #475569;">
+                                <th style="padding: 0.75rem; text-align: center;">Thời Gian</th>
+                                <th style="padding: 0.75rem;">Doanh Thu</th>
+                                <th style="padding: 0.75rem;">CP Vận Hành</th>
+                                <th style="padding: 0.75rem;">Chi Phí Lãi Vay</th>
+                                <th style="padding: 0.75rem;">Trả Gốc Nợ</th>
+                                <th style="padding: 0.75rem;">Lợi Nhuận Ròng</th>
+                                <th style="padding: 0.75rem;">Trích Tái Đầu Tư</th>
+                                <th style="padding: 0.75rem;">Dư Nợ Còn Lại</th>
+                                <th style="padding: 0.75rem;">Tổng Tài Sản</th>
+                            </tr>
+                        </thead>
+                        <tbody id="myp-table-body" style="font-size: 0.85rem;">
+                            <!-- JavaScript sẽ render bảng tại đây -->
+                        </tbody>
+                    </table>
+                </div>
+            </div> <!-- End of VIEW-MULTIYEAR -->
+
             <!-- VIEW: FORMULAS & CALCULATORS -->
             <div id="view-formulas" class="app-view" style="display: none;">
                 <div class="formulas-layout">
@@ -3547,7 +3708,8 @@
                 </button>
             </div>
         </div>
-    </div>
+    </div> <!-- End of VIEW-DEBT -->
+</main>
 
     <!-- MOBILE BOTTOM NAVIGATION -->
     <nav class="mobile-nav">
@@ -3582,6 +3744,10 @@
         <a href="#" class="mobile-nav-item" data-view="investment">
             <i class="fa-solid fa-seedling"></i>
             <span>Đầu Tư</span>
+        </a>
+        <a href="#" class="mobile-nav-item" data-view="multiyear">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Đa Năm</span>
         </a>
         <a href="#" class="mobile-nav-item" data-view="formulas">
             <i class="fa-solid fa-calculator"></i>
@@ -5208,6 +5374,7 @@ placeholder="Ví dụ:&#10;Ngày 3-7&#10;50 ôhg x 10&#10;Ngày 4-7&#10;60 ôhg 
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="config.js"></script>
     <script src="flower_cycles_db.js?v=20260621_v2"></script>
+    <script src="multiyear_planner.js"></script>
     <script src="todo_v2.js?v=20260723_v2"></script>
     <script src="app.js"></script>
     <script src="investment.js"></script>
