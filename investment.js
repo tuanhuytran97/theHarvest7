@@ -191,7 +191,7 @@ function renderInvestmentPortfolio() {
     // Re-apply visibility state after re-render for each card individually
     const targetIds = ['inv-kpi-nav', 'inv-kpi-capital', 'inv-kpi-profit', 'inv-kpi-roi', 'inv-kpi-mos', 'inv-kpi-dividends'];
     targetIds.forEach(id => {
-        const isHidden = localStorage.getItem('inv_hidden_' + id) === 'true';
+        const isHidden = localStorage.getItem('inv_hidden_' + id) !== 'false';
         applyInvCardVisibility(id, isHidden);
     });
 }
@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (btn) {
                 e.stopPropagation();
                 const targetId = btn.dataset.target;
-                const currentlyHidden = localStorage.getItem('inv_hidden_' + targetId) === 'true';
+                const currentlyHidden = localStorage.getItem('inv_hidden_' + targetId) !== 'false';
                 const newState = !currentlyHidden;
                 localStorage.setItem('inv_hidden_' + targetId, String(newState));
                 applyInvCardVisibility(targetId, newState);
@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Apply saved state on load
     const targetIds = ['inv-kpi-nav', 'inv-kpi-capital', 'inv-kpi-profit', 'inv-kpi-roi', 'inv-kpi-mos', 'inv-kpi-dividends'];
     targetIds.forEach(id => {
-        const isHidden = localStorage.getItem('inv_hidden_' + id) === 'true';
+        const isHidden = localStorage.getItem('inv_hidden_' + id) !== 'false';
         applyInvCardVisibility(id, isHidden);
     });
 });
