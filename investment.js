@@ -188,36 +188,39 @@ function renderInvestmentPortfolio() {
         updateInvestmentCharts();
     }
 
-    // Re-apply visibility state after re-render
-    const isHidden = localStorage.getItem('inv_kpis_hidden') === 'true';
-    applyInvNumbersVisibility(isHidden);
+    // Re-apply visibility state after re-render for each card individually
+    const targetIds = ['inv-kpi-nav', 'inv-kpi-capital', 'inv-kpi-profit', 'inv-kpi-roi', 'inv-kpi-mos', 'inv-kpi-dividends'];
+    targetIds.forEach(id => {
+        const isHidden = localStorage.getItem('inv_hidden_' + id) === 'true';
+        applyInvCardVisibility(id, isHidden);
+    });
 }
 window.renderInvestmentPortfolio = renderInvestmentPortfolio;
 
-// --- Eye Toggle: Hide / Show sensitive investment numbers in KPI cards only ---
-function applyInvNumbersVisibility(hidden) {
-    const sensitiveEls = document.querySelectorAll('.inv-sensitive-number');
-    const eyeIcons = document.querySelectorAll('.inv-card-eye-btn i');
+// --- Eye Toggle: Hide / Show sensitive investment numbers in KPI cards individually ---
+function applyInvCardVisibility(targetId, hidden) {
+    const el = document.getElementById(targetId);
+    if (!el) return;
 
-    sensitiveEls.forEach(el => {
-        if (hidden) {
-            if (!el.dataset.originalText) el.dataset.originalText = el.innerText;
-            el.innerText = '● ● ●';
-            el.style.letterSpacing = '3px';
-            el.style.opacity = '0.7';
-        } else {
-            if (el.dataset.originalText) {
-                el.innerText = el.dataset.originalText;
-                delete el.dataset.originalText;
-            }
-            el.style.letterSpacing = '';
-            el.style.opacity = '';
+    // Find the eye icon inside the button that targets this card
+    const btn = document.querySelector(`.inv-card-eye-btn[data-target="${targetId}"]`);
+    const icon = btn ? btn.querySelector('i') : null;
+
+    if (hidden) {
+        if (!el.dataset.originalText) el.dataset.originalText = el.innerText;
+        el.innerText = '● ● ●';
+        el.style.letterSpacing = '3px';
+        el.style.opacity = '0.7';
+        if (icon) icon.className = 'fa-solid fa-eye-slash';
+    } else {
+        if (el.dataset.originalText) {
+            el.innerText = el.dataset.originalText;
+            delete el.dataset.originalText;
         }
-    });
-
-    eyeIcons.forEach(icon => {
-        icon.className = hidden ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
-    });
+        el.style.letterSpacing = '';
+        el.style.opacity = '';
+        if (icon) icon.className = 'fa-solid fa-eye';
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -228,19 +231,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const btn = e.target.closest('.inv-card-eye-btn');
             if (btn) {
                 e.stopPropagation();
-                const currentlyHidden = localStorage.getItem('inv_kpis_hidden') === 'true';
+                const targetId = btn.dataset.target;
+                const currentlyHidden = localStorage.getItem('inv_hidden_' + targetId) === 'true';
                 const newState = !currentlyHidden;
-                localStorage.setItem('inv_kpis_hidden', String(newState));
-                applyInvNumbersVisibility(newState);
-                if (window.showToast) {
-                    window.showToast(newState ? '🙈 Đã ẩn các con số' : '👁 Đã hiện các con số', 'info');
-                }
+                localStorage.setItem('inv_hidden_' + targetId, String(newState));
+                applyInvCardVisibility(targetId, newState);
             }
         });
     }
     // Apply saved state on load
-    const savedHidden = localStorage.getItem('inv_kpis_hidden') === 'true';
-    applyInvNumbersVisibility(savedHidden);
+    const targetIds = ['inv-kpi-nav', 'inv-kpi-capital', 'inv-kpi-profit', 'inv-kpi-roi', 'inv-kpi-mos', 'inv-kpi-dividends'];
+    targetIds.forEach(id => {
+        const isHidden = localStorage.getItem('inv_hidden_' + id) === 'true';
+        applyInvCardVisibility(id, isHidden);
+    });
 });
 
 // --- Analytics & Charts Logic ---
