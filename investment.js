@@ -266,6 +266,21 @@ function applyInvNumbersVisibility(hidden) {
     if (icon) {
         icon.className = hidden ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
     }
+    const label = document.getElementById('inv-visibility-label');
+    if (label) label.innerText = hidden ? 'Hiện số' : 'Ẩn số';
+
+    const btn = document.getElementById('btn-inv-toggle-visibility');
+    if (btn) {
+        if (hidden) {
+            btn.style.background = '#fef3c7';
+            btn.style.borderColor = '#fcd34d';
+            btn.style.color = '#92400e';
+        } else {
+            btn.style.background = '#f1f5f9';
+            btn.style.borderColor = '#cbd5e1';
+            btn.style.color = '#475569';
+        }
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
