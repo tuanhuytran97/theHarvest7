@@ -2885,38 +2885,51 @@
                     </div>
 
                     <!-- Value KPIs -->
-                    <div class="financial-ratios-summary-container" style="margin-top: 10px;">
+                    <div style="display: flex; justify-content: flex-end; margin-top: 10px; margin-bottom: -4px;">
+                        <button id="btn-inv-toggle-visibility"
+                            title="Ẩn / Hiện các con số"
+                            style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: white; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: all 0.25s; backdrop-filter: blur(4px);">
+                            <i class="fa-solid fa-eye" id="inv-visibility-icon"></i>
+                        </button>
+                    </div>
+                    <div id="inv-kpi-container" class="financial-ratios-summary-container" style="margin-top: 6px;">
                         <div class="ratio-summary-card"
                             style="background: linear-gradient(135deg, #064e3b 0%, #065f46 100%) !important;">
                             <div class="ratio-label"><i class="fa-solid fa-vault"></i> TỔNG TÀI SẢN (NAV)</div>
-                            <h3 id="inv-kpi-nav" class="ratio-value" style="font-size: 1.8rem;">0 ₫</h3>
+                            <h3 id="inv-kpi-nav" class="ratio-value inv-sensitive-number" style="font-size: 1.8rem;">0 ₫</h3>
                         </div>
                         <div class="ratio-summary-card"
                             style="background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;">
                             <div class="ratio-label"><i class="fa-solid fa-money-bill-transfer"></i> VỐN ĐẦU TƯ</div>
-                            <h3 id="inv-kpi-capital" class="ratio-value" style="font-size: 1.8rem;">0 ₫</h3>
+                            <h3 id="inv-kpi-capital" class="ratio-value inv-sensitive-number" style="font-size: 1.8rem;">0 ₫</h3>
                         </div>
                         <div class="ratio-summary-card"
                             style="background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;">
                             <div class="ratio-label"><i class="fa-solid fa-hand-holding-dollar"></i> LÃI / LỖ TUYỆT ĐỐI
                             </div>
-                            <h3 id="inv-kpi-profit" class="ratio-value" style="font-size: 1.8rem;">0 ₫</h3>
+                            <h3 id="inv-kpi-profit" class="ratio-value inv-sensitive-number" style="font-size: 1.8rem;">0 ₫</h3>
                         </div>
                         <div class="ratio-summary-card"
                             style="background: linear-gradient(135deg, #b45309 0%, #d97706 100%) !important;">
                             <div class="ratio-label"><i class="fa-solid fa-chart-line"></i> HIỆU SUẤT (ROI)</div>
-                            <h3 id="inv-kpi-roi" class="ratio-value" style="font-size: 1.8rem;">0%</h3>
+                            <h3 id="inv-kpi-roi" class="ratio-value inv-sensitive-number" style="font-size: 1.8rem;">0%</h3>
                         </div>
                         <div class="ratio-summary-card"
                             style="background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;">
                             <div class="ratio-label"><i class="fa-solid fa-shield-halved"></i> BIÊN AN TOÀN TRUNG BÌNH
                             </div>
-                            <h3 id="inv-kpi-mos" class="ratio-value" style="font-size: 1.8rem;">0%</h3>
+                            <h3 id="inv-kpi-mos" class="ratio-value inv-sensitive-number" style="font-size: 1.8rem;">0%</h3>
                         </div>
                         <div class="ratio-summary-card"
                             style="background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%) !important;">
                             <div class="ratio-label"><i class="fa-solid fa-coins"></i> CỔ TỨC TÍCH LUỸ</div>
-                            <h3 id="inv-kpi-dividends" class="ratio-value" style="font-size: 1.8rem;">0 ₫</h3>
+                            <h3 id="inv-kpi-dividends" class="ratio-value inv-sensitive-number" style="font-size: 1.8rem;">0 ₫</h3>
+                        </div>
+                        <div class="ratio-summary-card"
+                            style="background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%) !important;">
+                            <div class="ratio-label"><i class="fa-solid fa-piggy-bank"></i> TỔNG NGUỒN VỐN</div>
+                            <h3 id="inv-kpi-total-source" class="ratio-value inv-sensitive-number" style="font-size: 1.8rem;">0 ₫</h3>
+                            <div id="inv-kpi-total-source-breakdown" style="font-size: 0.72rem; opacity: 0.8; margin-top: 4px; line-height: 1.6;"></div>
                         </div>
                     </div>
 

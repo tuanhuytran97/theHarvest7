@@ -143,6 +143,8 @@ function renderInvestmentPortfolio() {
     const kpiMos = document.getElementById('inv-kpi-mos');
     const kpiDivs = document.getElementById('inv-kpi-dividends');
     const kpiCapital = document.getElementById('inv-kpi-capital');
+    const kpiTotalSource = document.getElementById('inv-kpi-total-source');
+    const kpiTotalSourceBreakdown = document.getElementById('inv-kpi-total-source-breakdown');
 
     if (kpiNav && window.formatCurrency) kpiNav.innerText = window.formatCurrency(totalCurrent);
     if (kpiDivs && window.formatCurrency) kpiDivs.innerText = window.formatCurrency(totalDivs);
@@ -161,6 +163,37 @@ function renderInvestmentPortfolio() {
     if (kpiMos && totalIntrinsic > 0) {
         const mos = ((totalIntrinsic - totalCurrent) / totalIntrinsic) * 100;
         kpiMos.innerText = mos > 0 ? `${mos.toFixed(1)}%` : "0%";
+    }
+
+    // --- TỔNG NGUỒN VỐN: Total capital ever invested (sum of all buy transactions) ---
+    if (kpiTotalSource && window.formatShorthandCurrency) {
+        // Calculate total capital contributed from all Mua transactions (not net of sells)
+        let totalBuyCapital = 0;
+        let totalSellProceeds = 0;
+        const capitalByYear = {};
+        invHistoryData.forEach(row => {
+            const type = String(row["Loại Sự Kiện"] || row["Loại Giao Dịch"] || "");
+            const amt = parseFloat(row["Số Tiền"]) || 0;
+            const dateVal = row["Ngày Giao Dịch"] || row["Ngày"];
+            const year = dateVal ? (String(dateVal).split('/')[2] || new Date().getFullYear()) : new Date().getFullYear();
+            if (type === "Mua") {
+                totalBuyCapital += amt;
+                capitalByYear[year] = (capitalByYear[year] || 0) + amt;
+            } else if (type === "Bán") {
+                totalSellProceeds += amt;
+            }
+        });
+
+        kpiTotalSource.innerText = window.formatCurrency ? window.formatCurrency(totalBuyCapital) : totalBuyCapital;
+
+        // Breakdown: top years contributed
+        if (kpiTotalSourceBreakdown) {
+            const sortedYears = Object.keys(capitalByYear).sort();
+            const breakdownHtml = sortedYears.map(yr =>
+                `<span>• ${yr}: ${window.formatShorthandCurrency(capitalByYear[yr])}</span>`
+            ).join('<br>');
+            kpiTotalSourceBreakdown.innerHTML = breakdownHtml || '';
+        }
     }
 
     const isDemo = localStorage.getItem('inv_demo_mode') === 'true';
@@ -187,8 +220,73 @@ function renderInvestmentPortfolio() {
     if (invHistoryData.length > 0) {
         updateInvestmentCharts();
     }
+
+    // Re-apply visibility state after re-render
+    const isHidden = localStorage.getItem('inv_numbers_hidden') === 'true';
+    applyInvNumbersVisibility(isHidden);
 }
 window.renderInvestmentPortfolio = renderInvestmentPortfolio;
+
+// --- Eye Toggle: Hide / Show sensitive investment numbers ---
+function applyInvNumbersVisibility(hidden) {
+    const sensitiveEls = document.querySelectorAll('.inv-sensitive-number');
+    const tableBody = document.getElementById('inv-portfolio-body');
+    const icon = document.getElementById('inv-visibility-icon');
+
+    sensitiveEls.forEach(el => {
+        if (hidden) {
+            if (!el.dataset.originalText) el.dataset.originalText = el.innerText;
+            el.innerText = '● ● ●';
+            el.style.letterSpacing = '3px';
+            el.style.filter = 'blur(0)';
+            el.style.opacity = '0.7';
+        } else {
+            if (el.dataset.originalText) {
+                el.innerText = el.dataset.originalText;
+                delete el.dataset.originalText;
+            }
+            el.style.letterSpacing = '';
+            el.style.filter = '';
+            el.style.opacity = '';
+        }
+    });
+
+    if (tableBody) {
+        if (hidden) {
+            tableBody.style.filter = 'blur(5px)';
+            tableBody.style.userSelect = 'none';
+            tableBody.style.pointerEvents = 'none';
+        } else {
+            tableBody.style.filter = '';
+            tableBody.style.userSelect = '';
+            tableBody.style.pointerEvents = '';
+        }
+    }
+
+    if (icon) {
+        icon.className = hidden ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Wire up the eye toggle button
+    const btnToggleVis = document.getElementById('btn-inv-toggle-visibility');
+    if (btnToggleVis && !btnToggleVis._visListenerAttached) {
+        btnToggleVis._visListenerAttached = true;
+        btnToggleVis.addEventListener('click', () => {
+            const currentlyHidden = localStorage.getItem('inv_numbers_hidden') === 'true';
+            const newState = !currentlyHidden;
+            localStorage.setItem('inv_numbers_hidden', String(newState));
+            applyInvNumbersVisibility(newState);
+            if (window.showToast) {
+                window.showToast(newState ? '🙈 Đã ẩn tất cả con số' : '👁 Đã hiện tất cả con số', 'info');
+            }
+        });
+    }
+    // Apply saved state on load
+    const savedHidden = localStorage.getItem('inv_numbers_hidden') === 'true';
+    if (savedHidden) applyInvNumbersVisibility(true);
+});
 
 // --- Analytics & Charts Logic ---
 function updateInvestmentCharts() {
