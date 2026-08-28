@@ -5563,7 +5563,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Build Custom Legend
         if (legendEl) {
-            legendEl.innerHTML = activeCategories.map(c => {
+            let legendHtml = activeCategories.map(c => {
                 const pct = sumExpenses > 0 ? ((c.val / sumExpenses) * 100).toFixed(1) : '0.0';
                 return `
                     <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; padding: 4px 0; border-bottom: 1px dashed rgba(0,0,0,0.05);">
@@ -5578,6 +5578,21 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 `;
             }).join('');
+
+            // Append Total row
+            legendHtml += `
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem; padding: 8px 0 4px 0; border-top: 1.5px solid #cbd5e1; margin-top: 6px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="display: inline-block; width: 12px; height: 12px; border-radius: 3px; background-color: transparent; border: 1.5px dashed #475569;"></span>
+                        <span style="font-weight: 700; color: #1e293b;">Tổng cộng</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <strong style="font-weight: 800; color: #b91c1c;">${formatCurrency(sumExpenses)}</strong>
+                        <span style="font-size: 0.75rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; background-color: #fee2e2; color: #991b1b;">100%</span>
+                    </div>
+                </div>
+            `;
+            legendEl.innerHTML = legendHtml;
         }
     }
 
@@ -9098,7 +9113,10 @@ document.addEventListener("DOMContentLoaded", () => {
     currentLimit = 20;
 
     // Restore saved view on load (Centralized initialization)
-    const savedView = localStorage.getItem("active_app_view") || 'books';
+    let savedView = localStorage.getItem("active_app_view") || 'todo';
+    if (savedView === 'books' || savedView === 'multiyear') {
+        savedView = 'todo';
+    }
     switchView(savedView);
 
     if (entryTypeSelect) {
