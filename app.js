@@ -173,7 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
         userTrigger.addEventListener("click", (e) => {
             e.stopPropagation();
             userDropdown.classList.toggle("active");
-            
+
             const notifDropdown = document.getElementById("admin-notifications-dropdown");
             if (notifDropdown) notifDropdown.style.display = "none";
         });
@@ -184,10 +184,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ── STACKED NOTIFICATIONS PANEL ────────────────────────────────
-    const notifBtn      = document.getElementById("admin-notifications-btn");
+    const notifBtn = document.getElementById("admin-notifications-btn");
     const notifDropdown = document.getElementById("admin-notifications-dropdown");
-    const refreshBtn    = document.getElementById("btn-refresh-requests");
-    const markAllBtn    = document.getElementById("btn-notif-mark-all");
+    const refreshBtn = document.getElementById("btn-refresh-requests");
+    const markAllBtn = document.getElementById("btn-notif-mark-all");
 
     // In-memory notification store  { id, category, icon, label, text, time, unread }
     let notificationsStore = [];
@@ -304,15 +304,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const priorityIcon = {
             "Khẩn cấp": "fa-solid fa-fire",
-            "Cao":       "fa-solid fa-circle-exclamation",
-            "Trung bình":"fa-solid fa-circle-dot",
-            "Thấp":      "fa-regular fa-circle"
+            "Cao": "fa-solid fa-circle-exclamation",
+            "Trung bình": "fa-solid fa-circle-dot",
+            "Thấp": "fa-regular fa-circle"
         };
         const priorityLabel = {
             "Khẩn cấp": "🔴 Khẩn cấp",
-            "Cao":       "🟠 Ưu tiên cao",
-            "Trung bình":"🟡 Trung bình",
-            "Thấp":      "⚪ Thấp"
+            "Cao": "🟠 Ưu tiên cao",
+            "Trung bình": "🟡 Trung bình",
+            "Thấp": "⚪ Thấp"
         };
 
         function parseDate(d) {
@@ -334,9 +334,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const pw = { "Khẩn cấp": 1, "Cao": 2, "Trung bình": 3, "Thấp": 4 };
 
         // Gather tasks by urgency bucket
-        const overdueList   = [];
-        const todayList     = [];
-        const upcomingList  = []; // 1–3 days
+        const overdueList = [];
+        const todayList = [];
+        const upcomingList = []; // 1–3 days
         const inProgressList = [];
 
         todoCache.forEach(t => {
@@ -346,7 +346,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const dl = parseDate(t.deadlineDate || t.deadline);
             const diff = dl ? daysDiff(dl) : null;
 
-            if (dl && diff < 0)      overdueList.push({ ...t, _diff: diff });
+            if (dl && diff < 0) overdueList.push({ ...t, _diff: diff });
             else if (dl && diff === 0) todayList.push({ ...t, _diff: 0 });
             else if (dl && diff > 0 && diff <= 3) upcomingList.push({ ...t, _diff: diff });
 
@@ -409,7 +409,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // only inject if not already covered by today/overdue/upcoming
             const alreadyCovered =
                 overdueList.some(x => x.id === t.id) ||
-                todayList.some(x => x.id === t.id)   ||
+                todayList.some(x => x.id === t.id) ||
                 upcomingList.some(x => x.id === t.id);
             if (alreadyCovered) return;
             const id = "task_inprogress_" + t.id;
@@ -447,17 +447,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const categoryMeta = {
             payment: { icon: "fa-solid fa-money-bill-transfer", label: "Thanh toán" },
-            entry:   { icon: "fa-solid fa-file-circle-plus",   label: "Nhập đơn" },
-            task:    { icon: "fa-solid fa-list-check",          label: "Công việc" }
+            entry: { icon: "fa-solid fa-file-circle-plus", label: "Nhập đơn" },
+            task: { icon: "fa-solid fa-list-check", label: "Công việc" }
         };
 
         // Urgency subtype derived from notification id prefix
         function getTaskSubtype(id) {
-            if (id.startsWith("task_overdue_"))    return "overdue";
-            if (id.startsWith("task_today_"))      return "today";
-            if (id.startsWith("task_upcoming_"))   return "upcoming";
+            if (id.startsWith("task_overdue_")) return "overdue";
+            if (id.startsWith("task_today_")) return "today";
+            if (id.startsWith("task_upcoming_")) return "upcoming";
             if (id.startsWith("task_inprogress_")) return "inprogress";
-            if (id.startsWith("task_user_"))       return "approval";
+            if (id.startsWith("task_user_")) return "approval";
             return "";
         }
 
@@ -514,7 +514,7 @@ document.addEventListener("DOMContentLoaded", () => {
         list.querySelectorAll(".notif-card").forEach(card => {
             card.addEventListener("click", () => {
                 const notifId = card.dataset.id;
-                const taskId  = card.dataset.taskId;
+                const taskId = card.dataset.taskId;
 
                 // Mark as read
                 const notif = notificationsStore.find(n => n.id === notifId);
@@ -610,13 +610,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const role = getRole();
         if (!role) return false;
         if (role === 'ADMIN') return true;
-        
+
         if (CONFIG.role_permissions) {
             try {
-                const perms = typeof CONFIG.role_permissions === 'string' 
-                    ? JSON.parse(CONFIG.role_permissions) 
+                const perms = typeof CONFIG.role_permissions === 'string'
+                    ? JSON.parse(CONFIG.role_permissions)
                     : CONFIG.role_permissions;
-                    
+
                 if (perms[role]) {
                     if (perms[role] === '*') return true;
                     if (Array.isArray(perms[role])) {
@@ -627,7 +627,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error("Error parsing role_permissions config:", e);
             }
         }
-        
+
         // Fallback default permissions
         if (role === 'EMP_LV1') {
             return ['sync', 'entry', 'delete', 'debt', 'chatbot', 'formulas'].includes(permissionName);
@@ -642,7 +642,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function approveUser(username) {
         if (!confirm(`Bạn có chắc chắn muốn DUYỆT tài khoản "${username}" không?`)) return;
-        
+
         if (!isConfigured()) {
             let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
             if (customUsers[username]) {
@@ -653,7 +653,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             return;
         }
-        
+
         try {
             const response = await fetch(CONFIG.WEB_APP_URL, {
                 method: "POST",
@@ -674,7 +674,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function rejectUser(username) {
         if (!confirm(`Bạn có chắc chắn muốn TỪ CHỐI/XÓA yêu cầu của "${username}" không?`)) return;
-        
+
         if (!isConfigured()) {
             let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
             if (customUsers[username]) {
@@ -685,7 +685,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             return;
         }
-        
+
         try {
             const response = await fetch(CONFIG.WEB_APP_URL, {
                 method: "POST",
@@ -713,18 +713,18 @@ document.addEventListener("DOMContentLoaded", () => {
             loginOverlay.style.display = "none";
             appContainer.style.display = "flex";
             if (chatbotContainer) chatbotContainer.style.display = "flex";
-            
+
             try {
                 const cachedConfig = sessionStorage.getItem("system-config");
                 if (cachedConfig) {
                     Object.assign(CONFIG, JSON.parse(cachedConfig));
                 }
-            } catch (e) {}
-            
+            } catch (e) { }
+
             applyRolePermissions(role);
             updateUserProfile();
             fetchSystemConfig();
-            
+
             const notifWrapper = document.getElementById("admin-notifications-wrapper");
             if (notifWrapper) {
                 // Show bell for all roles — todos show for everyone, pending approvals only come back for ADMIN
@@ -853,15 +853,15 @@ document.addEventListener("DOMContentLoaded", () => {
             const name = document.getElementById("register-name").value.trim();
             const password = document.getElementById("register-password").value;
             const role = document.getElementById("register-role").value;
-            
+
             const submitBtn = registerForm.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerText;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang gửi...';
             submitBtn.disabled = true;
-            
+
             if (registerErrorMsg) registerErrorMsg.style.display = "none";
             if (registerSuccessMsg) registerSuccessMsg.style.display = "none";
-            
+
             if (!isConfigured()) {
                 try {
                     let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
@@ -881,7 +881,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         registerSuccessMsg.style.display = "block";
                         registerForm.reset();
                     }
-                } catch(err) {
+                } catch (err) {
                     if (registerErrorMsg) {
                         registerErrorMsg.innerText = err.message;
                         registerErrorMsg.style.display = "block";
@@ -892,7 +892,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 return;
             }
-            
+
             try {
                 const response = await fetch(CONFIG.WEB_APP_URL, {
                     method: "POST",
@@ -905,7 +905,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }),
                     headers: { "Content-Type": "text/plain;charset=utf-8" }
                 });
-                
+
                 const result = await response.json();
                 if (result.status === "success") {
                     if (registerSuccessMsg) {
@@ -956,14 +956,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     "emp1": { name: "Nhân viên 1", role: "EMP_LV1", password: "nth66" },
                     "emp2": { name: "Nhân viên 2", role: "EMP_LV2", password: "haitran63" }
                 };
-                
+
                 let userConfig = null;
-                
+
                 // 1. Check in customUsers by username (dynamic offline users)
                 if (customUsers[user] && customUsers[user].password === pw) {
                     userConfig = customUsers[user];
                 }
-                
+
                 // 2. Check in defaultUsers (config.js users)
                 if (!userConfig) {
                     const defaultUser = defaultUsers[user];
@@ -976,7 +976,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         };
                     }
                 }
-                
+
                 // 3. Fallback check by matching username within customUsers (legacy compatibility)
                 if (!userConfig) {
                     for (const key in customUsers) {
@@ -987,14 +987,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                     }
                 }
-                
+
                 if (userConfig) {
                     localStorage.setItem("failed-login-attempts", "0");
                     localStorage.removeItem("login-block-until");
                     sessionStorage.setItem("user-role", userConfig.role);
                     sessionStorage.setItem("user-name", userConfig.name);
                     sessionStorage.setItem("user-token", userConfig.username + ":" + userConfig.password); // Use username:password as token
- 
+
                     loginOverlay.style.display = "none";
                     appContainer.style.display = "flex";
                     if (chatbotContainer) chatbotContainer.style.display = "flex";
@@ -1428,7 +1428,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (vuaTotalCollectInput) vuaTotalCollectInput.required = false;
                 toggleFlowerReq(true);
                 toggleExpenseReq(false);
- 
+
                 // Premium visual styling
                 if (entryCard) {
                     entryCard.style.borderTop = "6px solid #10b981";
@@ -2664,6 +2664,56 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
     window.switchView = switchView;
+
+    window.gotoAddRevenue = function () {
+        if (typeof window.switchView === 'function') {
+            window.switchView('data');
+        } else {
+            const menuData = document.getElementById('menu-data');
+            if (menuData) menuData.click();
+        }
+        setTimeout(() => {
+            const entryTypeSelect = document.getElementById('entry-type');
+            if (entryTypeSelect) {
+                entryTypeSelect.value = 'farm';
+                entryTypeSelect.dispatchEvent(new Event('change'));
+            }
+            const reportDate = document.getElementById('report-date');
+            const dateInput = document.getElementById('date-input');
+            if (reportDate && dateInput && reportDate.value) {
+                dateInput.value = reportDate.value;
+            }
+            const entryCard = document.querySelector('.entry-card');
+            if (entryCard) {
+                entryCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 50);
+    };
+
+    window.gotoAddExpense = function () {
+        if (typeof window.switchView === 'function') {
+            window.switchView('data');
+        } else {
+            const menuData = document.getElementById('menu-data');
+            if (menuData) menuData.click();
+        }
+        setTimeout(() => {
+            const entryTypeSelect = document.getElementById('entry-type');
+            if (entryTypeSelect) {
+                entryTypeSelect.value = 'expense';
+                entryTypeSelect.dispatchEvent(new Event('change'));
+            }
+            const reportDate = document.getElementById('report-date');
+            const dateInput = document.getElementById('date-input');
+            if (reportDate && dateInput && reportDate.value) {
+                dateInput.value = reportDate.value;
+            }
+            const entryCard = document.querySelector('.entry-card');
+            if (entryCard) {
+                entryCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 50);
+    };
 
     if (menuTodo) {
         menuTodo.addEventListener('click', (e) => {
@@ -3908,7 +3958,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const kpiLabels = document.querySelectorAll('.kpi-cards h3');
             kpiLabels.forEach(label => {
-                let context = val === 'day' ? 'T.Ngày' : (val === 'month' ? 'T.Tháng' : (val.startsWith('q' ) ? 'T.Quý' : (val === 'ytd' ? 'Luỹ Kế (YTD)' : 'T.Năm')));
+                let context = val === 'day' ? 'T.Ngày' : (val === 'month' ? 'T.Tháng' : (val.startsWith('q') ? 'T.Quý' : (val === 'ytd' ? 'Luỹ Kế (YTD)' : 'T.Năm')));
                 label.innerText = label.innerText.replace(/T\.(Tháng|Năm|Quý|Ngày)|Luỹ Kế \(YTD\)/g, context);
             });
             updateDashboard();
@@ -4988,36 +5038,35 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!expenseEl || !revenueEl) return;
 
         const fmt = (v) => formatCurrency(v);
+        const escapeAttr = (str) => String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
         // Category style config for expenses
         const catConfig = {
-            'expensed':     { icon: 'fa-building-columns', color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)',  label: 'Expensed' },
-            'phân':         { icon: 'fa-seedling',          color: '#22c55e', bg: 'rgba(34,197,94,0.08)',   label: 'Phân bón' },
-            'thuốc':        { icon: 'fa-flask',             color: '#06b6d4', bg: 'rgba(6,182,212,0.08)',   label: 'Thuốc' },
-            'công':         { icon: 'fa-users',             color: '#f59e0b', bg: 'rgba(245,158,11,0.08)',  label: 'Lương / Công' },
-            'lãi':          { icon: 'fa-percent',           color: '#f97316', bg: 'rgba(249,115,22,0.08)', label: 'Lãi vay' },
-            'vật tư':       { icon: 'fa-toolbox',           color: '#64748b', bg: 'rgba(100,116,139,0.08)',label: 'Vật Tư' },
-            'vật tư kd':    { icon: 'fa-box-open',          color: '#0ea5e9', bg: 'rgba(14,165,233,0.08)', label: 'Vật Tư KD' },
-            'mua bông':     { icon: 'fa-cart-shopping',     color: '#ec4899', bg: 'rgba(236,72,153,0.08)', label: 'Mua Bông' },
-            'vận chuyển':   { icon: 'fa-truck',             color: '#0369a1', bg: 'rgba(3,105,161,0.08)',  label: 'Vận Chuyển' },
-            'chi phí khác': { icon: 'fa-ellipsis',          color: '#94a3b8', bg: 'rgba(148,163,184,0.08)',label: 'Chi Phí Khác' },
+            'expensed': { icon: 'fa-building-columns', color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)', label: 'Expensed' },
+            'phân': { icon: 'fa-seedling', color: '#22c55e', bg: 'rgba(34,197,94,0.08)', label: 'Phân bón' },
+            'thuốc': { icon: 'fa-flask', color: '#06b6d4', bg: 'rgba(6,182,212,0.08)', label: 'Thuốc' },
+            'công': { icon: 'fa-users', color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', label: 'Lương / Công' },
+            'lãi': { icon: 'fa-percent', color: '#f97316', bg: 'rgba(249,115,22,0.08)', label: 'Lãi vay' },
+            'vật tư': { icon: 'fa-toolbox', color: '#64748b', bg: 'rgba(100,116,139,0.08)', label: 'Vật Tư' },
+            'vật tư kd': { icon: 'fa-box-open', color: '#0ea5e9', bg: 'rgba(14,165,233,0.08)', label: 'Vật Tư KD' },
+            'mua bông': { icon: 'fa-cart-shopping', color: '#ec4899', bg: 'rgba(236,72,153,0.08)', label: 'Mua Bông' },
+            'vận chuyển': { icon: 'fa-truck', color: '#0369a1', bg: 'rgba(3,105,161,0.08)', label: 'Vận Chuyển' },
+            'chi phí khác': { icon: 'fa-ellipsis', color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', label: 'Chi Phí Khác' },
         };
         function getCatCfg(key) {
             return catConfig[key.toLowerCase()] || { icon: 'fa-circle-dot', color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', label: key };
         }
 
         // ---- EXPENSE SIDE ----
-        // Group expense rows by Loại CP
         const expenseGroups = {};
         dayRows.forEach(row => {
             const cp = parseFloat(row['Chi Phí']) || 0;
             if (cp <= 0) return;
             const loaiCP = (row['Loại CP'] || 'Chi Phí Khác').trim();
-            // Use the dedicated expense note field — NOT Người Mua
             const ghiChuCP = (row['Ghi Chú Chi Phí'] || row['Ghi Chú'] || '').trim();
             if (!expenseGroups[loaiCP]) expenseGroups[loaiCP] = { total: 0, items: [] };
             expenseGroups[loaiCP].total += cp;
-            expenseGroups[loaiCP].items.push({ cp, ghiChu: ghiChuCP });
+            expenseGroups[loaiCP].items.push({ cp, ghiChu: ghiChuCP, sheetRowNumber: row._sheetRowNumber || null, rawRow: row, loaiCP });
         });
 
         const loaiCPOrder = ['Expensed', 'Phân', 'Thuốc', 'Công', 'Lãi', 'Vật Tư', 'Vật Tư KD', 'Mua Bông', 'Vận Chuyển', 'Chi Phí Khác'];
@@ -5027,54 +5076,81 @@ document.addEventListener("DOMContentLoaded", () => {
             return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
         });
 
+        const expKeyAll = `ALL_${day}_${month}_${year}`;
+        const isEditingExpAll = window.editingExpenseState && window.editingExpenseState.expKey === expKeyAll;
+
         let expHtml = '';
-        if (sortedExpKeys.length === 0) {
+        if (sortedExpKeys.length === 0 && !isEditingExpAll) {
             expHtml = `
-                <div style="text-align:center; padding:3rem 1rem;">
-                    <i class="fa-solid fa-check-circle" style="color:#10b981; font-size:2.5rem; display:block; margin-bottom:12px; opacity:0.7;"></i>
-                    <div style="font-weight:700; color:#10b981; font-size:0.95rem;">Không có chi phí</div>
-                    <div style="color:#94a3b8; font-size:0.8rem; margin-top:4px;">Ngày ${day}/${month}/${year}</div>
+                <div style="text-align:center; padding:2rem 1rem; border:1px dashed #cbd5e1; border-radius:12px; background:rgba(255,255,255,0.5);">
+                    <i class="fa-solid fa-receipt" style="color:#cbd5e1; font-size:2.2rem; display:block; margin-bottom:8px;"></i>
+                    <div style="font-weight:700; color:#94a3b8; font-size:0.9rem;">Chưa có chi phí trong ngày</div>
+                    <button type="button" onclick="toggleEditExpenseCategory('ALL', ${day}, ${month}, ${year})"
+                        style="margin-top:10px; background:linear-gradient(135deg, #ef4444, #dc2626); color:white; border:none; padding:6px 16px; border-radius:8px; font-size:0.8rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 8px rgba(239,68,68,0.25);">
+                        <i class="fa-solid fa-plus-circle"></i> Thêm Chi Phí Ngày ${day}/${month}
+                    </button>
                 </div>`;
         } else {
-            // Summary bar
+            // Expense Summary Bar
             expHtml += `
-                <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.15); border-radius:12px; padding:10px 14px; margin-bottom:14px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.15); border-radius:12px; padding:10px 14px; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
                     <div>
                         <div style="font-size:0.7rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px;">Tổng chi phí · ${day}/${month}/${year}</div>
                         <div style="font-size:1.25rem; font-weight:900; color:#ef4444;">${fmt(totalExpense)}</div>
                     </div>
-                    <div style="text-align:right;">
-                        <div style="font-size:0.7rem; font-weight:700; color:#94a3b8; margin-bottom:2px;">Danh mục</div>
-                        <div style="font-size:1.1rem; font-weight:800; color:#ef4444;">${sortedExpKeys.length}</div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button type="button" onclick="toggleEditExpenseCategory('ALL', ${day}, ${month}, ${year})"
+                            style="background:white; color:#ef4444; border:1px solid rgba(239,68,68,0.3); padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:all 0.2s;">
+                            <i class="fa-solid fa-pen-to-square"></i> ${isEditingExpAll ? 'Đóng Editor' : '✏️ Sửa Chi Phí'}
+                        </button>
                     </div>
                 </div>`;
 
-            sortedExpKeys.forEach(key => {
-                const grp = expenseGroups[key];
-                const cfg = getCatCfg(key);
-                const pct = totalExpense > 0 ? ((grp.total / totalExpense) * 100).toFixed(0) : 0;
-                expHtml += `
-                    <div style="border-radius:10px; overflow:hidden; margin-bottom:8px; border:1px solid ${cfg.color}22;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:${cfg.bg}; gap:8px;">
-                            <div style="display:flex; align-items:center; gap:8px; min-width:0;">
-                                <span style="width:28px; height:28px; border-radius:8px; background:${cfg.color}20; color:${cfg.color}; display:flex; align-items:center; justify-content:center; font-size:0.75rem; flex-shrink:0;">
-                                    <i class="fa-solid ${cfg.icon}"></i>
-                                </span>
-                                <div style="min-width:0;">
-                                    <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark);">${cfg.label}</div>
-                                    <div style="font-size:0.72rem; color:#94a3b8;">${grp.items.length} khoản · ${pct}% tổng CP</div>
+            if (isEditingExpAll) {
+                expHtml += renderExpenseEditorHtml(day, month, year, 'ALL');
+            } else {
+                sortedExpKeys.forEach(key => {
+                    const grp = expenseGroups[key];
+                    const cfg = getCatCfg(key);
+                    const pct = totalExpense > 0 ? ((grp.total / totalExpense) * 100).toFixed(0) : 0;
+                    const catKey = `${key}_${day}_${month}_${year}`;
+                    const isEditingCat = window.editingExpenseState && window.editingExpenseState.expKey === catKey;
+
+                    expHtml += `
+                        <div style="border-radius:10px; overflow:hidden; margin-bottom:8px; border:1px solid ${cfg.color}22;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:${cfg.bg}; gap:8px;">
+                                <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                                    <span style="width:28px; height:28px; border-radius:8px; background:${cfg.color}20; color:${cfg.color}; display:flex; align-items:center; justify-content:center; font-size:0.75rem; flex-shrink:0;">
+                                        <i class="fa-solid ${cfg.icon}"></i>
+                                    </span>
+                                    <div style="min-width:0;">
+                                        <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark);">${cfg.label}</div>
+                                        <div style="font-size:0.72rem; color:#94a3b8;">${grp.items.length} khoản · ${pct}% tổng CP</div>
+                                    </div>
                                 </div>
-                            </div>
-                            <span style="font-weight:800; font-size:0.95rem; color:${cfg.color}; white-space:nowrap; flex-shrink:0;">${fmt(grp.total)}</span>
-                        </div>
-                        ${grp.items.map(item => `
+                                <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                                    <button type="button" onclick="toggleEditExpenseCategory('${escapeAttr(key)}', ${day}, ${month}, ${year})"
+                                        style="background:white; color:${cfg.color}; border:1px solid ${cfg.color}40; padding:3px 8px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:3px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                                        <i class="fa-solid fa-pen-to-square"></i> ${isEditingCat ? 'Hủy' : 'Sửa'}
+                                    </button>
+                                    <span style="font-weight:800; font-size:0.95rem; color:${cfg.color}; white-space:nowrap;">${fmt(grp.total)}</span>
+                                </div>
+                            </div>`;
+
+                    if (isEditingCat) {
+                        expHtml += renderExpenseEditorHtml(day, month, year, key);
+                    } else {
+                        expHtml += grp.items.map(item => `
                             <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px 6px 48px; border-top:1px dashed ${cfg.color}15; background:white;">
                                 <span style="font-size:0.82rem; color:#64748b; font-style:${item.ghiChu ? 'normal' : 'italic'};">${item.ghiChu || '(Không có ghi chú)'}</span>
                                 <span style="font-size:0.82rem; font-weight:600; color:${cfg.color}; white-space:nowrap;">${fmt(item.cp)}</span>
                             </div>
-                        `).join('')}
-                    </div>`;
-            });
+                        `).join('');
+                    }
+
+                    expHtml += `</div>`;
+                });
+            }
         }
         expenseEl.innerHTML = expHtml;
 
@@ -5088,11 +5164,15 @@ document.addEventListener("DOMContentLoaded", () => {
             const buyer = (row['Người Mua'] || 'Khách Lẻ').trim();
             const flower = (row['Phân Loại Bông'] || '').trim();
             const qty = parseFloat(row['Số lượng']) || 0;
+            let price = parseFloat(row['Giá']) || 0;
+            if (price <= 0 && qty > 0 && rev > 0) price = Math.round(rev / qty);
             const typeDT = (row['Loại DT'] || 'Farm').trim();
             const status = (row['Status'] || '').trim();
+            const sheetRowNumber = row._sheetRowNumber || null;
+
             if (!buyerGroups[buyer]) buyerGroups[buyer] = { total: 0, items: [], typeDT };
             buyerGroups[buyer].total += rev;
-            buyerGroups[buyer].items.push({ rev, flower, qty, typeDT, status });
+            buyerGroups[buyer].items.push({ rev, flower, qty, price, typeDT, status, sheetRowNumber, rawRow: row });
         });
 
         const sortedBuyers = Object.entries(buyerGroups).sort((a, b) => b[1].total - a[1].total);
@@ -5134,6 +5214,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 const buyerBorder = isVua ? 'rgba(245,158,11,0.2)' : 'rgba(14,165,233,0.15)';
                 const buyerIcon = isVua ? 'fa-store' : 'fa-user';
 
+                const buyerKey = `${buyer}_${day}_${month}_${year}`;
+                const isEditing = window.editingBuyerState && window.editingBuyerState.buyerKey === buyerKey;
+
                 revHtml += `
                     <div style="border-radius:10px; overflow:hidden; margin-bottom:8px; border:1px solid ${buyerBorder};">
                         <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:${buyerBg}; gap:8px;">
@@ -5146,23 +5229,84 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <div style="font-size:0.72rem; color:#94a3b8;">${grp.items.length} mặt hàng · ${buyerPct}% doanh thu</div>
                                 </div>
                             </div>
-                            <span style="font-weight:800; font-size:0.95rem; color:${c}; white-space:nowrap; flex-shrink:0;">${fmt(grp.total)}</span>
-                        </div>
-                        ${grp.items.map(item => {
-                            const itemLabel = item.flower
-                                ? `${item.flower}${item.qty > 0 ? ` <span style="color:#94a3b8">(${item.qty.toLocaleString('vi-VN')} bông)</span>` : ''}`
-                                : (item.typeDT !== 'Farm' ? item.typeDT : 'Doanh thu khác');
-                            const isDone = item.status && item.status.toLowerCase() === 'xong';
-                            return `
-                                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px 6px 48px; border-top:1px dashed ${c}15; background:white;">
-                                    <span style="font-size:0.82rem; color:#64748b;">${itemLabel}</span>
-                                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-                                        ${isDone ? `<span style="font-size:0.68rem; background:#d1fae5; color:#059669; border-radius:4px; padding:1px 6px; font-weight:700;">✓ Xong</span>` : ''}
-                                        <span style="font-size:0.82rem; font-weight:600; color:${c};">${fmt(item.rev)}</span>
+                            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                                <button type="button" onclick="toggleEditBuyerGroup('${escapeAttr(buyer)}', ${day}, ${month}, ${year})"
+                                    style="background:white; color:${c}; border:1px solid ${c}40; padding:3px 9px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:all 0.2s;">
+                                    <i class="fa-solid fa-pen-to-square"></i> ${isEditing ? 'Hủy' : 'Sửa'}
+                                </button>
+                                <span style="font-weight:800; font-size:0.95rem; color:${c}; white-space:nowrap;">${fmt(grp.total)}</span>
+                            </div>
+                        </div>`;
+
+                if (isEditing) {
+                    revHtml += `
+                        <div class="buyer-inline-editor" style="padding:12px; background:#f8fafc; border-top:1.5px solid ${c}30;">
+                            <div style="margin-bottom:10px;">
+                                <label style="font-size:0.72rem; font-weight:800; color:#64748b; text-transform:uppercase; display:block; margin-bottom:4px;">TÊN KHÁCH HÀNG</label>
+                                <input type="text" id="ier-buyer-name" value="${escapeAttr(window.editingBuyerState.buyer)}" placeholder="Nhập tên khách hàng..." style="padding:7px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.88rem; font-weight:700; width:100%; outline:none; background:white; color:#0f172a;" />
+                            </div>
+
+                            <div style="display:grid; grid-template-columns: 1.4fr 1fr 1fr 1.2fr 30px; gap:6px; font-size:0.7rem; font-weight:800; color:#64748b; margin-bottom:6px; padding:0 2px;">
+                                <div>TÊN BÔNG</div>
+                                <div>SỐ LƯỢNG</div>
+                                <div>ĐƠN GIÁ</div>
+                                <div style="text-align:right;">THÀNH TIỀN</div>
+                                <div></div>
+                            </div>
+
+                            <div id="inline-edit-rows-list" style="display:flex; flex-direction:column; gap:6px;">
+                                ${window.editingBuyerState.items.map((it, idx) => `
+                                    <div class="inline-edit-row" data-idx="${idx}" style="display:grid; grid-template-columns: 1.4fr 1fr 1fr 1.2fr 30px; gap:6px; align-items:center; background:white; padding:6px; border-radius:6px; border:1px solid #e2e8f0;">
+                                        <input type="text" class="ier-flower" value="${escapeAttr(it.flower)}" list="flower-types" placeholder="Tên bông..." style="padding:5px 8px; border:1px solid #cbd5e1; border-radius:4px; font-size:0.8rem; font-weight:600; width:100%; outline:none;" />
+                                        <input type="number" class="ier-qty" value="${it.qty || ''}" placeholder="SL" min="0" oninput="updateInlineEditRowTotal(this)" style="padding:5px 8px; border:1px solid #cbd5e1; border-radius:4px; font-size:0.8rem; font-weight:600; width:100%; outline:none;" />
+                                        <input type="number" class="ier-price" value="${it.price || ''}" placeholder="Giá" min="0" oninput="updateInlineEditRowTotal(this)" style="padding:5px 8px; border:1px solid #cbd5e1; border-radius:4px; font-size:0.8rem; font-weight:600; width:100%; outline:none;" />
+                                        <div class="ier-total" style="font-size:0.8rem; font-weight:800; color:${c}; text-align:right;">${fmt((it.qty || 0) * (it.price || 0))}</div>
+                                        <button type="button" onclick="removeInlineEditRow(${idx})" style="background:#fee2e2; color:#ef4444; border:none; width:26px; height:26px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.75rem;">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
                                     </div>
-                                </div>`;
-                        }).join('')}
-                    </div>`;
+                                `).join('')}
+                            </div>
+
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top:1px dashed #cbd5e1; flex-wrap:wrap; gap:8px;">
+                                <button type="button" onclick="addInlineEditRow()"
+                                    style="background:rgba(14,165,233,0.1); color:#0284c7; border:1px solid rgba(14,165,233,0.3); padding:5px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                                    <i class="fa-solid fa-plus-circle"></i> Thêm Bông
+                                </button>
+
+                                <div style="display:flex; gap:8px;">
+                                    <button type="button" onclick="cancelBuyerInlineEdit()"
+                                        style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 14px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">
+                                        Hủy
+                                    </button>
+                                    <button type="button" onclick="saveBuyerInlineEdit()" id="btn-save-buyer-inline"
+                                        style="background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; padding:6px 16px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 8px rgba(16,185,129,0.3);">
+                                        <i class="fa-solid fa-floppy-disk"></i> Lưu Thay Đổi
+                                    </button>
+                                </div>
+                            </div>
+                        </div>`;
+                } else {
+                    revHtml += grp.items.map(item => {
+                        const unitPrice = item.price > 0 ? item.price : (item.qty > 0 && item.rev > 0 ? Math.round(item.rev / item.qty) : 0);
+                        const priceStr = unitPrice > 0 ? ` x ${unitPrice.toLocaleString('vi-VN')}` : '';
+                        const qtyStr = item.qty > 0 ? ` (${item.qty.toLocaleString('vi-VN')} bông)` : '';
+                        const itemLabel = item.flower
+                            ? `${item.flower}<span style="color:#64748b; font-weight:500;">${qtyStr}</span>${priceStr ? ` <span style="color:#0284c7; font-weight:700;">${priceStr}</span>` : ''}`
+                            : (item.typeDT !== 'Farm' ? item.typeDT : 'Doanh thu khác');
+                        const isDone = item.status && item.status.toLowerCase() === 'xong';
+                        return `
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px 6px 48px; border-top:1px dashed ${c}15; background:white;">
+                                <span style="font-size:0.82rem; color:#64748b;">${itemLabel}</span>
+                                <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                                    ${isDone ? `<span style="font-size:0.68rem; background:#d1fae5; color:#059669; border-radius:4px; padding:1px 6px; font-weight:700;">✓ Xong</span>` : ''}
+                                    <span style="font-size:0.82rem; font-weight:600; color:${c};">${fmt(item.rev)}</span>
+                                </div>
+                            </div>`;
+                    }).join('');
+                }
+
+                revHtml += `</div>`;
             });
 
             revHtml += `
@@ -5181,6 +5325,444 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         revenueEl.innerHTML = revHtml;
     }
+
+    // --- EXPENSE INLINE EDIT HELPERS FOR DAILY REPORT ---
+    window.editingExpenseState = null;
+
+    function renderExpenseEditorHtml(day, month, year, categoryName) {
+        if (!window.editingExpenseState) return '';
+        const fmt = (v) => typeof formatCurrency === 'function' ? formatCurrency(v) : (v || 0).toLocaleString('vi-VN') + ' ₫';
+        const escapeAttr = (str) => String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const catOptions = ['Expensed', 'Phân', 'Thuốc', 'Công', 'Lãi', 'Vật Tư', 'Vật Tư KD', 'Mua Bông', 'Vận Chuyển', 'Chi Phí Khác'];
+
+        return `
+            <div class="expense-inline-editor" style="padding:12px; background:#fff1f2; border:1.5px solid #fecdd3; border-radius:10px; margin-bottom:10px;">
+                <div style="font-weight:800; font-size:0.85rem; color:#e11d48; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa Chi Phí — <strong>${categoryName === 'ALL' ? 'Tất cả danh mục' : categoryName}</strong></span>
+                    <span style="font-size:0.72rem; color:#9f1239; background:#ffe4e6; padding:2px 8px; border-radius:12px;">Ngày ${day}/${month}/${year}</span>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1.2fr 1.2fr 1.8fr 30px; gap:6px; font-size:0.7rem; font-weight:800; color:#9f1239; margin-bottom:6px; padding:0 2px;">
+                    <div>LOẠI CHI PHÍ</div>
+                    <div>SỐ TIỀN</div>
+                    <div>GHI CHÚ CHI PHÍ</div>
+                    <div></div>
+                </div>
+
+                <div id="exp-inline-edit-rows-list" style="display:flex; flex-direction:column; gap:6px;">
+                    ${window.editingExpenseState.items.map((it, idx) => `
+                        <div class="exp-inline-edit-row" data-idx="${idx}" style="display:grid; grid-template-columns: 1.2fr 1.2fr 1.8fr 30px; gap:6px; align-items:center; background:white; padding:6px; border-radius:6px; border:1px solid #fecdd3;">
+                            <select class="ieer-cat" style="padding:5px 6px; border:1px solid #fda4af; border-radius:4px; font-size:0.8rem; font-weight:600; width:100%; outline:none; background:white;">
+                                ${catOptions.map(cat => `<option value="${cat}" ${it.loaiCP.toLowerCase() === cat.toLowerCase() ? 'selected' : ''}>${cat}</option>`).join('')}
+                            </select>
+                            <input type="number" class="ieer-cp" value="${it.cp || ''}" placeholder="Số tiền..." min="0" style="padding:5px 8px; border:1px solid #fda4af; border-radius:4px; font-size:0.8rem; font-weight:600; width:100%; outline:none; color:#be123c;" />
+                            <input type="text" class="ieer-note" value="${escapeAttr(it.ghiChu)}" placeholder="Ghi chú chi phí..." style="padding:5px 8px; border:1px solid #cbd5e1; border-radius:4px; font-size:0.8rem; font-weight:500; width:100%; outline:none;" />
+                            <button type="button" onclick="removeExpenseInlineEditRow(${idx})" style="background:#fee2e2; color:#ef4444; border:none; width:26px; height:26px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.75rem;">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top:1px dashed #fda4af; flex-wrap:wrap; gap:8px;">
+                    <button type="button" onclick="addExpenseInlineEditRow()"
+                        style="background:rgba(225,29,72,0.08); color:#e11d48; border:1px solid rgba(225,29,72,0.3); padding:5px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                        <i class="fa-solid fa-plus-circle"></i> Thêm Khoản CP
+                    </button>
+
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" onclick="cancelExpenseInlineEdit()"
+                            style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 14px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">
+                            Hủy
+                        </button>
+                        <button type="button" onclick="saveExpenseInlineEdit()" id="btn-save-exp-inline"
+                            style="background:linear-gradient(135deg, #ef4444, #dc2626); color:white; border:none; padding:6px 16px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 8px rgba(239,68,68,0.3);">
+                            <i class="fa-solid fa-floppy-disk"></i> Lưu Thay Đổi
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    window.toggleEditExpenseCategory = function (categoryName, day, month, year) {
+        const expKey = `${categoryName}_${day}_${month}_${year}`;
+        if (window.editingExpenseState && window.editingExpenseState.expKey === expKey) {
+            window.editingExpenseState = null;
+        } else {
+            const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
+            const dayRows = farmDataRef.filter(row => {
+                const d = row.parsedDate;
+                return d && d.getFullYear() === year && (d.getMonth() + 1) === month && d.getDate() === day;
+            });
+
+            const items = [];
+            dayRows.forEach(row => {
+                const cp = parseFloat(row['Chi Phí']) || 0;
+                if (cp <= 0) return;
+                const loaiCP = (row['Loại CP'] || 'Chi Phí Khác').trim();
+                if (categoryName === 'ALL' || loaiCP.toLowerCase() === categoryName.toLowerCase()) {
+                    items.push({
+                        sheetRowNumber: row._sheetRowNumber || null,
+                        loaiCP: loaiCP,
+                        cp: cp,
+                        ghiChu: (row['Ghi Chú Chi Phí'] || row['Ghi Chú'] || '').trim(),
+                        rawRow: row
+                    });
+                }
+            });
+
+            window.editingExpenseState = {
+                expKey: expKey,
+                categoryName: categoryName,
+                day: day,
+                month: month,
+                year: year,
+                items: items.length > 0 ? items : [{ sheetRowNumber: null, loaiCP: categoryName === 'ALL' ? 'Expensed' : categoryName, cp: 0, ghiChu: '' }]
+            };
+        }
+        if (typeof updateDashboard === 'function') updateDashboard();
+    };
+
+    window.addExpenseInlineEditRow = function () {
+        if (!window.editingExpenseState) return;
+        const defaultCat = window.editingExpenseState.categoryName === 'ALL' ? 'Expensed' : window.editingExpenseState.categoryName;
+        window.editingExpenseState.items.push({
+            sheetRowNumber: null,
+            loaiCP: defaultCat,
+            cp: 0,
+            ghiChu: ''
+        });
+        if (typeof updateDashboard === 'function') updateDashboard();
+    };
+
+    window.removeExpenseInlineEditRow = function (idx) {
+        if (!window.editingExpenseState) return;
+        window.editingExpenseState.items.splice(idx, 1);
+        if (typeof updateDashboard === 'function') updateDashboard();
+    };
+
+    window.cancelExpenseInlineEdit = function () {
+        window.editingExpenseState = null;
+        if (typeof updateDashboard === 'function') updateDashboard();
+    };
+
+    window.saveExpenseInlineEdit = async function () {
+        if (!window.editingExpenseState) return;
+        const { day, month, year, items: origItems } = window.editingExpenseState;
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const btnSave = document.getElementById('btn-save-exp-inline');
+        if (btnSave) {
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+        }
+
+        const rowsList = document.querySelectorAll('.exp-inline-edit-row');
+        const newItems = [];
+        rowsList.forEach(r => {
+            const loaiCP = (r.querySelector('.ieer-cat')?.value || 'Chi Phí Khác').trim();
+            const cp = parseFloat(r.querySelector('.ieer-cp')?.value) || 0;
+            const ghiChu = (r.querySelector('.ieer-note')?.value || '').trim();
+            const idx = parseInt(r.dataset.idx, 10);
+            const orig = origItems[idx] || {};
+            if (cp > 0 || ghiChu) {
+                newItems.push({
+                    loaiCP,
+                    cp,
+                    ghiChu,
+                    sheetRowNumber: orig.sheetRowNumber || null,
+                    rawRow: orig.rawRow || null
+                });
+            }
+        });
+
+        const deletedItems = origItems.filter(o => o.sheetRowNumber && !newItems.some(n => n.sheetRowNumber === o.sheetRowNumber));
+        const token = typeof getToken === 'function' ? getToken() : '';
+        const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
+
+        try {
+            // 1. Delete removed rows
+            for (const del of deletedItems) {
+                if (del.rawRow) {
+                    const fidx = farmDataRef.indexOf(del.rawRow);
+                    if (fidx >= 0) farmDataRef.splice(fidx, 1);
+                }
+                if (del.sheetRowNumber && window.CONFIG && window.CONFIG.WEB_APP_URL) {
+                    fetch(window.CONFIG.WEB_APP_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'deleteByRow', rowNumber: del.sheetRowNumber, token }),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                    }).catch(e => console.error("Error deleting row:", e));
+                }
+            }
+
+            // 2. Update existing & insert new rows
+            for (const item of newItems) {
+                if (item.sheetRowNumber && item.rawRow) {
+                    item.rawRow['Loại CP'] = item.loaiCP;
+                    item.rawRow['Chi Phí'] = item.cp;
+                    item.rawRow['Ghi Chú Chi Phí'] = item.ghiChu;
+                    item.rawRow['Ghi Chú'] = item.ghiChu;
+
+                    if (window.CONFIG && window.CONFIG.WEB_APP_URL) {
+                        fetch(window.CONFIG.WEB_APP_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                action: 'update',
+                                rowNumber: item.sheetRowNumber,
+                                updates: {
+                                    'Loại CP': item.loaiCP,
+                                    'Chi Phí': item.cp,
+                                    'Ghi Chú Chi Phí': item.ghiChu,
+                                    'Ghi Chú': item.ghiChu
+                                },
+                                token
+                            }),
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                        }).catch(e => console.error("Error updating row:", e));
+                    }
+                } else {
+                    const newRowObj = {
+                        'Ngày': dateStr,
+                        'Loại CP': item.loaiCP,
+                        'Chi Phí': item.cp,
+                        'Ghi Chú Chi Phí': item.ghiChu,
+                        'Ghi Chú': item.ghiChu,
+                        'Loại DT': 'Farm',
+                        'Status': 'Chưa Xong',
+                        parsedDate: new Date(year, month - 1, day)
+                    };
+                    farmDataRef.unshift(newRowObj);
+
+                    if (window.CONFIG && window.CONFIG.WEB_APP_URL) {
+                        fetch(window.CONFIG.WEB_APP_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                action: 'add',
+                                payload: { action: 'add', data: newRowObj },
+                                token
+                            }),
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                        }).catch(e => console.error("Error adding row:", e));
+                    }
+                }
+            }
+
+            window.editingExpenseState = null;
+            if (window.showToast) window.showToast("Đã cập nhật chi phí thành công!", "success");
+            if (typeof updateDashboard === 'function') updateDashboard();
+            if (typeof applyFiltersAndRender === 'function') applyFiltersAndRender();
+
+        } catch (err) {
+            console.error("Save expense error:", err);
+            alert("Lỗi khi lưu chi phí: " + err.message);
+            window.editingExpenseState = null;
+            if (typeof updateDashboard === 'function') updateDashboard();
+        }
+    };
+
+    // --- BUYER INLINE EDIT HELPERS FOR DAILY REPORT ---
+    window.editingBuyerState = null;
+
+    window.toggleEditBuyerGroup = function (buyerName, day, month, year) {
+        const buyerKey = `${buyerName}_${day}_${month}_${year}`;
+        if (window.editingBuyerState && window.editingBuyerState.buyerKey === buyerKey) {
+            window.editingBuyerState = null;
+        } else {
+            const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
+            const dayRows = farmDataRef.filter(row => {
+                const d = row.parsedDate;
+                return d && d.getFullYear() === year && (d.getMonth() + 1) === month && d.getDate() === day;
+            });
+
+            const items = [];
+            dayRows.forEach(row => {
+                const b = (row['Người Mua'] || 'Khách Lẻ').trim();
+                if (b.toLowerCase() === buyerName.toLowerCase()) {
+                    const dtBong = parseFloat(row['Doanh Thu Bông']) || 0;
+                    const dtKhac = parseFloat(row['Doanh Thu Khác']) || 0;
+                    const rev = dtBong + dtKhac;
+                    if (rev <= 0) return;
+                    const flower = (row['Phân Loại Bông'] || '').trim();
+                    const qty = parseFloat(row['Số lượng']) || 0;
+                    let price = parseFloat(row['Giá']) || 0;
+                    if (price <= 0 && qty > 0 && rev > 0) price = Math.round(rev / qty);
+                    items.push({
+                        sheetRowNumber: row._sheetRowNumber || null,
+                        flower: flower,
+                        qty: qty,
+                        price: price,
+                        rev: rev,
+                        rawRow: row
+                    });
+                }
+            });
+
+            window.editingBuyerState = {
+                buyerKey: buyerKey,
+                buyer: buyerName,
+                day: day,
+                month: month,
+                year: year,
+                items: items.length > 0 ? items : [{ sheetRowNumber: null, flower: '', qty: 0, price: 0, rev: 0 }]
+            };
+        }
+        if (typeof updateDashboard === 'function') updateDashboard();
+    };
+
+    window.updateInlineEditRowTotal = function (inputEl) {
+        const rowEl = inputEl.closest('.inline-edit-row');
+        if (!rowEl) return;
+        const qty = parseFloat(rowEl.querySelector('.ier-qty')?.value) || 0;
+        const price = parseFloat(rowEl.querySelector('.ier-price')?.value) || 0;
+        const totalEl = rowEl.querySelector('.ier-total');
+        if (totalEl) {
+            totalEl.innerText = (typeof formatCurrency === 'function' ? formatCurrency(qty * price) : (qty * price).toLocaleString('vi-VN') + ' ₫');
+        }
+    };
+
+    window.addInlineEditRow = function () {
+        if (!window.editingBuyerState) return;
+        window.editingBuyerState.items.push({
+            sheetRowNumber: null,
+            flower: '',
+            qty: 0,
+            price: 0,
+            rev: 0
+        });
+        if (typeof updateDashboard === 'function') updateDashboard();
+    };
+
+    window.removeInlineEditRow = function (idx) {
+        if (!window.editingBuyerState) return;
+        window.editingBuyerState.items.splice(idx, 1);
+        if (typeof updateDashboard === 'function') updateDashboard();
+    };
+
+    window.cancelBuyerInlineEdit = function () {
+        window.editingBuyerState = null;
+        if (typeof updateDashboard === 'function') updateDashboard();
+    };
+
+    window.saveBuyerInlineEdit = async function () {
+        if (!window.editingBuyerState) return;
+        const { buyer: origBuyer, day, month, year, items: origItems } = window.editingBuyerState;
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const newBuyerName = (document.getElementById('ier-buyer-name')?.value || origBuyer).trim();
+
+        const btnSave = document.getElementById('btn-save-buyer-inline');
+        if (btnSave) {
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+        }
+
+        const rowsList = document.querySelectorAll('.inline-edit-row');
+        const newItems = [];
+        rowsList.forEach(r => {
+            const flower = (r.querySelector('.ier-flower')?.value || '').trim();
+            const qty = parseFloat(r.querySelector('.ier-qty')?.value) || 0;
+            const price = parseFloat(r.querySelector('.ier-price')?.value) || 0;
+            const idx = parseInt(r.dataset.idx, 10);
+            const orig = origItems[idx] || {};
+            if (flower || qty > 0) {
+                newItems.push({
+                    flower,
+                    qty,
+                    price,
+                    rev: qty * price,
+                    sheetRowNumber: orig.sheetRowNumber || null,
+                    rawRow: orig.rawRow || null,
+                    isNew: !orig.sheetRowNumber
+                });
+            }
+        });
+
+        const deletedItems = origItems.filter(o => o.sheetRowNumber && !newItems.some(n => n.sheetRowNumber === o.sheetRowNumber));
+        const token = typeof getToken === 'function' ? getToken() : '';
+        const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
+
+        try {
+            // 1. Delete removed rows
+            for (const del of deletedItems) {
+                if (del.rawRow) {
+                    const fidx = farmDataRef.indexOf(del.rawRow);
+                    if (fidx >= 0) farmDataRef.splice(fidx, 1);
+                }
+                if (del.sheetRowNumber && window.CONFIG && window.CONFIG.WEB_APP_URL) {
+                    fetch(window.CONFIG.WEB_APP_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'deleteByRow', rowNumber: del.sheetRowNumber, token }),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                    }).catch(e => console.error("Error deleting row:", e));
+                }
+            }
+
+            // 2. Update existing & insert new rows
+            for (const item of newItems) {
+                if (item.sheetRowNumber && item.rawRow) {
+                    item.rawRow['Người Mua'] = newBuyerName;
+                    item.rawRow['Phân Loại Bông'] = item.flower;
+                    item.rawRow['Số lượng'] = item.qty;
+                    item.rawRow['Giá'] = item.price;
+                    item.rawRow['Doanh Thu Bông'] = item.rev;
+
+                    if (window.CONFIG && window.CONFIG.WEB_APP_URL) {
+                        fetch(window.CONFIG.WEB_APP_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                action: 'update',
+                                rowNumber: item.sheetRowNumber,
+                                updates: {
+                                    'Người Mua': newBuyerName,
+                                    'Phân Loại Bông': item.flower,
+                                    'Số lượng': item.qty,
+                                    'Giá': item.price,
+                                    'Doanh Thu Bông': item.rev
+                                },
+                                token
+                            }),
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                        }).catch(e => console.error("Error updating row:", e));
+                    }
+                } else {
+                    const newRowObj = {
+                        'Ngày': dateStr,
+                        'Người Mua': newBuyerName,
+                        'Phân Loại Bông': item.flower,
+                        'Số lượng': item.qty,
+                        'Giá': item.price,
+                        'Doanh Thu Bông': item.rev,
+                        'Loại DT': 'Farm',
+                        'Status': 'Chưa Xong',
+                        parsedDate: new Date(year, month - 1, day)
+                    };
+                    farmDataRef.unshift(newRowObj);
+
+                    if (window.CONFIG && window.CONFIG.WEB_APP_URL) {
+                        fetch(window.CONFIG.WEB_APP_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                action: 'add',
+                                payload: { action: 'add', data: newRowObj },
+                                token
+                            }),
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                        }).catch(e => console.error("Error adding row:", e));
+                    }
+                }
+            }
+
+            window.editingBuyerState = null;
+            if (window.showToast) window.showToast("Đã cập nhật đơn hàng thành công!", "success");
+            if (typeof updateDashboard === 'function') updateDashboard();
+            if (typeof applyFiltersAndRender === 'function') applyFiltersAndRender();
+
+        } catch (err) {
+            console.error("Save error:", err);
+            alert("Lỗi khi lưu: " + err.message);
+            window.editingBuyerState = null;
+            if (typeof updateDashboard === 'function') updateDashboard();
+        }
+    };
 
     function updateDashboardFinancialRatios(year, targetConfig = null) {
         const config = targetConfig || {
@@ -5390,21 +5972,21 @@ document.addEventListener("DOMContentLoaded", () => {
             let originalValue = e.target.value;
             let selectionEnd = e.target.selectionEnd;
             let offsetFromEnd = originalValue.length - selectionEnd;
-            
+
             let digits = originalValue.replace(/[^\d]/g, '');
             if (!digits) {
                 e.target.value = "";
                 recalcBreakEven();
                 return;
             }
-            
+
             let num = parseInt(digits, 10) || 0;
             let formatted = new Intl.NumberFormat('vi-VN').format(num);
             e.target.value = formatted;
-            
+
             let newPos = Math.max(0, formatted.length - offsetFromEnd);
             e.target.setSelectionRange(newPos, newPos);
-            
+
             recalcBreakEven();
         });
     }
@@ -5598,7 +6180,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function recalcBreakEven() {
         if (!currentCashflowStatement) return;
-        
+
         const monthSelect = document.getElementById('cashflow-month');
         const yearSelect = document.getElementById('cashflow-year');
         const selectedMonthStr = monthSelect ? monthSelect.value : "all";
@@ -5625,25 +6207,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 monthlyDepr = val;
             }
         }
-        
+
         const additionalFixedCost = monthlyDepr * numMonths;
 
         const s = currentCashflowStatement;
-        
+
         // 1. Variable Costs
         const variableCosts = s.phanBon + s.thuoc + s.muaBong + s.vanChuyen;
-        
+
         // 2. Fixed Costs
         const fixedCostsFromStatement = s.luong + s.lai + s.vatTu + s.expensed + s.vanHanh;
         const totalFixedCosts = fixedCostsFromStatement + additionalFixedCost;
-        
+
         // 3. Break-even Revenue (Option 2: Cash-Outflow Recovery)
         const breakEvenRevenue = totalFixedCosts + variableCosts;
-        
+
         // 4. Gap / Difference (excluding Company revenue)
         const actualRevenueForBE = s.totalRev - (s.revCompany || 0);
         const diff = actualRevenueForBE - breakEvenRevenue;
-        
+
         // 5. Calculate Average Price of Flowers for selected period
         let flowerQty = 0;
         let flowerRev = 0;
@@ -7049,7 +7631,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (capitalAllocationChartInstance) capitalAllocationChartInstance.destroy();
 
         const total = cash + business + realEstate + finance;
-        
+
         // Define premium colors
         const tealColor = '#10b981';
         const indigoColor = '#6366f1';
@@ -7189,7 +7771,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 const label = context.label || '';
                                 if (label === 'Không có phân bổ') return ` ${label}`;
                                 const value = context.parsed || 0;
@@ -7223,9 +7805,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updateAccumulationJourney(years, equityRow) {
         if (!years || !equityRow || years.length === 0) return;
-        
+
         const equityData = equityRow.slice(1).map(v => Number(v) || 0);
-        
+
         // Find index of the maximum (latest) year
         let maxYearIdx = 0;
         let maxYearVal = -Infinity;
@@ -7236,16 +7818,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 maxYearIdx = i;
             }
         }
-        
+
         if (maxYearVal === -Infinity) return;
-        
+
         const latestYear = maxYearVal;
         const latestEquityMillions = equityData[maxYearIdx]; // this is in millions
         const latestEquityVND = latestEquityMillions * 1000000;
         const targetVND = 10000000000; // 10 Billion VND
-        
+
         const percentage = Math.min(100, Math.max(0, (latestEquityVND / targetVND) * 100));
-        
+
         // Update DOM elements
         const pctEl = document.getElementById('accumulation-percentage');
         const barEl = document.getElementById('accumulation-progress-bar');
@@ -7254,7 +7836,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const remainingEl = document.getElementById('accumulation-remaining');
         const remainingLabelEl = document.getElementById('accumulation-remaining-label');
         const iconContainerEl = document.getElementById('accumulation-remaining-icon-container');
-        
+
         if (pctEl) {
             pctEl.innerText = percentage.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
         }
@@ -7702,7 +8284,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 if (context.parsed.y !== null) {
                                     if (context.dataset.label.includes('Sản Lượng')) {
                                         label += context.parsed.y.toLocaleString('vi-VN') + ' Bông';
-                                        
+
                                         // If price dataset is hidden, show it inside the tooltip of Sản Lượng
                                         const priceDataset = context.chart.data.datasets.find(ds => ds.label && ds.label.includes('Giá'));
                                         const isPriceVisible = priceDataset && context.chart.isDatasetVisible(context.chart.data.datasets.indexOf(priceDataset));
@@ -8581,8 +9163,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // ── Sync mini cash bar in Data Entry tab ──────────────────────────────
         const entryCashEl = document.getElementById('entry-kpi-cash-hand');
         const entryOpenEl = document.getElementById('entry-cash-opening');
-        const entryInEl   = document.getElementById('entry-cash-in-total');
-        const entryOutEl  = document.getElementById('entry-cash-out-total');
+        const entryInEl = document.getElementById('entry-cash-in-total');
+        const entryOutEl = document.getElementById('entry-cash-out-total');
         const entryDiffEl = document.getElementById('entry-cash-diff-total');
 
         if (entryCashEl) {
@@ -8590,8 +9172,8 @@ document.addEventListener("DOMContentLoaded", () => {
             entryCashEl.style.color = currentCash >= 0 ? '#10b981' : '#ef4444';
         }
         if (entryOpenEl) entryOpenEl.innerText = formatCurrency(openingBalance);
-        if (entryInEl)   entryInEl.innerText   = formatCurrency(cashIn);
-        if (entryOutEl)  entryOutEl.innerText  = formatCurrency(cashOut);
+        if (entryInEl) entryInEl.innerText = formatCurrency(cashIn);
+        if (entryOutEl) entryOutEl.innerText = formatCurrency(cashOut);
         if (entryDiffEl) {
             const cashDiff2 = cashIn - cashOut + adjTotal;
             if (cashDiff2 > 0) {
@@ -10390,7 +10972,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 let updatedQueue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
                 if (updatedQueue.length > 0) {
                     const first = updatedQueue[0];
-                    if ((item.clientId && first.clientId === item.clientId) || 
+                    if ((item.clientId && first.clientId === item.clientId) ||
                         (item.rowNumber && first.rowNumber === item.rowNumber)) {
                         updatedQueue.shift();
                     } else {
@@ -10517,9 +11099,9 @@ document.addEventListener("DOMContentLoaded", () => {
         listContainer.innerHTML = html;
     }
 
-    window.removeQueueItem = function(source, index) {
+    window.removeQueueItem = function (source, index) {
         if (!confirm('Bạn có chắc muốn xóa mục này khỏi hàng chờ? Giao dịch/công việc này sẽ không được đồng bộ lên Cloud.')) return;
-        
+
         if (source === 'harvest') {
             let queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
             queue.splice(index, 1);
@@ -10557,13 +11139,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnClearQueue) {
         btnClearQueue.addEventListener('click', () => {
             if (!confirm('Cảnh báo: Bạn có chắc chắn muốn xóa TOÀN BỘ hàng chờ đồng bộ của cả Dữ liệu Farm và Công Việc? Tất cả thay đổi chưa lưu lên Cloud sẽ bị hủy bỏ.')) return;
-            
+
             localStorage.setItem('harvest_sync_queue', '[]');
             localStorage.setItem('todo_sync_queue', '[]');
-            
+
             showToast('Đã xóa toàn bộ hàng chờ đồng bộ!', 'info');
             document.getElementById('queue-manager-modal').style.display = 'none';
-            
+
             updateConnectionStatus();
             if (window.updateTodoConnectionStatus) {
                 window.updateTodoConnectionStatus();
@@ -10609,7 +11191,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btnEditProfile.addEventListener("click", (e) => {
             e.stopPropagation();
             if (userDropdown) userDropdown.classList.remove("active");
-            
+
             // Fill current name & username
             if (profileNewName) profileNewName.value = getUserName() || "";
             if (profileNewUsername) {
@@ -10619,7 +11201,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (profileCurrentPassword) profileCurrentPassword.value = "";
             if (profileErrorMsg) profileErrorMsg.style.display = "none";
-            
+
             profileModal.style.display = "flex";
         });
     }
@@ -10673,14 +11255,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
                     const currentRole = getRole();
                     const oldUsername = getToken() ? getToken().split(":")[0] : newUsername;
-                    
+
                     if (oldUsername && customUsers[oldUsername]) {
                         delete customUsers[oldUsername];
                     }
                     if (customUsers[currentRole]) {
                         delete customUsers[currentRole];
                     }
-                    
+
                     customUsers[newUsername] = {
                         name: newName,
                         role: currentRole,
@@ -10730,7 +11312,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
                         const currentRole = getRole();
                         const oldUsername = getToken() ? getToken().split(":")[0] : newUsername;
-                        
+
                         if (oldUsername && customUsers[oldUsername]) {
                             delete customUsers[oldUsername];
                         }
@@ -10762,14 +11344,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
                     const currentRole = getRole();
                     const oldUsername = getToken() ? getToken().split(":")[0] : newUsername;
-                    
+
                     if (oldUsername && customUsers[oldUsername]) {
                         delete customUsers[oldUsername];
                     }
                     if (customUsers[currentRole]) {
                         delete customUsers[currentRole];
                     }
-                    
+
                     customUsers[newUsername] = {
                         name: newName,
                         role: currentRole,
@@ -10816,12 +11398,12 @@ document.addEventListener("DOMContentLoaded", () => {
         btnChangePassword.addEventListener("click", (e) => {
             e.stopPropagation();
             if (userDropdown) userDropdown.classList.remove("active");
-            
+
             if (pwCurrentPassword) pwCurrentPassword.value = "";
             if (pwNewPassword) pwNewPassword.value = "";
             if (pwConfirmPassword) pwConfirmPassword.value = "";
             if (pwErrorMsg) pwErrorMsg.style.display = "none";
-            
+
             passwordModal.style.display = "flex";
         });
     }
@@ -10880,7 +11462,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     let customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
                     const currentRole = getRole();
                     const currentName = getUserName() || "Người dùng";
-                    
+
                     customUsers[currUsername] = {
                         name: currentName,
                         role: currentRole,
@@ -11204,7 +11786,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (importImageFile) importImageFile.value = '';
         uploadedImages = [];
         renderUploadedImagesPreview();
-        
+
         // Reset to text tab by default
         if (tabImportText) tabImportText.click();
 
@@ -11332,7 +11914,7 @@ Quy tắc:
             text = text.substring(0, text.length - 3);
         }
         text = text.trim();
-        
+
         const items = JSON.parse(text);
         if (!Array.isArray(items)) {
             throw new Error("Dữ liệu AI trả về không phải là một danh sách hợp lệ.");
@@ -11477,7 +12059,7 @@ Quy tắc:
                 const qty = parseFloat(itemMatch[1]);
                 const rawType = itemMatch[2].trim().toLowerCase();
                 let priceRaw = itemMatch[3].trim().toLowerCase();
-                
+
                 let resolvedType = flowerMap[rawType] || itemMatch[2].trim();
                 if (!flowerMap[rawType]) {
                     resolvedType = resolvedType.charAt(0).toUpperCase() + resolvedType.slice(1);
@@ -11490,7 +12072,7 @@ Quy tắc:
                     priceVal = parseFloat(priceRaw);
                 }
                 priceVal = normalizeUnitPrice(priceVal);
-                
+
                 parsedQty = qty;
                 parsedType = resolvedType;
                 parsedPrice = priceVal;
@@ -11503,12 +12085,12 @@ Quy tắc:
                 if (nameThenQtyMatch) {
                     let rawType = nameThenQtyMatch[1].trim().toLowerCase();
                     const qtyExpr = nameThenQtyMatch[2].trim();
-                    
+
                     let resolvedType = flowerMap[rawType] || nameThenQtyMatch[1].trim();
                     if (!flowerMap[rawType]) {
                         resolvedType = resolvedType.charAt(0).toUpperCase() + resolvedType.slice(1);
                     }
-                    
+
                     if (resolvedType.endsWith(' X') || resolvedType.endsWith(' x')) {
                         resolvedType = resolvedType.slice(0, -2).trim();
                     }
@@ -11540,7 +12122,7 @@ Quy tắc:
                     if (!flowerMap[rawType]) {
                         resolvedType = resolvedType.charAt(0).toUpperCase() + resolvedType.slice(1);
                     }
-                    
+
                     parsedQty = 0;
                     parsedType = resolvedType;
                     parsedPrice = "";
@@ -11683,7 +12265,7 @@ Quy tắc:
                 const idx = parseInt(input.getAttribute('data-idx'));
                 const qtyVal = parseFloat(e.target.value) || 0;
                 parsedImportRows[idx].qty = qtyVal;
-                
+
                 const currentPrice = parsedImportRows[idx].price;
                 if (currentPrice === '' || currentPrice === null || currentPrice === undefined) {
                     parsedImportRows[idx].total = '';
@@ -11747,7 +12329,7 @@ Quy tắc:
             parsedImportRows.forEach((row, index) => {
                 const dateStr = formatDateVietnamese(row.date);
                 const noteVal = statusVal === 'Xong' ? `Đã thu tiền ngày ${dateStr}` : "";
-                
+
                 const hasPrice = row.price !== '' && row.price !== null && row.price !== undefined;
                 const dtBong = hasPrice ? row.total : "";
 
@@ -11767,8 +12349,8 @@ Quy tắc:
 
                 payloadRowsParsed.push({
                     "Ngày": dateStr, "Status": statusVal, "Người Mua": buyerVal, "Phân Loại Bông": row.type, "Ghi Chú": noteVal,
-                    parsedDate: row.date, "Số lượng": row.qty, 
-                    "Giá": hasPrice ? row.price : "", 
+                    parsedDate: row.date, "Số lượng": row.qty,
+                    "Giá": hasPrice ? row.price : "",
                     "Doanh Thu Bông": dtBong !== "" ? dtBong : 0,
                     "Đã Thu": (statusVal === 'Xong' && hasPrice) ? dtBong : 0,
                     "Chi Phí": 0, "Tiền Phải Thu": 0, "Doanh Thu Khác": 0, "Loại DT": "Farm"
@@ -11804,7 +12386,7 @@ Quy tắc:
             if (document.getElementById('view-report').style.display === 'block') updateDashboard();
 
             showToast(`Đang lưu ${parsedImportRows.length} giao dịch vào danh sách chờ...`, "success");
-            
+
             closeImportModal();
             processSyncQueue();
         });
