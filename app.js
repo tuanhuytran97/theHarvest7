@@ -3865,16 +3865,37 @@ document.addEventListener("DOMContentLoaded", () => {
             const val = reportRangeSelect.value;
             const isMonth = val === 'month';
             const isQuarter = val.startsWith('q');
+            const isDay = val === 'day';
 
             monthSelectContainer.style.display = (isMonth || val === 'ytd') ? 'flex' : 'none';
+            const daySelectContainer = document.getElementById('day-select-container');
+            if (daySelectContainer) {
+                daySelectContainer.style.display = isDay ? 'flex' : 'none';
+            }
 
             // Adjust chart displays
-            document.getElementById('yearly-report-charts').style.display = (isMonth || isQuarter) ? 'none' : 'grid';
+            document.getElementById('yearly-report-charts').style.display = (isMonth || isQuarter || isDay) ? 'none' : 'grid';
             document.getElementById('monthly-report-charts').style.display = (isMonth || isQuarter) ? 'grid' : 'none';
+
+            // Daily special view: hide charts/insights, show daily detail list
+            const insightsSection = document.querySelector('#view-report .report-insights-grid');
+            const commonChartsSection = document.getElementById('common-report-charts');
+            const dayDetailSection = document.getElementById('day-report-detail');
+            if (isDay) {
+                if (insightsSection) insightsSection.style.display = 'none';
+                if (commonChartsSection) commonChartsSection.style.display = 'none';
+                if (dayDetailSection) dayDetailSection.style.display = 'block';
+            } else {
+                if (insightsSection) insightsSection.style.display = '';
+                if (commonChartsSection) commonChartsSection.style.display = '';
+                if (dayDetailSection) dayDetailSection.style.display = 'none';
+            }
 
             const chartTitleSpan = document.querySelector('#monthly-report-charts h2 span');
             if (chartTitleSpan) {
-                if (val === 'month') {
+                if (val === 'day') {
+                    chartTitleSpan.innerText = 'Báo Cáo Kết Quả Kinh Doanh Ngày';
+                } else if (val === 'month') {
                     chartTitleSpan.innerText = 'Báo Cáo Kết Quả Kinh Doanh Tháng';
                 } else if (val === 'ytd') {
                     chartTitleSpan.innerText = 'Báo Cáo Kết Quả Kinh Doanh Luỹ Kế (YTD)';
@@ -3887,9 +3908,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const kpiLabels = document.querySelectorAll('.kpi-cards h3');
             kpiLabels.forEach(label => {
-                let context = val === 'month' ? 'T.Tháng' : (val.startsWith('q' ) ? 'T.Quý' : (val === 'ytd' ? 'Luỹ Kế (YTD)' : 'T.Năm'));
-                label.innerText = label.innerText.replace(/T\.(Tháng|Năm|Quý)|Luỹ Kế \(YTD\)/g, context);
+                let context = val === 'day' ? 'T.Ngày' : (val === 'month' ? 'T.Tháng' : (val.startsWith('q' ) ? 'T.Quý' : (val === 'ytd' ? 'Luỹ Kế (YTD)' : 'T.Năm')));
+                label.innerText = label.innerText.replace(/T\.(Tháng|Năm|Quý|Ngày)|Luỹ Kế \(YTD\)/g, context);
             });
+            updateDashboard();
+            syncMainToComparison();
+        });
+    }
+
+    const reportDateInput = document.getElementById('report-date');
+    if (reportDateInput) {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        reportDateInput.value = `${yyyy}-${mm}-${dd}`;
+
+        reportDateInput.addEventListener('change', () => {
             updateDashboard();
             syncMainToComparison();
         });
@@ -4054,6 +4089,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const curMonth = now.getMonth() + 1;
             const curDay = now.getDate();
 
+            if (rangeVal === 'day') return 1;
             if (selectedYear < curYear) return 1;
             if (selectedYear > curYear) return 0;
 
@@ -4104,7 +4140,17 @@ document.addEventListener("DOMContentLoaded", () => {
             const rowMonth = d.getMonth() + 1;
             const rowDay = d.getDate();
 
-            if (rangeVal === 'month') {
+            if (rangeVal === 'day') {
+                let selectedDay = now.getDate();
+                const dateInput = document.getElementById('report-date');
+                if (dateInput && dateInput.value) {
+                    const parsed = new Date(dateInput.value);
+                    if (!isNaN(parsed.getTime())) {
+                        selectedDay = parsed.getDate();
+                    }
+                }
+                return rowDay <= selectedDay;
+            } else if (rangeVal === 'month') {
                 if (selectedMonth < curMonth) return true;
                 if (selectedMonth > curMonth) return false;
                 return rowDay <= curDay;
@@ -4144,17 +4190,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!yearSelect.options.length) populateYears();
 
-        const selectedYear = parseInt(yearSelect.value) || new Date().getFullYear();
-        const selectedMonth = parseInt(monthSelect.value) || (new Date().getMonth() + 1);
+        let selectedYear = parseInt(yearSelect.value) || new Date().getFullYear();
+        let selectedMonth = parseInt(monthSelect.value) || (new Date().getMonth() + 1);
+        let selectedDay = new Date().getDate();
+
         const reportType = filterSelect ? filterSelect.value : "Chung";
         const rangeVal = rangeSelect ? rangeSelect.value : 'month';
         const isMonthlyRange = rangeVal === 'month';
         const isQuarterRange = rangeVal.startsWith('q');
         const isYtdRange = rangeVal === 'ytd';
+        const isDayRange = rangeVal === 'day';
+
+        const dateInput = document.getElementById('report-date');
+        if (isDayRange && dateInput && dateInput.value) {
+            const parsed = new Date(dateInput.value);
+            if (!isNaN(parsed.getTime())) {
+                selectedYear = parsed.getFullYear();
+                selectedMonth = parsed.getMonth() + 1;
+                selectedDay = parsed.getDate();
+            }
+        }
 
         // Baseline determination (default is same period last year)
         let baselineYear = selectedYear - 1;
         let baselineMonth = selectedMonth;
+        let baselineDay = selectedDay;
         let baselineQuarter = isQuarterRange ? rangeVal : null;
 
         const customCmpBox = document.getElementById('unified-cmp-controls');
@@ -4163,7 +4223,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const mPrev = document.getElementById('report-month-prev');
             const qPrev = document.getElementById('report-quarter-prev');
             if (yPrev) baselineYear = parseInt(yPrev.value);
-            if (mPrev && (isMonthlyRange || isYtdRange)) baselineMonth = parseInt(mPrev.value);
+            if (mPrev && (isMonthlyRange || isYtdRange || isDayRange)) baselineMonth = parseInt(mPrev.value);
             if (qPrev && isQuarterRange) baselineQuarter = qPrev.value;
         }
 
@@ -4213,6 +4273,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (inCurrQ && rowYear === selectedYear) isCurr = true;
                 if (inPrevQ && rowYear === baselineYear) isPrev = true;
+            } else if (isDayRange) {
+                if (rowYear === selectedYear && rowMonth === selectedMonth && d.getDate() === selectedDay) isCurr = true;
+                if (rowYear === baselineYear && rowMonth === baselineMonth && d.getDate() === baselineDay) isPrev = true;
             } else if (isMonthlyRange) {
                 if (rowYear === selectedYear && rowMonth === selectedMonth) isCurr = true;
                 if (rowYear === baselineYear && rowMonth === baselineMonth) isPrev = true;
@@ -4371,6 +4434,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (rangeVal === 'q3' && rowMonth >= 7 && rowMonth <= 9) inCurrQ = true;
                 if (rangeVal === 'q4' && rowMonth >= 10 && rowMonth <= 12) inCurrQ = true;
                 if (inCurrQ && rowYear === selectedYear) isCurr = true;
+            } else if (isDayRange) {
+                if (rowYear === selectedYear && rowMonth === selectedMonth && d.getDate() === selectedDay) isCurr = true;
             } else if (isMonthlyRange) {
                 if (rowYear === selectedYear && rowMonth === selectedMonth) isCurr = true;
             } else {
@@ -4869,7 +4934,7 @@ document.addEventListener("DOMContentLoaded", () => {
             el.innerHTML = `<i class="fa-solid ${icon}"></i> ${Math.abs(diffPct).toFixed(1)}% <span style="font-size: 0.85em; margin-left: 4px; opacity: 0.9;">(${prevFormatted} vs ${compTitle})</span>`;
         }
 
-        const compTitle = isMonthlyRange ? `T${baselineMonth}/${baselineYear}` : (isQuarterRange ? `Quý ${(baselineQuarter || rangeVal).substring(1).toUpperCase()} ${baselineYear}` : (isYtdRange ? `YTD T${selectedMonth}/${baselineYear}` : `Năm ${baselineYear}`));
+        const compTitle = isDayRange ? `${baselineDay}/${baselineMonth}/${baselineYear}` : (isMonthlyRange ? `T${baselineMonth}/${baselineYear}` : (isQuarterRange ? `Quý ${(baselineQuarter || rangeVal).substring(1).toUpperCase()} ${baselineYear}` : (isYtdRange ? `YTD T${selectedMonth}/${baselineYear}` : `Năm ${baselineYear}`)));
         updateGrowth('growth-qty', totalQty, prevQty, compTitle, '');
         updateGrowth('growth-revenue', totalRevenue, prevRevenue, compTitle, '₫');
         updateGrowth('growth-expense', totalExpense, prevExpense, compTitle, '₫', true);
@@ -4877,7 +4942,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         renderDetailedStatement(statement, totalRevenue, totalExpense, totalProfit);
 
-        if (!isMonthlyRange && !isQuarterRange) {
+        if (isDayRange) {
+            // Collect rows for the selected day
+            const dayRows = farmData.filter(row => {
+                const d = row.parsedDate;
+                if (!d || isNaN(d.getTime())) return false;
+                return d.getFullYear() === selectedYear && (d.getMonth() + 1) === selectedMonth && d.getDate() === selectedDay;
+            });
+            renderDailyDetailView(dayRows, statement, totalRevenue, totalExpense, totalProfit, selectedDay, selectedMonth, selectedYear);
+        } else if (!isMonthlyRange && !isQuarterRange) {
             if (isYtdRange) {
                 const labels = [];
                 const ytdData = [];
@@ -4907,6 +4980,206 @@ document.addEventListener("DOMContentLoaded", () => {
             ];
             renderMonthlyCombinedChart(labels, quarterData, null, selectedYear);
         }
+    }
+
+    function renderDailyDetailView(dayRows, statement, totalRevenue, totalExpense, totalProfit, day, month, year) {
+        const expenseEl = document.getElementById('day-expense-list');
+        const revenueEl = document.getElementById('day-revenue-list');
+        if (!expenseEl || !revenueEl) return;
+
+        const fmt = (v) => formatCurrency(v);
+
+        // Category style config for expenses
+        const catConfig = {
+            'expensed':     { icon: 'fa-building-columns', color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)',  label: 'Expensed' },
+            'phân':         { icon: 'fa-seedling',          color: '#22c55e', bg: 'rgba(34,197,94,0.08)',   label: 'Phân bón' },
+            'thuốc':        { icon: 'fa-flask',             color: '#06b6d4', bg: 'rgba(6,182,212,0.08)',   label: 'Thuốc' },
+            'công':         { icon: 'fa-users',             color: '#f59e0b', bg: 'rgba(245,158,11,0.08)',  label: 'Lương / Công' },
+            'lãi':          { icon: 'fa-percent',           color: '#f97316', bg: 'rgba(249,115,22,0.08)', label: 'Lãi vay' },
+            'vật tư':       { icon: 'fa-toolbox',           color: '#64748b', bg: 'rgba(100,116,139,0.08)',label: 'Vật Tư' },
+            'vật tư kd':    { icon: 'fa-box-open',          color: '#0ea5e9', bg: 'rgba(14,165,233,0.08)', label: 'Vật Tư KD' },
+            'mua bông':     { icon: 'fa-cart-shopping',     color: '#ec4899', bg: 'rgba(236,72,153,0.08)', label: 'Mua Bông' },
+            'vận chuyển':   { icon: 'fa-truck',             color: '#0369a1', bg: 'rgba(3,105,161,0.08)',  label: 'Vận Chuyển' },
+            'chi phí khác': { icon: 'fa-ellipsis',          color: '#94a3b8', bg: 'rgba(148,163,184,0.08)',label: 'Chi Phí Khác' },
+        };
+        function getCatCfg(key) {
+            return catConfig[key.toLowerCase()] || { icon: 'fa-circle-dot', color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', label: key };
+        }
+
+        // ---- EXPENSE SIDE ----
+        // Group expense rows by Loại CP
+        const expenseGroups = {};
+        dayRows.forEach(row => {
+            const cp = parseFloat(row['Chi Phí']) || 0;
+            if (cp <= 0) return;
+            const loaiCP = (row['Loại CP'] || 'Chi Phí Khác').trim();
+            // Use the dedicated expense note field — NOT Người Mua
+            const ghiChuCP = (row['Ghi Chú Chi Phí'] || row['Ghi Chú'] || '').trim();
+            if (!expenseGroups[loaiCP]) expenseGroups[loaiCP] = { total: 0, items: [] };
+            expenseGroups[loaiCP].total += cp;
+            expenseGroups[loaiCP].items.push({ cp, ghiChu: ghiChuCP });
+        });
+
+        const loaiCPOrder = ['Expensed', 'Phân', 'Thuốc', 'Công', 'Lãi', 'Vật Tư', 'Vật Tư KD', 'Mua Bông', 'Vận Chuyển', 'Chi Phí Khác'];
+        const sortedExpKeys = Object.keys(expenseGroups).sort((a, b) => {
+            const ai = loaiCPOrder.findIndex(l => l.toLowerCase() === a.toLowerCase());
+            const bi = loaiCPOrder.findIndex(l => l.toLowerCase() === b.toLowerCase());
+            return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+        });
+
+        let expHtml = '';
+        if (sortedExpKeys.length === 0) {
+            expHtml = `
+                <div style="text-align:center; padding:3rem 1rem;">
+                    <i class="fa-solid fa-check-circle" style="color:#10b981; font-size:2.5rem; display:block; margin-bottom:12px; opacity:0.7;"></i>
+                    <div style="font-weight:700; color:#10b981; font-size:0.95rem;">Không có chi phí</div>
+                    <div style="color:#94a3b8; font-size:0.8rem; margin-top:4px;">Ngày ${day}/${month}/${year}</div>
+                </div>`;
+        } else {
+            // Summary bar
+            expHtml += `
+                <div style="display:flex; align-items:center; justify-content:space-between; background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.15); border-radius:12px; padding:10px 14px; margin-bottom:14px;">
+                    <div>
+                        <div style="font-size:0.7rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px;">Tổng chi phí · ${day}/${month}/${year}</div>
+                        <div style="font-size:1.25rem; font-weight:900; color:#ef4444;">${fmt(totalExpense)}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:0.7rem; font-weight:700; color:#94a3b8; margin-bottom:2px;">Danh mục</div>
+                        <div style="font-size:1.1rem; font-weight:800; color:#ef4444;">${sortedExpKeys.length}</div>
+                    </div>
+                </div>`;
+
+            sortedExpKeys.forEach(key => {
+                const grp = expenseGroups[key];
+                const cfg = getCatCfg(key);
+                const pct = totalExpense > 0 ? ((grp.total / totalExpense) * 100).toFixed(0) : 0;
+                expHtml += `
+                    <div style="border-radius:10px; overflow:hidden; margin-bottom:8px; border:1px solid ${cfg.color}22;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:${cfg.bg}; gap:8px;">
+                            <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                                <span style="width:28px; height:28px; border-radius:8px; background:${cfg.color}20; color:${cfg.color}; display:flex; align-items:center; justify-content:center; font-size:0.75rem; flex-shrink:0;">
+                                    <i class="fa-solid ${cfg.icon}"></i>
+                                </span>
+                                <div style="min-width:0;">
+                                    <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark);">${cfg.label}</div>
+                                    <div style="font-size:0.72rem; color:#94a3b8;">${grp.items.length} khoản · ${pct}% tổng CP</div>
+                                </div>
+                            </div>
+                            <span style="font-weight:800; font-size:0.95rem; color:${cfg.color}; white-space:nowrap; flex-shrink:0;">${fmt(grp.total)}</span>
+                        </div>
+                        ${grp.items.map(item => `
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px 6px 48px; border-top:1px dashed ${cfg.color}15; background:white;">
+                                <span style="font-size:0.82rem; color:#64748b; font-style:${item.ghiChu ? 'normal' : 'italic'};">${item.ghiChu || '(Không có ghi chú)'}</span>
+                                <span style="font-size:0.82rem; font-weight:600; color:${cfg.color}; white-space:nowrap;">${fmt(item.cp)}</span>
+                            </div>
+                        `).join('')}
+                    </div>`;
+            });
+        }
+        expenseEl.innerHTML = expHtml;
+
+        // ---- REVENUE SIDE ----
+        const buyerGroups = {};
+        dayRows.forEach(row => {
+            const dtBong = parseFloat(row['Doanh Thu Bông']) || 0;
+            const dtKhac = parseFloat(row['Doanh Thu Khác']) || 0;
+            const rev = dtBong + dtKhac;
+            if (rev <= 0) return;
+            const buyer = (row['Người Mua'] || 'Khách Lẻ').trim();
+            const flower = (row['Phân Loại Bông'] || '').trim();
+            const qty = parseFloat(row['Số lượng']) || 0;
+            const typeDT = (row['Loại DT'] || 'Farm').trim();
+            const status = (row['Status'] || '').trim();
+            if (!buyerGroups[buyer]) buyerGroups[buyer] = { total: 0, items: [], typeDT };
+            buyerGroups[buyer].total += rev;
+            buyerGroups[buyer].items.push({ rev, flower, qty, typeDT, status });
+        });
+
+        const sortedBuyers = Object.entries(buyerGroups).sort((a, b) => b[1].total - a[1].total);
+        const profitColor = totalProfit >= 0 ? '#10b981' : '#ef4444';
+        const profitBg = totalProfit >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)';
+        const profitBorder = totalProfit >= 0 ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)';
+        const profitIcon = totalProfit >= 0 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down';
+        const margin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : '0';
+
+        let revHtml = '';
+        if (sortedBuyers.length === 0) {
+            revHtml = `
+                <div style="text-align:center; padding:3rem 1rem;">
+                    <i class="fa-solid fa-inbox" style="color:#cbd5e1; font-size:2.5rem; display:block; margin-bottom:12px;"></i>
+                    <div style="font-weight:700; color:#94a3b8; font-size:0.95rem;">Chưa có doanh thu</div>
+                    <div style="color:#cbd5e1; font-size:0.8rem; margin-top:4px;">Ngày ${day}/${month}/${year}</div>
+                </div>`;
+        } else {
+            // Summary pills
+            revHtml += `
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
+                    <div style="background:rgba(14,165,233,0.06); border:1px solid rgba(14,165,233,0.15); border-radius:12px; padding:10px 14px;">
+                        <div style="font-size:0.72rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Tổng doanh thu</div>
+                        <div style="font-size:1.15rem; font-weight:900; color:#0ea5e9; line-height:1.3;">${fmt(totalRevenue)}</div>
+                        <div style="font-size:0.72rem; color:#94a3b8;">${sortedBuyers.length} khách hàng</div>
+                    </div>
+                    <div style="background:${profitBg}; border:1px solid ${profitBorder}; border-radius:12px; padding:10px 14px;">
+                        <div style="font-size:0.72rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Lợi nhuận</div>
+                        <div style="font-size:1.15rem; font-weight:900; color:${profitColor}; line-height:1.3;">${fmt(totalProfit)}</div>
+                        <div style="font-size:0.72rem; color:#94a3b8;">Biên LN: ${margin}%</div>
+                    </div>
+                </div>`;
+
+            sortedBuyers.forEach(([buyer, grp]) => {
+                const buyerPct = totalRevenue > 0 ? ((grp.total / totalRevenue) * 100).toFixed(0) : 0;
+                const isVua = grp.typeDT && (grp.typeDT.toLowerCase().includes('vựa') || grp.typeDT.toLowerCase().includes('vua'));
+                const c = isVua ? '#f59e0b' : '#0ea5e9';
+                const buyerBg = isVua ? 'rgba(245,158,11,0.06)' : 'rgba(14,165,233,0.06)';
+                const buyerBorder = isVua ? 'rgba(245,158,11,0.2)' : 'rgba(14,165,233,0.15)';
+                const buyerIcon = isVua ? 'fa-store' : 'fa-user';
+
+                revHtml += `
+                    <div style="border-radius:10px; overflow:hidden; margin-bottom:8px; border:1px solid ${buyerBorder};">
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:${buyerBg}; gap:8px;">
+                            <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                                <span style="width:28px; height:28px; border-radius:8px; background:${c}20; color:${c}; display:flex; align-items:center; justify-content:center; font-size:0.75rem; flex-shrink:0;">
+                                    <i class="fa-solid ${buyerIcon}"></i>
+                                </span>
+                                <div style="min-width:0;">
+                                    <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${buyer}</div>
+                                    <div style="font-size:0.72rem; color:#94a3b8;">${grp.items.length} mặt hàng · ${buyerPct}% doanh thu</div>
+                                </div>
+                            </div>
+                            <span style="font-weight:800; font-size:0.95rem; color:${c}; white-space:nowrap; flex-shrink:0;">${fmt(grp.total)}</span>
+                        </div>
+                        ${grp.items.map(item => {
+                            const itemLabel = item.flower
+                                ? `${item.flower}${item.qty > 0 ? ` <span style="color:#94a3b8">(${item.qty.toLocaleString('vi-VN')} bông)</span>` : ''}`
+                                : (item.typeDT !== 'Farm' ? item.typeDT : 'Doanh thu khác');
+                            const isDone = item.status && item.status.toLowerCase() === 'xong';
+                            return `
+                                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px 6px 48px; border-top:1px dashed ${c}15; background:white;">
+                                    <span style="font-size:0.82rem; color:#64748b;">${itemLabel}</span>
+                                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                                        ${isDone ? `<span style="font-size:0.68rem; background:#d1fae5; color:#059669; border-radius:4px; padding:1px 6px; font-weight:700;">✓ Xong</span>` : ''}
+                                        <span style="font-size:0.82rem; font-weight:600; color:${c};">${fmt(item.rev)}</span>
+                                    </div>
+                                </div>`;
+                        }).join('')}
+                    </div>`;
+            });
+
+            revHtml += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-radius:12px; background:${profitBg}; border:1.5px solid ${profitBorder}; margin-top:6px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="width:32px; height:32px; border-radius:10px; background:${profitColor}20; color:${profitColor}; display:flex; align-items:center; justify-content:center; font-size:0.85rem;">
+                            <i class="fa-solid ${profitIcon}"></i>
+                        </span>
+                        <div>
+                            <div style="font-size:0.72rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Lợi nhuận ngày</div>
+                            <div style="font-size:0.75rem; color:${profitColor}; font-weight:600;">Biên: ${margin}% · CP: ${fmt(totalExpense)}</div>
+                        </div>
+                    </div>
+                    <span style="font-size:1.15rem; font-weight:900; color:${profitColor};">${fmt(totalProfit)}</span>
+                </div>`;
+        }
+        revenueEl.innerHTML = revHtml;
     }
 
     function updateDashboardFinancialRatios(year, targetConfig = null) {
@@ -5235,7 +5508,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const container = document.getElementById('statement-content');
         if (!container) return;
 
-        const isCmp = s2 !== null;
+        const isCmp = s2 !== null && typeof s2 === 'object';
 
         function formatVal(val) {
             return formatCurrency(val);
@@ -7908,6 +8181,38 @@ document.addEventListener("DOMContentLoaded", () => {
     // Call populate once to set options on load
     populateYears();
 
+    // Initialize section visibility based on default report-range value (day)
+    (function initReportRangeUI() {
+        const rangeEl = document.getElementById('report-range');
+        if (!rangeEl) return;
+        const val = rangeEl.value;
+        const isDay = val === 'day';
+        const isMonth = val === 'month';
+        const isQuarter = val.startsWith('q');
+
+        const monthContainer = document.getElementById('month-select-container');
+        const dayContainer = document.getElementById('day-select-container');
+        const yearlyCharts = document.getElementById('yearly-report-charts');
+        const monthlyCharts = document.getElementById('monthly-report-charts');
+        const insightsSection = document.querySelector('#view-report .report-insights-grid');
+        const commonCharts = document.getElementById('common-report-charts');
+        const dayDetail = document.getElementById('day-report-detail');
+
+        if (monthContainer) monthContainer.style.display = (isMonth || val === 'ytd') ? 'flex' : 'none';
+        if (dayContainer) dayContainer.style.display = isDay ? 'flex' : 'none';
+        if (yearlyCharts) yearlyCharts.style.display = (isMonth || isQuarter || isDay) ? 'none' : 'grid';
+        if (monthlyCharts) monthlyCharts.style.display = (isMonth || isQuarter) ? 'grid' : 'none';
+        if (insightsSection) insightsSection.style.display = isDay ? 'none' : '';
+        if (commonCharts) commonCharts.style.display = isDay ? 'none' : '';
+        if (dayDetail) dayDetail.style.display = isDay ? 'block' : 'none';
+
+        // Update KPI label texts
+        const kpiLabels = document.querySelectorAll('.kpi-cards h3');
+        kpiLabels.forEach(label => {
+            const context = isDay ? 'T.Ngày' : (isMonth ? 'T.Tháng' : (isQuarter ? 'T.Quý' : 'T.Năm'));
+            label.innerText = label.innerText.replace(/T\.(Tháng|Năm|Quý|Ngày)|Luỹ Kế \(YTD\)/g, context);
+        });
+    })();
 
     // Update Filter And Render logic to include dashboard update
     function applyFiltersAndRender() {

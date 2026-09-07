@@ -1524,9 +1524,11 @@ tbody tr:hover {
     gap: 4px;
   }
 
-  .report-controls select {
+  .report-controls select,
+  .report-controls input {
     width: 100%;
     min-width: unset;
+    box-sizing: border-box;
   }
 
   /* Charts on Mobile */
