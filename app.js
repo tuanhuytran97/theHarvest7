@@ -7737,6 +7737,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // --- Calculate Average Rate of Return across ALL financial report years ---
         let roeList = [];
+        let roeYearDetails = [];
 
         if (values && Array.isArray(values)) {
             const roeRow = values.find(row => {
@@ -7752,6 +7753,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (!isNaN(num)) {
                             const pctVal = (Math.abs(num) < 2 && num !== 0) ? num * 100 : num;
                             roeList.push(pctVal);
+                            roeYearDetails.push({ year: years[i], val: pctVal });
                         }
                     }
                 }
@@ -7767,7 +7769,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         const pVal = Number(profitRow[i + 1]) || 0;
                         const eqVal = equityData[i] || 0;
                         if (eqVal > 0 && pVal !== 0) {
-                            roeList.push((pVal / eqVal) * 100);
+                            const calcPct = (pVal / eqVal) * 100;
+                            roeList.push(calcPct);
+                            roeYearDetails.push({ year: years[i], val: calcPct });
                         }
                     }
                 }
@@ -7789,7 +7793,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // Display Average Return Rate
+        // Display Average Return Rate & Render Hover Tooltip
         if (avgReturnEl) {
             if (avgReturnPct !== null && !isNaN(avgReturnPct) && isFinite(avgReturnPct)) {
                 const sign = avgReturnPct > 0 ? "+" : "";
@@ -7801,12 +7805,79 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // Calculate Estimated Completion Year based on Average Rate of Return
+        const tooltipAvgReturnEl = document.getElementById('tooltip-acc-avg-return');
+        if (tooltipAvgReturnEl) {
+            if (avgReturnPct !== null && !isNaN(avgReturnPct) && isFinite(avgReturnPct)) {
+                let rowsHtml = '';
+                if (roeYearDetails.length > 0) {
+                    rowsHtml = roeYearDetails.map(item => `
+                        <div style="display: flex; justify-content: space-between; padding: 2px 0;">
+                            <span style="color: #94a3b8;">• ROE Năm ${item.year}:</span>
+                            <span style="font-weight: 700; color: ${item.val >= 0 ? '#34d399' : '#f87171'};">${item.val >= 0 ? '+' : ''}${item.val.toFixed(1)}%</span>
+                        </div>
+                    `).join('');
+                    rowsHtml += `
+                        <div style="border-top: 1px dashed rgba(255,255,255,0.15); margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; font-weight: 800;">
+                            <span style="color: #cbd5e1;">Công thức:</span>
+                            <span style="color: #34d399;">Tổng ROE / ${roeYearDetails.length} năm</span>
+                        </div>
+                    `;
+                } else if (equityData.length >= 2) {
+                    const startY = years[0];
+                    const endY = years[years.length - 1];
+                    rowsHtml = `
+                        <div style="color: #cbd5e1; font-size: 0.75rem;">
+                            • Tăng trưởng từ năm ${startY} đến ${endY}<br/>
+                            • Công thức CAGR: <b>(VCSH_${endY} / VCSH_${startY})^(1/n) - 1</b>
+                        </div>
+                    `;
+                }
+
+                tooltipAvgReturnEl.innerHTML = `
+                    <div style="font-weight: 800; font-size: 0.88rem; color: #34d399; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 6px;">
+                        <i class="fa-solid fa-chart-line"></i> Cơ Sở Tính TSSL TB / Năm
+                    </div>
+                    <div style="margin-bottom: 6px; font-size: 0.75rem; color: #cbd5e1;">
+                        Tỷ suất sinh lợi trung bình mỗi năm dựa trên báo cáo tài chính thực tế:
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; font-size: 0.75rem;">
+                        ${rowsHtml}
+                    </div>
+                    <div style="font-size: 0.72rem; color: #94a3b8; font-style: italic; line-height: 1.35;">
+                        💡 Con số <b>+${avgReturnPct.toFixed(1)}%/năm</b> đại diện cho tốc độ sinh lợi kép kỳ vọng để dự báo mốc tích lũy 10 Tỷ.
+                    </div>
+                `;
+            } else {
+                tooltipAvgReturnEl.innerHTML = `
+                    <div style="font-weight: 800; font-size: 0.88rem; color: #f87171; margin-bottom: 6px;">
+                        <i class="fa-solid fa-circle-exclamation"></i> Chưa đủ dữ liệu
+                    </div>
+                    <div style="font-size: 0.75rem; color: #cbd5e1;">
+                        Cần tối thiểu 1 năm có chỉ số ROE hoặc 2 năm báo cáo VCSH để tính TSSL trung bình.
+                    </div>
+                `;
+            }
+        }
+
+        // Calculate Estimated Completion Year based on Average Rate of Return & Render Hover Tooltip
+        const tooltipTargetYearEl = document.getElementById('tooltip-acc-target-year');
+
         if (targetYearEl) {
             if (remaining <= 0) {
                 targetYearEl.innerText = "Đã Đạt! 🎉";
                 targetYearEl.style.color = "#fbbf24";
                 if (targetSubtextEl) targetSubtextEl.innerText = "Mục tiêu 10 Tỷ đã hoàn thành";
+
+                if (tooltipTargetYearEl) {
+                    tooltipTargetYearEl.innerHTML = `
+                        <div style="font-weight: 800; font-size: 0.88rem; color: #fbbf24; margin-bottom: 6px;">
+                            🎉 ĐÃ ĐẠT MỤC TIÊU 10 TỶ!
+                        </div>
+                        <div style="font-size: 0.75rem; color: #e2e8f0;">
+                            Vốn Chủ Sở Hữu hiện tại (${formatCurrency(latestEquityVND)}) đã cán đích thành công. Chúc mừng bạn!
+                        </div>
+                    `;
+                }
             } else if (avgReturnPct !== null && avgReturnPct > 0 && latestEquityVND > 0) {
                 const r = avgReturnPct / 100;
                 const ratio = targetVND / latestEquityVND;
@@ -7815,6 +7886,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     const fullYears = Math.floor(yearsNeeded);
                     const monthsNeeded = Math.round((yearsNeeded - fullYears) * 12);
                     const targetYear = latestYear + Math.ceil(yearsNeeded);
+
+                    // Estimate target month & year
+                    const today = new Date();
+                    const currentMonth = today.getMonth() + 1; // 1-12
+                    let totalMonthsFuture = (fullYears * 12) + monthsNeeded;
+                    let targetMonth = currentMonth + (totalMonthsFuture % 12);
+                    let addYearsFromMonths = Math.floor((currentMonth + totalMonthsFuture - 1) / 12);
+                    let finalTargetYear = latestYear + addYearsFromMonths;
 
                     targetYearEl.innerText = `Năm ${targetYear}`;
                     targetYearEl.style.color = "#c084fc";
@@ -7828,16 +7907,92 @@ document.addEventListener("DOMContentLoaded", () => {
                             targetSubtextEl.innerText = `Còn ~${monthsNeeded} tháng`;
                         }
                     }
+
+                    if (tooltipTargetYearEl) {
+                        tooltipTargetYearEl.innerHTML = `
+                            <div style="font-weight: 800; font-size: 0.88rem; color: #c084fc; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 6px;">
+                                <i class="fa-solid fa-calculator"></i> Cơ Sở Dự Kiến Đạt Target
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 4px; background: rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; font-size: 0.75rem;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #94a3b8;">• VCSH Hiện Tại (${latestYear}):</span>
+                                    <span style="font-weight: 700; color: #ffffff;">${formatCurrency(latestEquityVND)}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #94a3b8;">• Mục Tiêu Tích Lũy:</span>
+                                    <span style="font-weight: 700; color: #fbbf24;">10.000.000.000 ₫</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #94a3b8;">• Số Tiền Cần Tích Lũy:</span>
+                                    <span style="font-weight: 700; color: #60a5fa;">${formatCurrency(remaining)}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span style="color: #94a3b8;">• TSSL Kỳ Vọng (ROE TB):</span>
+                                    <span style="font-weight: 700; color: #34d399;">+${avgReturnPct.toFixed(1)}%/năm</span>
+                                </div>
+                                <div style="border-top: 1px dashed rgba(255,255,255,0.15); margin-top: 6px; padding-top: 6px;">
+                                    <div style="color: #e2e8f0; font-weight: 700; margin-bottom: 2px;">Công thức tính thời gian:</div>
+                                    <div style="color: #c084fc; font-family: monospace; font-size: 0.72rem;">Năm = log(10 Tỷ / VCSH) / log(1 + TSSL)</div>
+                                    <div style="color: #cbd5e1; margin-top: 4px;">= <b>${yearsNeeded.toFixed(2)} năm</b> (~${fullYears} năm ${monthsNeeded} tháng)</div>
+                                </div>
+                            </div>
+                            <div style="font-size: 0.72rem; color: #94a3b8; font-style: italic; line-height: 1.35;">
+                                🎯 Dự kiến sẽ hoàn thành mốc 10 Tỷ vào <b>Tháng ${targetMonth}/${finalTargetYear}</b> với tốc độ sinh lợi hiện tại.
+                            </div>
+                        `;
+                    }
                 } else {
                     targetYearEl.innerText = "Chưa xác định";
                     targetYearEl.style.color = "#94a3b8";
                     if (targetSubtextEl) targetSubtextEl.innerText = "Cần TSSL > 0%";
+
+                    if (tooltipTargetYearEl) {
+                        tooltipTargetYearEl.innerHTML = `
+                            <div style="font-weight: 800; font-size: 0.88rem; color: #f87171; margin-bottom: 6px;">
+                                <i class="fa-solid fa-triangle-exclamation"></i> TSSL không khả thi
+                            </div>
+                            <div style="font-size: 0.75rem; color: #cbd5e1;">
+                                Tỷ suất sinh lợi hiện tại không đủ dương để tăng trưởng quy mô vốn lên mốc 10 Tỷ.
+                            </div>
+                        `;
+                    }
                 }
             } else {
                 targetYearEl.innerText = "Chưa xác định";
                 targetYearEl.style.color = "#94a3b8";
                 if (targetSubtextEl) targetSubtextEl.innerText = "Cần TSSL > 0%";
+
+                if (tooltipTargetYearEl) {
+                    tooltipTargetYearEl.innerHTML = `
+                        <div style="font-weight: 800; font-size: 0.88rem; color: #f87171; margin-bottom: 6px;">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Chưa đủ điều kiện
+                        </div>
+                        <div style="font-size: 0.75rem; color: #cbd5e1;">
+                            Cần TSSL Trung Bình &gt; 0% và VCSH hiện tại &gt; 0 để tính thời gian hoàn thành mục tiêu.
+                        </div>
+                    `;
+                }
             }
+        }
+
+        // Attach click listener for mobile tap support
+        document.querySelectorAll('.accumulation-metric-card.has-tooltip').forEach(card => {
+            if (!card.dataset.tooltipBound) {
+                card.dataset.tooltipBound = "true";
+                card.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const wasActive = card.classList.contains('active-tooltip');
+                    document.querySelectorAll('.accumulation-metric-card.has-tooltip').forEach(c => c.classList.remove('active-tooltip'));
+                    if (!wasActive) card.classList.add('active-tooltip');
+                });
+            }
+        });
+
+        if (!window.accTooltipDocBound) {
+            window.accTooltipDocBound = true;
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.accumulation-metric-card.has-tooltip').forEach(c => c.classList.remove('active-tooltip'));
+            });
         }
     }
 

@@ -6245,5 +6245,86 @@ tr.swiping td:first-child::before {
   box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.2) !important;
 }
 
+/* ==========================================================================
+   ASSET ACCUMULATION JOURNEY HOVER TOOLTIPS
+   ========================================================================== */
+.accumulation-metric-card {
+    position: relative;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.accumulation-metric-card.has-tooltip {
+    cursor: pointer;
+}
+
+.accumulation-metric-card.has-tooltip:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.acc-tooltip {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%) translateY(6px);
+    width: 330px;
+    max-width: 90vw;
+    background: rgba(15, 23, 42, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 14px;
+    padding: 14px 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.3);
+    color: #e2e8f0;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    z-index: 1050;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s;
+    text-align: left;
+    white-space: normal;
+}
+
+.acc-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 7px;
+    border-style: solid;
+    border-color: rgba(15, 23, 42, 0.96) transparent transparent transparent;
+}
+
+.accumulation-metric-card:hover .acc-tooltip,
+.accumulation-metric-card.active-tooltip .acc-tooltip {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+}
+
+.acc-tooltip-right {
+    left: auto !important;
+    right: 0 !important;
+    transform: translateX(0) translateY(6px) !important;
+}
+
+.acc-tooltip-right::after {
+    left: auto !important;
+    right: 24px !important;
+    transform: none !important;
+}
+
+.accumulation-metric-card:hover .acc-tooltip-right,
+.accumulation-metric-card.active-tooltip .acc-tooltip-right {
+    transform: translateX(0) translateY(0) !important;
+}
+
+
 
 
