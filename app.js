@@ -1412,6 +1412,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             };
 
+            const summaryBar = document.getElementById('flower-summary-bar');
             if (type === "farm") {
                 if (vuaFields) vuaFields.style.display = "none";
                 if (expenseFields) expenseFields.style.display = "none";
@@ -1421,6 +1422,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (flowerListBlock) flowerListBlock.style.display = "flex";
                 if (flowerDivider) flowerDivider.style.display = "block";
                 if (flowerPillsContainer) flowerPillsContainer.style.display = "flex";
+                if (summaryBar) summaryBar.style.display = "flex";
                 if (labelBuyerInput) labelBuyerInput.innerText = "Khách Hàng (Tên Khách)";
                 const importTextBtn = document.getElementById('import-text-btn');
                 if (importTextBtn) importTextBtn.style.display = "flex";
@@ -1461,6 +1463,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (flowerListBlock) flowerListBlock.style.display = "flex";
                 if (flowerDivider) flowerDivider.style.display = "block";
                 if (flowerPillsContainer) flowerPillsContainer.style.display = "flex";
+                if (summaryBar) summaryBar.style.display = "flex";
                 if (labelBuyerInput) labelBuyerInput.innerText = "Đối Soát Vựa (Tên Vựa)";
                 const importTextBtn = document.getElementById('import-text-btn');
                 if (importTextBtn) importTextBtn.style.display = "none";
@@ -1502,6 +1505,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (flowerListBlock) flowerListBlock.style.display = "none";
                 if (flowerDivider) flowerDivider.style.display = "none";
                 if (flowerPillsContainer) flowerPillsContainer.style.display = "none";
+                if (summaryBar) summaryBar.style.display = "none";
                 if (buyerInput) { buyerInput.value = ""; buyerInput.required = false; }
                 if (vuaTotalCollectInput) vuaTotalCollectInput.required = false;
                 toggleFlowerReq(false);
@@ -1634,7 +1638,74 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    function updateFlowerSummaryTotals() {
+        let totalQty = 0;
+        let totalAmount = 0;
+        if (flowerItemsContainer) {
+            flowerItemsContainer.querySelectorAll('.flower-item').forEach(item => {
+                const qInput = item.querySelector('.fw-qty');
+                const pInput = item.querySelector('.fw-price');
+                const q = parseFloat(qInput ? qInput.value : 0) || 0;
+                const p = parseMoney(pInput ? pInput.value : "0");
+                totalQty += q;
+                totalAmount += (q * p);
+            });
+        }
+        const summaryQtyEl = document.getElementById('summary-total-qty');
+        const summaryAmountEl = document.getElementById('summary-total-amount');
+        if (summaryQtyEl) {
+            summaryQtyEl.value = totalQty.toLocaleString('vi-VN');
+        }
+        if (summaryAmountEl) {
+            summaryAmountEl.value = formatCurrency(totalAmount);
+        }
+    }
+
+    function createFlowerRowAfter(targetRow = null) {
+        if (!flowerItemsContainer) return null;
+        const item = document.createElement('div');
+        item.className = 'flower-item';
+        item.innerHTML = `
+            <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
+                <input type="number" placeholder="0" class="fw-qty" min="0" required>
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Loại mặt hàng</label>
+                <input type="text" class="fw-type" list="flower-types" placeholder="Tên hoa..." required
+                    style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;">
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Đơn Giá</label>
+                <input type="text" placeholder="0" class="fw-price money-input" required>
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Thành tiền</label>
+                <input type="text" placeholder="0" class="fw-total" readonly style="background: #f1f5f9; color: #0f172a; font-weight: 800; border: 1.5px solid #cbd5e1 !important;">
+            </div>
+            <div class="flower-row-actions">
+                <button type="button" class="add-flower-row-btn" title="Thêm bông"><i class="fa-solid fa-plus"></i></button>
+                <button type="button" class="del-flower-btn" title="Xoá"><i class="fa-solid fa-trash-can"></i></button>
+            </div>
+        `;
+        if (targetRow && targetRow.nextSibling) {
+            flowerItemsContainer.insertBefore(item, targetRow.nextSibling);
+        } else {
+            flowerItemsContainer.appendChild(item);
+        }
+        attachFlowerRowEvents(item);
+        calculateVuaTotals();
+        updateFlowerSummaryTotals();
+
+        const newQty = item.querySelector('.fw-qty');
+        if (newQty) {
+            setTimeout(() => newQty.focus(), 30);
+        }
+        return item;
+    }
+
     function attachFlowerRowEvents(row) {
+        const addRowBtn = row.querySelector('.add-flower-row-btn');
         const delBtn = row.querySelector('.del-flower-btn');
         const qtyInput = row.querySelector('.fw-qty');
         const typeInput = row.querySelector('.fw-type');
@@ -1647,13 +1718,21 @@ document.addEventListener("DOMContentLoaded", () => {
             const total = qty * price;
             if (totalInput) totalInput.value = formatCurrency(total);
             calculateVuaTotals();
+            updateFlowerSummaryTotals();
         };
+
+        if (addRowBtn) {
+            addRowBtn.addEventListener('click', () => {
+                createFlowerRowAfter(row);
+            });
+        }
 
         if (delBtn) {
             delBtn.addEventListener('click', () => {
-                if (flowerItemsContainer.children.length > 1) {
+                if (flowerItemsContainer.querySelectorAll('.flower-item').length > 1) {
                     row.remove();
                     calculateVuaTotals();
+                    updateFlowerSummaryTotals();
                 } else {
                     alert('Phải có ít nhất 1 dòng Bông!');
                 }
@@ -1694,16 +1773,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const nextQty = nextRow.querySelector('.fw-qty');
                         if (nextQty) nextQty.focus();
                     } else {
-                        if (addFlowerBtn) {
-                            addFlowerBtn.click();
-                            const newRow = flowerItemsContainer.lastElementChild;
-                            if (newRow) {
-                                const newQty = newRow.querySelector('.fw-qty');
-                                if (newQty) {
-                                    setTimeout(() => newQty.focus(), 10);
-                                }
-                            }
-                        }
+                        createFlowerRowAfter(row);
                     }
                 }
             });
@@ -1711,36 +1781,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (flowerItemsContainer) {
-        attachFlowerRowEvents(flowerItemsContainer.querySelector('.flower-item'));
+        const initialRow = flowerItemsContainer.querySelector('.flower-item');
+        if (initialRow) {
+            attachFlowerRowEvents(initialRow);
+        }
+        updateFlowerSummaryTotals();
     }
 
     if (addFlowerBtn) {
         addFlowerBtn.addEventListener('click', () => {
-            const item = document.createElement('div');
-            item.className = 'flower-item';
-            item.style.cssText = 'display: grid; grid-template-columns: 0.6fr 1.2fr 1.2fr 1.5fr 30px; gap: 10px; align-items: center;';
-            item.innerHTML = `
-                <div class="form-group" style="margin: 0;">
-                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
-                    <input type="number" placeholder="0" class="fw-qty" min="0" required>
-                </div>
-                <div class="form-group" style="margin: 0;">
-                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Loại mặt hàng</label>
-                    <input type="text" class="fw-type" list="flower-types" placeholder="Tên hoa..." required
-                        style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;">
-                </div>
-                <div class="form-group" style="margin: 0;">
-                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Đơn Giá</label>
-                    <input type="text" placeholder="0" class="fw-price money-input" required>
-                </div>
-                <div class="form-group" style="margin: 0;">
-                    <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Thành tiền</label>
-                    <input type="text" placeholder="0" class="fw-total" readonly style="background: #f1f5f9; color: #0f172a; font-weight: 800; border: 1.5px solid #cbd5e1 !important;">
-                </div>
-                <button type="button" class="del-flower-btn" title="Xoá"><i class="fa-solid fa-trash-can"></i></button>
-            `;
-            flowerItemsContainer.appendChild(item);
-            attachFlowerRowEvents(item);
+            createFlowerRowAfter();
         });
     }
 
@@ -1913,7 +1963,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <td data-label="Thao tác">
                         <div style="display: flex; gap: 8px; justify-content: center; ${isVuaShipping ? 'filter: grayscale(1); opacity: 0.5;' : ''}">
                             ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
-                            <button class="action-btn" data-row-index="${rowIndex}" ${isVuaShipping ? 'disabled' : 'onclick="switchToInlineEdit(this)"'} title="${isVuaShipping ? 'Sửa trong tab Vựa' : 'Sửa'}" style="color:var(--primary-color); ${isVuaShipping ? 'cursor: not-allowed;' : ''}">
+                            <button class="action-btn" data-row-index="${rowIndex}" ${isVuaShipping ? 'disabled' : `onclick="editSingleExpense(dataToRenderRef[${rowIndex}]._sheetRowNumber)"`} title="${isVuaShipping ? 'Sửa trong tab Vựa' : 'Sửa'}" style="color:var(--primary-color); ${isVuaShipping ? 'cursor: not-allowed;' : ''}">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </button>
                             ` : ''}
@@ -3342,14 +3392,28 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Custom Modal for Editing Transaction line
+    // Custom Modal for Editing Transaction line (Doanh Thu)
     async function editTransactionLine(lineObj) {
-        if (!isAuthorizedForDebt()) {
+        const canEdit = isAuthorizedForDebt() || (typeof getRole === 'function' && (getRole() === 'ADMIN' || getRole() === 'EMP_LV1')) || (typeof hasPermission === 'function' && (hasPermission('data') || hasPermission('report')));
+        if (!canEdit) {
             alert("Bạn không có quyền thực hiện chỉnh sửa!");
             return;
         }
 
+        const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
+        const rawRow = lineObj.rawRow || farmDataRef.find(r => String(r._sheetRowNumber) === String(lineObj.row));
+        if (rawRow && (rawRow['Status'] || rawRow['status'] || '').trim().toLowerCase() === 'xong') {
+            if (window.showToast) {
+                window.showToast("Đơn hàng đã hoàn thành (Xong) nên không thể chỉnh sửa!", "warning");
+            } else {
+                alert("Đơn hàng đã hoàn thành (Xong) nên không thể chỉnh sửa!");
+            }
+            return;
+        }
+
         const modal = document.getElementById('modal-edit-line');
+        const fieldBuyer = document.getElementById('field-edit-buyer');
+        const inputBuyer = document.getElementById('input-edit-buyer');
         const inputFlowerType = document.getElementById('input-edit-flowertype');
         const inputQty = document.getElementById('input-edit-qty');
         const inputPrice = document.getElementById('input-edit-price');
@@ -3359,10 +3423,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const btnCancel = document.getElementById('btn-cancel-edit-line');
 
         // Set initial values
-        subtitleEl.innerText = `Đang sửa đơn: ${lineObj.flowerType || ''}`;
+        subtitleEl.innerText = `Đang sửa: ${lineObj.buyer ? lineObj.buyer + ' - ' : ''}${lineObj.flowerType || 'Sản phẩm'}`;
+        if (fieldBuyer && inputBuyer) {
+            if (lineObj.buyer !== undefined) {
+                fieldBuyer.style.display = 'block';
+                inputBuyer.value = lineObj.buyer || '';
+            } else {
+                fieldBuyer.style.display = 'none';
+            }
+        }
         if (inputFlowerType) inputFlowerType.value = lineObj.flowerType || '';
-        inputQty.value = lineObj.qty;
-        inputPrice.value = formatMoneyStr(lineObj.price);
+        inputQty.value = lineObj.qty || '';
+        inputPrice.value = formatMoneyStr(lineObj.price || 0);
 
         function updateModalTotal() {
             const q = parseFloat(inputQty.value) || 0;
@@ -3375,14 +3447,16 @@ document.addEventListener("DOMContentLoaded", () => {
         // Show modal
         modal.style.display = 'flex';
         setTimeout(() => {
-            if (inputFlowerType) inputFlowerType.focus();
+            if (fieldBuyer && lineObj.buyer !== undefined && inputBuyer) inputBuyer.focus();
+            else if (inputFlowerType) inputFlowerType.focus();
             else inputQty.focus();
         }, 100);
 
         // Listeners for auto-calculation and subtitle update
         const onFlowerTypeInput = (e) => {
             const val = e.target.value.trim();
-            subtitleEl.innerText = `Đang sửa đơn: ${val || lineObj.flowerType || ''}`;
+            const b = inputBuyer ? inputBuyer.value.trim() : (lineObj.buyer || '');
+            subtitleEl.innerText = `Đang sửa: ${b ? b + ' - ' : ''}${val || lineObj.flowerType || ''}`;
         };
         const onQtyInput = () => updateModalTotal();
         const onPriceInput = (e) => {
@@ -3413,6 +3487,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const newFlowerType = inputFlowerType ? inputFlowerType.value.trim() : (lineObj.flowerType || '');
                 const newQty = parseFloat(inputQty.value) || 0;
                 const newPrice = parseMoney(inputPrice.value) || 0;
+                const newBuyer = (inputBuyer && fieldBuyer && fieldBuyer.style.display !== 'none') ? inputBuyer.value.trim() : null;
 
                 if (!newFlowerType) {
                     alert("Vui lòng nhập tên loại hoa / sản phẩm!");
@@ -3436,11 +3511,34 @@ document.addEventListener("DOMContentLoaded", () => {
                         "Giá": newPrice
                     };
 
+                    if (newBuyer !== null && newBuyer !== '') {
+                        updates["Người Mua"] = newBuyer;
+                    }
+
                     if (lineObj.isVua) {
                         updates["Tiền Phải Thu"] = newQty * newPrice;
                     } else {
                         updates["Doanh Thu Bông"] = newQty * newPrice;
                     }
+
+                    // Optimistically update local data cache
+                    const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
+                    const foundRow = farmDataRef.find(r => String(r._sheetRowNumber) === String(lineObj.row)) || lineObj.rawRow;
+                    if (foundRow) {
+                        foundRow["Phân Loại Bông"] = newFlowerType;
+                        foundRow["Số lượng"] = newQty;
+                        foundRow["Giá"] = newPrice;
+                        if (newBuyer) foundRow["Người Mua"] = newBuyer;
+                        if (lineObj.isVua) {
+                            foundRow["Tiền Phải Thu"] = newQty * newPrice;
+                        } else {
+                            foundRow["Doanh Thu Bông"] = newQty * newPrice;
+                        }
+                    }
+
+                    if (typeof updateDashboard === 'function') updateDashboard();
+                    if (typeof renderDebtTable === 'function') renderDebtTable();
+                    if (typeof applyFiltersAndRender === 'function') applyFiltersAndRender();
 
                     const response = await fetch(CONFIG.WEB_APP_URL, {
                         method: "POST",
@@ -3458,16 +3556,17 @@ document.addEventListener("DOMContentLoaded", () => {
                         throw new Error(result.message || "Lỗi khi cập nhật Google Sheets");
                     }
 
-                    showToast("Đã cập nhật dòng đơn hàng thành công!", "success");
-                    renderDebtTable();
+                    showToast("Đã cập nhật doanh thu thành công!", "success");
 
-                    // Trigger sync
+                    // Trigger sync to guarantee sheet row state
                     const syncBtnGlobal = document.getElementById('sync-gsheet-btn');
                     if (syncBtnGlobal) syncBtnGlobal.click();
 
+                    resolve(true);
                 } catch (err) {
                     console.error(err);
                     alert("Lỗi khi cập nhật dòng đơn hàng: " + err.message);
+                    resolve(false);
                 } finally {
                     document.body.style.cursor = 'default';
                 }
@@ -3477,12 +3576,259 @@ document.addEventListener("DOMContentLoaded", () => {
                 closeEditModal();
                 btnConfirm.removeEventListener('click', onConfirm);
                 btnCancel.removeEventListener('click', onCancel);
+                resolve(false);
             };
 
             btnConfirm.onclick = onConfirm;
             btnCancel.onclick = onCancel;
         });
     }
+    window.editTransactionLine = editTransactionLine;
+
+    // Custom Modal for Editing Expense Transaction (Chi Phí)
+    async function editExpenseTransaction(expenseObj) {
+        const canEdit = (typeof getRole === 'function' && (getRole() === 'ADMIN' || getRole() === 'EMP_LV1')) || (typeof hasPermission === 'function' && (hasPermission('data') || hasPermission('report')));
+        if (!canEdit) {
+            alert("Bạn không có quyền thực hiện chỉnh sửa!");
+            return;
+        }
+
+        const modal = document.getElementById('modal-edit-expense');
+        const selectType = document.getElementById('input-edit-exp-type');
+        const inputAmount = document.getElementById('input-edit-exp-amount');
+        const inputNote = document.getElementById('input-edit-exp-note');
+        const subtitleEl = document.getElementById('modal-edit-expense-subtitle');
+        const btnConfirm = document.getElementById('btn-confirm-edit-expense');
+        const btnCancel = document.getElementById('btn-cancel-edit-expense');
+
+        if (!modal) {
+            alert("Không tìm thấy modal chỉnh sửa chi phí!");
+            return;
+        }
+
+        // Set initial values
+        if (selectType) {
+            const targetType = (expenseObj.loaiCP || 'Chi Phí Khác').trim();
+            let matched = false;
+            for (let opt of selectType.options) {
+                if (opt.value.toLowerCase() === targetType.toLowerCase()) {
+                    selectType.value = opt.value;
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) selectType.value = 'Chi Phí Khác';
+        }
+        if (inputAmount) inputAmount.value = formatMoneyStr(expenseObj.cp || 0);
+        if (inputNote) inputNote.value = expenseObj.ghiChu || '';
+        if (subtitleEl) subtitleEl.innerText = `Đang sửa: ${expenseObj.loaiCP || 'Chi Phí'} (${formatCurrency(expenseObj.cp || 0)})`;
+
+        modal.style.display = 'flex';
+        setTimeout(() => {
+            if (inputAmount) inputAmount.focus();
+        }, 100);
+
+        const onAmountInput = (e) => {
+            const val = parseMoney(e.target.value);
+            e.target.value = val === 0 ? "" : formatMoneyStr(val);
+        };
+        if (inputAmount) inputAmount.addEventListener('input', onAmountInput);
+
+        const closeExpenseModal = () => {
+            modal.style.display = 'none';
+            if (inputAmount) inputAmount.removeEventListener('input', onAmountInput);
+        };
+
+        return new Promise((resolve) => {
+            const onConfirm = async () => {
+                if (!isConfigured()) {
+                    alert("Chưa cấu hình Server URL. Không thể cập nhật chi phí.");
+                    closeExpenseModal();
+                    resolve(false);
+                    return;
+                }
+
+                const newType = selectType ? selectType.value : (expenseObj.loaiCP || 'Chi Phí Khác');
+                const newAmount = parseMoney(inputAmount ? inputAmount.value : 0);
+                const newNote = inputNote ? inputNote.value.trim() : '';
+
+                if (newAmount <= 0) {
+                    alert("Số tiền chi phí phải lớn hơn 0.");
+                    return;
+                }
+
+                closeExpenseModal();
+                document.body.style.cursor = 'wait';
+
+                try {
+                    showToast(`Đang cập nhật chi phí...`, "info");
+
+                    const updates = {
+                        "Loại CP": newType,
+                        "Chi Phí": newAmount.toString(),
+                        "Ghi Chú Chi Phí": newNote,
+                        "Ghi Chú": newNote
+                    };
+
+                    const targetRowNumber = expenseObj.row || expenseObj.sheetRowNumber;
+                    const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
+                    const foundItem = farmDataRef.find(item => String(item._sheetRowNumber) === String(targetRowNumber)) || expenseObj.rawRow;
+
+                    if (foundItem) {
+                        foundItem["Loại CP"] = newType;
+                        foundItem["Chi Phí"] = newAmount;
+                        foundItem["Ghi Chú Chi Phí"] = newNote;
+                        foundItem["Ghi Chú"] = newNote;
+                    }
+
+                    if (typeof updateDashboard === 'function') updateDashboard();
+                    if (typeof applyFiltersAndRender === 'function') applyFiltersAndRender();
+
+                    const response = await fetch(CONFIG.WEB_APP_URL, {
+                        method: "POST",
+                        body: JSON.stringify({
+                            action: "update",
+                            rowNumber: targetRowNumber,
+                            updates: updates,
+                            token: getToken()
+                        }),
+                        headers: { "Content-Type": "text/plain;charset=utf-8" }
+                    });
+
+                    const result = await response.json();
+                    if (result.status !== "success") {
+                        throw new Error(result.message || "Lỗi khi cập nhật Google Sheets");
+                    }
+
+                    showToast("Đã cập nhật chi phí thành công!", "success");
+
+                    // Trigger sync
+                    const syncBtnGlobal = document.getElementById('sync-gsheet-btn');
+                    if (syncBtnGlobal) syncBtnGlobal.click();
+
+                    resolve(true);
+                } catch (err) {
+                    console.error(err);
+                    alert("Lỗi khi cập nhật chi phí: " + err.message);
+                    resolve(false);
+                } finally {
+                    document.body.style.cursor = 'default';
+                }
+            };
+
+            const onCancel = () => {
+                closeExpenseModal();
+                btnConfirm.removeEventListener('click', onConfirm);
+                btnCancel.removeEventListener('click', onCancel);
+                resolve(false);
+            };
+
+            btnConfirm.onclick = onConfirm;
+            btnCancel.onclick = onCancel;
+        });
+    }
+    window.editExpenseTransaction = editExpenseTransaction;
+
+    // Direct helper functions for daily report & table click handlers
+    window.editSingleRevenueLine = function(sheetRowNumber) {
+        const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
+        const row = farmDataRef.find(r => String(r._sheetRowNumber) === String(sheetRowNumber));
+        if (!row) {
+            alert("Không tìm thấy dòng dữ liệu!");
+            return;
+        }
+        const status = (row['Status'] || row['status'] || '').trim().toLowerCase();
+        if (status === 'xong') {
+            if (window.showToast) {
+                window.showToast("Đơn hàng đã hoàn thành (Xong) nên không thể chỉnh sửa!", "warning");
+            } else {
+                alert("Đơn hàng đã hoàn thành (Xong) nên không thể chỉnh sửa!");
+            }
+            return;
+        }
+        const flowerType = (row['Phân Loại Bông'] || '').trim();
+        const qty = parseFloat(row['Số lượng']) || 0;
+        let price = parseFloat(row['Giá']) || 0;
+        const rev = (parseFloat(row['Doanh Thu Bông']) || 0) + (parseFloat(row['Doanh Thu Khác']) || 0);
+        if (price <= 0 && qty > 0 && rev > 0) price = Math.round(rev / qty);
+        const isVua = (row['Loại DT'] || '').toLowerCase().includes('vựa');
+        const buyer = (row['Người Mua'] || '').trim();
+
+        editTransactionLine({
+            row: row._sheetRowNumber,
+            qty: qty,
+            price: price,
+            flowerType: flowerType,
+            isVua: isVua,
+            buyer: buyer,
+            rawRow: row
+        });
+    };
+
+    window.editBuyerRevenueDirect = function(buyerName, day, month, year) {
+        const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
+        const dayRows = farmDataRef.filter(row => {
+            const d = row.parsedDate;
+            if (!d) return false;
+            const matchDate = d.getFullYear() === year && (d.getMonth() + 1) === month && d.getDate() === day;
+            const b = (row['Người Mua'] || 'Khách Lẻ').trim();
+            return matchDate && b.toLowerCase() === buyerName.toLowerCase();
+        });
+
+        if (dayRows.length === 0) {
+            alert("Không tìm thấy đơn hàng của khách " + buyerName);
+            return;
+        }
+        const editableRow = dayRows.find(r => (r['Status'] || r['status'] || '').trim().toLowerCase() !== 'xong');
+        if (!editableRow) {
+            if (window.showToast) {
+                window.showToast("Tất cả đơn hàng của khách " + buyerName + " trong ngày đã hoàn thành (Xong) nên không thể chỉnh sửa!", "warning");
+            } else {
+                alert("Tất cả đơn hàng của khách " + buyerName + " trong ngày đã hoàn thành (Xong) nên không thể chỉnh sửa!");
+            }
+            return;
+        }
+        window.editSingleRevenueLine(editableRow._sheetRowNumber);
+    };
+
+    window.editSingleExpense = function(sheetRowNumber) {
+        const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
+        const row = farmDataRef.find(r => String(r._sheetRowNumber) === String(sheetRowNumber));
+        if (!row) {
+            alert("Không tìm thấy dòng chi phí!");
+            return;
+        }
+        const loaiCP = (row['Loại CP'] || 'Chi Phí Khác').trim();
+        const cp = parseFloat(row['Chi Phí']) || 0;
+        const ghiChu = (row['Ghi Chú Chi Phí'] || row['Ghi Chú'] || '').trim();
+
+        window.editExpenseTransaction({
+            row: row._sheetRowNumber,
+            loaiCP: loaiCP,
+            cp: cp,
+            ghiChu: ghiChu,
+            rawRow: row
+        });
+    };
+
+    window.editExpenseCategoryDirect = function(categoryName, day, month, year) {
+        const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
+        const dayRows = farmDataRef.filter(row => {
+            const d = row.parsedDate;
+            if (!d) return false;
+            const matchDate = d.getFullYear() === year && (d.getMonth() + 1) === month && d.getDate() === day;
+            const cp = parseFloat(row['Chi Phí']) || 0;
+            if (cp <= 0) return false;
+            const loaiCP = (row['Loại CP'] || 'Chi Phí Khác').trim();
+            return matchDate && (categoryName === 'ALL' || loaiCP.toLowerCase() === categoryName.toLowerCase());
+        });
+
+        if (dayRows.length === 0) {
+            alert("Không tìm thấy khoản chi phí danh mục " + categoryName);
+            return;
+        }
+        window.editSingleExpense(dayRows[0]._sheetRowNumber);
+    };
 
     // Process payment calls
     async function processPayment(isFull) {
@@ -5076,16 +5422,13 @@ document.addEventListener("DOMContentLoaded", () => {
             return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
         });
 
-        const expKeyAll = `ALL_${day}_${month}_${year}`;
-        const isEditingExpAll = window.editingExpenseState && window.editingExpenseState.expKey === expKeyAll;
-
         let expHtml = '';
-        if (sortedExpKeys.length === 0 && !isEditingExpAll) {
+        if (sortedExpKeys.length === 0) {
             expHtml = `
                 <div style="text-align:center; padding:2rem 1rem; border:1px dashed #cbd5e1; border-radius:12px; background:rgba(255,255,255,0.5);">
                     <i class="fa-solid fa-receipt" style="color:#cbd5e1; font-size:2.2rem; display:block; margin-bottom:8px;"></i>
                     <div style="font-weight:700; color:#94a3b8; font-size:0.9rem;">Chưa có chi phí trong ngày</div>
-                    <button type="button" onclick="toggleEditExpenseCategory('ALL', ${day}, ${month}, ${year})"
+                    <button type="button" onclick="editExpenseCategoryDirect('ALL', ${day}, ${month}, ${year})"
                         style="margin-top:10px; background:linear-gradient(135deg, #ef4444, #dc2626); color:white; border:none; padding:6px 16px; border-radius:8px; font-size:0.8rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 8px rgba(239,68,68,0.25);">
                         <i class="fa-solid fa-plus-circle"></i> Thêm Chi Phí Ngày ${day}/${month}
                     </button>
@@ -5099,58 +5442,54 @@ document.addEventListener("DOMContentLoaded", () => {
                         <div style="font-size:1.25rem; font-weight:900; color:#ef4444;">${fmt(totalExpense)}</div>
                     </div>
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <button type="button" onclick="toggleEditExpenseCategory('ALL', ${day}, ${month}, ${year})"
+                        <button type="button" onclick="editExpenseCategoryDirect('ALL', ${day}, ${month}, ${year})"
                             style="background:white; color:#ef4444; border:1px solid rgba(239,68,68,0.3); padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:all 0.2s;">
-                            <i class="fa-solid fa-pen-to-square"></i> ${isEditingExpAll ? 'Đóng Editor' : '✏️ Sửa Chi Phí'}
+                            <i class="fa-solid fa-pen-to-square"></i> ✏️ Sửa Chi Phí
                         </button>
                     </div>
                 </div>`;
 
-            if (isEditingExpAll) {
-                expHtml += renderExpenseEditorHtml(day, month, year, 'ALL');
-            } else {
-                sortedExpKeys.forEach(key => {
-                    const grp = expenseGroups[key];
-                    const cfg = getCatCfg(key);
-                    const pct = totalExpense > 0 ? ((grp.total / totalExpense) * 100).toFixed(0) : 0;
-                    const catKey = `${key}_${day}_${month}_${year}`;
-                    const isEditingCat = window.editingExpenseState && window.editingExpenseState.expKey === catKey;
+            sortedExpKeys.forEach(key => {
+                const grp = expenseGroups[key];
+                const cfg = getCatCfg(key);
+                const pct = totalExpense > 0 ? ((grp.total / totalExpense) * 100).toFixed(0) : 0;
 
-                    expHtml += `
-                        <div style="border-radius:10px; overflow:hidden; margin-bottom:8px; border:1px solid ${cfg.color}22;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:${cfg.bg}; gap:8px;">
-                                <div style="display:flex; align-items:center; gap:8px; min-width:0;">
-                                    <span style="width:28px; height:28px; border-radius:8px; background:${cfg.color}20; color:${cfg.color}; display:flex; align-items:center; justify-content:center; font-size:0.75rem; flex-shrink:0;">
-                                        <i class="fa-solid ${cfg.icon}"></i>
-                                    </span>
-                                    <div style="min-width:0;">
-                                        <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark);">${cfg.label}</div>
-                                        <div style="font-size:0.72rem; color:#94a3b8;">${grp.items.length} khoản · ${pct}% tổng CP</div>
-                                    </div>
+                expHtml += `
+                    <div style="border-radius:10px; overflow:hidden; margin-bottom:8px; border:1px solid ${cfg.color}22;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:${cfg.bg}; gap:8px;">
+                            <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                                <span style="width:28px; height:28px; border-radius:8px; background:${cfg.color}20; color:${cfg.color}; display:flex; align-items:center; justify-content:center; font-size:0.75rem; flex-shrink:0;">
+                                    <i class="fa-solid ${cfg.icon}"></i>
+                                </span>
+                                <div style="min-width:0;">
+                                    <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark);">${cfg.label}</div>
+                                    <div style="font-size:0.72rem; color:#94a3b8;">${grp.items.length} khoản · ${pct}% tổng CP</div>
                                 </div>
-                                <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-                                    <button type="button" onclick="toggleEditExpenseCategory('${escapeAttr(key)}', ${day}, ${month}, ${year})"
-                                        style="background:white; color:${cfg.color}; border:1px solid ${cfg.color}40; padding:3px 8px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:3px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                                        <i class="fa-solid fa-pen-to-square"></i> ${isEditingCat ? 'Hủy' : 'Sửa'}
-                                    </button>
-                                    <span style="font-weight:800; font-size:0.95rem; color:${cfg.color}; white-space:nowrap;">${fmt(grp.total)}</span>
-                                </div>
-                            </div>`;
-
-                    if (isEditingCat) {
-                        expHtml += renderExpenseEditorHtml(day, month, year, key);
-                    } else {
-                        expHtml += grp.items.map(item => `
-                            <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px 6px 48px; border-top:1px dashed ${cfg.color}15; background:white;">
-                                <span style="font-size:0.82rem; color:#64748b; font-style:${item.ghiChu ? 'normal' : 'italic'};">${item.ghiChu || '(Không có ghi chú)'}</span>
-                                <span style="font-size:0.82rem; font-weight:600; color:${cfg.color}; white-space:nowrap;">${fmt(item.cp)}</span>
                             </div>
-                        `).join('');
-                    }
+                            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                                <button type="button" onclick="editExpenseCategoryDirect('${escapeAttr(key)}', ${day}, ${month}, ${year})"
+                                    style="background:white; color:${cfg.color}; border:1px solid ${cfg.color}40; padding:3px 8px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:3px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                                    <i class="fa-solid fa-pen-to-square"></i> Sửa
+                                </button>
+                                <span style="font-weight:800; font-size:0.95rem; color:${cfg.color}; white-space:nowrap;">${fmt(grp.total)}</span>
+                            </div>
+                        </div>`;
 
-                    expHtml += `</div>`;
-                });
-            }
+                expHtml += grp.items.map(item => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px 6px 48px; border-top:1px dashed ${cfg.color}15; background:white;">
+                        <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+                            <span style="font-size:0.82rem; color:#64748b; font-style:${item.ghiChu ? 'normal' : 'italic'}; overflow:hidden; text-overflow:ellipsis;">${item.ghiChu || '(Không có ghi chú)'}</span>
+                            <button type="button" onclick="editSingleExpense(${item.sheetRowNumber})"
+                                style="background:none; border:none; color:${cfg.color}; cursor:pointer; padding:2px 5px; font-size:0.75rem; border-radius:4px; opacity:0.8;" title="Sửa khoản chi này">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                        </div>
+                        <span style="font-size:0.82rem; font-weight:600; color:${cfg.color}; white-space:nowrap;">${fmt(item.cp)}</span>
+                    </div>
+                `).join('');
+
+                expHtml += `</div>`;
+            });
         }
         expenseEl.innerHTML = expHtml;
 
@@ -5213,9 +5552,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const buyerBg = isVua ? 'rgba(245,158,11,0.06)' : 'rgba(14,165,233,0.06)';
                 const buyerBorder = isVua ? 'rgba(245,158,11,0.2)' : 'rgba(14,165,233,0.15)';
                 const buyerIcon = isVua ? 'fa-store' : 'fa-user';
-
-                const buyerKey = `${buyer}_${day}_${month}_${year}`;
-                const isEditing = window.editingBuyerState && window.editingBuyerState.buyerKey === buyerKey;
+                const isAllDone = grp.items.length > 0 && grp.items.every(i => i.status && i.status.toLowerCase() === 'xong');
 
                 revHtml += `
                     <div style="border-radius:10px; overflow:hidden; margin-bottom:8px; border:1px solid ${buyerBorder};">
@@ -5230,81 +5567,42 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                             </div>
                             <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-                                <button type="button" onclick="toggleEditBuyerGroup('${escapeAttr(buyer)}', ${day}, ${month}, ${year})"
+                                ${!isAllDone ? `
+                                <button type="button" onclick="editBuyerRevenueDirect('${escapeAttr(buyer)}', ${day}, ${month}, ${year})"
                                     style="background:white; color:${c}; border:1px solid ${c}40; padding:3px 9px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:all 0.2s;">
-                                    <i class="fa-solid fa-pen-to-square"></i> ${isEditing ? 'Hủy' : 'Sửa'}
-                                </button>
+                                    <i class="fa-solid fa-pen-to-square"></i> Sửa
+                                </button>` : `
+                                <span style="font-size:0.75rem; color:#059669; font-weight:700; background:#d1fae5; border:1px solid #a7f3d0; padding:3px 9px; border-radius:6px; display:inline-flex; align-items:center; gap:4px; opacity:0.9;" title="Đơn hàng đã hoàn thành (Xong) - không thể chỉnh sửa">
+                                    <i class="fa-solid fa-lock" style="font-size:0.7rem;"></i> Đã Xong
+                                </span>`}
                                 <span style="font-weight:800; font-size:0.95rem; color:${c}; white-space:nowrap;">${fmt(grp.total)}</span>
                             </div>
                         </div>`;
 
-                if (isEditing) {
-                    revHtml += `
-                        <div class="buyer-inline-editor" style="padding:12px; background:#f8fafc; border-top:1.5px solid ${c}30;">
-                            <div style="margin-bottom:10px;">
-                                <label style="font-size:0.72rem; font-weight:800; color:#64748b; text-transform:uppercase; display:block; margin-bottom:4px;">TÊN KHÁCH HÀNG</label>
-                                <input type="text" id="ier-buyer-name" value="${escapeAttr(window.editingBuyerState.buyer)}" placeholder="Nhập tên khách hàng..." style="padding:7px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.88rem; font-weight:700; width:100%; outline:none; background:white; color:#0f172a;" />
+                revHtml += grp.items.map(item => {
+                    const unitPrice = item.price > 0 ? item.price : (item.qty > 0 && item.rev > 0 ? Math.round(item.rev / item.qty) : 0);
+                    const priceStr = unitPrice > 0 ? ` x ${unitPrice.toLocaleString('vi-VN')}` : '';
+                    const qtyStr = item.qty > 0 ? ` (${item.qty.toLocaleString('vi-VN')} bông)` : '';
+                    const itemLabel = item.flower
+                        ? `${item.flower}<span style="color:#64748b; font-weight:500;">${qtyStr}</span>${priceStr ? ` <span style="color:#0284c7; font-weight:700;">${priceStr}</span>` : ''}`
+                        : (item.typeDT !== 'Farm' ? item.typeDT : 'Doanh thu khác');
+                    const isDone = item.status && item.status.toLowerCase() === 'xong';
+                    return `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px 6px 48px; border-top:1px dashed ${c}15; background:white;">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span style="font-size:0.82rem; color:#64748b;">${itemLabel}</span>
+                                ${!isDone ? `
+                                <button type="button" class="btn-edit-line" onclick="editSingleRevenueLine(${item.sheetRowNumber})"
+                                    style="background:none; border:none; color:${c}; cursor:pointer; padding:2px 6px; font-size:0.78rem; border-radius:4px; opacity:0.85;" title="Chỉnh sửa mặt hàng này">
+                                    <i class="fa-solid fa-pen" style="pointer-events:none;"></i>
+                                </button>` : ''}
                             </div>
-
-                            <div style="display:grid; grid-template-columns: 1.4fr 1fr 1fr 1.2fr 30px; gap:6px; font-size:0.7rem; font-weight:800; color:#64748b; margin-bottom:6px; padding:0 2px;">
-                                <div>TÊN BÔNG</div>
-                                <div>SỐ LƯỢNG</div>
-                                <div>ĐƠN GIÁ</div>
-                                <div style="text-align:right;">THÀNH TIỀN</div>
-                                <div></div>
-                            </div>
-
-                            <div id="inline-edit-rows-list" style="display:flex; flex-direction:column; gap:6px;">
-                                ${window.editingBuyerState.items.map((it, idx) => `
-                                    <div class="inline-edit-row" data-idx="${idx}" style="display:grid; grid-template-columns: 1.4fr 1fr 1fr 1.2fr 30px; gap:6px; align-items:center; background:white; padding:6px; border-radius:6px; border:1px solid #e2e8f0;">
-                                        <input type="text" class="ier-flower" value="${escapeAttr(it.flower)}" list="flower-types" placeholder="Tên bông..." style="padding:5px 8px; border:1px solid #cbd5e1; border-radius:4px; font-size:0.8rem; font-weight:600; width:100%; outline:none;" />
-                                        <input type="number" class="ier-qty" value="${it.qty || ''}" placeholder="SL" min="0" oninput="updateInlineEditRowTotal(this)" style="padding:5px 8px; border:1px solid #cbd5e1; border-radius:4px; font-size:0.8rem; font-weight:600; width:100%; outline:none;" />
-                                        <input type="number" class="ier-price" value="${it.price || ''}" placeholder="Giá" min="0" oninput="updateInlineEditRowTotal(this)" style="padding:5px 8px; border:1px solid #cbd5e1; border-radius:4px; font-size:0.8rem; font-weight:600; width:100%; outline:none;" />
-                                        <div class="ier-total" style="font-size:0.8rem; font-weight:800; color:${c}; text-align:right;">${fmt((it.qty || 0) * (it.price || 0))}</div>
-                                        <button type="button" onclick="removeInlineEditRow(${idx})" style="background:#fee2e2; color:#ef4444; border:none; width:26px; height:26px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.75rem;">
-                                            <i class="fa-solid fa-trash-can"></i>
-                                        </button>
-                                    </div>
-                                `).join('')}
-                            </div>
-
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top:1px dashed #cbd5e1; flex-wrap:wrap; gap:8px;">
-                                <button type="button" onclick="addInlineEditRow()"
-                                    style="background:rgba(14,165,233,0.1); color:#0284c7; border:1px solid rgba(14,165,233,0.3); padding:5px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
-                                    <i class="fa-solid fa-plus-circle"></i> Thêm Bông
-                                </button>
-
-                                <div style="display:flex; gap:8px;">
-                                    <button type="button" onclick="cancelBuyerInlineEdit()"
-                                        style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 14px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">
-                                        Hủy
-                                    </button>
-                                    <button type="button" onclick="saveBuyerInlineEdit()" id="btn-save-buyer-inline"
-                                        style="background:linear-gradient(135deg, #10b981, #059669); color:white; border:none; padding:6px 16px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 8px rgba(16,185,129,0.3);">
-                                        <i class="fa-solid fa-floppy-disk"></i> Lưu Thay Đổi
-                                    </button>
-                                </div>
+                            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                                ${isDone ? `<span style="font-size:0.68rem; background:#d1fae5; color:#059669; border-radius:4px; padding:1px 6px; font-weight:700;">✓ Xong</span>` : ''}
+                                <span style="font-size:0.82rem; font-weight:600; color:${c};">${fmt(item.rev)}</span>
                             </div>
                         </div>`;
-                } else {
-                    revHtml += grp.items.map(item => {
-                        const unitPrice = item.price > 0 ? item.price : (item.qty > 0 && item.rev > 0 ? Math.round(item.rev / item.qty) : 0);
-                        const priceStr = unitPrice > 0 ? ` x ${unitPrice.toLocaleString('vi-VN')}` : '';
-                        const qtyStr = item.qty > 0 ? ` (${item.qty.toLocaleString('vi-VN')} bông)` : '';
-                        const itemLabel = item.flower
-                            ? `${item.flower}<span style="color:#64748b; font-weight:500;">${qtyStr}</span>${priceStr ? ` <span style="color:#0284c7; font-weight:700;">${priceStr}</span>` : ''}`
-                            : (item.typeDT !== 'Farm' ? item.typeDT : 'Doanh thu khác');
-                        const isDone = item.status && item.status.toLowerCase() === 'xong';
-                        return `
-                            <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px 6px 48px; border-top:1px dashed ${c}15; background:white;">
-                                <span style="font-size:0.82rem; color:#64748b;">${itemLabel}</span>
-                                <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-                                    ${isDone ? `<span style="font-size:0.68rem; background:#d1fae5; color:#059669; border-radius:4px; padding:1px 6px; font-weight:700;">✓ Xong</span>` : ''}
-                                    <span style="font-size:0.82rem; font-weight:600; color:${c};">${fmt(item.rev)}</span>
-                                </div>
-                            </div>`;
-                    }).join('');
-                }
+                }).join('');
 
                 revHtml += `</div>`;
             });
@@ -5325,444 +5623,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         revenueEl.innerHTML = revHtml;
     }
-
-    // --- EXPENSE INLINE EDIT HELPERS FOR DAILY REPORT ---
-    window.editingExpenseState = null;
-
-    function renderExpenseEditorHtml(day, month, year, categoryName) {
-        if (!window.editingExpenseState) return '';
-        const fmt = (v) => typeof formatCurrency === 'function' ? formatCurrency(v) : (v || 0).toLocaleString('vi-VN') + ' ₫';
-        const escapeAttr = (str) => String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const catOptions = ['Expensed', 'Phân', 'Thuốc', 'Công', 'Lãi', 'Vật Tư', 'Vật Tư KD', 'Mua Bông', 'Vận Chuyển', 'Chi Phí Khác'];
-
-        return `
-            <div class="expense-inline-editor" style="padding:12px; background:#fff1f2; border:1.5px solid #fecdd3; border-radius:10px; margin-bottom:10px;">
-                <div style="font-weight:800; font-size:0.85rem; color:#e11d48; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-                    <span><i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa Chi Phí — <strong>${categoryName === 'ALL' ? 'Tất cả danh mục' : categoryName}</strong></span>
-                    <span style="font-size:0.72rem; color:#9f1239; background:#ffe4e6; padding:2px 8px; border-radius:12px;">Ngày ${day}/${month}/${year}</span>
-                </div>
-
-                <div style="display:grid; grid-template-columns: 1.2fr 1.2fr 1.8fr 30px; gap:6px; font-size:0.7rem; font-weight:800; color:#9f1239; margin-bottom:6px; padding:0 2px;">
-                    <div>LOẠI CHI PHÍ</div>
-                    <div>SỐ TIỀN</div>
-                    <div>GHI CHÚ CHI PHÍ</div>
-                    <div></div>
-                </div>
-
-                <div id="exp-inline-edit-rows-list" style="display:flex; flex-direction:column; gap:6px;">
-                    ${window.editingExpenseState.items.map((it, idx) => `
-                        <div class="exp-inline-edit-row" data-idx="${idx}" style="display:grid; grid-template-columns: 1.2fr 1.2fr 1.8fr 30px; gap:6px; align-items:center; background:white; padding:6px; border-radius:6px; border:1px solid #fecdd3;">
-                            <select class="ieer-cat" style="padding:5px 6px; border:1px solid #fda4af; border-radius:4px; font-size:0.8rem; font-weight:600; width:100%; outline:none; background:white;">
-                                ${catOptions.map(cat => `<option value="${cat}" ${it.loaiCP.toLowerCase() === cat.toLowerCase() ? 'selected' : ''}>${cat}</option>`).join('')}
-                            </select>
-                            <input type="number" class="ieer-cp" value="${it.cp || ''}" placeholder="Số tiền..." min="0" style="padding:5px 8px; border:1px solid #fda4af; border-radius:4px; font-size:0.8rem; font-weight:600; width:100%; outline:none; color:#be123c;" />
-                            <input type="text" class="ieer-note" value="${escapeAttr(it.ghiChu)}" placeholder="Ghi chú chi phí..." style="padding:5px 8px; border:1px solid #cbd5e1; border-radius:4px; font-size:0.8rem; font-weight:500; width:100%; outline:none;" />
-                            <button type="button" onclick="removeExpenseInlineEditRow(${idx})" style="background:#fee2e2; color:#ef4444; border:none; width:26px; height:26px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.75rem;">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </div>
-                    `).join('')}
-                </div>
-
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top:1px dashed #fda4af; flex-wrap:wrap; gap:8px;">
-                    <button type="button" onclick="addExpenseInlineEditRow()"
-                        style="background:rgba(225,29,72,0.08); color:#e11d48; border:1px solid rgba(225,29,72,0.3); padding:5px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
-                        <i class="fa-solid fa-plus-circle"></i> Thêm Khoản CP
-                    </button>
-
-                    <div style="display:flex; gap:8px;">
-                        <button type="button" onclick="cancelExpenseInlineEdit()"
-                            style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; padding:6px 14px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">
-                            Hủy
-                        </button>
-                        <button type="button" onclick="saveExpenseInlineEdit()" id="btn-save-exp-inline"
-                            style="background:linear-gradient(135deg, #ef4444, #dc2626); color:white; border:none; padding:6px 16px; border-radius:6px; font-size:0.78rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 3px 8px rgba(239,68,68,0.3);">
-                            <i class="fa-solid fa-floppy-disk"></i> Lưu Thay Đổi
-                        </button>
-                    </div>
-                </div>
-            </div>`;
-    }
-
-    window.toggleEditExpenseCategory = function (categoryName, day, month, year) {
-        const expKey = `${categoryName}_${day}_${month}_${year}`;
-        if (window.editingExpenseState && window.editingExpenseState.expKey === expKey) {
-            window.editingExpenseState = null;
-        } else {
-            const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
-            const dayRows = farmDataRef.filter(row => {
-                const d = row.parsedDate;
-                return d && d.getFullYear() === year && (d.getMonth() + 1) === month && d.getDate() === day;
-            });
-
-            const items = [];
-            dayRows.forEach(row => {
-                const cp = parseFloat(row['Chi Phí']) || 0;
-                if (cp <= 0) return;
-                const loaiCP = (row['Loại CP'] || 'Chi Phí Khác').trim();
-                if (categoryName === 'ALL' || loaiCP.toLowerCase() === categoryName.toLowerCase()) {
-                    items.push({
-                        sheetRowNumber: row._sheetRowNumber || null,
-                        loaiCP: loaiCP,
-                        cp: cp,
-                        ghiChu: (row['Ghi Chú Chi Phí'] || row['Ghi Chú'] || '').trim(),
-                        rawRow: row
-                    });
-                }
-            });
-
-            window.editingExpenseState = {
-                expKey: expKey,
-                categoryName: categoryName,
-                day: day,
-                month: month,
-                year: year,
-                items: items.length > 0 ? items : [{ sheetRowNumber: null, loaiCP: categoryName === 'ALL' ? 'Expensed' : categoryName, cp: 0, ghiChu: '' }]
-            };
-        }
-        if (typeof updateDashboard === 'function') updateDashboard();
-    };
-
-    window.addExpenseInlineEditRow = function () {
-        if (!window.editingExpenseState) return;
-        const defaultCat = window.editingExpenseState.categoryName === 'ALL' ? 'Expensed' : window.editingExpenseState.categoryName;
-        window.editingExpenseState.items.push({
-            sheetRowNumber: null,
-            loaiCP: defaultCat,
-            cp: 0,
-            ghiChu: ''
-        });
-        if (typeof updateDashboard === 'function') updateDashboard();
-    };
-
-    window.removeExpenseInlineEditRow = function (idx) {
-        if (!window.editingExpenseState) return;
-        window.editingExpenseState.items.splice(idx, 1);
-        if (typeof updateDashboard === 'function') updateDashboard();
-    };
-
-    window.cancelExpenseInlineEdit = function () {
-        window.editingExpenseState = null;
-        if (typeof updateDashboard === 'function') updateDashboard();
-    };
-
-    window.saveExpenseInlineEdit = async function () {
-        if (!window.editingExpenseState) return;
-        const { day, month, year, items: origItems } = window.editingExpenseState;
-        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const btnSave = document.getElementById('btn-save-exp-inline');
-        if (btnSave) {
-            btnSave.disabled = true;
-            btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
-        }
-
-        const rowsList = document.querySelectorAll('.exp-inline-edit-row');
-        const newItems = [];
-        rowsList.forEach(r => {
-            const loaiCP = (r.querySelector('.ieer-cat')?.value || 'Chi Phí Khác').trim();
-            const cp = parseFloat(r.querySelector('.ieer-cp')?.value) || 0;
-            const ghiChu = (r.querySelector('.ieer-note')?.value || '').trim();
-            const idx = parseInt(r.dataset.idx, 10);
-            const orig = origItems[idx] || {};
-            if (cp > 0 || ghiChu) {
-                newItems.push({
-                    loaiCP,
-                    cp,
-                    ghiChu,
-                    sheetRowNumber: orig.sheetRowNumber || null,
-                    rawRow: orig.rawRow || null
-                });
-            }
-        });
-
-        const deletedItems = origItems.filter(o => o.sheetRowNumber && !newItems.some(n => n.sheetRowNumber === o.sheetRowNumber));
-        const token = typeof getToken === 'function' ? getToken() : '';
-        const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
-
-        try {
-            // 1. Delete removed rows
-            for (const del of deletedItems) {
-                if (del.rawRow) {
-                    const fidx = farmDataRef.indexOf(del.rawRow);
-                    if (fidx >= 0) farmDataRef.splice(fidx, 1);
-                }
-                if (del.sheetRowNumber && window.CONFIG && window.CONFIG.WEB_APP_URL) {
-                    fetch(window.CONFIG.WEB_APP_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: 'deleteByRow', rowNumber: del.sheetRowNumber, token }),
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                    }).catch(e => console.error("Error deleting row:", e));
-                }
-            }
-
-            // 2. Update existing & insert new rows
-            for (const item of newItems) {
-                if (item.sheetRowNumber && item.rawRow) {
-                    item.rawRow['Loại CP'] = item.loaiCP;
-                    item.rawRow['Chi Phí'] = item.cp;
-                    item.rawRow['Ghi Chú Chi Phí'] = item.ghiChu;
-                    item.rawRow['Ghi Chú'] = item.ghiChu;
-
-                    if (window.CONFIG && window.CONFIG.WEB_APP_URL) {
-                        fetch(window.CONFIG.WEB_APP_URL, {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                action: 'update',
-                                rowNumber: item.sheetRowNumber,
-                                updates: {
-                                    'Loại CP': item.loaiCP,
-                                    'Chi Phí': item.cp,
-                                    'Ghi Chú Chi Phí': item.ghiChu,
-                                    'Ghi Chú': item.ghiChu
-                                },
-                                token
-                            }),
-                            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                        }).catch(e => console.error("Error updating row:", e));
-                    }
-                } else {
-                    const newRowObj = {
-                        'Ngày': dateStr,
-                        'Loại CP': item.loaiCP,
-                        'Chi Phí': item.cp,
-                        'Ghi Chú Chi Phí': item.ghiChu,
-                        'Ghi Chú': item.ghiChu,
-                        'Loại DT': 'Farm',
-                        'Status': 'Chưa Xong',
-                        parsedDate: new Date(year, month - 1, day)
-                    };
-                    farmDataRef.unshift(newRowObj);
-
-                    if (window.CONFIG && window.CONFIG.WEB_APP_URL) {
-                        fetch(window.CONFIG.WEB_APP_URL, {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                action: 'add',
-                                payload: { action: 'add', data: newRowObj },
-                                token
-                            }),
-                            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                        }).catch(e => console.error("Error adding row:", e));
-                    }
-                }
-            }
-
-            window.editingExpenseState = null;
-            if (window.showToast) window.showToast("Đã cập nhật chi phí thành công!", "success");
-            if (typeof updateDashboard === 'function') updateDashboard();
-            if (typeof applyFiltersAndRender === 'function') applyFiltersAndRender();
-
-        } catch (err) {
-            console.error("Save expense error:", err);
-            alert("Lỗi khi lưu chi phí: " + err.message);
-            window.editingExpenseState = null;
-            if (typeof updateDashboard === 'function') updateDashboard();
-        }
-    };
-
-    // --- BUYER INLINE EDIT HELPERS FOR DAILY REPORT ---
-    window.editingBuyerState = null;
-
-    window.toggleEditBuyerGroup = function (buyerName, day, month, year) {
-        const buyerKey = `${buyerName}_${day}_${month}_${year}`;
-        if (window.editingBuyerState && window.editingBuyerState.buyerKey === buyerKey) {
-            window.editingBuyerState = null;
-        } else {
-            const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
-            const dayRows = farmDataRef.filter(row => {
-                const d = row.parsedDate;
-                return d && d.getFullYear() === year && (d.getMonth() + 1) === month && d.getDate() === day;
-            });
-
-            const items = [];
-            dayRows.forEach(row => {
-                const b = (row['Người Mua'] || 'Khách Lẻ').trim();
-                if (b.toLowerCase() === buyerName.toLowerCase()) {
-                    const dtBong = parseFloat(row['Doanh Thu Bông']) || 0;
-                    const dtKhac = parseFloat(row['Doanh Thu Khác']) || 0;
-                    const rev = dtBong + dtKhac;
-                    if (rev <= 0) return;
-                    const flower = (row['Phân Loại Bông'] || '').trim();
-                    const qty = parseFloat(row['Số lượng']) || 0;
-                    let price = parseFloat(row['Giá']) || 0;
-                    if (price <= 0 && qty > 0 && rev > 0) price = Math.round(rev / qty);
-                    items.push({
-                        sheetRowNumber: row._sheetRowNumber || null,
-                        flower: flower,
-                        qty: qty,
-                        price: price,
-                        rev: rev,
-                        rawRow: row
-                    });
-                }
-            });
-
-            window.editingBuyerState = {
-                buyerKey: buyerKey,
-                buyer: buyerName,
-                day: day,
-                month: month,
-                year: year,
-                items: items.length > 0 ? items : [{ sheetRowNumber: null, flower: '', qty: 0, price: 0, rev: 0 }]
-            };
-        }
-        if (typeof updateDashboard === 'function') updateDashboard();
-    };
-
-    window.updateInlineEditRowTotal = function (inputEl) {
-        const rowEl = inputEl.closest('.inline-edit-row');
-        if (!rowEl) return;
-        const qty = parseFloat(rowEl.querySelector('.ier-qty')?.value) || 0;
-        const price = parseFloat(rowEl.querySelector('.ier-price')?.value) || 0;
-        const totalEl = rowEl.querySelector('.ier-total');
-        if (totalEl) {
-            totalEl.innerText = (typeof formatCurrency === 'function' ? formatCurrency(qty * price) : (qty * price).toLocaleString('vi-VN') + ' ₫');
-        }
-    };
-
-    window.addInlineEditRow = function () {
-        if (!window.editingBuyerState) return;
-        window.editingBuyerState.items.push({
-            sheetRowNumber: null,
-            flower: '',
-            qty: 0,
-            price: 0,
-            rev: 0
-        });
-        if (typeof updateDashboard === 'function') updateDashboard();
-    };
-
-    window.removeInlineEditRow = function (idx) {
-        if (!window.editingBuyerState) return;
-        window.editingBuyerState.items.splice(idx, 1);
-        if (typeof updateDashboard === 'function') updateDashboard();
-    };
-
-    window.cancelBuyerInlineEdit = function () {
-        window.editingBuyerState = null;
-        if (typeof updateDashboard === 'function') updateDashboard();
-    };
-
-    window.saveBuyerInlineEdit = async function () {
-        if (!window.editingBuyerState) return;
-        const { buyer: origBuyer, day, month, year, items: origItems } = window.editingBuyerState;
-        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const newBuyerName = (document.getElementById('ier-buyer-name')?.value || origBuyer).trim();
-
-        const btnSave = document.getElementById('btn-save-buyer-inline');
-        if (btnSave) {
-            btnSave.disabled = true;
-            btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
-        }
-
-        const rowsList = document.querySelectorAll('.inline-edit-row');
-        const newItems = [];
-        rowsList.forEach(r => {
-            const flower = (r.querySelector('.ier-flower')?.value || '').trim();
-            const qty = parseFloat(r.querySelector('.ier-qty')?.value) || 0;
-            const price = parseFloat(r.querySelector('.ier-price')?.value) || 0;
-            const idx = parseInt(r.dataset.idx, 10);
-            const orig = origItems[idx] || {};
-            if (flower || qty > 0) {
-                newItems.push({
-                    flower,
-                    qty,
-                    price,
-                    rev: qty * price,
-                    sheetRowNumber: orig.sheetRowNumber || null,
-                    rawRow: orig.rawRow || null,
-                    isNew: !orig.sheetRowNumber
-                });
-            }
-        });
-
-        const deletedItems = origItems.filter(o => o.sheetRowNumber && !newItems.some(n => n.sheetRowNumber === o.sheetRowNumber));
-        const token = typeof getToken === 'function' ? getToken() : '';
-        const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
-
-        try {
-            // 1. Delete removed rows
-            for (const del of deletedItems) {
-                if (del.rawRow) {
-                    const fidx = farmDataRef.indexOf(del.rawRow);
-                    if (fidx >= 0) farmDataRef.splice(fidx, 1);
-                }
-                if (del.sheetRowNumber && window.CONFIG && window.CONFIG.WEB_APP_URL) {
-                    fetch(window.CONFIG.WEB_APP_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: 'deleteByRow', rowNumber: del.sheetRowNumber, token }),
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                    }).catch(e => console.error("Error deleting row:", e));
-                }
-            }
-
-            // 2. Update existing & insert new rows
-            for (const item of newItems) {
-                if (item.sheetRowNumber && item.rawRow) {
-                    item.rawRow['Người Mua'] = newBuyerName;
-                    item.rawRow['Phân Loại Bông'] = item.flower;
-                    item.rawRow['Số lượng'] = item.qty;
-                    item.rawRow['Giá'] = item.price;
-                    item.rawRow['Doanh Thu Bông'] = item.rev;
-
-                    if (window.CONFIG && window.CONFIG.WEB_APP_URL) {
-                        fetch(window.CONFIG.WEB_APP_URL, {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                action: 'update',
-                                rowNumber: item.sheetRowNumber,
-                                updates: {
-                                    'Người Mua': newBuyerName,
-                                    'Phân Loại Bông': item.flower,
-                                    'Số lượng': item.qty,
-                                    'Giá': item.price,
-                                    'Doanh Thu Bông': item.rev
-                                },
-                                token
-                            }),
-                            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                        }).catch(e => console.error("Error updating row:", e));
-                    }
-                } else {
-                    const newRowObj = {
-                        'Ngày': dateStr,
-                        'Người Mua': newBuyerName,
-                        'Phân Loại Bông': item.flower,
-                        'Số lượng': item.qty,
-                        'Giá': item.price,
-                        'Doanh Thu Bông': item.rev,
-                        'Loại DT': 'Farm',
-                        'Status': 'Chưa Xong',
-                        parsedDate: new Date(year, month - 1, day)
-                    };
-                    farmDataRef.unshift(newRowObj);
-
-                    if (window.CONFIG && window.CONFIG.WEB_APP_URL) {
-                        fetch(window.CONFIG.WEB_APP_URL, {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                action: 'add',
-                                payload: { action: 'add', data: newRowObj },
-                                token
-                            }),
-                            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                        }).catch(e => console.error("Error adding row:", e));
-                    }
-                }
-            }
-
-            window.editingBuyerState = null;
-            if (window.showToast) window.showToast("Đã cập nhật đơn hàng thành công!", "success");
-            if (typeof updateDashboard === 'function') updateDashboard();
-            if (typeof applyFiltersAndRender === 'function') applyFiltersAndRender();
-
-        } catch (err) {
-            console.error("Save error:", err);
-            alert("Lỗi khi lưu: " + err.message);
-            window.editingBuyerState = null;
-            if (typeof updateDashboard === 'function') updateDashboard();
-        }
-    };
 
     function updateDashboardFinancialRatios(year, targetConfig = null) {
         const config = targetConfig || {
@@ -7480,7 +7340,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (equityRow && years.length > 0) {
-                updateAccumulationJourney(years, equityRow);
+                updateAccumulationJourney(years, equityRow, values);
             }
 
             // Render Capital Allocation Donut Chart
@@ -7803,7 +7663,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    function updateAccumulationJourney(years, equityRow) {
+    function updateAccumulationJourney(years, equityRow, values = null) {
         if (!years || !equityRow || years.length === 0) return;
 
         const equityData = equityRow.slice(1).map(v => Number(v) || 0);
@@ -7837,6 +7697,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const remainingLabelEl = document.getElementById('accumulation-remaining-label');
         const iconContainerEl = document.getElementById('accumulation-remaining-icon-container');
 
+        const avgReturnEl = document.getElementById('accumulation-avg-return');
+        const targetYearEl = document.getElementById('accumulation-target-year');
+        const targetSubtextEl = document.getElementById('accumulation-target-subtext');
+
         if (pctEl) {
             pctEl.innerText = percentage.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
         }
@@ -7849,14 +7713,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (currentEl) {
             currentEl.innerText = formatCurrency(latestEquityVND);
         }
+
+        const remaining = targetVND - latestEquityVND;
         if (remainingEl) {
-            const remaining = targetVND - latestEquityVND;
             if (remaining > 0) {
                 remainingEl.innerText = formatCurrency(remaining);
                 if (remainingLabelEl) remainingLabelEl.innerText = "Còn Cần Tích Lũy";
                 if (iconContainerEl) {
-                    iconContainerEl.style.background = 'rgba(16, 185, 129, 0.1)';
-                    iconContainerEl.style.color = '#10b981';
+                    iconContainerEl.style.background = 'rgba(59, 130, 246, 0.15)';
+                    iconContainerEl.style.color = '#60a5fa';
                     iconContainerEl.innerHTML = '<i class="fa-solid fa-hourglass-half"></i>';
                 }
             } else {
@@ -7867,6 +7732,111 @@ document.addEventListener("DOMContentLoaded", () => {
                     iconContainerEl.style.color = '#d97706';
                     iconContainerEl.innerHTML = '<i class="fa-solid fa-award"></i>';
                 }
+            }
+        }
+
+        // --- Calculate Average Rate of Return across ALL financial report years ---
+        let roeList = [];
+
+        if (values && Array.isArray(values)) {
+            const roeRow = values.find(row => {
+                const label = String(row[0] || "").toUpperCase().trim();
+                return label === "ROE" || label === "ROE (%)" || label === "TỶ LỆ ROE" || (label.includes("ROE") && !label.includes("ROA"));
+            });
+
+            if (roeRow) {
+                for (let i = 0; i < years.length; i++) {
+                    const rawV = roeRow[i + 1];
+                    if (rawV !== undefined && rawV !== null && rawV !== "") {
+                        const num = Number(rawV);
+                        if (!isNaN(num)) {
+                            const pctVal = (Math.abs(num) < 2 && num !== 0) ? num * 100 : num;
+                            roeList.push(pctVal);
+                        }
+                    }
+                }
+            }
+
+            if (roeList.length === 0) {
+                const profitRow = values.find(row => {
+                    const label = String(row[0] || "").toUpperCase().trim();
+                    return label.includes("LỢI NHUẬN SAU THUẾ") || label.includes("LỢI NHUẬN RÒNG") || label === "LỢI NHUẬN";
+                });
+                if (profitRow) {
+                    for (let i = 0; i < years.length; i++) {
+                        const pVal = Number(profitRow[i + 1]) || 0;
+                        const eqVal = equityData[i] || 0;
+                        if (eqVal > 0 && pVal !== 0) {
+                            roeList.push((pVal / eqVal) * 100);
+                        }
+                    }
+                }
+            }
+        }
+
+        let avgReturnPct = null;
+        if (roeList.length > 0) {
+            avgReturnPct = roeList.reduce((sum, v) => sum + v, 0) / roeList.length;
+        } else if (equityData.length >= 2) {
+            const startEq = equityData[0];
+            const endEq = equityData[equityData.length - 1];
+            const startY = parseInt(years[0], 10);
+            const endY = parseInt(years[years.length - 1], 10);
+            const nY = endY - startY;
+
+            if (nY > 0 && startEq > 0 && endEq > 0) {
+                avgReturnPct = (Math.pow(endEq / startEq, 1 / nY) - 1) * 100;
+            }
+        }
+
+        // Display Average Return Rate
+        if (avgReturnEl) {
+            if (avgReturnPct !== null && !isNaN(avgReturnPct) && isFinite(avgReturnPct)) {
+                const sign = avgReturnPct > 0 ? "+" : "";
+                avgReturnEl.innerText = `${sign}${avgReturnPct.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}% / năm`;
+                avgReturnEl.style.color = avgReturnPct >= 0 ? '#34d399' : '#f87171';
+            } else {
+                avgReturnEl.innerText = "N/A";
+                avgReturnEl.style.color = "#94a3b8";
+            }
+        }
+
+        // Calculate Estimated Completion Year based on Average Rate of Return
+        if (targetYearEl) {
+            if (remaining <= 0) {
+                targetYearEl.innerText = "Đã Đạt! 🎉";
+                targetYearEl.style.color = "#fbbf24";
+                if (targetSubtextEl) targetSubtextEl.innerText = "Mục tiêu 10 Tỷ đã hoàn thành";
+            } else if (avgReturnPct !== null && avgReturnPct > 0 && latestEquityVND > 0) {
+                const r = avgReturnPct / 100;
+                const ratio = targetVND / latestEquityVND;
+                if (ratio > 1 && r > 0) {
+                    const yearsNeeded = Math.log(ratio) / Math.log(1 + r);
+                    const fullYears = Math.floor(yearsNeeded);
+                    const monthsNeeded = Math.round((yearsNeeded - fullYears) * 12);
+                    const targetYear = latestYear + Math.ceil(yearsNeeded);
+
+                    targetYearEl.innerText = `Năm ${targetYear}`;
+                    targetYearEl.style.color = "#c084fc";
+
+                    if (targetSubtextEl) {
+                        if (fullYears > 0 && monthsNeeded > 0) {
+                            targetSubtextEl.innerText = `Còn ~${fullYears} năm ${monthsNeeded} tháng`;
+                        } else if (fullYears > 0) {
+                            targetSubtextEl.innerText = `Còn ~${fullYears} năm tích lũy`;
+                        } else {
+                            targetSubtextEl.innerText = `Còn ~${monthsNeeded} tháng`;
+                        }
+                    }
+                } else {
+                    targetYearEl.innerText = "Chưa xác định";
+                    targetYearEl.style.color = "#94a3b8";
+                    if (targetSubtextEl) targetSubtextEl.innerText = "Cần TSSL > 0%";
+                }
+            } else {
+                targetYearEl.innerText = "Chưa xác định";
+                targetYearEl.style.color = "#94a3b8";
+                if (targetSubtextEl) targetSubtextEl.innerText = "Cần TSSL > 0%";
             }
         }
     }
@@ -9857,10 +9827,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Thành tiền</label>
                         <input type="text" placeholder="0" class="fw-total" readonly style="background: #f1f5f9; color: #0f172a; font-weight: 800; border: 1.5px solid #cbd5e1 !important;">
                     </div>
-                    <button type="button" class="del-flower-btn" title="Xoá"><i class="fa-solid fa-trash-can"></i></button>
+                    <div class="flower-row-actions">
+                        <button type="button" class="add-flower-row-btn" title="Thêm bông"><i class="fa-solid fa-plus"></i></button>
+                        <button type="button" class="del-flower-btn" title="Xoá"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
                 </div>
             `;
             attachFlowerRowEvents(flowerItemsContainer.querySelector('.flower-item'));
+            updateFlowerSummaryTotals();
         }
 
         if (entryTypeSelect && entryTypeSelect.value === 'vua') calculateVuaTotals();
