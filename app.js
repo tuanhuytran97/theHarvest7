@@ -52,6 +52,89 @@ function formatSignedMoneyStr(num) {
     return sign + new Intl.NumberFormat('vi-VN').format(num) + " ₫";
 }
 
+// --- ACCUMULATION TARGET EDITING GLOBALS ---
+window.openEditTargetModal = function() {
+    const modal = document.getElementById('modal-edit-accumulation-target');
+    const input = document.getElementById('input-acc-target-amount');
+    if (!modal || !input) return;
+
+    const savedTarget = localStorage.getItem('accumulation_target_vnd') || "10000000000";
+    input.value = savedTarget;
+    window.onAccTargetInput(savedTarget);
+
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        if (input) input.focus();
+    }, 100);
+};
+
+window.closeEditTargetModal = function() {
+    const modal = document.getElementById('modal-edit-accumulation-target');
+    if (modal) modal.style.display = 'none';
+};
+
+window.onAccTargetInput = function(val) {
+    const preview = document.getElementById('acc-target-preview');
+    if (!preview) return;
+
+    const cleanNumStr = String(val || "").replace(/[^0-9]/g, '');
+    if (!cleanNumStr) {
+        preview.innerText = "0 ₫";
+        preview.style.color = "#f87171";
+        return;
+    }
+
+    const num = Number(cleanNumStr);
+    preview.style.color = "#34d399";
+
+    let helperText = "";
+    if (num >= 1000000000) {
+        const ty = num / 1000000000;
+        helperText = ` (${ty.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} Tỷ)`;
+    } else if (num >= 1000000) {
+        const trieu = num / 1000000;
+        helperText = ` (${trieu.toLocaleString('vi-VN', { maximumFractionDigits: 0 })} Triệu)`;
+    }
+
+    preview.innerText = `${formatCurrency(num)}${helperText}`;
+};
+
+window.setAccTargetPreset = function(presetVal) {
+    const input = document.getElementById('input-acc-target-amount');
+    if (input) {
+        input.value = presetVal;
+        window.onAccTargetInput(presetVal);
+    }
+};
+
+window.saveAccumulationTarget = function(e) {
+    if (e) e.preventDefault();
+    const input = document.getElementById('input-acc-target-amount');
+    if (!input) return;
+
+    const cleanNumStr = String(input.value || "").replace(/[^0-9]/g, '');
+    const num = Number(cleanNumStr);
+
+    if (isNaN(num) || num <= 0) {
+        if (window.showToast) window.showToast("Vui lòng nhập số tiền mục tiêu hợp lệ (> 0)", "error");
+        else alert("Vui lòng nhập số tiền mục tiêu hợp lệ (> 0)");
+        return;
+    }
+
+    localStorage.setItem('accumulation_target_vnd', num.toString());
+    window.closeEditTargetModal();
+
+    if (window.showToast) window.showToast(`Đã cập nhật mục tiêu mới: ${formatCurrency(num)}`, "success");
+
+    if (window.lastAccumulationArgs && typeof updateAccumulationJourney === 'function') {
+        updateAccumulationJourney(
+            window.lastAccumulationArgs.years,
+            window.lastAccumulationArgs.equityRow,
+            window.lastAccumulationArgs.values
+        );
+    }
+};
+
 function formatShorthandCurrency(num, isSigned = false) {
     if (num === 0) return "0đ";
     const absNum = Math.round(Math.abs(num));
@@ -5723,9 +5806,20 @@ document.addEventListener("DOMContentLoaded", () => {
             const formatBalanceVal = (val) => {
                 if (typeof val !== 'number' || isNaN(val)) return "N/A";
                 const absVal = Math.abs(val);
-                if (absVal >= 1000000000) return (val / 1000000000).toFixed(2) + ' Tỷ';
-                if (absVal >= 1000000) return (val / 1000000).toFixed(1) + ' Tr';
-                return formatNumber(val);
+                if (absVal === 0) return "0 ₫";
+
+                if (absVal >= 1000000000) {
+                    const ty = val / 1000000000;
+                    return ty.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 3 }) + " tỷ VND";
+                } else if (absVal >= 1000000) {
+                    const trieu = val / 1000000;
+                    return trieu.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + " triệu VND";
+                } else if (absVal >= 1000) {
+                    const ty = val / 1000;
+                    return ty.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 3 }) + " tỷ VND";
+                } else {
+                    return val.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + " triệu VND";
+                }
             };
 
             const goalVal = findVal("MỤC TIÊU") || 0;
@@ -5754,7 +5848,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 <div class="ratio-summary-card highlight-target">
                     <span class="ratio-label"><i class="fa-solid fa-bullseye"></i> Mục Tiêu Cần Đạt</span>
-                    <span class="ratio-value">${remainingGoal > 0 ? formatNumber(remainingGoal) : "✔ Hoàn thành"}</span>
+                    <span class="ratio-value">${remainingGoal > 0 ? formatBalanceVal(remainingGoal) : "✔ Hoàn thành"}</span>
                 </div>
                 <div class="ratio-summary-card highlight-warning">
                     <span class="ratio-label"><i class="fa-solid fa-hourglass-half"></i> Hoàn Vốn</span>
