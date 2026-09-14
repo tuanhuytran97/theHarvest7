@@ -2546,13 +2546,16 @@
                             </div>
                             
                             <!-- Card 3: Mục Tiêu -->
-                            <div class="accumulation-metric-card" style="border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
+                            <div class="accumulation-metric-card has-tooltip" id="card-acc-target-goal" onclick="openEditTargetModal()" title="Bấm để chỉnh sửa số tiền Mục Tiêu Tích Lũy" style="border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; position: relative;">
                                 <div style="background: rgba(251, 191, 36, 0.15); color: #fbbf24; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;">
                                     <i class="fa-solid fa-bullseye"></i>
                                 </div>
-                                <div style="min-width: 0;">
-                                    <span style="display: block; font-size: 0.72rem; font-weight: 700; color: #94a3b8 !important; text-transform: uppercase; white-space: nowrap;">Mục Tiêu</span>
-                                    <span style="font-size: 1.1rem; font-weight: 800; color: #fbbf24 !important; white-space: nowrap;">10.000.000.000 ₫</span>
+                                <div style="min-width: 0; flex: 1;">
+                                    <span style="display: flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 700; color: #94a3b8 !important; text-transform: uppercase; white-space: nowrap;">
+                                        Mục Tiêu
+                                        <i class="fa-solid fa-pen-to-square" style="font-size: 0.75rem; color: #fbbf24; opacity: 0.85;" title="Chỉnh sửa mục tiêu"></i>
+                                    </span>
+                                    <span id="accumulation-target-goal" style="font-size: 1.1rem; font-weight: 800; color: #fbbf24 !important; white-space: nowrap;">10.000.000.000 ₫</span>
                                 </div>
                             </div>
 
@@ -5548,7 +5551,38 @@ placeholder="Ví dụ:&#10;Ngày 3-7&#10;50 ôhg x 10&#10;Ngày 4-7&#10;60 ôhg 
                 <button type="button" id="btn-save-import" class="btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; display: flex; align-items: center; gap: 8px; border:none; cursor:pointer; font-weight:700; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);" disabled>
                     <i class="fa-solid fa-floppy-disk"></i> Lưu Tất Cả
                 </button>
+    <!-- EDIT ACCUMULATION TARGET MODAL -->
+    <div id="modal-edit-accumulation-target" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem; box-sizing: border-box;">
+        <div class="glassmorphism" style="background: rgba(30, 41, 59, 0.95); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 20px; width: 100%; max-width: 440px; padding: 1.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6); color: white; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 12px; margin-bottom: 1rem;">
+                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-bullseye"></i> Chỉnh Sửa Mục Tiêu Tích Lũy
+                </h3>
+                <button type="button" onclick="closeEditTargetModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; cursor: pointer; padding: 4px;"><i class="fa-solid fa-xmark"></i></button>
             </div>
+            
+            <form id="form-edit-accumulation-target" onsubmit="saveAccumulationTarget(event)">
+                <label style="display: block; font-size: 0.8rem; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">Số Tiền Mục Tiêu Vốn Chủ Sở Hữu (VND):</label>
+                <input type="text" id="input-acc-target-amount" placeholder="VD: 10000000000" style="width: 100%; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(15, 23, 42, 0.8); color: #fbbf24; font-weight: 800; font-size: 1.1rem; padding: 10px 14px; border-radius: 10px; outline: none; box-sizing: border-box; margin-bottom: 8px;" oninput="onAccTargetInput(this.value)">
+                
+                <div id="acc-target-preview" style="font-size: 0.85rem; font-weight: 700; color: #34d399; margin-bottom: 1rem; min-height: 20px;">10.000.000.000 ₫ (10 Tỷ)</div>
+                
+                <!-- Quick Preset Buttons -->
+                <div style="margin-bottom: 1.25rem;">
+                    <div style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">Chọn nhanh mức mục tiêu:</div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button type="button" onclick="setAccTargetPreset(5000000000)" style="padding: 6px 12px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: white; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">5 Tỷ</button>
+                        <button type="button" onclick="setAccTargetPreset(10000000000)" style="padding: 6px 12px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: white; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">10 Tỷ</button>
+                        <button type="button" onclick="setAccTargetPreset(20000000000)" style="padding: 6px 12px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: white; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">20 Tỷ</button>
+                        <button type="button" onclick="setAccTargetPreset(50000000000)" style="padding: 6px 12px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: white; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">50 Tỷ</button>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="closeEditTargetModal()" style="padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.15); background: transparent; color: #cbd5e1; font-weight: 700; cursor: pointer;">Hủy</button>
+                    <button type="submit" style="padding: 10px 20px; border-radius: 10px; border: none; background: linear-gradient(135deg, #fbbf24, #d97706); color: #0f172a; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);">Lưu Mục Tiêu</button>
+                </div>
+            </form>
         </div>
     </div>
 

@@ -7666,6 +7666,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateAccumulationJourney(years, equityRow, values = null) {
         if (!years || !equityRow || years.length === 0) return;
 
+        window.lastAccumulationArgs = { years, equityRow, values };
+
         const equityData = equityRow.slice(1).map(v => Number(v) || 0);
 
         // Find index of the maximum (latest) year
@@ -7684,7 +7686,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const latestYear = maxYearVal;
         const latestEquityMillions = equityData[maxYearIdx]; // this is in millions
         const latestEquityVND = latestEquityMillions * 1000000;
-        const targetVND = 10000000000; // 10 Billion VND
+
+        // Retrieve user configurable Target Goal from localStorage (Default 10 Billion VND)
+        const savedTarget = localStorage.getItem('accumulation_target_vnd');
+        const targetVND = (savedTarget && !isNaN(Number(savedTarget)) && Number(savedTarget) > 0)
+            ? Number(savedTarget)
+            : 10000000000;
+
+        const targetGoalEl = document.getElementById('accumulation-target-goal');
+        if (targetGoalEl) {
+            targetGoalEl.innerText = formatCurrency(targetVND);
+        }
 
         const percentage = Math.min(100, Math.max(0, (latestEquityVND / targetVND) * 100));
 
@@ -7861,17 +7873,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Calculate Estimated Completion Year based on Average Rate of Return & Render Hover Tooltip
         const tooltipTargetYearEl = document.getElementById('tooltip-acc-target-year');
+        const targetStr = formatCurrency(targetVND);
+        const targetShortStr = (targetVND >= 1000000000) ? (targetVND / 1000000000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + " Tỷ" : targetStr;
 
         if (targetYearEl) {
             if (remaining <= 0) {
                 targetYearEl.innerText = "Đã Đạt! 🎉";
                 targetYearEl.style.color = "#fbbf24";
-                if (targetSubtextEl) targetSubtextEl.innerText = "Mục tiêu 10 Tỷ đã hoàn thành";
+                if (targetSubtextEl) targetSubtextEl.innerText = `Mục tiêu ${targetShortStr} đã hoàn thành`;
 
                 if (tooltipTargetYearEl) {
                     tooltipTargetYearEl.innerHTML = `
                         <div style="font-weight: 800; font-size: 0.88rem; color: #fbbf24; margin-bottom: 6px;">
-                            🎉 ĐÃ ĐẠT MỤC TIÊU 10 TỶ!
+                            🎉 ĐÃ ĐẠT MỤC TIÊU ${targetShortStr.toUpperCase()}!
                         </div>
                         <div style="font-size: 0.75rem; color: #e2e8f0;">
                             Vốn Chủ Sở Hữu hiện tại (${formatCurrency(latestEquityVND)}) đã cán đích thành công. Chúc mừng bạn!
@@ -7920,7 +7934,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                                 <div style="display: flex; justify-content: space-between;">
                                     <span style="color: #94a3b8;">• Mục Tiêu Tích Lũy:</span>
-                                    <span style="font-weight: 700; color: #fbbf24;">10.000.000.000 ₫</span>
+                                    <span style="font-weight: 700; color: #fbbf24;">${targetStr}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between;">
                                     <span style="color: #94a3b8;">• Số Tiền Cần Tích Lũy:</span>
@@ -7932,12 +7946,12 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                                 <div style="border-top: 1px dashed rgba(255,255,255,0.15); margin-top: 6px; padding-top: 6px;">
                                     <div style="color: #e2e8f0; font-weight: 700; margin-bottom: 2px;">Công thức tính thời gian:</div>
-                                    <div style="color: #c084fc; font-family: monospace; font-size: 0.72rem;">Năm = log(10 Tỷ / VCSH) / log(1 + TSSL)</div>
+                                    <div style="color: #c084fc; font-family: monospace; font-size: 0.72rem;">Năm = log(Mụctiêu / VCSH) / log(1 + TSSL)</div>
                                     <div style="color: #cbd5e1; margin-top: 4px;">= <b>${yearsNeeded.toFixed(2)} năm</b> (~${fullYears} năm ${monthsNeeded} tháng)</div>
                                 </div>
                             </div>
                             <div style="font-size: 0.72rem; color: #94a3b8; font-style: italic; line-height: 1.35;">
-                                🎯 Dự kiến sẽ hoàn thành mốc 10 Tỷ vào <b>Tháng ${targetMonth}/${finalTargetYear}</b> với tốc độ sinh lợi hiện tại.
+                                🎯 Dự kiến sẽ hoàn thành mốc ${targetShortStr} vào <b>Tháng ${targetMonth}/${finalTargetYear}</b> với tốc độ sinh lợi hiện tại.
                             </div>
                         `;
                     }
@@ -7995,6 +8009,87 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
     }
+
+    // --- ACCUMULATION TARGET EDITING HANDLERS ---
+    window.openEditTargetModal = function() {
+        const modal = document.getElementById('modal-edit-accumulation-target');
+        const input = document.getElementById('input-acc-target-amount');
+        if (!modal || !input) return;
+
+        const savedTarget = localStorage.getItem('accumulation_target_vnd') || "10000000000";
+        input.value = savedTarget;
+        window.onAccTargetInput(savedTarget);
+
+        modal.style.display = 'flex';
+        setTimeout(() => input.focus(), 100);
+    };
+
+    window.closeEditTargetModal = function() {
+        const modal = document.getElementById('modal-edit-accumulation-target');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.onAccTargetInput = function(val) {
+        const preview = document.getElementById('acc-target-preview');
+        if (!preview) return;
+
+        const cleanNumStr = String(val || "").replace(/[^0-9]/g, '');
+        if (!cleanNumStr) {
+            preview.innerText = "0 ₫";
+            preview.style.color = "#f87171";
+            return;
+        }
+
+        const num = Number(cleanNumStr);
+        preview.style.color = "#34d399";
+
+        let helperText = "";
+        if (num >= 1000000000) {
+            const ty = num / 1000000000;
+            helperText = ` (${ty.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} Tỷ)`;
+        } else if (num >= 1000000) {
+            const trieu = num / 1000000;
+            helperText = ` (${trieu.toLocaleString('vi-VN', { maximumFractionDigits: 0 })} Triệu)`;
+        }
+
+        preview.innerText = `${formatCurrency(num)}${helperText}`;
+    };
+
+    window.setAccTargetPreset = function(presetVal) {
+        const input = document.getElementById('input-acc-target-amount');
+        if (input) {
+            input.value = presetVal;
+            window.onAccTargetInput(presetVal);
+        }
+    };
+
+    window.saveAccumulationTarget = function(e) {
+        if (e) e.preventDefault();
+        const input = document.getElementById('input-acc-target-amount');
+        if (!input) return;
+
+        const cleanNumStr = String(input.value || "").replace(/[^0-9]/g, '');
+        const num = Number(cleanNumStr);
+
+        if (isNaN(num) || num <= 0) {
+            if (window.showToast) window.showToast("Vui lòng nhập số tiền mục tiêu hợp lệ (> 0)", "error");
+            else alert("Vui lòng nhập số tiền mục tiêu hợp lệ (> 0)");
+            return;
+        }
+
+        localStorage.setItem('accumulation_target_vnd', num.toString());
+        window.closeEditTargetModal();
+
+        if (window.showToast) window.showToast(`Đã cập nhật mục tiêu mới: ${formatCurrency(num)}`, "success");
+
+        if (window.lastAccumulationArgs && typeof updateAccumulationJourney === 'function') {
+            updateAccumulationJourney(
+                window.lastAccumulationArgs.years,
+                window.lastAccumulationArgs.equityRow,
+                window.lastAccumulationArgs.values
+            );
+        }
+    };
 
     // Attach sync button listener
     const syncFinancialBtn = document.getElementById('sync-financial-btn');
