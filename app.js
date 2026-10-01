@@ -1750,13 +1750,13 @@ document.addEventListener("DOMContentLoaded", () => {
         item.className = 'flower-item';
         item.innerHTML = `
             <div class="form-group" style="margin: 0;">
-                <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
-                <input type="number" placeholder="0" class="fw-qty" min="0" required>
-            </div>
-            <div class="form-group" style="margin: 0;">
                 <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Loại mặt hàng</label>
                 <input type="text" class="fw-type" list="flower-types" placeholder="Tên hoa..." required
                     style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;">
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
+                <input type="number" placeholder="0" class="fw-qty" min="0" required>
             </div>
             <div class="form-group" style="margin: 0;">
                 <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Đơn Giá</label>
@@ -1780,9 +1780,9 @@ document.addEventListener("DOMContentLoaded", () => {
         calculateVuaTotals();
         updateFlowerSummaryTotals();
 
-        const newQty = item.querySelector('.fw-qty');
-        if (newQty) {
-            setTimeout(() => newQty.focus(), 30);
+        const newType = item.querySelector('.fw-type');
+        if (newType) {
+            setTimeout(() => newType.focus(), 30);
         }
         return item;
     }
@@ -1825,16 +1825,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (qtyInput) qtyInput.addEventListener('input', updateRowTotal);
         if (pInput) pInput.addEventListener('input', updateRowTotal);
 
-        // Keyboard navigation listeners
-        if (qtyInput) {
-            qtyInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (pInput) pInput.focus();
-                }
-            });
-        }
-
+        // Keyboard navigation listeners: Loại mặt hàng -> SL -> Đơn giá -> Dòng mới
         if (typeInput) {
             typeInput.addEventListener('focus', () => {
                 activeTypeInput = typeInput;
@@ -1847,14 +1838,23 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
+        if (qtyInput) {
+            qtyInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (pInput) pInput.focus();
+                }
+            });
+        }
+
         if (pInput) {
             pInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     const nextRow = row.nextElementSibling;
                     if (nextRow && nextRow.classList.contains('flower-item')) {
-                        const nextQty = nextRow.querySelector('.fw-qty');
-                        if (nextQty) nextQty.focus();
+                        const nextType = nextRow.querySelector('.fw-type');
+                        if (nextType) nextType.focus();
                     } else {
                         createFlowerRowAfter(row);
                     }
@@ -2779,6 +2779,7 @@ document.addEventListener("DOMContentLoaded", () => {
             syncMobileNav('investment');
             if (viewInvestment) viewInvestment.style.display = 'block';
             if (typeof fetchInvestmentData === 'function') fetchInvestmentData();
+            if (typeof updateInvestmentDemoUI === 'function') updateInvestmentDemoUI();
         } else if (viewId === 'multiyear') {
             if (menuMultiYear) menuMultiYear.classList.add('active');
             syncMobileNav('multiyear');
@@ -5795,12 +5796,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 const years = Math.floor(totalMonths / 12);
                 const months = totalMonths % 12;
                 let res = "";
-                if (years > 0) res += years + (years > 1 ? " Years" : " Year");
+                if (years > 0) res += years + " Năm";
                 if (months > 0) {
                     if (res) res += " ";
-                    res += months + (months > 1 ? " Months" : " Month");
+                    res += months + " Tháng";
                 }
-                return res || "0 Months";
+                return res || "0 Tháng";
             };
 
             const formatBalanceVal = (val) => {
@@ -5808,18 +5809,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 const absVal = Math.abs(val);
                 if (absVal === 0) return "0 ₫";
 
-                if (absVal >= 1000000000) {
-                    const ty = val / 1000000000;
-                    return ty.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 3 }) + " tỷ VND";
-                } else if (absVal >= 1000000) {
-                    const trieu = val / 1000000;
-                    return trieu.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + " triệu VND";
-                } else if (absVal >= 1000) {
-                    const ty = val / 1000;
-                    return ty.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 3 }) + " tỷ VND";
-                } else {
-                    return val.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + " triệu VND";
-                }
+                // Dữ liệu từ bảng Báo cáo tài chính tính theo triệu đồng (nếu < 100 triệu) -> quy đổi sang VND
+                const vnd = absVal < 100000000 ? val * 1000000 : val;
+                return formatCurrency(vnd);
             };
 
             const goalVal = findVal("MỤC TIÊU") || 0;
@@ -5848,11 +5840,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 <div class="ratio-summary-card highlight-target">
                     <span class="ratio-label"><i class="fa-solid fa-bullseye"></i> Mục Tiêu Cần Đạt</span>
-                    <span class="ratio-value">${remainingGoal > 0 ? formatBalanceVal(remainingGoal) : "✔ Hoàn thành"}</span>
+                    <span class="ratio-value currency-val" title="${remainingGoal > 0 ? formatBalanceVal(remainingGoal) : 'Hoàn thành'}">${remainingGoal > 0 ? formatBalanceVal(remainingGoal) : "✔ Hoàn thành"}</span>
                 </div>
                 <div class="ratio-summary-card highlight-warning">
                     <span class="ratio-label"><i class="fa-solid fa-hourglass-half"></i> Hoàn Vốn</span>
-                    <span class="ratio-value">${formatPayback(payback)}</span>
+                    <span class="ratio-value currency-val" style="font-size: 1.15rem !important;" title="${formatPayback(payback)}">${formatPayback(payback)}</span>
                 </div>
 
                 <!-- Divider Row 2: Chỉ số bảng cân đối kế toán -->
@@ -5861,19 +5853,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 <div class="ratio-summary-card ratio-bs-card" style="background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;">
                     <span class="ratio-label"><i class="fa-solid fa-vault"></i> Tổng Tài Sản</span>
-                    <span class="ratio-value" style="font-size: 1.3rem !important;">${formatBalanceVal(totalAssets)}</span>
+                    <span class="ratio-value currency-val" title="${formatBalanceVal(totalAssets)}">${formatBalanceVal(totalAssets)}</span>
                 </div>
                 <div class="ratio-summary-card ratio-bs-card" style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%) !important;">
                     <span class="ratio-label"><i class="fa-solid fa-file-invoice-dollar"></i> Tổng Nợ Phải Trả</span>
-                    <span class="ratio-value" style="font-size: 1.3rem !important;">${formatBalanceVal(totalDebt)}</span>
+                    <span class="ratio-value currency-val" title="${formatBalanceVal(totalDebt)}">${formatBalanceVal(totalDebt)}</span>
                 </div>
                 <div class="ratio-summary-card ratio-bs-card" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;">
                     <span class="ratio-label"><i class="fa-solid fa-sack-dollar"></i> Lợi Nhuận</span>
-                    <span class="ratio-value" style="font-size: 1.3rem !important; color: ${typeof netProfit === 'number' && netProfit < 0 ? '#fecaca' : '#ffffff'} !important;">${formatBalanceVal(netProfit)}</span>
+                    <span class="ratio-value currency-val" style="color: ${typeof netProfit === 'number' && netProfit < 0 ? '#fecaca' : '#ffffff'} !important;" title="${formatBalanceVal(netProfit)}">${formatBalanceVal(netProfit)}</span>
                 </div>
                 <div class="ratio-summary-card ratio-bs-card" style="background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%) !important;">
                     <span class="ratio-label"><i class="fa-solid fa-landmark"></i> Vốn Chủ Sở Hữu</span>
-                    <span class="ratio-value" style="font-size: 1.3rem !important;">${formatBalanceVal(equityCurr)}</span>
+                    <span class="ratio-value currency-val" title="${formatBalanceVal(equityCurr)}">${formatBalanceVal(equityCurr)}</span>
                 </div>
                 <div class="ratio-summary-card ratio-bs-card" style="background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%) !important;">
                     <span class="ratio-label"><i class="fa-solid ${vcshIcon}"></i> Tăng Trưởng VCSH</span>
@@ -7762,37 +7754,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
         window.lastAccumulationArgs = { years, equityRow, values };
 
-        const equityData = equityRow.slice(1).map(v => Number(v) || 0);
+        try {
+            const equityData = equityRow.slice(1).map(v => Number(v) || 0);
 
-        // Find index of the maximum (latest) year
-        let maxYearIdx = 0;
-        let maxYearVal = -Infinity;
-        for (let i = 0; i < years.length; i++) {
-            const yVal = parseInt(years[i], 10);
-            if (!isNaN(yVal) && yVal > maxYearVal) {
-                maxYearVal = yVal;
-                maxYearIdx = i;
+            // Find index of the maximum (latest) year
+            let maxYearIdx = 0;
+            let maxYearVal = -Infinity;
+            for (let i = 0; i < years.length; i++) {
+                const yVal = parseInt(years[i], 10);
+                if (!isNaN(yVal) && yVal > maxYearVal) {
+                    maxYearVal = yVal;
+                    maxYearIdx = i;
+                }
             }
-        }
 
-        if (maxYearVal === -Infinity) return;
+            if (maxYearVal === -Infinity) return;
 
-        const latestYear = maxYearVal;
-        const latestEquityMillions = equityData[maxYearIdx]; // this is in millions
-        const latestEquityVND = latestEquityMillions * 1000000;
+            const latestYear = maxYearVal;
+            const latestEquityMillions = equityData[maxYearIdx]; // this is in millions
+            const latestEquityVND = latestEquityMillions * 1000000;
 
-        // Retrieve user configurable Target Goal from localStorage (Default 10 Billion VND)
-        const savedTarget = localStorage.getItem('accumulation_target_vnd');
-        const targetVND = (savedTarget && !isNaN(Number(savedTarget)) && Number(savedTarget) > 0)
-            ? Number(savedTarget)
-            : 10000000000;
+            // Retrieve user configurable Target Goal from localStorage (Default 10 Billion VND)
+            const savedTarget = localStorage.getItem('accumulation_target_vnd');
+            const targetVND = (savedTarget && !isNaN(Number(savedTarget)) && Number(savedTarget) > 0)
+                ? Number(savedTarget)
+                : 10000000000;
+            const targetStr = formatCurrency(targetVND);
+            const targetShortStr = (targetVND >= 1000000000) ? (targetVND / 1000000000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + " Tỷ" : targetStr;
 
-        const targetGoalEl = document.getElementById('accumulation-target-goal');
-        if (targetGoalEl) {
-            targetGoalEl.innerText = formatCurrency(targetVND);
-        }
+            const targetGoalEl = document.getElementById('accumulation-target-goal');
+            if (targetGoalEl) {
+                targetGoalEl.innerText = formatCurrency(targetVND);
+            }
 
-        const percentage = Math.min(100, Math.max(0, (latestEquityVND / targetVND) * 100));
+            const percentage = Math.min(100, Math.max(0, (latestEquityVND / targetVND) * 100));
 
         // Update DOM elements
         const pctEl = document.getElementById('accumulation-percentage');
@@ -7841,52 +7836,66 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // --- Calculate Average Rate of Return across ALL financial report years ---
-        let roeList = [];
-        let roeYearDetails = [];
+        // --- Tính toán Tỷ lệ Tăng trưởng VCSH Trung bình từ Hàng 30 trong BCTC ---
+        let growthList = [];
+        let growthYearDetails = [];
 
         if (values && Array.isArray(values)) {
-            const roeRow = values.find(row => {
-                const label = String(row[0] || "").toUpperCase().trim();
-                return label === "ROE" || label === "ROE (%)" || label === "TỶ LỆ ROE" || (label.includes("ROE") && !label.includes("ROA"));
-            });
+            let growthRow = null;
 
-            if (roeRow) {
+            // 1. Kiểm tra hàng 30 của file (vị trí index 29 trong mảng 0-indexed)
+            if (values.length >= 30) {
+                const r30 = values[29];
+                const r30Label = String(r30[0] || "").toUpperCase().trim();
+                if (r30Label.includes("TĂNG TRƯỞNG VCSH") || r30Label.includes("TĂNG TRƯỞNG") || r30Label.includes("VCSH")) {
+                    growthRow = r30;
+                }
+            }
+
+            // 2. Tìm kiếm theo tên nhãn nếu hàng 30 bị thay đổi vị trí
+            if (!growthRow) {
+                growthRow = values.find(row => {
+                    const label = String(row[0] || "").toUpperCase().trim();
+                    return label.includes("TĂNG TRƯỞNG VCSH") || label.includes("(TỶ LỆ TĂNG TRƯỞNG VCSH)") || label === "TỶ LỆ TĂNG TRƯỞNG VCSH";
+                });
+            }
+
+            // 3. Fallback lấy index 29 nếu có dòng
+            if (!growthRow && values.length >= 30) {
+                growthRow = values[29];
+            }
+
+            if (growthRow) {
                 for (let i = 0; i < years.length; i++) {
-                    const rawV = roeRow[i + 1];
+                    const rawV = growthRow[i + 1];
                     if (rawV !== undefined && rawV !== null && rawV !== "") {
                         const num = Number(rawV);
                         if (!isNaN(num)) {
                             const pctVal = (Math.abs(num) < 2 && num !== 0) ? num * 100 : num;
-                            roeList.push(pctVal);
-                            roeYearDetails.push({ year: years[i], val: pctVal });
+                            growthList.push(pctVal);
+                            growthYearDetails.push({ year: years[i], val: pctVal });
                         }
                     }
                 }
             }
 
-            if (roeList.length === 0) {
-                const profitRow = values.find(row => {
-                    const label = String(row[0] || "").toUpperCase().trim();
-                    return label.includes("LỢI NHUẬN SAU THUẾ") || label.includes("LỢI NHUẬN RÒNG") || label === "LỢI NHUẬN";
-                });
-                if (profitRow) {
-                    for (let i = 0; i < years.length; i++) {
-                        const pVal = Number(profitRow[i + 1]) || 0;
-                        const eqVal = equityData[i] || 0;
-                        if (eqVal > 0 && pVal !== 0) {
-                            const calcPct = (pVal / eqVal) * 100;
-                            roeList.push(calcPct);
-                            roeYearDetails.push({ year: years[i], val: calcPct });
-                        }
+            // Fallback nếu hàng 30 chưa có số: tự tính tăng trưởng VCSH giữa các năm liên tiếp
+            if (growthList.length === 0 && equityData.length >= 2) {
+                for (let i = 1; i < years.length; i++) {
+                    const prevEq = equityData[i - 1];
+                    const currEq = equityData[i];
+                    if (prevEq > 0) {
+                        const calcPct = ((currEq - prevEq) / prevEq) * 100;
+                        growthList.push(calcPct);
+                        growthYearDetails.push({ year: years[i], val: calcPct });
                     }
                 }
             }
         }
 
         let avgReturnPct = null;
-        if (roeList.length > 0) {
-            avgReturnPct = roeList.reduce((sum, v) => sum + v, 0) / roeList.length;
+        if (growthList.length > 0) {
+            avgReturnPct = growthList.reduce((sum, v) => sum + v, 0) / growthList.length;
         } else if (equityData.length >= 2) {
             const startEq = equityData[0];
             const endEq = equityData[equityData.length - 1];
@@ -7915,17 +7924,17 @@ document.addEventListener("DOMContentLoaded", () => {
         if (tooltipAvgReturnEl) {
             if (avgReturnPct !== null && !isNaN(avgReturnPct) && isFinite(avgReturnPct)) {
                 let rowsHtml = '';
-                if (roeYearDetails.length > 0) {
-                    rowsHtml = roeYearDetails.map(item => `
+                if (growthYearDetails.length > 0) {
+                    rowsHtml = growthYearDetails.map(item => `
                         <div style="display: flex; justify-content: space-between; padding: 2px 0;">
-                            <span style="color: #94a3b8;">• ROE Năm ${item.year}:</span>
+                            <span style="color: #94a3b8;">• Tăng trưởng Năm ${item.year}:</span>
                             <span style="font-weight: 700; color: ${item.val >= 0 ? '#34d399' : '#f87171'};">${item.val >= 0 ? '+' : ''}${item.val.toFixed(1)}%</span>
                         </div>
                     `).join('');
                     rowsHtml += `
                         <div style="border-top: 1px dashed rgba(255,255,255,0.15); margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; font-weight: 800;">
                             <span style="color: #cbd5e1;">Công thức:</span>
-                            <span style="color: #34d399;">Tổng ROE / ${roeYearDetails.length} năm</span>
+                            <span style="color: #34d399;">Tổng Tăng Trưởng / ${growthYearDetails.length} năm</span>
                         </div>
                     `;
                 } else if (equityData.length >= 2) {
@@ -7941,16 +7950,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 tooltipAvgReturnEl.innerHTML = `
                     <div style="font-weight: 800; font-size: 0.88rem; color: #34d399; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 6px;">
-                        <i class="fa-solid fa-chart-line"></i> Cơ Sở Tính TSSL TB / Năm
+                        <i class="fa-solid fa-chart-line"></i> Cơ Sở Tính (Tỷ Lệ Tăng Trưởng VCSH TB)
                     </div>
                     <div style="margin-bottom: 6px; font-size: 0.75rem; color: #cbd5e1;">
-                        Tỷ suất sinh lợi trung bình mỗi năm dựa trên báo cáo tài chính thực tế:
+                        Tỷ lệ tăng trưởng Vốn Chủ Sở Hữu (VCSH) trung bình mỗi năm từ hàng 30 BCTC:
                     </div>
                     <div style="background: rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; font-size: 0.75rem;">
                         ${rowsHtml}
                     </div>
                     <div style="font-size: 0.72rem; color: #94a3b8; font-style: italic; line-height: 1.35;">
-                        💡 Con số <b>+${avgReturnPct.toFixed(1)}%/năm</b> đại diện cho tốc độ sinh lợi kép kỳ vọng để dự báo mốc tích lũy 10 Tỷ.
+                        💡 Con số <b>${avgReturnPct >= 0 ? '+' : ''}${avgReturnPct.toFixed(1)}%/năm</b> đại diện cho tốc độ tăng trưởng quy mô vốn chủ sở hữu bình quân hàng năm để dự phóng mốc tích lũy ${targetShortStr}.
                     </div>
                 `;
             } else {
@@ -7959,7 +7968,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <i class="fa-solid fa-circle-exclamation"></i> Chưa đủ dữ liệu
                     </div>
                     <div style="font-size: 0.75rem; color: #cbd5e1;">
-                        Cần tối thiểu 1 năm có chỉ số ROE hoặc 2 năm báo cáo VCSH để tính TSSL trung bình.
+                        Cần tối thiểu 2 năm báo cáo VCSH (hàng 30) để tính Tỷ lệ Tăng trưởng VCSH trung bình.
                     </div>
                 `;
             }
@@ -7967,8 +7976,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Calculate Estimated Completion Year based on Average Rate of Return & Render Hover Tooltip
         const tooltipTargetYearEl = document.getElementById('tooltip-acc-target-year');
-        const targetStr = formatCurrency(targetVND);
-        const targetShortStr = (targetVND >= 1000000000) ? (targetVND / 1000000000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + " Tỷ" : targetStr;
 
         if (targetYearEl) {
             if (remaining <= 0) {
@@ -8035,32 +8042,32 @@ document.addEventListener("DOMContentLoaded", () => {
                                     <span style="font-weight: 700; color: #60a5fa;">${formatCurrency(remaining)}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: #94a3b8;">• TSSL Kỳ Vọng (ROE TB):</span>
-                                    <span style="font-weight: 700; color: #34d399;">+${avgReturnPct.toFixed(1)}%/năm</span>
+                                    <span style="color: #94a3b8;">• Tăng Trưởng Kỳ Vọng (VCSH TB):</span>
+                                    <span style="font-weight: 700; color: #34d399;">${avgReturnPct >= 0 ? '+' : ''}${avgReturnPct.toFixed(1)}%/năm</span>
                                 </div>
                                 <div style="border-top: 1px dashed rgba(255,255,255,0.15); margin-top: 6px; padding-top: 6px;">
                                     <div style="color: #e2e8f0; font-weight: 700; margin-bottom: 2px;">Công thức tính thời gian:</div>
-                                    <div style="color: #c084fc; font-family: monospace; font-size: 0.72rem;">Năm = log(Mụctiêu / VCSH) / log(1 + TSSL)</div>
+                                    <div style="color: #c084fc; font-family: monospace; font-size: 0.72rem;">Năm = log(Mụctiêu / VCSH) / log(1 + TăngTrưởngVCSH)</div>
                                     <div style="color: #cbd5e1; margin-top: 4px;">= <b>${yearsNeeded.toFixed(2)} năm</b> (~${fullYears} năm ${monthsNeeded} tháng)</div>
                                 </div>
                             </div>
                             <div style="font-size: 0.72rem; color: #94a3b8; font-style: italic; line-height: 1.35;">
-                                🎯 Dự kiến sẽ hoàn thành mốc ${targetShortStr} vào <b>Tháng ${targetMonth}/${finalTargetYear}</b> với tốc độ sinh lợi hiện tại.
+                                🎯 Dự kiến sẽ hoàn thành mốc ${targetShortStr} vào <b>Tháng ${targetMonth}/${finalTargetYear}</b> với tốc độ tăng trưởng vốn hiện tại.
                             </div>
                         `;
                     }
                 } else {
                     targetYearEl.innerText = "Chưa xác định";
                     targetYearEl.style.color = "#94a3b8";
-                    if (targetSubtextEl) targetSubtextEl.innerText = "Cần TSSL > 0%";
+                    if (targetSubtextEl) targetSubtextEl.innerText = "Cần Tăng Trưởng > 0%";
 
                     if (tooltipTargetYearEl) {
                         tooltipTargetYearEl.innerHTML = `
                             <div style="font-weight: 800; font-size: 0.88rem; color: #f87171; margin-bottom: 6px;">
-                                <i class="fa-solid fa-triangle-exclamation"></i> TSSL không khả thi
+                                <i class="fa-solid fa-triangle-exclamation"></i> Tăng trưởng không khả thi
                             </div>
                             <div style="font-size: 0.75rem; color: #cbd5e1;">
-                                Tỷ suất sinh lợi hiện tại không đủ dương để tăng trưởng quy mô vốn lên mốc 10 Tỷ.
+                                Tỷ lệ tăng trưởng VCSH hiện tại không đủ dương để tăng trưởng quy mô vốn lên mốc ${targetShortStr}.
                             </div>
                         `;
                     }
@@ -8068,7 +8075,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 targetYearEl.innerText = "Chưa xác định";
                 targetYearEl.style.color = "#94a3b8";
-                if (targetSubtextEl) targetSubtextEl.innerText = "Cần TSSL > 0%";
+                if (targetSubtextEl) targetSubtextEl.innerText = "Cần Tăng Trưởng > 0%";
 
                 if (tooltipTargetYearEl) {
                     tooltipTargetYearEl.innerHTML = `
@@ -8076,7 +8083,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             <i class="fa-solid fa-triangle-exclamation"></i> Chưa đủ điều kiện
                         </div>
                         <div style="font-size: 0.75rem; color: #cbd5e1;">
-                            Cần TSSL Trung Bình &gt; 0% và VCSH hiện tại &gt; 0 để tính thời gian hoàn thành mục tiêu.
+                            Cần Tỷ lệ Tăng trưởng VCSH Trung Bình &gt; 0% và VCSH hiện tại &gt; 0 để tính thời gian hoàn thành mục tiêu.
                         </div>
                     `;
                 }
@@ -8101,6 +8108,9 @@ document.addEventListener("DOMContentLoaded", () => {
             document.addEventListener('click', () => {
                 document.querySelectorAll('.accumulation-metric-card.has-tooltip').forEach(c => c.classList.remove('active-tooltip'));
             });
+        }
+        } catch (err) {
+            console.error("Accumulation Journey Error:", err);
         }
     }
 
@@ -10155,13 +10165,13 @@ document.addEventListener("DOMContentLoaded", () => {
             flowerItemsContainer.innerHTML = `
                 <div class="flower-item">
                     <div class="form-group" style="margin: 0;">
-                        <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
-                        <input type="number" placeholder="0" class="fw-qty" min="0" required>
-                    </div>
-                    <div class="form-group" style="margin: 0;">
                         <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Loại mặt hàng</label>
                         <input type="text" class="fw-type" list="flower-types" placeholder="Tên hoa..." required
                             style="width: 100%; border: 1px solid var(--border-color); border-radius: 4px; padding: 6px;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">SL</label>
+                        <input type="number" placeholder="0" class="fw-qty" min="0" required>
                     </div>
                     <div class="form-group" style="margin: 0;">
                         <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Đơn Giá</label>

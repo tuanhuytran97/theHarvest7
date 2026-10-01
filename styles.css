@@ -3381,6 +3381,14 @@ tr.swiping td:first-child::before {
     text-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+.ratio-summary-card .ratio-value.currency-val {
+    font-size: 1.18rem !important;
+    letter-spacing: -0.4px !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+}
+
 /* Individual Banner Colors */
 .ratio-summary-card:nth-child(1) { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); } /* Blue */
 .ratio-summary-card:nth-child(2) { background: linear-gradient(135deg, #10b981 0%, #059669 100%); } /* Green */
