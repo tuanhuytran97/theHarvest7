@@ -5777,7 +5777,24 @@ document.addEventListener("DOMContentLoaded", () => {
             const payback = findVal("PAYBACK TIME");
             const equityCurr = findVal("VỐN CHỦ SỞ HỮU") || 0;
             const equityPrev = (yearIdx > 1) ? (findValAtCol("VỐN CHỦ SỞ HỮU", yearIdx - 1) || 0) : 0;
-            const netProfit = findVal("LỢI NHUẬN SAU THUẾ") || findVal("LỢI NHUẬN") || 0;
+
+            // Lấy giá trị EBITDA từ hàng 37 trong Excel (chỉ số index 36) theo yêu cầu
+            const getEbitdaValAtCol = (colIdx) => {
+                // 1. Ưu tiên hàng 37 của Excel (index 36) nếu chứa EBITDA
+                if (values.length >= 37 && String(values[36]?.[0] || "").toUpperCase().includes("EBITDA")) {
+                    return values[36][colIdx];
+                }
+                // 2. Tìm dòng chứa nhãn EBITDA nếu vị trí dòng bị thay đổi
+                const ebitdaRow = values.find(r => String(r[0] || "").toUpperCase().includes("EBITDA"));
+                if (ebitdaRow) return ebitdaRow[colIdx];
+                // 3. Fallback lấy trực tiếp hàng 37 (index 36)
+                if (values.length >= 37 && values[36]?.[colIdx] !== undefined) {
+                    return values[36][colIdx];
+                }
+                // 4. Fallback các dòng lợi nhuận khác nếu có
+                return findValAtCol("LỢI NHUẬN RÒNG", colIdx) || findValAtCol("LỢI NHUẬN SAU THUẾ", colIdx) || findValAtCol("LỢI NHUẬN", colIdx) || 0;
+            };
+            const netProfit = getEbitdaValAtCol(yearIdx);
 
             // Balance Sheet KPIs
             const totalAssets = findVal("TỔNG CỘNG TÀI SẢN") || findVal("TỔNG TÀI SẢN") || 0;
@@ -5805,6 +5822,11 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             const formatBalanceVal = (val) => {
+                if (typeof val === 'string') {
+                    const cleaned = val.replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, '');
+                    const parsed = parseFloat(cleaned);
+                    if (!isNaN(parsed)) val = parsed;
+                }
                 if (typeof val !== 'number' || isNaN(val)) return "N/A";
                 const absVal = Math.abs(val);
                 if (absVal === 0) return "0 ₫";
@@ -5860,7 +5882,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span class="ratio-value currency-val" title="${formatBalanceVal(totalDebt)}">${formatBalanceVal(totalDebt)}</span>
                 </div>
                 <div class="ratio-summary-card ratio-bs-card" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;">
-                    <span class="ratio-label"><i class="fa-solid fa-sack-dollar"></i> Lợi Nhuận</span>
+                    <span class="ratio-label" title="EBITDA (Earnings Before Interest, Taxes, Depreciation, and Amortization)"><i class="fa-solid fa-sack-dollar"></i> Lợi Nhuận (EBITDA)</span>
                     <span class="ratio-value currency-val" style="color: ${typeof netProfit === 'number' && netProfit < 0 ? '#fecaca' : '#ffffff'} !important;" title="${formatBalanceVal(netProfit)}">${formatBalanceVal(netProfit)}</span>
                 </div>
                 <div class="ratio-summary-card ratio-bs-card" style="background: linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%) !important;">
@@ -7305,12 +7327,12 @@ document.addEventListener("DOMContentLoaded", () => {
             if (isSectionHeader) tr.classList.add("financial-row-header");
             if (isTotalRow) tr.classList.add("financial-row-total");
             if (upperLabel.includes("VỐN CHỦ")) tr.classList.add("financial-row-equity");
-            if (upperLabel.includes("LỢI NHUẬN")) tr.classList.add("financial-row-profit");
+            if (upperLabel.includes("LỢI NHUẬN") || upperLabel.includes("EBITDA")) tr.classList.add("financial-row-profit");
 
             // Apply important formatting to specific user-requested rows
             const exactKeywords = [
                 "VỐN CHỦ SỞ HỮU", "TỔNG NỢ PHẢI TRẢ", "TỔNG CỘNG TÀI SẢN",
-                "TỔNG CỘNG NGUỒN VỐN", "LỢI NHUẬN", "ROE", "ROA",
+                "TỔNG CỘNG NGUỒN VỐN", "LỢI NHUẬN", "EBITDA", "ROE", "ROA",
                 "NỢ/VCSH", "PAYBACK TIME",
                 "TÀI SẢN DÀI HẠN", "TÀI SẢN NGẮN HẠN"
             ];

@@ -239,63 +239,235 @@ function renderInvestmentPortfolio() {
         updateInvestmentCharts();
     }
 
-    // Re-apply visibility state after re-render for each card individually
-    const targetIds = ['inv-kpi-nav', 'inv-kpi-capital', 'inv-kpi-profit', 'inv-kpi-roi', 'inv-kpi-mos', 'inv-kpi-dividends'];
-    targetIds.forEach(id => {
-        const isHidden = localStorage.getItem('inv_hidden_' + id) !== 'false';
-        applyInvCardVisibility(id, isHidden);
-    });
+    // Đồng bộ trạng thái hiển thị (mặc định luôn ẨN khi chưa mở khóa)
+    applyUnifiedInvestmentVisibility(isInvPrivacyUnlocked);
 }
 window.renderInvestmentPortfolio = renderInvestmentPortfolio;
 
-// --- Eye Toggle: Hide / Show sensitive investment numbers in KPI cards individually ---
-function applyInvCardVisibility(targetId, hidden) {
-    const el = document.getElementById(targetId);
-    if (!el) return;
+// --- UNIFIED INVESTMENT PRIVACY SYSTEM (KPIs + Danh Mục Hiện Tại) ---
+let isInvPrivacyUnlocked = false;
 
-    // Find the eye icon inside the button that targets this card
-    const btn = document.querySelector(`.inv-card-eye-btn[data-target="${targetId}"]`);
-    const icon = btn ? btn.querySelector('i') : null;
+function applyUnifiedInvestmentVisibility(isUnlocked) {
+    isInvPrivacyUnlocked = !!isUnlocked;
+    const hidden = !isInvPrivacyUnlocked;
+
+    // 1. Đồng bộ 6 thẻ KPI (NAV, Vốn, Lãi/lỗ, ROI, MOS, Cổ tức)
+    const targetIds = ['inv-kpi-nav', 'inv-kpi-capital', 'inv-kpi-profit', 'inv-kpi-roi', 'inv-kpi-mos', 'inv-kpi-dividends'];
+    targetIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (hidden) {
+                if (!el.dataset.originalText && el.innerText !== '● ● ●') {
+                    el.dataset.originalText = el.innerText;
+                }
+                el.innerText = '● ● ●';
+                el.style.letterSpacing = '3px';
+                el.style.opacity = '0.7';
+            } else {
+                if (el.dataset.originalText) {
+                    el.innerText = el.dataset.originalText;
+                    delete el.dataset.originalText;
+                }
+                el.style.letterSpacing = '';
+                el.style.opacity = '';
+            }
+        }
+    });
+
+    // 2. Đồng bộ các icon mắt trên 6 thẻ KPI
+    const cardEyeIcons = document.querySelectorAll('.inv-card-eye-btn i');
+    cardEyeIcons.forEach(icon => {
+        icon.className = hidden ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+    });
+
+    // 3. Đồng bộ Bảng Danh Mục Hiện Tại & Nút mắt tại tiêu đề
+    const tableContainer = document.getElementById('inv-portfolio-table-container');
+    const placeholder = document.getElementById('inv-portfolio-hidden-placeholder');
+    const portBtn = document.getElementById('btn-toggle-portfolio-vis');
+    const portIcon = document.getElementById('inv-portfolio-vis-icon');
 
     if (hidden) {
-        if (!el.dataset.originalText) el.dataset.originalText = el.innerText;
-        el.innerText = '● ● ●';
-        el.style.letterSpacing = '3px';
-        el.style.opacity = '0.7';
+        if (tableContainer) tableContainer.style.display = 'none';
+        if (placeholder) placeholder.style.display = 'block';
+        if (portIcon) portIcon.className = 'fa-solid fa-eye-slash';
+        if (portBtn) {
+            portBtn.title = 'Hiện danh mục & số liệu (Cần mật khẩu Admin)';
+            portBtn.style.background = '#fef2f2';
+            portBtn.style.borderColor = '#fecaca';
+            portBtn.style.color = '#ef4444';
+        }
+    } else {
+        if (tableContainer) tableContainer.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+        if (portIcon) portIcon.className = 'fa-solid fa-eye';
+        if (portBtn) {
+            portBtn.title = 'Ẩn danh mục & số liệu';
+            portBtn.style.background = '#f0fdf4';
+            portBtn.style.borderColor = '#bbf7d0';
+            portBtn.style.color = '#16a34a';
+        }
+    }
+}
+window.applyUnifiedInvestmentVisibility = applyUnifiedInvestmentVisibility;
+
+// Khóa lại toàn bộ (Ẩn ngay lập tức mà không cần mật khẩu)
+function lockInvestmentPrivacy() {
+    applyUnifiedInvestmentVisibility(false);
+    if (window.showToast) {
+        window.showToast('🙈 Đã ẩn danh mục và số liệu tài sản', 'info');
+    }
+}
+window.lockInvestmentPrivacy = lockInvestmentPrivacy;
+
+// Yêu cầu chuyển đổi: nếu đang hiện -> ẩn đi; nếu đang ẩn -> mở modal mật khẩu Admin
+function requestToggleInvestmentPrivacy() {
+    if (isInvPrivacyUnlocked) {
+        lockInvestmentPrivacy();
+    } else {
+        openInvAdminAuthModal();
+    }
+}
+window.requestToggleInvestmentPrivacy = requestToggleInvestmentPrivacy;
+
+// Modal Xác thực Mật khẩu Admin
+function openInvAdminAuthModal() {
+    const modal = document.getElementById('modal-inv-admin-auth');
+    const input = document.getElementById('inv-admin-pw-input');
+    const err = document.getElementById('inv-admin-pw-error');
+    if (!modal) return;
+
+    if (input) {
+        input.value = '';
+        input.type = 'password';
+    }
+    const eyeIcon = document.getElementById('eye-icon-pw-input');
+    if (eyeIcon) eyeIcon.className = 'fa-solid fa-eye';
+
+    if (err) err.style.display = 'none';
+    modal.style.display = 'flex';
+    if (input) setTimeout(() => input.focus(), 100);
+}
+window.openInvAdminAuthModal = openInvAdminAuthModal;
+
+function closeInvAdminAuthModal() {
+    const modal = document.getElementById('modal-inv-admin-auth');
+    if (modal) modal.style.display = 'none';
+}
+window.closeInvAdminAuthModal = closeInvAdminAuthModal;
+
+function toggleAdminPasswordInputVisibility() {
+    const input = document.getElementById('inv-admin-pw-input');
+    const icon = document.getElementById('eye-icon-pw-input');
+    if (!input) return;
+    if (input.type === 'password') {
+        input.type = 'text';
         if (icon) icon.className = 'fa-solid fa-eye-slash';
     } else {
-        if (el.dataset.originalText) {
-            el.innerText = el.dataset.originalText;
-            delete el.dataset.originalText;
-        }
-        el.style.letterSpacing = '';
-        el.style.opacity = '';
+        input.type = 'password';
         if (icon) icon.className = 'fa-solid fa-eye';
     }
 }
+window.toggleAdminPasswordInputVisibility = toggleAdminPasswordInputVisibility;
+
+async function verifyAdminPassword(inputPw) {
+    if (!inputPw) return false;
+    const trimmedPw = inputPw.trim();
+
+    // 1. Kiểm tra theo token đăng nhập hiện tại
+    const token = (window.getToken ? window.getToken() : null) || sessionStorage.getItem("user-token") || localStorage.getItem("farm_token") || "";
+    if (token) {
+        if (token.includes(":")) {
+            const [u, p] = token.split(":");
+            if ((u === "admin" || (window.getRole && window.getRole() === "ADMIN")) && p === trimmedPw) {
+                return true;
+            }
+        } else if (token === trimmedPw) {
+            return true;
+        }
+    }
+
+    // 2. Kiểm tra users cấu hình cục bộ (custom_users, CONFIG)
+    const customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
+    if (customUsers["admin"] && customUsers["admin"].password === trimmedPw) return true;
+    for (let k in customUsers) {
+        if (customUsers[k]?.role === "ADMIN" && customUsers[k]?.password === trimmedPw) return true;
+    }
+
+    if (typeof CONFIG !== 'undefined' && CONFIG.USERS && CONFIG.USERS["admin"]) {
+        if (CONFIG.USERS["admin"].password === trimmedPw) return true;
+    }
+
+    // 3. Mật khẩu mặc định hệ thống
+    if (trimmedPw === "huytran97") return true;
+
+    // 4. Nếu có kết nối Server Apps Script, xác thực trực tiếp qua action "login"
+    if (window.isConfigured && window.isConfigured() && typeof CONFIG !== 'undefined' && CONFIG.WEB_APP_URL) {
+        try {
+            const resp = await fetch(CONFIG.WEB_APP_URL, {
+                method: "POST",
+                body: JSON.stringify({ action: "login", username: "admin", password: trimmedPw }),
+                headers: { "Content-Type": "text/plain;charset=utf-8" }
+            });
+            const data = await resp.json();
+            if (data && data.status === "success" && data.role === "ADMIN") {
+                return true;
+            }
+        } catch (e) {
+            console.warn("Online admin verification error:", e);
+        }
+    }
+
+    return false;
+}
+
+async function submitInvAdminAuth() {
+    const input = document.getElementById('inv-admin-pw-input');
+    const err = document.getElementById('inv-admin-pw-error');
+    const submitBtn = document.getElementById('btn-submit-inv-auth');
+    if (!input) return;
+
+    const pw = input.value;
+    if (!pw) {
+        if (err) {
+            err.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Vui lòng nhập mật khẩu Admin!';
+            err.style.display = 'block';
+        }
+        return;
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xác thực...';
+    }
+
+    try {
+        const isValid = await verifyAdminPassword(pw);
+        if (isValid) {
+            closeInvAdminAuthModal();
+            applyUnifiedInvestmentVisibility(true);
+            if (window.showToast) {
+                window.showToast('👁️ Đã mở khóa hiển thị danh mục và tài sản', 'success');
+            }
+        } else {
+            if (err) {
+                err.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> Mật khẩu Admin không chính xác!';
+                err.style.display = 'block';
+            }
+            input.value = '';
+            input.focus();
+        }
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-lock-open"></i> Mở Khóa';
+        }
+    }
+}
+window.submitInvAdminAuth = submitInvAdminAuth;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Wire up the eye toggle buttons inside cards
-    const invKpiContainer = document.getElementById('inv-kpi-container');
-    if (invKpiContainer) {
-        invKpiContainer.addEventListener('click', (e) => {
-            const btn = e.target.closest('.inv-card-eye-btn');
-            if (btn) {
-                e.stopPropagation();
-                const targetId = btn.dataset.target;
-                const currentlyHidden = localStorage.getItem('inv_hidden_' + targetId) !== 'false';
-                const newState = !currentlyHidden;
-                localStorage.setItem('inv_hidden_' + targetId, String(newState));
-                applyInvCardVisibility(targetId, newState);
-            }
-        });
-    }
-    // Apply saved state on load
-    const targetIds = ['inv-kpi-nav', 'inv-kpi-capital', 'inv-kpi-profit', 'inv-kpi-roi', 'inv-kpi-mos', 'inv-kpi-dividends'];
-    targetIds.forEach(id => {
-        const isHidden = localStorage.getItem('inv_hidden_' + id) !== 'false';
-        applyInvCardVisibility(id, isHidden);
-    });
+    // Áp dụng trạng thái mặc định: Ẩn toàn bộ
+    applyUnifiedInvestmentVisibility(isInvPrivacyUnlocked);
 });
 
 // --- Analytics & Charts Logic ---

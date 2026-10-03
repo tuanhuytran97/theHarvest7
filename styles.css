@@ -6333,6 +6333,28 @@ tr.swiping td:first-child::before {
     transform: translateX(0) translateY(0) !important;
 }
 
+/* Investment Portfolio Eye Toggle & Locked Placeholder */
+.inv-portfolio-eye-btn {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
 
+.inv-portfolio-eye-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
 
+.inv-portfolio-locked-card {
+    transition: all 0.25s ease;
+}
+
+.inv-portfolio-locked-card:hover {
+    border-color: #3b82f6 !important;
+    background: rgba(241, 245, 249, 0.95) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.inv-portfolio-locked-card:hover .btn-reveal-portfolio {
+    transform: scale(1.04);
+}
 
