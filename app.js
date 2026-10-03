@@ -11942,6 +11942,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnSaveImport = document.getElementById('btn-save-import');
     const importTextArea = document.getElementById('import-text-area');
     const modalImportBuyer = document.getElementById('modal-import-buyer');
+    const modalImportDate = document.getElementById('modal-import-date');
+    const btnApplyDateToAll = document.getElementById('btn-apply-date-to-all');
     const modalImportStatus = document.getElementById('modal-import-status');
     const importPreviewContainer = document.getElementById('import-preview-container');
     const importPreviewBody = document.getElementById('import-preview-body');
@@ -12116,14 +12118,35 @@ document.addEventListener("DOMContentLoaded", () => {
     if (importTextBtn && importTextModal) {
         importTextBtn.addEventListener('click', () => {
             const buyerInput = document.getElementById('buyer-input');
+            const dateInput = document.getElementById('date-input');
             const statusInput = document.getElementById('status-input');
             if (modalImportBuyer && buyerInput) {
                 modalImportBuyer.value = buyerInput.value;
+            }
+            if (modalImportDate) {
+                modalImportDate.value = (dateInput && dateInput.value) ? dateInput.value : formatDateInput(new Date());
             }
             if (modalImportStatus && statusInput) {
                 modalImportStatus.value = statusInput.value;
             }
             importTextModal.style.display = 'flex';
+        });
+    }
+
+    if (btnApplyDateToAll && modalImportDate) {
+        btnApplyDateToAll.addEventListener('click', () => {
+            const chosenDateStr = modalImportDate.value;
+            if (!chosenDateStr) {
+                alert("Vui lòng chọn ngày giao ở ô trên trước!");
+                return;
+            }
+            const parts = chosenDateStr.split('-');
+            const newDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            parsedImportRows.forEach(row => {
+                row.date = new Date(newDate);
+            });
+            renderImportPreview();
+            if (window.showToast) window.showToast(`Đã áp dụng ngày ${formatDateVietnamese(newDate)} cho tất cả các dòng!`, "success");
         });
     }
 
@@ -12148,7 +12171,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const handleAddImportRow = () => {
         let lastDate = new Date();
-        if (parsedImportRows.length > 0) {
+        if (modalImportDate && modalImportDate.value) {
+            const p = modalImportDate.value.split('-');
+            lastDate = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
+        } else if (parsedImportRows.length > 0) {
             lastDate = new Date(parsedImportRows[parsedImportRows.length - 1].date);
         }
         parsedImportRows.push({
@@ -12221,20 +12247,52 @@ document.addEventListener("DOMContentLoaded", () => {
             throw new Error("Chưa cấu hình GEMINI_API_KEY trong file config.js!");
         }
 
-        const prompt = `Bạn là trợ lý đắc lực bóc tách dữ liệu giao bông từ hình ảnh hóa đơn hoặc tin nhắn chụp màn hình.
-Hãy trích xuất thông tin giao bông thành một mảng các đối tượng JSON có cấu trúc sau:
-[
-  {
-    "date": "YYYY-MM-DD", // Ngày giao bông (ví dụ: ngày 3-7 của năm 2026 sẽ là 2026-07-03). Hãy lấy năm hiện tại là 2026 nếu không có thông tin năm. Nếu trong hình ảnh hoàn toàn không đề cập đến thông tin ngày, tháng thì hãy để giá trị là null.
-    "type": "tên loại hoa", // ví dụ: "Ô Hồng", "Xô ngoại", "Xô nội", "Ecuador", "Pháp", "Trắng ủ", "Quốc Vương", "Vàng Hà Lan", "Kem", "Simmo", "Victor Vàng", "Lạc Thần", "Hỷ Trứng", "Capu", "Xô Đỏ". Nếu loại hoa viết tắt, hãy tự động chuyển đổi: "ôhg" -> "Ô Hồng", "ohg" -> "Ô Hồng", "ô hồng" -> "Ô Hồng", "ecu" -> "Ecuador", "xo" -> "Xô ngoại", "xo noi" -> "Xô nội", "xo ngoai" -> "Xô ngoại".
-    "qty": số lượng, // Số lượng hoa dạng số.
-    "price": đơn giá // Đơn giá thực tế cho mỗi bông. QUY TẮC ĐƠN GIÁ BẮT BUỘC: Đơn giá thực tế cho mỗi bông luôn nằm trong khoảng từ 500đ đến 10.000đ (500 <= price <= 10000). Nếu trên ảnh ghi tắt như "x 12" hay "12" nghĩa là 1.200đ/bông. "x 10" hay "10" nghĩa là 1.000đ/bông. "x 8" hay "8" nghĩa là 800đ/bông. "x 15" hay "15" nghĩa là 1.500đ/bông. "x 1.2k" hay "1200" nghĩa là 1.200đ/bông. Tuyệt đối KHÔNG trả về các số đơn giá nhỏ hơn 500 (như 120, 100, 12, 10). Nếu hoàn toàn không có thông tin đơn giá, trả về null.
-  }
-]
+        const prompt = `Bạn là trợ lý AI chuyên nghiệp phân tích hóa đơn, sổ tay ghi chép giao bông và tin nhắn đặt hàng nông sản (đặc biệt là hoa tươi Đà Lạt).
+Hãy trích xuất tất cả các dòng giao bông từ hình ảnh thành một mảng JSON các đối tượng.
 
-Quy tắc:
-- Chỉ trả về mảng JSON hợp lệ theo đúng cấu trúc trên.
-- Không bao quanh bằng markdown block, không giải thích gì thêm.`;
+Cấu trúc mỗi phần tử:
+{
+  "date": "YYYY-MM-DD", // Ngày giao bông (ví dụ: ngày 3/10 hoặc "Tư 3/10" của năm 2026 sẽ là "2026-10-03"). Nếu ảnh ghi ngày tháng theo phong cách Việt Nam (ngày/tháng hoặc ngày-tháng), hãy hiểu là Ngày/Tháng. Nếu trong hình ảnh không có thông tin ngày, hãy để giá trị null.
+  "type": "tên loại hoa chuẩn hóa", 
+  "qty": số lượng, // Dạng số nguyên hoặc thập phân
+  "price": đơn giá // Đơn giá thực tế trên mỗi bông (VNĐ).
+}
+
+HƯỚNG DẪN QUAN TRỌNG VỀ NHẬN DIỆN CHỮ VIẾT TAY & CÔNG THỨC:
+1. Tên loại hoa phổ biến và ký hiệu viết tắt:
+   - "Ecu", "Ecu ", "Equ", "Ecou" -> "Ecuador"
+   - "pháp", "phap" -> "Pháp"
+   - "Trắng", "Trắng ủ", "Trắm", "Trang u" -> "Trắng ủ"
+   - "Vịt", "Vijo", "Vit" -> "Vịt"
+   - "Hỷ", "Hỷ s", "Hỷ Trứng", "Hy" -> "Hỷ Trứng"
+   - "HL", "Hà Lan", "Vàng Hà Lan" -> "Vàng Hà Lan"
+   - "Kem" -> "Kem"
+   - "Keo", "Kẹo" -> "Keo"
+   - "Simô", "Simo", "Simmo", "Sin" -> "Simmo"
+   - "Ô Hồng", "ohg", "ôhg", "ôh" -> "Ô Hồng"
+   - "Xô", "Xô ngoại", "xo" -> "Xô ngoại"
+   - "Xô nội" -> "Xô nội"
+   - "Quốc Vương", "QV" -> "Quốc Vương"
+   - "Victor Vàng" -> "Victor Vàng"
+   - "Capu" -> "Capu"
+   - "Lạc Thần" -> "Lạc Thần"
+
+2. Quy tắc đơn giá & phép nhân:
+   - Trong sổ tay ghi chép, người bán thường ghi: [Tên hoa] [Số lượng] x [Đơn giá rút gọn] = [Thành tiền nghìn đồng]
+   - Ví dụ: 
+     * "800 x 19 = 1520" nghĩa là số lượng 800 bông, đơn giá 1.900đ/bông, thành tiền 1.520.000đ.
+     * "1150 x 16 = 1840" nghĩa là số lượng 1150 bông, đơn giá 1.600đ/bông, thành tiền 1.840.000đ.
+     * "400 x 25 = 1000" nghĩa là số lượng 400 bông (chú ý số 4 viết tay thường nhầm với 9, nhưng 400 x 2.5k = 1000k khớp phép tính), đơn giá 2.500đ/bông.
+     * "200 x 25 = 500" nghĩa là số lượng 200 bông, đơn giá 2.500đ/bông, thành tiền 500.000đ.
+     * "200 x 22 = 440" nghĩa là số lượng 200 bông, đơn giá 2.200đ/bông.
+     * "150 x 26 = 390" nghĩa là số lượng 150 bông, đơn giá 2.600đ/bông.
+     * "50 x 25 = 125" nghĩa là 50 bông, đơn giá 2.500đ/bông.
+     * "50 x 20 = 100" nghĩa là 50 bông, đơn giá 2.000đ/bông.
+     * "50 x 22 = 110" nghĩa là 50 bông, đơn giá 2.200đ/bông.
+   - Hãy kiểm tra chéo giữa số lượng, đơn giá và kết quả phép tính bằng nhau (=) trên dòng để suy ra chính xác chữ số viết tay khó đọc (như 4 vs 9, 1 vs 7).
+   - Đơn giá thực tế cho mỗi bông luôn trong khoảng 500đ đến 15.000đ (ví dụ 19 -> 1900, 16 -> 1600, 25 -> 2500, 22 -> 2200, 26 -> 2600, 20 -> 2000).
+
+Chỉ trả về JSON thuần túy (mảng các object). Không bao quanh bởi markdown formatting.`;
 
         const payload = {
             contents: [{
@@ -12270,7 +12328,18 @@ Quy tắc:
             throw new Error("Dữ liệu AI trả về không phải là một danh sách hợp lệ.");
         }
 
-        return items.map(item => {
+        const getFallbackDate = () => {
+            if (modalImportDate && modalImportDate.value) {
+                const parts = modalImportDate.value.split('-');
+                if (parts.length >= 3) {
+                    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                }
+            }
+            return new Date();
+        };
+
+        let detectedDate = null;
+        const mappedRows = items.map(item => {
             let parsedDate;
             if (item.date && typeof item.date === 'string' && item.date.trim() !== '') {
                 const dateParts = item.date.split('-');
@@ -12279,11 +12348,12 @@ Quy tắc:
                     const mo = parseInt(dateParts[1]) || 1;
                     const dy = parseInt(dateParts[2]) || 1;
                     parsedDate = new Date(yr, mo - 1, dy);
+                    if (!detectedDate) detectedDate = parsedDate;
                 } else {
-                    parsedDate = new Date();
+                    parsedDate = getFallbackDate();
                 }
             } else {
-                parsedDate = new Date();
+                parsedDate = getFallbackDate();
             }
 
             const qtyVal = parseFloat(item.qty) || 0;
@@ -12298,14 +12368,20 @@ Quy tắc:
                 total: priceVal !== '' ? qtyVal * priceVal : ''
             };
         });
+
+        if (detectedDate && modalImportDate) {
+            modalImportDate.value = formatDateInput(detectedDate);
+        }
+
+        return mappedRows;
     }
 
     function normalizeUnitPrice(val) {
         if (val === '' || val === null || val === undefined || isNaN(val)) return '';
         let p = parseFloat(val);
         if (p <= 0) return p;
-        // Quy tắc: Đơn giá thực tế cho mỗi bông PHẢI luôn dao động trong khoảng từ 500đ đến 10.000đ
-        // Nếu số ghi tắt như 12, 10, 8, 15, 6.5, 120, 100... thì tự động nhân 10 cho đến khi p >= 500
+        // Quy tắc: Đơn giá thực tế cho mỗi bông PHẢI luôn dao động trong khoảng từ 500đ đến 15.000đ
+        // Nếu số ghi tắt như 19, 16, 25, 22, 12, 10, 8, 15, 6.5, 120, 100... thì tự động nhân 10 cho đến khi p >= 500
         while (p < 500 && p > 0) {
             p = p * 10;
         }
@@ -12314,7 +12390,10 @@ Quy tắc:
 
     function parseImportText(text) {
         const lines = text.split('\n');
-        let currentDate = new Date();
+        let currentDate = (modalImportDate && modalImportDate.value) ? (() => {
+            const p = modalImportDate.value.split('-');
+            return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
+        })() : new Date();
         const parsedRows = [];
         const currentYear = new Date().getFullYear();
         let lastParsedType = "Bông";
@@ -12339,14 +12418,24 @@ Quy tắc:
             'phap': 'Pháp',
             'trắng ủ': 'Trắng ủ',
             'trang u': 'Trắng ủ',
+            'trắng': 'Trắng ủ',
+            'trang': 'Trắng ủ',
+            'trắm': 'Trắng ủ',
+            'tram': 'Trắng ủ',
             'qv': 'Quốc Vương',
             'quốc vương': 'Quốc Vương',
             'quoc vuong': 'Quốc Vương',
             'vàng hà lan': 'Vàng Hà Lan',
             'vang ha lan': 'Vàng Hà Lan',
             'vhl': 'Vàng Hà Lan',
+            'hl': 'Vàng Hà Lan',
+            'hà lan': 'Vàng Hà Lan',
+            'ha lan': 'Vàng Hà Lan',
             'kem': 'Kem',
             'simmo': 'Simmo',
+            'simo': 'Simmo',
+            'simô': 'Simmo',
+            'sin': 'Simmo',
             'sino': 'Simmo',
             'victor vàng': 'Victor Vàng',
             'victor vang': 'Victor Vàng',
@@ -12360,12 +12449,15 @@ Quy tắc:
             'hỷ trùng': 'Hỷ Trứng',
             'hỷ': 'Hỷ Trứng',
             'hy': 'Hỷ Trứng',
+            'hỷ s': 'Hỷ Trứng',
             'capu': 'Capu',
             'xô đỏ': 'Xô Đỏ',
             'xo do': 'Xô Đỏ',
             'vịt': 'Vịt',
             'vit': 'Vịt',
+            'vijo': 'Vịt',
             'keo': 'Keo',
+            'kẹo': 'Keo',
             'bày': 'Bày',
             'bay': 'Bày'
         };
