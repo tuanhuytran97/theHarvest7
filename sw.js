@@ -1,4 +1,4 @@
-const CACHE_NAME = 'theharvest7-cache-v12';
+const CACHE_NAME = 'theharvest7-cache-v13';
 const ASSETS = [
   './',
   './index.html',

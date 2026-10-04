@@ -53,7 +53,7 @@ function formatSignedMoneyStr(num) {
 }
 
 // --- ACCUMULATION TARGET EDITING GLOBALS ---
-window.openEditTargetModal = function() {
+window.openEditTargetModal = function () {
     const modal = document.getElementById('modal-edit-accumulation-target');
     const input = document.getElementById('input-acc-target-amount');
     if (!modal || !input) return;
@@ -68,12 +68,12 @@ window.openEditTargetModal = function() {
     }, 100);
 };
 
-window.closeEditTargetModal = function() {
+window.closeEditTargetModal = function () {
     const modal = document.getElementById('modal-edit-accumulation-target');
     if (modal) modal.style.display = 'none';
 };
 
-window.onAccTargetInput = function(val) {
+window.onAccTargetInput = function (val) {
     const preview = document.getElementById('acc-target-preview');
     if (!preview) return;
 
@@ -99,7 +99,7 @@ window.onAccTargetInput = function(val) {
     preview.innerText = `${formatCurrency(num)}${helperText}`;
 };
 
-window.setAccTargetPreset = function(presetVal) {
+window.setAccTargetPreset = function (presetVal) {
     const input = document.getElementById('input-acc-target-amount');
     if (input) {
         input.value = presetVal;
@@ -107,7 +107,7 @@ window.setAccTargetPreset = function(presetVal) {
     }
 };
 
-window.saveAccumulationTarget = function(e) {
+window.saveAccumulationTarget = function (e) {
     if (e) e.preventDefault();
     const input = document.getElementById('input-acc-target-amount');
     if (!input) return;
@@ -1313,6 +1313,87 @@ document.addEventListener("DOMContentLoaded", () => {
     const vuaOutsideFlowerCostInput = document.getElementById('vua-outside-flower-cost');
     const vuaOutsideFlowerNoteInput = document.getElementById('vua-outside-flower-note');
 
+    // Vua Collect Lock Elements
+    const btnLockVuaCollect = document.getElementById('btn-lock-vua-collect');
+    const btnLockVuaCollectMark = document.getElementById('btn-lock-vua-collect-mark');
+    const badgeLockVuaCollect = document.getElementById('badge-lock-vua-collect');
+    const iconLockVuaCollect = document.getElementById('icon-lock-vua-collect');
+    const textLockVuaCollect = document.getElementById('text-lock-vua-collect');
+    const iconLockMark = document.getElementById('icon-lock-mark');
+    const textLockMark = document.getElementById('text-lock-mark');
+    let isVuaCollectLocked = false;
+
+    function setVuaCollectLock(locked) {
+        isVuaCollectLocked = !!locked;
+        if (isVuaCollectLocked) {
+            // Đảm bảo có số tiền được khóa (nếu đang trống hoặc 0 thì tính trước khi khóa)
+            if (vuaTotalCollectInput && (!vuaTotalCollectInput.value || parseMoney(vuaTotalCollectInput.value) === 0)) {
+                let totalCost = 0;
+                if (flowerItemsContainer) {
+                    flowerItemsContainer.querySelectorAll('.flower-item').forEach(item => {
+                        const q = parseFloat(item.querySelector('.fw-qty').value) || 0;
+                        const p = parseMoney(item.querySelector('.fw-price').value);
+                        totalCost += (q * p);
+                    });
+                }
+                const shipping = parseMoney(vuaShipCostInput ? vuaShipCostInput.value : "0");
+                const vattu = parseMoney(vuaVattuCostInput ? vuaVattuCostInput.value : "0");
+                const packing = parseMoney(vuaPackCostInput ? vuaPackCostInput.value : "0");
+                const outsideFlowerCost = parseMoney(vuaOutsideFlowerCostInput ? vuaOutsideFlowerCostInput.value : "0");
+                const calcTotal = totalCost + shipping + vattu + outsideFlowerCost + packing;
+                vuaTotalCollectInput.value = formatMoneyStr(calcTotal);
+            }
+
+            if (vuaTotalCollectInput) {
+                vuaTotalCollectInput.readOnly = true;
+                vuaTotalCollectInput.classList.add('is-locked');
+                vuaTotalCollectInput.title = "Tiền phải thu đang KHÓA. Khi giá vốn hoặc chi phí thay đổi, lợi nhuận sẽ tự động tính lại theo số tiền này.";
+            }
+            if (vuaPackCostInput) {
+                vuaPackCostInput.title = "Lợi nhuận đang tự động tính theo Tiền phải thu đã khóa.";
+            }
+            if (btnLockVuaCollect) {
+                btnLockVuaCollect.classList.add('is-locked');
+                if (iconLockVuaCollect) iconLockVuaCollect.className = "fa-solid fa-lock";
+                if (textLockVuaCollect) textLockVuaCollect.textContent = "Mở khóa";
+            }
+            if (badgeLockVuaCollect) {
+                badgeLockVuaCollect.style.display = "inline-flex";
+            }
+            if (btnLockVuaCollectMark) {
+                btnLockVuaCollectMark.classList.add('is-locked');
+                btnLockVuaCollectMark.title = "Đang KHÓA - Bấm để Mở khóa";
+                if (iconLockMark) iconLockMark.className = "fa-solid fa-lock";
+                if (textLockMark) textLockMark.textContent = "ĐÃ KHÓA";
+            }
+            calculateVuaTotals();
+        } else {
+            if (vuaTotalCollectInput) {
+                vuaTotalCollectInput.readOnly = false;
+                vuaTotalCollectInput.classList.remove('is-locked');
+                vuaTotalCollectInput.removeAttribute('title');
+            }
+            if (vuaPackCostInput) {
+                vuaPackCostInput.removeAttribute('title');
+            }
+            if (btnLockVuaCollect) {
+                btnLockVuaCollect.classList.remove('is-locked');
+                if (iconLockVuaCollect) iconLockVuaCollect.className = "fa-solid fa-lock-open";
+                if (textLockVuaCollect) textLockVuaCollect.textContent = "Khóa số tiền";
+            }
+            if (badgeLockVuaCollect) {
+                badgeLockVuaCollect.style.display = "none";
+            }
+            if (btnLockVuaCollectMark) {
+                btnLockVuaCollectMark.classList.remove('is-locked');
+                btnLockVuaCollectMark.title = "Bấm để Khóa tiền phải thu";
+                if (iconLockMark) iconLockMark.className = "fa-solid fa-lock-open";
+                if (textLockMark) textLockMark.textContent = "Khóa";
+            }
+            calculateVuaTotals();
+        }
+    }
+
     const expenseFields = document.getElementById('expense-fields');
     const addExpenseBtn = document.getElementById('add-expense-btn');
     const expenseItemsContainer = document.getElementById('expense-items-container');
@@ -1554,6 +1635,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (vuaTotalCollectInput) vuaTotalCollectInput.required = true;
                 toggleFlowerReq(true);
                 toggleExpenseReq(false);
+                setVuaCollectLock(false);
                 calculateVuaTotals();
 
                 // Premium visual styling
@@ -1651,14 +1733,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const shipping = parseMoney(vuaShipCostInput ? vuaShipCostInput.value : "0");
         const vattu = parseMoney(vuaVattuCostInput ? vuaVattuCostInput.value : "0");
-        const packing = parseMoney(vuaPackCostInput ? vuaPackCostInput.value : "0");
         const outsideFlowerCost = parseMoney(vuaOutsideFlowerCostInput ? vuaOutsideFlowerCostInput.value : "0");
 
-        let totalCollect = totalCost + shipping + vattu + outsideFlowerCost + packing;
+        if (isVuaCollectLocked) {
+            // Khi Tiền Phải Thu bị khóa: Giữ nguyên số tiền vuaTotalCollectInput đã khóa
+            const lockedCollect = parseMoney(vuaTotalCollectInput ? vuaTotalCollectInput.value : "0");
 
-        if (vuaTotalCollectInput) {
-            vuaTotalCollectInput.value = formatMoneyStr(totalCollect);
-            calculateBundlesAndPrice(vuaTotalCollectInput.value);
+            // Giá vốn thay đổi -> Lợi nhuận tự tính toán lại: Lợi nhuận = Tiền phải thu (đã khóa) - (Giá vốn + Chi phí)
+            const newProfit = lockedCollect - (totalCost + shipping + vattu + outsideFlowerCost);
+            if (vuaPackCostInput && document.activeElement !== vuaPackCostInput) {
+                vuaPackCostInput.value = formatMoneyStr(newProfit);
+            }
+
+            if (vuaTotalCollectInput) {
+                calculateBundlesAndPrice(vuaTotalCollectInput.value);
+            }
+        } else {
+            const packing = parseSignedMoney(vuaPackCostInput ? vuaPackCostInput.value : "0");
+            let totalCollect = totalCost + shipping + vattu + outsideFlowerCost + packing;
+
+            if (vuaTotalCollectInput) {
+                vuaTotalCollectInput.value = formatMoneyStr(totalCollect);
+                calculateBundlesAndPrice(vuaTotalCollectInput.value);
+            }
         }
     }
 
@@ -1692,8 +1789,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // Suggest rounding to nearest 5000 (VND 5k) - e.g. 62->60, 63->65
             const roundedPrice = Math.round(pricePerBundle / 5000) * 5000;
 
-            // Check if it's already perfectly rounded or diff is extremely small
-            if (Math.abs(roundedPrice - pricePerBundle) < 100) {
+            // Check if locked or already perfectly rounded
+            if (isVuaCollectLocked) {
+                if (suggestBox) suggestBox.style.display = 'none';
+            } else if (Math.abs(roundedPrice - pricePerBundle) < 100) {
                 if (suggestBox) suggestBox.style.display = 'none';
             } else {
                 const targetCollect = roundedPrice * totalBundles;
@@ -1908,11 +2007,37 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // --- VUA COLLECT LOCK LISTENERS ---
+    if (btnLockVuaCollect) {
+        btnLockVuaCollect.addEventListener('click', (e) => {
+            e.preventDefault();
+            setVuaCollectLock(!isVuaCollectLocked);
+        });
+    }
+
+    if (btnLockVuaCollectMark) {
+        btnLockVuaCollectMark.addEventListener('click', (e) => {
+            e.preventDefault();
+            setVuaCollectLock(!isVuaCollectLocked);
+        });
+    }
+
+    if (vuaTotalCollectInput) {
+        vuaTotalCollectInput.addEventListener('click', () => {
+            if (isVuaCollectLocked) {
+                if (typeof showToast === 'function') {
+                    showToast('🔒 Tiền phải thu đang khóa. Bấm nút Khóa để mở nếu muốn sửa số tiền.', 'info');
+                }
+            }
+        });
+    }
+
     if (vuaShipCostInput) vuaShipCostInput.addEventListener('input', calculateVuaTotals);
     if (vuaVattuCostInput) vuaVattuCostInput.addEventListener('input', calculateVuaTotals);
     if (vuaPackCostInput) vuaPackCostInput.addEventListener('input', calculateVuaTotals);
     if (vuaOutsideFlowerCostInput) vuaOutsideFlowerCostInput.addEventListener('input', calculateVuaTotals);
     if (vuaTotalCollectInput) vuaTotalCollectInput.addEventListener('input', () => {
+        if (isVuaCollectLocked) return;
         const userCollect = parseMoney(vuaTotalCollectInput.value);
         let sumCost = 0;
         flowerItemsContainer.querySelectorAll('.flower-item').forEach(item => {
@@ -3814,7 +3939,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.editExpenseTransaction = editExpenseTransaction;
 
     // Direct helper functions for daily report & table click handlers
-    window.editSingleRevenueLine = function(sheetRowNumber) {
+    window.editSingleRevenueLine = function (sheetRowNumber) {
         const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
         const row = farmDataRef.find(r => String(r._sheetRowNumber) === String(sheetRowNumber));
         if (!row) {
@@ -3849,7 +3974,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    window.editBuyerRevenueDirect = function(buyerName, day, month, year) {
+    window.editBuyerRevenueDirect = function (buyerName, day, month, year) {
         const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
         const dayRows = farmDataRef.filter(row => {
             const d = row.parsedDate;
@@ -3875,7 +4000,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.editSingleRevenueLine(editableRow._sheetRowNumber);
     };
 
-    window.editSingleExpense = function(sheetRowNumber) {
+    window.editSingleExpense = function (sheetRowNumber) {
         const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
         const row = farmDataRef.find(r => String(r._sheetRowNumber) === String(sheetRowNumber));
         if (!row) {
@@ -3895,7 +4020,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    window.editExpenseCategoryDirect = function(categoryName, day, month, year) {
+    window.editExpenseCategoryDirect = function (categoryName, day, month, year) {
         const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
         const dayRows = farmDataRef.filter(row => {
             const d = row.parsedDate;
@@ -5799,7 +5924,18 @@ document.addEventListener("DOMContentLoaded", () => {
             // Balance Sheet KPIs
             const totalAssets = findVal("TỔNG CỘNG TÀI SẢN") || findVal("TỔNG TÀI SẢN") || 0;
             const totalDebt = findVal("TỔNG NỢ PHẢI TRẢ") || 0;
-            const vcshGrowth = findVal("(TỶ LỆ TĂNG TRƯỞNG VCSH)") || findVal("TỶ LỆ TĂNG TRƯỞNG VCSH") || findVal("TĂNG TRƯỞNG VCSH") || null;
+            // Tính tăng trưởng VCSH trực tiếp từ số VCSH hiển thị trên bảng (giống hình 2)
+            // Dùng cùng công thức: ((curr - prev) / |prev|) * 100
+            let vcshGrowth = null;
+            if (typeof equityCurr === 'number' && typeof equityPrev === 'number' && equityPrev !== 0) {
+                vcshGrowth = ((equityCurr - equityPrev) / Math.abs(equityPrev)) * 100;
+            } else {
+                // Fallback: đọc từ hàng TĂNG TRƯỞNG VCSH trong bảng nếu không có equityPrev
+                const vcshGrowthRaw = findVal("(TỶ LỆ TĂNG TRƯỞNG VCSH)") || findVal("TỶ LỆ TĂNG TRƯỞNG VCSH") || findVal("TĂNG TRƯỞNG VCSH") || null;
+                if (typeof vcshGrowthRaw === 'number') {
+                    vcshGrowth = Math.abs(vcshGrowthRaw) < 2 ? vcshGrowthRaw * 100 : vcshGrowthRaw;
+                }
+            }
 
             const formatPct = (val) => {
                 if (typeof val !== 'number') return "N/A";
@@ -5836,13 +5972,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 return formatCurrency(vnd);
             };
 
-            const goalVal = findVal("MỤC TIÊU") || 0;
-            const remainingGoal = goalVal - equityCurr;
+            // Đọc mục tiêu VCSH năm đó từ hàng "Mục Tiêu tăng trưởng VCSH" (số, đơn vị triệu)
+            // Fallback sang hàng "MỤC TIÊU" nếu không có
+            const mucTieuRow = values.find(r => {
+                const lbl = String(r[0] || "").toUpperCase().trim();
+                return lbl.includes("MỤC TIÊU TĂNG TRƯỞNG VCSH") && !lbl.includes("%") && !lbl.includes("(");
+            });
+            const goalValRaw = mucTieuRow ? (Number(mucTieuRow[yearIdx]) || 0)
+                             : (findVal("MỤC TIÊU") || 0);
+            const goalVal = goalValRaw;
+            const remainingGoal = goalVal - equityCurr; // cả 2 đơn vị triệu đồng
+
+            // Tính % hoàn thành mục tiêu năm đó
+            const goalPct = (goalVal > 0) ? Math.min(999, (equityCurr / goalVal) * 100) : null;
 
             // Tính màu cho tỷ lệ tăng trưởng VCSH
+            // vcshGrowth đã là % (e.g. 25.5 nghĩa là 25.5%), không cần nhân 100 nữa
             let vcshGrowthPct = null;
             if (typeof vcshGrowth === 'number') {
-                vcshGrowthPct = Math.abs(vcshGrowth) < 2 ? vcshGrowth * 100 : vcshGrowth;
+                vcshGrowthPct = vcshGrowth; // đã là %
             }
             const vcshColor = vcshGrowthPct !== null ? (vcshGrowthPct > 5 ? '#a7f3d0' : '#fca5a5') : 'white';
             const vcshIcon = vcshGrowthPct !== null ? (vcshGrowthPct > 5 ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down') : 'fa-chart-simple';
@@ -5862,7 +6010,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 <div class="ratio-summary-card highlight-target">
                     <span class="ratio-label"><i class="fa-solid fa-bullseye"></i> Mục Tiêu Cần Đạt</span>
-                    <span class="ratio-value currency-val" title="${remainingGoal > 0 ? formatBalanceVal(remainingGoal) : 'Hoàn thành'}">${remainingGoal > 0 ? formatBalanceVal(remainingGoal) : "✔ Hoàn thành"}</span>
+                    ${goalVal > 0 ? `
+                        <span class="ratio-value currency-val" style="font-size:1.05rem !important; display:flex; flex-direction:column; align-items:flex-start; gap:2px;"
+                            title="Mục tiêu: ${formatBalanceVal(goalVal)} | VCSH hiện tại: ${formatBalanceVal(equityCurr)}">
+                            <span style="font-size:0.85rem; opacity:0.85;">${formatBalanceVal(goalVal)}</span>
+                            <span style="font-size:0.78rem; font-weight:800; color:${remainingGoal <= 0 ? '#34d399' : '#fca5a5'}; background:${remainingGoal <= 0 ? 'rgba(52,211,153,0.15)' : 'rgba(252,165,165,0.15)'}; border-radius:5px; padding:1px 7px;">
+                                ${remainingGoal <= 0
+                                    ? `✅ Passed · +${formatBalanceVal(Math.abs(remainingGoal))} vượt`
+                                    : `❌ Failed · -${formatBalanceVal(remainingGoal)} thiếu`}
+                            </span>
+                            ${goalPct !== null ? `<span style="font-size:0.72rem; color:${remainingGoal <= 0 ? '#34d399' : '#fbbf24'}; opacity:0.9;">${goalPct.toLocaleString('vi-VN',{maximumFractionDigits:1})}% hoàn thành</span>` : ''}
+                        </span>
+                    ` : `<span class="ratio-value currency-val" style="color:#94a3b8; font-size:0.9rem;">Chưa có mục tiêu</span>`}
                 </div>
                 <div class="ratio-summary-card highlight-warning">
                     <span class="ratio-label"><i class="fa-solid fa-hourglass-half"></i> Hoàn Vốn</span>
@@ -7307,6 +7466,48 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         thead.appendChild(thr);
 
+        // Helper parsing cell number from raw sheet or formatted string
+        function parseFinancialCellNumber(val) {
+            if (typeof val === 'number') return isNaN(val) ? 0 : val;
+            if (val === null || val === undefined || val === '') return 0;
+            if (typeof val === 'string') {
+                const trimmed = val.trim();
+                if (!trimmed) return 0;
+                if (trimmed.includes('.') && trimmed.includes(',')) {
+                    const clean = trimmed.replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, '');
+                    const parsed = parseFloat(clean);
+                    return isNaN(parsed) ? 0 : parsed;
+                }
+                if (/^\d{1,3}(\.\d{3})+$/.test(trimmed)) {
+                    const clean = trimmed.replace(/\./g, '');
+                    const parsed = parseFloat(clean);
+                    return isNaN(parsed) ? 0 : parsed;
+                }
+                const clean = trimmed.replace(/,/g, '').replace(/[^0-9.-]/g, '');
+                const parsed = parseFloat(clean);
+                return isNaN(parsed) ? 0 : parsed;
+            }
+            return 0;
+        }
+
+        // Helper calculating percentage growth vs previous year
+        function getGrowthPercentInfo(prevVal, currVal) {
+            if (prevVal === 0 && currVal === 0) return { text: '--', color: '#94a3b8' };
+            if (prevVal === 0) {
+                if (currVal > 0) return { text: '+100.00%', color: '#10b981' };
+                if (currVal < 0) return { text: '-100.00%', color: '#ef4444' };
+                return { text: '--', color: '#94a3b8' };
+            }
+            const pct = ((currVal - prevVal) / Math.abs(prevVal)) * 100;
+            if (Math.abs(pct) < 0.005) return { text: '0.00%', color: '#94a3b8' };
+            const absVal = Math.abs(pct);
+            const formattedNum = absVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return {
+                text: (pct > 0 ? '+' : '-') + formattedNum + '%',
+                color: pct > 0 ? '#10b981' : '#ef4444'
+            };
+        }
+
         // 2. Render Data Rows (Dữ liệu bắt đầu từ dòng index 1 trở đi)
         for (let rIdx = 1; rIdx < values.length; rIdx++) {
             const rowData = values[rIdx];
@@ -7321,7 +7522,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const isSectionHeader = rowLabel && rowLabel === rowLabel.toUpperCase() && !rowLabel.includes("TỔNG");
             const isTotalRow = upperLabel.includes("TỔNG");
 
-            const isPercentageRatio = ["ROE", "ROA", "NỢ/VCSH", "NỢ / VCSH", "TĂNG TRƯỞNG VCSH", "HOÀN THÀNH MỤC TIÊU", "(%)", "%"].some(r => upperLabel.includes(r));
+            // Hàng "Mục Tiêu tăng trưởng VCSH" (không có "%" trong nhãn) hiển thị dạng số + Passed/Failed
+            const isMucTieuVCSH = upperLabel.includes("MỤC TIÊU TĂNG TRƯỞNG VCSH") && !upperLabel.includes("%") && !upperLabel.includes("(");
+            const isPercentageRatio = !isMucTieuVCSH && ["ROE", "ROA", "NỢ/VCSH", "NỢ / VCSH", "TĂNG TRƯỞNG VCSH", "HOÀN THÀNH MỤC TIÊU", "(%)", "%"].some(r => upperLabel.includes(r));
             const isOtherRatio = ["PAYBACK TIME"].includes(upperLabel);
 
             if (isSectionHeader) tr.classList.add("financial-row-header");
@@ -7334,13 +7537,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 "VỐN CHỦ SỞ HỮU", "TỔNG NỢ PHẢI TRẢ", "TỔNG CỘNG TÀI SẢN",
                 "TỔNG CỘNG NGUỒN VỐN", "LỢI NHUẬN", "EBITDA", "ROE", "ROA",
                 "NỢ/VCSH", "PAYBACK TIME",
-                "TÀI SẢN DÀI HẠN", "TÀI SẢN NGẮN HẠN"
+                "TÀI SẢN DÀI HẠN", "TÀI SẢN NGẮN HẠN", "NỢ PHẢI TRẢ", "NỢ NGẮN HẠN", "NỢ DÀI HẠN"
             ];
             // Match if row starts with keyword or equals keyword (avoiding middle matches like 'Tỷ lệ VCSH')
             const isImportantRow = exactKeywords.some(key => upperLabel === key || upperLabel.startsWith(key + " ") || upperLabel === "[" + key + "]");
             if (isImportantRow) {
                 tr.classList.add("financial-row-highlight-premium");
             }
+
+            // Nhận diện các phần mục lớn cần hiển thị tỷ lệ thay đổi % theo năm
+            const isMajorSection = (isSectionHeader || isTotalRow || isImportantRow) && !isPercentageRatio && !isOtherRatio && rowLabel !== "";
 
             rowData.forEach((cell, cIdx) => {
                 const td = document.createElement('td');
@@ -7355,7 +7561,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         td.style.color = "#0369a1";
                     }
                     if (isLocked) td.className = "financial-col-locked";
-                    // So snh t?ng th? v?i c? th? 2026
+                    // So sánh tổng thể với cột năm 2026
                     const cellStr = String(headerRow[cIdx] || "").trim();
                     const isCurrentYear = cellStr.includes(currentYearStr) || cellStr === "2026";
                     if (isCurrentYear) td.classList.add("financial-col-current");
@@ -7365,6 +7571,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     if (rowLabel === "") {
                         displayVal = ""; // Hide zeros in spacer rows
+                        td.innerText = "";
+                    } else if (isMucTieuVCSH && typeof val === 'number') {
+                        // Hàng Mục Tiêu tăng trưởng VCSH: hiển thị số, so sánh với VCSH cùng cột
+                        const targetVal = val; // số mục tiêu (đơn vị triệu)
+                        // Tìm giá trị VCSH ở cùng cột
+                        const vcshRow = values.find(r => {
+                            const lbl = String(r[0] || "").toUpperCase().trim();
+                            return lbl === "VỐN CHỦ SỞ HỮU";
+                        });
+                        const vcshVal = vcshRow ? (Number(vcshRow[cIdx]) || 0) : null;
+
+                        displayVal = formatNumber(targetVal);
+                        td.style.fontWeight = "700";
+
+                        if (vcshVal !== null && targetVal !== 0) {
+                            const gap = vcshVal - targetVal;
+                            const isPassed = vcshVal >= targetVal;
+                            const gapStr = formatNumber(Math.abs(gap));
+                            const badgeColor = isPassed ? '#10b981' : '#ef4444';
+                            const badgeBg = isPassed ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.1)';
+                            const statusText = isPassed ? '✅ Passed' : '❌ Failed';
+                            const gapLabel = isPassed
+                                ? `+${gapStr} vượt`
+                                : `-${gapStr} thiếu`;
+                            td.style.color = badgeColor;
+                            td.innerHTML = `
+                                <div class="financial-cell-container" style="flex-direction:column; align-items:flex-end; gap:2px;">
+                                    <span class="financial-val-primary" style="color:${badgeColor};">${displayVal}</span>
+                                    <span style="font-size:0.7rem; font-weight:700; color:${badgeColor}; background:${badgeBg}; border-radius:4px; padding:1px 5px; line-height:1.4;">${statusText} · ${gapLabel}</span>
+                                </div>`;
+                        } else {
+                            td.style.color = '#94a3b8';
+                            td.innerText = displayVal;
+                        }
                     } else if (isPercentageRatio && typeof val === 'number') {
                         let pctVal = val;
                         if (Math.abs(val) < 2) pctVal = val * 100;
@@ -7385,17 +7625,42 @@ document.addEventListener("DOMContentLoaded", () => {
                         if (upperLabel.includes("TĂNG TRƯỞNG VCSH")) {
                             td.style.color = pctVal > 5 ? "#10b981" : "#ef4444";
                         }
+
+                        if (upperLabel.includes("HOÀN THÀNH MỤC TIÊU")) {
+                            td.innerHTML = displayVal;
+                        } else {
+                            td.innerText = displayVal;
+                        }
                     } else if (isOtherRatio) {
                         // Giữ lại số lẻ cho các tỷ số đặc biệt nếu cần (vd: Payback time)
                         displayVal = (typeof val === 'number' ? val.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : val);
+                        td.innerText = displayVal;
+                    } else if (isMajorSection) {
+                        // HIỂN THỊ CON SỐ CHÍNH KÈM TỶ LỆ % THAY ĐỔI THEO NĂM (GIỐNG HÌNH 2)
+                        displayVal = formatNumber(val);
+                        let growthInfo;
+                        if (cIdx === 1) {
+                            growthInfo = { text: '--', color: '#94a3b8' };
+                        } else {
+                            const prevVal = parseFinancialCellNumber(rowData[cIdx - 1]);
+                            const currVal = parseFinancialCellNumber(val);
+                            growthInfo = getGrowthPercentInfo(prevVal, currVal);
+                        }
+
+                        const prevYearLabel = headerRow[cIdx - 1] ? String(headerRow[cIdx - 1]).trim() : '';
+                        const hoverTitle = cIdx > 1 && prevYearLabel ? `Tăng/giảm so với năm ${prevYearLabel}: ${growthInfo.text}` : '';
+
+                        td.innerHTML = `
+                            <div class="financial-cell-container">
+                                <span class="financial-val-primary">${displayVal}</span>
+                                <span class="financial-val-pct" style="color: ${growthInfo.color} !important;" ${hoverTitle ? `title="${hoverTitle}"` : ''}>
+                                    ${growthInfo.text}
+                                </span>
+                            </div>
+                        `;
                     } else {
                         // Tất cả các con số thông thường (Tiền, sản lượng) đều làm tròn nguyên
                         displayVal = formatNumber(val);
-                    }
-
-                    if (upperLabel.includes("HOÀN THÀNH MỤC TIÊU") && isPercentageRatio) {
-                        td.innerHTML = displayVal;
-                    } else {
                         td.innerText = displayVal;
                     }
 
@@ -7403,8 +7668,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 if (isImportantRow) {
                     td.style.fontWeight = "800";
-                    td.style.textDecoration = "underline";
-                    td.style.textUnderlineOffset = "4px";
+                    if (!isMajorSection) {
+                        td.style.textDecoration = "underline";
+                        td.style.textUnderlineOffset = "4px";
+                    } else {
+                        td.style.textDecoration = "none";
+                    }
                 }
 
                 tr.appendChild(td);
@@ -7811,171 +8080,133 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const percentage = Math.min(100, Math.max(0, (latestEquityVND / targetVND) * 100));
 
-        // Update DOM elements
-        const pctEl = document.getElementById('accumulation-percentage');
-        const barEl = document.getElementById('accumulation-progress-bar');
-        const yearEl = document.getElementById('accumulation-year');
-        const currentEl = document.getElementById('accumulation-current');
-        const remainingEl = document.getElementById('accumulation-remaining');
-        const remainingLabelEl = document.getElementById('accumulation-remaining-label');
-        const iconContainerEl = document.getElementById('accumulation-remaining-icon-container');
+            // Update DOM elements
+            const pctEl = document.getElementById('accumulation-percentage');
+            const barEl = document.getElementById('accumulation-progress-bar');
+            const yearEl = document.getElementById('accumulation-year');
+            const currentEl = document.getElementById('accumulation-current');
+            const remainingEl = document.getElementById('accumulation-remaining');
+            const remainingLabelEl = document.getElementById('accumulation-remaining-label');
+            const iconContainerEl = document.getElementById('accumulation-remaining-icon-container');
 
-        const avgReturnEl = document.getElementById('accumulation-avg-return');
-        const targetYearEl = document.getElementById('accumulation-target-year');
-        const targetSubtextEl = document.getElementById('accumulation-target-subtext');
+            const avgReturnEl = document.getElementById('accumulation-avg-return');
+            const targetYearEl = document.getElementById('accumulation-target-year');
+            const targetSubtextEl = document.getElementById('accumulation-target-subtext');
 
-        if (pctEl) {
-            pctEl.innerText = percentage.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
-        }
-        if (barEl) {
-            barEl.style.width = percentage.toFixed(2) + '%';
-        }
-        if (yearEl) {
-            yearEl.innerText = latestYear.toString();
-        }
-        if (currentEl) {
-            currentEl.innerText = formatCurrency(latestEquityVND);
-        }
-
-        const remaining = targetVND - latestEquityVND;
-        if (remainingEl) {
-            if (remaining > 0) {
-                remainingEl.innerText = formatCurrency(remaining);
-                if (remainingLabelEl) remainingLabelEl.innerText = "Còn Cần Tích Lũy";
-                if (iconContainerEl) {
-                    iconContainerEl.style.background = 'rgba(59, 130, 246, 0.15)';
-                    iconContainerEl.style.color = '#60a5fa';
-                    iconContainerEl.innerHTML = '<i class="fa-solid fa-hourglass-half"></i>';
-                }
-            } else {
-                remainingEl.innerText = "Đã đạt mục tiêu! 🎉";
-                if (remainingLabelEl) remainingLabelEl.innerText = "Trạng Thái";
-                if (iconContainerEl) {
-                    iconContainerEl.style.background = 'rgba(251, 191, 36, 0.15)';
-                    iconContainerEl.style.color = '#d97706';
-                    iconContainerEl.innerHTML = '<i class="fa-solid fa-award"></i>';
-                }
+            if (pctEl) {
+                pctEl.innerText = percentage.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
             }
-        }
-
-        // --- Tính toán Tỷ lệ Tăng trưởng VCSH Trung bình từ Hàng 30 trong BCTC ---
-        let growthList = [];
-        let growthYearDetails = [];
-
-        if (values && Array.isArray(values)) {
-            let growthRow = null;
-
-            // 1. Kiểm tra hàng 30 của file (vị trí index 29 trong mảng 0-indexed)
-            if (values.length >= 30) {
-                const r30 = values[29];
-                const r30Label = String(r30[0] || "").toUpperCase().trim();
-                if (r30Label.includes("TĂNG TRƯỞNG VCSH") || r30Label.includes("TĂNG TRƯỞNG") || r30Label.includes("VCSH")) {
-                    growthRow = r30;
-                }
+            if (barEl) {
+                barEl.style.width = percentage.toFixed(2) + '%';
+            }
+            if (yearEl) {
+                yearEl.innerText = latestYear.toString();
+            }
+            if (currentEl) {
+                currentEl.innerText = formatCurrency(latestEquityVND);
             }
 
-            // 2. Tìm kiếm theo tên nhãn nếu hàng 30 bị thay đổi vị trí
-            if (!growthRow) {
-                growthRow = values.find(row => {
-                    const label = String(row[0] || "").toUpperCase().trim();
-                    return label.includes("TĂNG TRƯỞNG VCSH") || label.includes("(TỶ LỆ TĂNG TRƯỞNG VCSH)") || label === "TỶ LỆ TĂNG TRƯỞNG VCSH";
-                });
-            }
-
-            // 3. Fallback lấy index 29 nếu có dòng
-            if (!growthRow && values.length >= 30) {
-                growthRow = values[29];
-            }
-
-            if (growthRow) {
-                for (let i = 0; i < years.length; i++) {
-                    const rawV = growthRow[i + 1];
-                    if (rawV !== undefined && rawV !== null && rawV !== "") {
-                        const num = Number(rawV);
-                        if (!isNaN(num)) {
-                            const pctVal = (Math.abs(num) < 2 && num !== 0) ? num * 100 : num;
-                            growthList.push(pctVal);
-                            growthYearDetails.push({ year: years[i], val: pctVal });
-                        }
+            const remaining = targetVND - latestEquityVND;
+            if (remainingEl) {
+                if (remaining > 0) {
+                    remainingEl.innerText = formatCurrency(remaining);
+                    if (remainingLabelEl) remainingLabelEl.innerText = "Còn Cần Tích Lũy";
+                    if (iconContainerEl) {
+                        iconContainerEl.style.background = 'rgba(59, 130, 246, 0.15)';
+                        iconContainerEl.style.color = '#60a5fa';
+                        iconContainerEl.innerHTML = '<i class="fa-solid fa-hourglass-half"></i>';
+                    }
+                } else {
+                    remainingEl.innerText = "Đã đạt mục tiêu! 🎉";
+                    if (remainingLabelEl) remainingLabelEl.innerText = "Trạng Thái";
+                    if (iconContainerEl) {
+                        iconContainerEl.style.background = 'rgba(251, 191, 36, 0.15)';
+                        iconContainerEl.style.color = '#d97706';
+                        iconContainerEl.innerHTML = '<i class="fa-solid fa-award"></i>';
                     }
                 }
             }
 
-            // Fallback nếu hàng 30 chưa có số: tự tính tăng trưởng VCSH giữa các năm liên tiếp
-            if (growthList.length === 0 && equityData.length >= 2) {
-                for (let i = 1; i < years.length; i++) {
+            // --- Tính toán Tỷ lệ Tăng trưởng VCSH Trung bình từ các số VCSH hiển thị trên bảng (hình 2) ---
+            // Lấy đúng các % tăng trưởng VCSH năm qua năm được hiển thị trực tiếp trên cột VCSH,
+            // dùng cùng công thức: ((curr - prev) / |prev|) * 100 — giống hình 2
+            let growthList = [];
+            let growthYearDetails = [];
+
+            if (equityData.length >= 2) {
+                for (let i = 1; i < equityData.length; i++) {
                     const prevEq = equityData[i - 1];
                     const currEq = equityData[i];
-                    if (prevEq > 0) {
-                        const calcPct = ((currEq - prevEq) / prevEq) * 100;
+                    // Chỉ tính khi năm trước != 0 (tránh chia 0)
+                    if (prevEq !== 0) {
+                        const calcPct = ((currEq - prevEq) / Math.abs(prevEq)) * 100;
                         growthList.push(calcPct);
                         growthYearDetails.push({ year: years[i], val: calcPct });
                     }
                 }
             }
-        }
 
-        let avgReturnPct = null;
-        if (growthList.length > 0) {
-            avgReturnPct = growthList.reduce((sum, v) => sum + v, 0) / growthList.length;
-        } else if (equityData.length >= 2) {
-            const startEq = equityData[0];
-            const endEq = equityData[equityData.length - 1];
-            const startY = parseInt(years[0], 10);
-            const endY = parseInt(years[years.length - 1], 10);
-            const nY = endY - startY;
+            let avgReturnPct = null;
+            if (growthList.length > 0) {
+                avgReturnPct = growthList.reduce((sum, v) => sum + v, 0) / growthList.length;
+            } else if (equityData.length >= 2) {
+                const startEq = equityData[0];
+                const endEq = equityData[equityData.length - 1];
+                const startY = parseInt(years[0], 10);
+                const endY = parseInt(years[years.length - 1], 10);
+                const nY = endY - startY;
 
-            if (nY > 0 && startEq > 0 && endEq > 0) {
-                avgReturnPct = (Math.pow(endEq / startEq, 1 / nY) - 1) * 100;
+                if (nY > 0 && startEq > 0 && endEq > 0) {
+                    avgReturnPct = (Math.pow(endEq / startEq, 1 / nY) - 1) * 100;
+                }
             }
-        }
 
-        // Display Average Return Rate & Render Hover Tooltip
-        if (avgReturnEl) {
-            if (avgReturnPct !== null && !isNaN(avgReturnPct) && isFinite(avgReturnPct)) {
-                const sign = avgReturnPct > 0 ? "+" : "";
-                avgReturnEl.innerText = `${sign}${avgReturnPct.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}% / năm`;
-                avgReturnEl.style.color = avgReturnPct >= 0 ? '#34d399' : '#f87171';
-            } else {
-                avgReturnEl.innerText = "N/A";
-                avgReturnEl.style.color = "#94a3b8";
+            // Display Average Return Rate & Render Hover Tooltip
+            if (avgReturnEl) {
+                if (avgReturnPct !== null && !isNaN(avgReturnPct) && isFinite(avgReturnPct)) {
+                    const sign = avgReturnPct > 0 ? "+" : "";
+                    avgReturnEl.innerText = `${sign}${avgReturnPct.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}% / năm`;
+                    avgReturnEl.style.color = avgReturnPct >= 0 ? '#34d399' : '#f87171';
+                } else {
+                    avgReturnEl.innerText = "N/A";
+                    avgReturnEl.style.color = "#94a3b8";
+                }
             }
-        }
 
-        const tooltipAvgReturnEl = document.getElementById('tooltip-acc-avg-return');
-        if (tooltipAvgReturnEl) {
-            if (avgReturnPct !== null && !isNaN(avgReturnPct) && isFinite(avgReturnPct)) {
-                let rowsHtml = '';
-                if (growthYearDetails.length > 0) {
-                    rowsHtml = growthYearDetails.map(item => `
+            const tooltipAvgReturnEl = document.getElementById('tooltip-acc-avg-return');
+            if (tooltipAvgReturnEl) {
+                if (avgReturnPct !== null && !isNaN(avgReturnPct) && isFinite(avgReturnPct)) {
+                    let rowsHtml = '';
+                    if (growthYearDetails.length > 0) {
+                        rowsHtml = growthYearDetails.map(item => `
                         <div style="display: flex; justify-content: space-between; padding: 2px 0;">
                             <span style="color: #94a3b8;">• Tăng trưởng Năm ${item.year}:</span>
                             <span style="font-weight: 700; color: ${item.val >= 0 ? '#34d399' : '#f87171'};">${item.val >= 0 ? '+' : ''}${item.val.toFixed(1)}%</span>
                         </div>
                     `).join('');
-                    rowsHtml += `
+                        rowsHtml += `
                         <div style="border-top: 1px dashed rgba(255,255,255,0.15); margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; font-weight: 800;">
                             <span style="color: #cbd5e1;">Công thức:</span>
                             <span style="color: #34d399;">Tổng Tăng Trưởng / ${growthYearDetails.length} năm</span>
                         </div>
                     `;
-                } else if (equityData.length >= 2) {
-                    const startY = years[0];
-                    const endY = years[years.length - 1];
-                    rowsHtml = `
+                    } else if (equityData.length >= 2) {
+                        const startY = years[0];
+                        const endY = years[years.length - 1];
+                        rowsHtml = `
                         <div style="color: #cbd5e1; font-size: 0.75rem;">
                             • Tăng trưởng từ năm ${startY} đến ${endY}<br/>
                             • Công thức CAGR: <b>(VCSH_${endY} / VCSH_${startY})^(1/n) - 1</b>
                         </div>
                     `;
-                }
+                    }
 
-                tooltipAvgReturnEl.innerHTML = `
+                    tooltipAvgReturnEl.innerHTML = `
                     <div style="font-weight: 800; font-size: 0.88rem; color: #34d399; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 6px;">
                         <i class="fa-solid fa-chart-line"></i> Cơ Sở Tính (Tỷ Lệ Tăng Trưởng VCSH TB)
                     </div>
                     <div style="margin-bottom: 6px; font-size: 0.75rem; color: #cbd5e1;">
-                        Tỷ lệ tăng trưởng Vốn Chủ Sở Hữu (VCSH) trung bình mỗi năm từ hàng 30 BCTC:
+                        Tỷ lệ tăng trưởng VCSH năm qua năm, lấy từ số VCSH hiển thị trên bảng BCTC:
                     </div>
                     <div style="background: rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; font-size: 0.75rem;">
                         ${rowsHtml}
@@ -7984,29 +8215,29 @@ document.addEventListener("DOMContentLoaded", () => {
                         💡 Con số <b>${avgReturnPct >= 0 ? '+' : ''}${avgReturnPct.toFixed(1)}%/năm</b> đại diện cho tốc độ tăng trưởng quy mô vốn chủ sở hữu bình quân hàng năm để dự phóng mốc tích lũy ${targetShortStr}.
                     </div>
                 `;
-            } else {
-                tooltipAvgReturnEl.innerHTML = `
+                } else {
+                    tooltipAvgReturnEl.innerHTML = `
                     <div style="font-weight: 800; font-size: 0.88rem; color: #f87171; margin-bottom: 6px;">
                         <i class="fa-solid fa-circle-exclamation"></i> Chưa đủ dữ liệu
                     </div>
                     <div style="font-size: 0.75rem; color: #cbd5e1;">
-                        Cần tối thiểu 2 năm báo cáo VCSH (hàng 30) để tính Tỷ lệ Tăng trưởng VCSH trung bình.
+                        Cần tối thiểu 2 năm dữ liệu VCSH để tính Tỷ lệ Tăng trưởng VCSH trung bình.
                     </div>
                 `;
+                }
             }
-        }
 
-        // Calculate Estimated Completion Year based on Average Rate of Return & Render Hover Tooltip
-        const tooltipTargetYearEl = document.getElementById('tooltip-acc-target-year');
+            // Calculate Estimated Completion Year based on Average Rate of Return & Render Hover Tooltip
+            const tooltipTargetYearEl = document.getElementById('tooltip-acc-target-year');
 
-        if (targetYearEl) {
-            if (remaining <= 0) {
-                targetYearEl.innerText = "Đã Đạt! 🎉";
-                targetYearEl.style.color = "#fbbf24";
-                if (targetSubtextEl) targetSubtextEl.innerText = `Mục tiêu ${targetShortStr} đã hoàn thành`;
+            if (targetYearEl) {
+                if (remaining <= 0) {
+                    targetYearEl.innerText = "Đã Đạt! 🎉";
+                    targetYearEl.style.color = "#fbbf24";
+                    if (targetSubtextEl) targetSubtextEl.innerText = `Mục tiêu ${targetShortStr} đã hoàn thành`;
 
-                if (tooltipTargetYearEl) {
-                    tooltipTargetYearEl.innerHTML = `
+                    if (tooltipTargetYearEl) {
+                        tooltipTargetYearEl.innerHTML = `
                         <div style="font-weight: 800; font-size: 0.88rem; color: #fbbf24; margin-bottom: 6px;">
                             🎉 ĐÃ ĐẠT MỤC TIÊU ${targetShortStr.toUpperCase()}!
                         </div>
@@ -8014,39 +8245,39 @@ document.addEventListener("DOMContentLoaded", () => {
                             Vốn Chủ Sở Hữu hiện tại (${formatCurrency(latestEquityVND)}) đã cán đích thành công. Chúc mừng bạn!
                         </div>
                     `;
-                }
-            } else if (avgReturnPct !== null && avgReturnPct > 0 && latestEquityVND > 0) {
-                const r = avgReturnPct / 100;
-                const ratio = targetVND / latestEquityVND;
-                if (ratio > 1 && r > 0) {
-                    const yearsNeeded = Math.log(ratio) / Math.log(1 + r);
-                    const fullYears = Math.floor(yearsNeeded);
-                    const monthsNeeded = Math.round((yearsNeeded - fullYears) * 12);
-                    const targetYear = latestYear + Math.ceil(yearsNeeded);
-
-                    // Estimate target month & year
-                    const today = new Date();
-                    const currentMonth = today.getMonth() + 1; // 1-12
-                    let totalMonthsFuture = (fullYears * 12) + monthsNeeded;
-                    let targetMonth = currentMonth + (totalMonthsFuture % 12);
-                    let addYearsFromMonths = Math.floor((currentMonth + totalMonthsFuture - 1) / 12);
-                    let finalTargetYear = latestYear + addYearsFromMonths;
-
-                    targetYearEl.innerText = `Năm ${targetYear}`;
-                    targetYearEl.style.color = "#c084fc";
-
-                    if (targetSubtextEl) {
-                        if (fullYears > 0 && monthsNeeded > 0) {
-                            targetSubtextEl.innerText = `Còn ~${fullYears} năm ${monthsNeeded} tháng`;
-                        } else if (fullYears > 0) {
-                            targetSubtextEl.innerText = `Còn ~${fullYears} năm tích lũy`;
-                        } else {
-                            targetSubtextEl.innerText = `Còn ~${monthsNeeded} tháng`;
-                        }
                     }
+                } else if (avgReturnPct !== null && avgReturnPct > 0 && latestEquityVND > 0) {
+                    const r = avgReturnPct / 100;
+                    const ratio = targetVND / latestEquityVND;
+                    if (ratio > 1 && r > 0) {
+                        const yearsNeeded = Math.log(ratio) / Math.log(1 + r);
+                        const fullYears = Math.floor(yearsNeeded);
+                        const monthsNeeded = Math.round((yearsNeeded - fullYears) * 12);
+                        const targetYear = latestYear + Math.ceil(yearsNeeded);
 
-                    if (tooltipTargetYearEl) {
-                        tooltipTargetYearEl.innerHTML = `
+                        // Estimate target month & year
+                        const today = new Date();
+                        const currentMonth = today.getMonth() + 1; // 1-12
+                        let totalMonthsFuture = (fullYears * 12) + monthsNeeded;
+                        let targetMonth = currentMonth + (totalMonthsFuture % 12);
+                        let addYearsFromMonths = Math.floor((currentMonth + totalMonthsFuture - 1) / 12);
+                        let finalTargetYear = latestYear + addYearsFromMonths;
+
+                        targetYearEl.innerText = `Năm ${targetYear}`;
+                        targetYearEl.style.color = "#c084fc";
+
+                        if (targetSubtextEl) {
+                            if (fullYears > 0 && monthsNeeded > 0) {
+                                targetSubtextEl.innerText = `Còn ~${fullYears} năm ${monthsNeeded} tháng`;
+                            } else if (fullYears > 0) {
+                                targetSubtextEl.innerText = `Còn ~${fullYears} năm tích lũy`;
+                            } else {
+                                targetSubtextEl.innerText = `Còn ~${monthsNeeded} tháng`;
+                            }
+                        }
+
+                        if (tooltipTargetYearEl) {
+                            tooltipTargetYearEl.innerHTML = `
                             <div style="font-weight: 800; font-size: 0.88rem; color: #c084fc; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 6px;">
                                 <i class="fa-solid fa-calculator"></i> Cơ Sở Dự Kiến Đạt Target
                             </div>
@@ -8077,6 +8308,22 @@ document.addEventListener("DOMContentLoaded", () => {
                                 🎯 Dự kiến sẽ hoàn thành mốc ${targetShortStr} vào <b>Tháng ${targetMonth}/${finalTargetYear}</b> với tốc độ tăng trưởng vốn hiện tại.
                             </div>
                         `;
+                        }
+                    } else {
+                        targetYearEl.innerText = "Chưa xác định";
+                        targetYearEl.style.color = "#94a3b8";
+                        if (targetSubtextEl) targetSubtextEl.innerText = "Cần Tăng Trưởng > 0%";
+
+                        if (tooltipTargetYearEl) {
+                            tooltipTargetYearEl.innerHTML = `
+                            <div style="font-weight: 800; font-size: 0.88rem; color: #f87171; margin-bottom: 6px;">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Tăng trưởng không khả thi
+                            </div>
+                            <div style="font-size: 0.75rem; color: #cbd5e1;">
+                                Tỷ lệ tăng trưởng VCSH hiện tại không đủ dương để tăng trưởng quy mô vốn lên mốc ${targetShortStr}.
+                            </div>
+                        `;
+                        }
                     }
                 } else {
                     targetYearEl.innerText = "Chưa xác định";
@@ -8085,22 +8332,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     if (tooltipTargetYearEl) {
                         tooltipTargetYearEl.innerHTML = `
-                            <div style="font-weight: 800; font-size: 0.88rem; color: #f87171; margin-bottom: 6px;">
-                                <i class="fa-solid fa-triangle-exclamation"></i> Tăng trưởng không khả thi
-                            </div>
-                            <div style="font-size: 0.75rem; color: #cbd5e1;">
-                                Tỷ lệ tăng trưởng VCSH hiện tại không đủ dương để tăng trưởng quy mô vốn lên mốc ${targetShortStr}.
-                            </div>
-                        `;
-                    }
-                }
-            } else {
-                targetYearEl.innerText = "Chưa xác định";
-                targetYearEl.style.color = "#94a3b8";
-                if (targetSubtextEl) targetSubtextEl.innerText = "Cần Tăng Trưởng > 0%";
-
-                if (tooltipTargetYearEl) {
-                    tooltipTargetYearEl.innerHTML = `
                         <div style="font-weight: 800; font-size: 0.88rem; color: #f87171; margin-bottom: 6px;">
                             <i class="fa-solid fa-triangle-exclamation"></i> Chưa đủ điều kiện
                         </div>
@@ -8108,36 +8339,36 @@ document.addEventListener("DOMContentLoaded", () => {
                             Cần Tỷ lệ Tăng trưởng VCSH Trung Bình &gt; 0% và VCSH hiện tại &gt; 0 để tính thời gian hoàn thành mục tiêu.
                         </div>
                     `;
+                    }
                 }
             }
-        }
 
-        // Attach click listener for mobile tap support
-        document.querySelectorAll('.accumulation-metric-card.has-tooltip').forEach(card => {
-            if (!card.dataset.tooltipBound) {
-                card.dataset.tooltipBound = "true";
-                card.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const wasActive = card.classList.contains('active-tooltip');
+            // Attach click listener for mobile tap support
+            document.querySelectorAll('.accumulation-metric-card.has-tooltip').forEach(card => {
+                if (!card.dataset.tooltipBound) {
+                    card.dataset.tooltipBound = "true";
+                    card.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const wasActive = card.classList.contains('active-tooltip');
+                        document.querySelectorAll('.accumulation-metric-card.has-tooltip').forEach(c => c.classList.remove('active-tooltip'));
+                        if (!wasActive) card.classList.add('active-tooltip');
+                    });
+                }
+            });
+
+            if (!window.accTooltipDocBound) {
+                window.accTooltipDocBound = true;
+                document.addEventListener('click', () => {
                     document.querySelectorAll('.accumulation-metric-card.has-tooltip').forEach(c => c.classList.remove('active-tooltip'));
-                    if (!wasActive) card.classList.add('active-tooltip');
                 });
             }
-        });
-
-        if (!window.accTooltipDocBound) {
-            window.accTooltipDocBound = true;
-            document.addEventListener('click', () => {
-                document.querySelectorAll('.accumulation-metric-card.has-tooltip').forEach(c => c.classList.remove('active-tooltip'));
-            });
-        }
         } catch (err) {
             console.error("Accumulation Journey Error:", err);
         }
     }
 
     // --- ACCUMULATION TARGET EDITING HANDLERS ---
-    window.openEditTargetModal = function() {
+    window.openEditTargetModal = function () {
         const modal = document.getElementById('modal-edit-accumulation-target');
         const input = document.getElementById('input-acc-target-amount');
         if (!modal || !input) return;
@@ -8150,12 +8381,12 @@ document.addEventListener("DOMContentLoaded", () => {
         setTimeout(() => input.focus(), 100);
     };
 
-    window.closeEditTargetModal = function() {
+    window.closeEditTargetModal = function () {
         const modal = document.getElementById('modal-edit-accumulation-target');
         if (modal) modal.style.display = 'none';
     };
 
-    window.onAccTargetInput = function(val) {
+    window.onAccTargetInput = function (val) {
         const preview = document.getElementById('acc-target-preview');
         if (!preview) return;
 
@@ -8181,7 +8412,7 @@ document.addEventListener("DOMContentLoaded", () => {
         preview.innerText = `${formatCurrency(num)}${helperText}`;
     };
 
-    window.setAccTargetPreset = function(presetVal) {
+    window.setAccTargetPreset = function (presetVal) {
         const input = document.getElementById('input-acc-target-amount');
         if (input) {
             input.value = presetVal;
@@ -8189,7 +8420,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    window.saveAccumulationTarget = function(e) {
+    window.saveAccumulationTarget = function (e) {
         if (e) e.preventDefault();
         const input = document.getElementById('input-acc-target-amount');
         if (!input) return;
@@ -9999,7 +10230,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Vựa Mode
             const shipCost = parseMoney(vuaShipCostInput.value);
             const vattuCost = parseMoney(vuaVattuCostInput.value);
-            const packingCost = parseMoney(document.getElementById('vua-packing-cost') ? document.getElementById('vua-packing-cost').value : "0");
+            const packingCost = parseSignedMoney(document.getElementById('vua-packing-cost') ? document.getElementById('vua-packing-cost').value : "0");
             const totalCollect = parseMoney(vuaTotalCollectInput.value);
             const outsideFlowerCost = parseMoney(vuaOutsideFlowerCostInput ? vuaOutsideFlowerCostInput.value : "0");
             const outsideFlowerNote = vuaOutsideFlowerNoteInput ? vuaOutsideFlowerNoteInput.value.trim() : "";
@@ -10213,7 +10444,10 @@ document.addEventListener("DOMContentLoaded", () => {
             updateFlowerSummaryTotals();
         }
 
-        if (entryTypeSelect && entryTypeSelect.value === 'vua') calculateVuaTotals();
+        if (entryTypeSelect && entryTypeSelect.value === 'vua') {
+            setVuaCollectLock(false);
+            calculateVuaTotals();
+        }
 
         // Reset expense items container to default single row
         if (expenseItemsContainer) {

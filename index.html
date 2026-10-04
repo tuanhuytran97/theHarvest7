@@ -1744,13 +1744,28 @@
                                 </div>
 
                                 <div class="form-group span-full">
-                                    <label>🏦 Tiền Phải Thu Khách (VNĐ)</label>
-                                    <input type="text" id="vua-total-collect" class="money-input">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                        <label style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                                            <span>🏦 Tiền Phải Thu Khách (VNĐ)</span>
+                                            <span id="badge-lock-vua-collect" class="badge-vua-lock" style="display: none;">🔒 Đã khóa</span>
+                                        </label>
+                                        <button type="button" id="btn-lock-vua-collect" class="btn-toggle-vua-lock" title="Bấm để Khóa / Mở khóa số tiền này">
+                                            <i class="fa-solid fa-lock-open" id="icon-lock-vua-collect"></i>
+                                            <span id="text-lock-vua-collect">Khóa số tiền</span>
+                                        </button>
+                                    </div>
+                                    <div class="vua-collect-wrapper">
+                                        <button type="button" id="btn-lock-vua-collect-mark" class="btn-lock-vua-collect-mark" title="Bấm vào để Khóa / Mở khóa Tiền Phải Thu">
+                                            <i class="fa-solid fa-lock-open" id="icon-lock-mark"></i>
+                                            <span id="text-lock-mark">Khóa</span>
+                                        </button>
+                                        <input type="text" id="vua-total-collect" class="money-input">
+                                    </div>
                                 </div>
 
                                 <div class="form-group span-full">
                                     <label>📈 Lợi nhuận</label>
-                                    <input type="text" id="vua-packing-cost" class="money-input"
+                                    <input type="text" id="vua-packing-cost" class="money-input-signed"
                                         placeholder="Nhập lợi nhuận">
                                     <div id="packing-suggest-box" style="margin-top: 4px; display: none;">
                                         <button type="button" id="btn-apply-suggest"
