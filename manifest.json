@@ -1,11 +1,11 @@
 {
-  "name": "theHarvest7",
-  "short_name": "theHarvest7",
-  "description": "Hệ thống quản lý trang trại và theo dõi chu kỳ hoa",
-  "start_url": "./index.html",
+  "name": "The Harvest",
+  "short_name": "The Harvest",
+  "description": "Hệ thống quản lý trang trại và nhập đơn hàng hoa - The Harvest 7",
+  "start_url": "./mobile_entry.html",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#4f46e5",
+  "background_color": "#1b4332",
+  "theme_color": "#1b4332",
   "orientation": "portrait",
   "icons": [
     {
@@ -19,6 +19,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

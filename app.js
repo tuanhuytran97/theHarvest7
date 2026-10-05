@@ -5,6 +5,12 @@ var getToken = () => sessionStorage.getItem("user-token");
 var isConfigured = () => {
     return typeof CONFIG !== 'undefined' && CONFIG.WEB_APP_URL && CONFIG.WEB_APP_URL !== "" && CONFIG.WEB_APP_URL !== "YOUR_WEB_APP_URL_HERE" && CONFIG.WEB_APP_URL !== "NOT_CONFIGURED";
 };
+window.notifyAdminToEdit = function () {
+    alert("Vui lòng thông báo huytran97 để edit");
+};
+window.notifyAdminToEntry = function () {
+    alert("Vui lòng thông báo huytran97");
+};
 
 function getTodayStr() {
     const now = new Date();
@@ -845,6 +851,18 @@ document.addEventListener("DOMContentLoaded", () => {
         if (debtActionBox) debtActionBox.style.display = hasPermission('debt') ? '' : 'none';
         if (menuInvestment) menuInvestment.style.display = hasPermission('investment') ? '' : 'none';
         if (mobileInvestment) mobileInvestment.style.display = hasPermission('investment') ? '' : 'none';
+
+        const dateInput = document.getElementById('date-input');
+        if (dateInput) {
+            if (role !== 'ADMIN') {
+                const todayStr = formatDateInput(new Date());
+                dateInput.min = todayStr;
+                dateInput.max = todayStr;
+            } else {
+                dateInput.removeAttribute('min');
+                dateInput.removeAttribute('max');
+            }
+        }
     }
 
     const canMutate = () => {
@@ -2174,12 +2192,20 @@ document.addEventListener("DOMContentLoaded", () => {
                             <button class="action-btn" data-row-index="${rowIndex}" ${isVuaShipping ? 'disabled' : `onclick="editSingleExpense(dataToRenderRef[${rowIndex}]._sheetRowNumber)"`} title="${isVuaShipping ? 'Sửa trong tab Vựa' : 'Sửa'}" style="color:var(--primary-color); ${isVuaShipping ? 'cursor: not-allowed;' : ''}">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </button>
-                            ` : ''}
+                            ` : (getRole() !== 'ADMIN' && !isToday ? `
+                            <button class="action-btn" onclick="notifyAdminToEdit()" title="Vui lòng thông báo huytran97 để edit" style="color:var(--text-light); opacity: 0.7;">
+                                <i class="fa-solid fa-lock"></i>
+                            </button>
+                            ` : '')}
                             ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
                             <button class="action-btn" data-row-index="${rowIndex}" ${isVuaShipping ? 'disabled' : 'onclick="deleteRowByIndex(this)"'} title="${isVuaShipping ? 'Xóa trong tab Vựa' : 'Xoá'}" style="${isVuaShipping ? 'cursor: not-allowed;' : ''}">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
-                            ` : (getRole() === 'EMP_LV2' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Khóa'}</span>`)}
+                            ` : (getRole() !== 'ADMIN' && !isToday ? `
+                            <button class="action-btn" onclick="notifyAdminToEdit()" title="Vui lòng thông báo huytran97 để edit" style="color:var(--text-light); opacity: 0.7;">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                            ` : (getRole() === 'EMP_LV2' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Khóa'}</span>`))}
                         </div>
                     </td>
                 `;
@@ -2209,12 +2235,20 @@ document.addEventListener("DOMContentLoaded", () => {
                             <button class="action-btn" data-row-index="${rowIndex}" onclick="switchToInlineEdit(this)" title="Sửa" style="color:var(--primary-color);">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </button>
-                            ` : ''}
+                            ` : (getRole() !== 'ADMIN' && !isToday ? `
+                            <button class="action-btn" onclick="notifyAdminToEdit()" title="Vui lòng thông báo huytran97 để edit" style="color:var(--text-light); opacity: 0.7;">
+                                <i class="fa-solid fa-lock"></i>
+                            </button>
+                            ` : '')}
                             ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
                             <button class="action-btn" data-row-index="${rowIndex}" onclick="deleteRowByIndex(this)" title="Xoá">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
-                            ` : (getRole() === 'EMP_LV2' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Khóa'}</span>`)}
+                            ` : (getRole() !== 'ADMIN' && !isToday ? `
+                            <button class="action-btn" onclick="notifyAdminToEdit()" title="Vui lòng thông báo huytran97 để edit" style="color:var(--text-light); opacity: 0.7;">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                            ` : (getRole() === 'EMP_LV2' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Khóa'}</span>`))}
                         </div>
                     </td>
                 `;
@@ -2233,12 +2267,20 @@ document.addEventListener("DOMContentLoaded", () => {
                             <button class="action-btn" data-row-index="${rowIndex}" onclick="switchToInlineEdit(this)" title="Sửa" style="color:var(--primary-color);">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </button>
-                            ` : ''}
+                            ` : (getRole() !== 'ADMIN' && !isToday ? `
+                            <button class="action-btn" onclick="notifyAdminToEdit()" title="Vui lòng thông báo huytran97 để edit" style="color:var(--text-light); opacity: 0.7;">
+                                <i class="fa-solid fa-lock"></i>
+                            </button>
+                            ` : '')}
                             ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
                             <button class="action-btn" data-row-index="${rowIndex}" onclick="deleteRowByIndex(this)" title="Xoá">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
-                            ` : (getRole() === 'EMP_LV2' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Khóa'}</span>`)}
+                            ` : (getRole() !== 'ADMIN' && !isToday ? `
+                            <button class="action-btn" onclick="notifyAdminToEdit()" title="Vui lòng thông báo huytran97 để edit" style="color:var(--text-light); opacity: 0.7;">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                            ` : (getRole() === 'EMP_LV2' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Khóa'}</span>`))}
                         </div>
                     </td>
                 `;
@@ -2270,12 +2312,20 @@ document.addEventListener("DOMContentLoaded", () => {
                             <button class="action-btn" data-row-index="${rowIndex}" onclick="switchToInlineEdit(this)" title="Sửa" style="color:var(--primary-color);">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </button>
-                            ` : ''}
+                            ` : (getRole() !== 'ADMIN' && !isToday ? `
+                            <button class="action-btn" onclick="notifyAdminToEdit()" title="Vui lòng thông báo huytran97 để edit" style="color:var(--text-light); opacity: 0.7;">
+                                <i class="fa-solid fa-lock"></i>
+                            </button>
+                            ` : '')}
                             ${(getRole() === 'ADMIN' || (getRole() === 'EMP_LV1' && isToday)) ? `
                             <button class="action-btn" data-row-index="${rowIndex}" onclick="deleteRowByIndex(this)" title="Xoá">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
-                            ` : (getRole() === 'EMP_LV2' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Khóa'}</span>`)}
+                            ` : (getRole() !== 'ADMIN' && !isToday ? `
+                            <button class="action-btn" onclick="notifyAdminToEdit()" title="Vui lòng thông báo huytran97 để edit" style="color:var(--text-light); opacity: 0.7;">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                            ` : (getRole() === 'EMP_LV2' ? '-' : `<span style="color:var(--text-light);font-size:12px">${isToday ? '' : 'Khóa'}</span>`))}
                         </div>
                 `;
             }
@@ -2392,6 +2442,14 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("Không tìm thấy dữ liệu để xóa!");
             return;
         }
+
+        const rowDateStr = formatDateInput(rowData.parsedDate);
+        const todayStr = formatDateInput(new Date());
+        const isToday = rowDateStr === todayStr;
+        if (getRole() !== 'ADMIN' && !isToday) {
+            notifyAdminToEdit();
+            return;
+        }
         const sheetRow = rowData._sheetRowNumber;
         if (!sheetRow) {
             alert("Dòng này chưa có số thứ tự Sheet — hãy đồng bộ lại dữ liệu từ Google Sheets.");
@@ -2471,6 +2529,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const rowData = dataToRenderRef[idx];
         const tr = btn.closest('tr');
         if (!rowData || !tr) return;
+
+        const rowDateStr = formatDateInput(rowData.parsedDate);
+        const todayStr = formatDateInput(new Date());
+        const isToday = rowDateStr === todayStr;
+        if (getRole() !== 'ADMIN' && !isToday) {
+            notifyAdminToEdit();
+            return;
+        }
 
         // Save original HTML for cancel
         tr.dataset.originalHtml = tr.innerHTML;
@@ -2672,6 +2738,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const tr = btn.closest('tr');
         const originalData = dataToRenderRef[idx];
         if (!originalData || !tr) return;
+
+        const rowDateStr = formatDateInput(originalData.parsedDate);
+        const todayStr = formatDateInput(new Date());
+        const isToday = rowDateStr === todayStr;
+        if (getRole() !== 'ADMIN' && !isToday) {
+            notifyAdminToEdit();
+            return;
+        }
 
         if (!isConfigured()) {
             alert("Chưa cấu hình Server URL. Không thể cập nhật dòng dữ liệu.");
@@ -2940,7 +3014,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const reportDate = document.getElementById('report-date');
             const dateInput = document.getElementById('date-input');
             if (reportDate && dateInput && reportDate.value) {
-                dateInput.value = reportDate.value;
+                if (getRole() === 'ADMIN' || reportDate.value === formatDateInput(new Date())) {
+                    dateInput.value = reportDate.value;
+                } else {
+                    dateInput.value = formatDateInput(new Date());
+                }
             }
             const entryCard = document.querySelector('.entry-card');
             if (entryCard) {
@@ -2965,7 +3043,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const reportDate = document.getElementById('report-date');
             const dateInput = document.getElementById('date-input');
             if (reportDate && dateInput && reportDate.value) {
-                dateInput.value = reportDate.value;
+                if (getRole() === 'ADMIN' || reportDate.value === formatDateInput(new Date())) {
+                    dateInput.value = reportDate.value;
+                } else {
+                    dateInput.value = formatDateInput(new Date());
+                }
             }
             const entryCard = document.querySelector('.entry-card');
             if (entryCard) {
@@ -3946,6 +4028,15 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("Không tìm thấy dòng dữ liệu!");
             return;
         }
+
+        const rowDateStr = formatDateInput(row.parsedDate);
+        const todayStr = formatDateInput(new Date());
+        const isToday = rowDateStr === todayStr;
+        if (getRole() !== 'ADMIN' && !isToday) {
+            notifyAdminToEdit();
+            return;
+        }
+
         const status = (row['Status'] || row['status'] || '').trim().toLowerCase();
         if (status === 'xong') {
             if (window.showToast) {
@@ -3975,6 +4066,13 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     window.editBuyerRevenueDirect = function (buyerName, day, month, year) {
+        const todayD = new Date();
+        const isToday = todayD.getFullYear() === year && (todayD.getMonth() + 1) === month && todayD.getDate() === day;
+        if (getRole() !== 'ADMIN' && !isToday) {
+            notifyAdminToEdit();
+            return;
+        }
+
         const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
         const dayRows = farmDataRef.filter(row => {
             const d = row.parsedDate;
@@ -4007,6 +4105,15 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("Không tìm thấy dòng chi phí!");
             return;
         }
+
+        const rowDateStr = formatDateInput(row.parsedDate);
+        const todayStr = formatDateInput(new Date());
+        const isToday = rowDateStr === todayStr;
+        if (getRole() !== 'ADMIN' && !isToday) {
+            notifyAdminToEdit();
+            return;
+        }
+
         const loaiCP = (row['Loại CP'] || 'Chi Phí Khác').trim();
         const cp = parseFloat(row['Chi Phí']) || 0;
         const ghiChu = (row['Ghi Chú Chi Phí'] || row['Ghi Chú'] || '').trim();
@@ -4021,6 +4128,13 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     window.editExpenseCategoryDirect = function (categoryName, day, month, year) {
+        const todayD = new Date();
+        const isToday = todayD.getFullYear() === year && (todayD.getMonth() + 1) === month && todayD.getDate() === day;
+        if (getRole() !== 'ADMIN' && !isToday) {
+            notifyAdminToEdit();
+            return;
+        }
+
         const farmDataRef = window.getFarmData ? window.getFarmData() : (window.farmData || []);
         const dayRows = farmDataRef.filter(row => {
             const d = row.parsedDate;
@@ -10161,12 +10275,27 @@ document.addEventListener("DOMContentLoaded", () => {
     // Farm entry no longer has static calculateRevenue because multiple items are supported.
 
     // Initial Date for Form Setup (Set to Today)
-    document.getElementById('date-input').value = formatDateInput(new Date());
+    const dateInputEl = document.getElementById('date-input');
+    if (dateInputEl) {
+        dateInputEl.value = formatDateInput(new Date());
+        dateInputEl.addEventListener('change', function () {
+            if (getRole() !== 'ADMIN' && this.value !== formatDateInput(new Date())) {
+                window.notifyAdminToEntry();
+                this.value = formatDateInput(new Date());
+            }
+        });
+    }
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!isAuthorizedForEntry()) {
             alert("Bạn không có quyền nhập liệu!");
+            return;
+        }
+
+        const _rawDateVal = document.getElementById('date-input').value; // "YYYY-MM-DD"
+        if (getRole() !== 'ADMIN' && _rawDateVal !== formatDateInput(new Date())) {
+            window.notifyAdminToEntry();
             return;
         }
 
@@ -10178,7 +10307,6 @@ document.addEventListener("DOMContentLoaded", () => {
         // Shared fields
         // Parse date as LOCAL midnight (not UTC) to match server-side date parsing
         // Avoid new Date("YYYY-MM-DD") which creates UTC midnight, causing +7h offset vs local dates from server
-        const _rawDateVal = document.getElementById('date-input').value; // "YYYY-MM-DD"
         const [_yr, _mo, _dd] = _rawDateVal.split('-').map(Number);
         const dInput = new Date(_yr, _mo - 1, _dd); // Local midnight — consistent với processRawSheetData
         const dateStr = formatDateVietnamese(dInput); // Dùng định dạng chuẩn DD/MM/YYYY để khớp với Sheet

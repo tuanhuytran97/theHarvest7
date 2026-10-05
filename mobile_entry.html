@@ -1,0 +1,4001 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="The Harvest">
+    <meta name="theme-color" content="#1b4332">
+    <title>🌸 Nhập Đơn Hàng – The Harvest</title>
+    <meta name="description" content="Ứng dụng nhập đơn hàng hoa ngày dành cho Farm & Vựa - The Harvest 7">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="config.js"></script>
+    <style>
+        :root {
+            --green: #16a34a;
+            --green-light: #22c55e;
+            --green-dark: #15803d;
+            --green-bg: #f0fdf4;
+            --blue: #2563eb;
+            --blue-light: #3b82f6;
+            --blue-bg: #eff6ff;
+            --red: #dc2626;
+            --red-light: #ef4444;
+            --red-bg: #fef2f2;
+            --amber: #d97706;
+            --amber-bg: #fffbeb;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --text-soft: #64748b;
+            --text-light: #94a3b8;
+            --border: #e2e8f0;
+            --radius: 18px;
+            --radius-sm: 10px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+            --input-h: 58px;
+            --font-size-base: 17px;
+            --font-size-label: 14px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        html { font-size: var(--font-size-base); scroll-behavior: smooth; }
+        
+        body {
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overscroll-behavior: none;
+            padding-bottom: 100px;
+        }
+
+        /* ── HEADER ── */
+        .app-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: linear-gradient(135deg, #1a3a1a 0%, #2d5a2d 100%);
+            padding: 16px 20px 14px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.25);
+        }
+
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .header-text h1 {
+            font-size: 18px;
+            font-weight: 900;
+            color: #fff;
+            line-height: 1.1;
+        }
+
+        .header-text p {
+            font-size: 12px;
+            color: rgba(255,255,255,0.65);
+            font-weight: 600;
+        }
+
+        .header-date {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+        }
+
+        .date-badge {
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 10px;
+            padding: 6px 12px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .sync-btn {
+            background: rgba(34, 197, 94, 0.25);
+            border: 1.5px solid rgba(34, 197, 94, 0.5);
+            border-radius: 10px;
+            color: #86efac;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 5px 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .sync-btn:active { transform: scale(0.95); }
+
+        /* ── LOGIN SCREEN ── */
+        #login-screen {
+            min-height: 100vh;
+            background: linear-gradient(160deg, #1a3a1a 0%, #2d5a2d 50%, #1a3a1a 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .login-logo {
+            width: 90px;
+            height: 90px;
+            background: rgba(255,255,255,0.12);
+            border-radius: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 42px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.15);
+        }
+
+        .login-title {
+            color: #fff;
+            font-size: 26px;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 6px;
+        }
+
+        .login-subtitle {
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 380px;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 24px;
+            padding: 28px 24px;
+        }
+
+        .login-field {
+            margin-bottom: 16px;
+        }
+
+        .login-field label {
+            display: block;
+            color: rgba(255,255,255,0.75);
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .login-field input {
+            width: 100%;
+            height: 56px;
+            background: rgba(255,255,255,0.1);
+            border: 1.5px solid rgba(255,255,255,0.2);
+            border-radius: 14px;
+            padding: 0 18px;
+            color: #fff;
+            font-size: 17px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 600;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .login-field input::placeholder { color: rgba(255,255,255,0.35); }
+        .login-field input:focus { border-color: #22c55e; }
+
+        .login-btn {
+            width: 100%;
+            height: 58px;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            border: none;
+            border-radius: 16px;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 800;
+            font-family: 'Nunito', sans-serif;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .login-btn:active { transform: scale(0.97); }
+
+        .login-error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            color: #fca5a5;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 12px 16px;
+            margin-top: 14px;
+            text-align: center;
+            display: none;
+        }
+
+        /* ── TAB BAR ── */
+        .tab-bar {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 16px 0;
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+
+        .tab-bar::-webkit-scrollbar { display: none; }
+
+        .tab-btn {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 10px 18px;
+            border-radius: 12px 12px 0 0;
+            border: none;
+            background: transparent;
+            color: var(--text-soft);
+            font-size: 15px;
+            font-weight: 700;
+            font-family: 'Nunito', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+            position: relative;
+            bottom: -1px;
+        }
+
+        .tab-btn.active.farm { color: var(--green); border-color: var(--green); background: var(--green-bg); }
+        .tab-btn.active.vua { color: var(--blue); border-color: var(--blue); background: var(--blue-bg); }
+        .tab-btn.active.report { color: var(--amber); border-color: var(--amber); background: var(--amber-bg); }
+
+        /* ── MAIN CONTENT ── */
+        .main-content { padding: 16px; }
+
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+
+        /* ── SECTION HEADER ── */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .section-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .section-icon.green { background: var(--green-bg); }
+        .section-icon.blue { background: var(--blue-bg); }
+        .section-icon.amber { background: var(--amber-bg); }
+        .section-icon.red { background: var(--red-bg); }
+
+        .section-title h2 { font-size: 19px; font-weight: 900; }
+        .section-title p { font-size: 13px; color: var(--text-soft); font-weight: 600; margin-top: 2px; }
+
+        /* ── CARD ── */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--text-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ── FORM FIELDS ── */
+        .form-field {
+            margin-bottom: 16px;
+        }
+
+        .form-field label {
+            display: block;
+            font-size: var(--font-size-label);
+            font-weight: 800;
+            color: var(--text-soft);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .form-field label span {
+            color: var(--red);
+        }
+
+        .field-input,
+        .field-select {
+            width: 100%;
+            height: var(--input-h);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0 16px;
+            font-size: 18px;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 700;
+            color: var(--text);
+            background: var(--bg);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            -webkit-appearance: none;
+        }
+
+        .field-input:focus, .field-select:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.12);
+            background: #fff;
+        }
+
+        .field-input.blue:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12); }
+
+        textarea.field-input {
+            height: auto;
+            min-height: 80px;
+            padding: 14px 16px;
+            resize: none;
+            line-height: 1.5;
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* ── QUICK SELECT PILLS ── */
+        .quick-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .quick-pill {
+            padding: 7px 14px;
+            border-radius: 50px;
+            border: 2px solid var(--border);
+            background: var(--bg);
+            color: var(--text-soft);
+            font-size: 14px;
+            font-weight: 700;
+            font-family: 'Nunito', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-appearance: none;
+        }
+
+        .quick-pill:active { transform: scale(0.95); }
+        .quick-pill.active-pill { background: var(--green); border-color: var(--green); color: #fff; }
+        .quick-pill.blue.active-pill { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+        /* ── FLOWER ITEMS ── */
+        .flower-item {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .flower-item .item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .item-number {
+            width: 28px;
+            height: 28px;
+            background: var(--green);
+            border-radius: 50%;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-number.blue { background: var(--blue); }
+
+        .del-item-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--red-bg);
+            border: none;
+            color: var(--red);
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .del-item-btn:active { transform: scale(0.9); }
+
+        .item-total-display {
+            background: var(--green-bg);
+            border: 1px solid #bbf7d0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 17px;
+            font-weight: 900;
+            color: var(--green-dark);
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        .item-total-display.blue { background: var(--blue-bg); border-color: #bfdbfe; color: #1d4ed8; }
+
+        /* ── ADD ITEM BTN ── */
+        .add-item-btn {
+            width: 100%;
+            height: 54px;
+            border: 2.5px dashed var(--border);
+            border-radius: 14px;
+            background: transparent;
+            color: var(--text-soft);
+            font-size: 16px;
+            font-weight: 800;
+            font-family: 'Nunito', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+        }
+
+        .add-item-btn:active { background: var(--bg); }
+        .add-item-btn.green { border-color: var(--green); color: var(--green); }
+        .add-item-btn.blue { border-color: var(--blue); color: var(--blue); }
+
+        /* ── SUMMARY BOX ── */
+        .summary-box {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px solid #86efac;
+            border-radius: 14px;
+            padding: 16px;
+            margin-top: 4px;
+            margin-bottom: 16px;
+        }
+
+        .summary-box.blue {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-color: #93c5fd;
+        }
+
+        .summary-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .summary-row:last-child { margin-bottom: 0; }
+
+        .summary-label {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-soft);
+        }
+
+        .summary-value {
+            font-size: 17px;
+            font-weight: 900;
+            color: var(--green-dark);
+        }
+
+        .summary-value.blue { color: var(--blue); }
+        .summary-value.big {
+            font-size: 22px;
+        }
+
+        /* ── SUBMIT BTN ── */
+        .submit-btn {
+            width: 100%;
+            height: 64px;
+            border: none;
+            border-radius: 18px;
+            font-size: 19px;
+            font-weight: 900;
+            font-family: 'Nunito', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .submit-btn.green {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(22, 163, 74, 0.35);
+        }
+
+        .submit-btn.blue {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
+        }
+
+        .submit-btn:active { transform: scale(0.97); }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* ── DAILY REPORT ── */
+        .report-date-header {
+            background: linear-gradient(135deg, #78350f, #d97706);
+            border-radius: 16px;
+            padding: 18px 20px;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+
+        .report-date-header h3 {
+            font-size: 20px;
+            font-weight: 900;
+            margin-bottom: 4px;
+        }
+
+        .report-date-header p {
+            font-size: 14px;
+            opacity: 0.8;
+            font-weight: 600;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .kpi-card {
+            background: var(--card);
+            border-radius: 14px;
+            padding: 16px;
+            border: 1.5px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .kpi-value {
+            font-size: 20px;
+            font-weight: 900;
+        }
+
+        .kpi-value.green { color: var(--green); }
+        .kpi-value.blue { color: var(--blue); }
+        .kpi-value.red { color: var(--red); }
+        .kpi-value.amber { color: var(--amber); }
+
+        /* ── TRANSACTION ITEM ── */
+        .tx-card {
+            background: var(--card);
+            border-radius: 16px;
+            border: 1.5px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: opacity 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+        }
+
+        /* ── COMPLETED ORDER (CARD DONE) ── */
+        .tx-card.card-done {
+            opacity: 0.62;
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            border-left: 4px solid #16a34a !important;
+        }
+
+        .tx-card.card-done:hover,
+        .tx-card.card-done:active {
+            opacity: 0.88;
+        }
+
+        .tx-card.card-done .tx-header {
+            background: rgba(241, 245, 249, 0.6);
+        }
+
+        .tx-card.card-done .tx-buyer-name {
+            color: var(--text-soft);
+        }
+
+        .tx-card.card-done .tx-amount {
+            color: var(--text-soft) !important;
+            text-decoration: line-through;
+            text-decoration-color: rgba(100, 116, 139, 0.7);
+            text-decoration-thickness: 2px;
+        }
+
+        .tx-card.card-done .tx-avatar {
+            filter: grayscale(0.4);
+            opacity: 0.8;
+        }
+
+        .tx-card.card-done .tx-body {
+            opacity: 0.85;
+        }
+
+        .tx-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tx-buyer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tx-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+
+        .tx-avatar.farm { background: var(--green-bg); color: var(--green); }
+        .tx-avatar.vua { background: var(--blue-bg); color: var(--blue); }
+        .tx-avatar.expense { background: var(--red-bg); color: var(--red); }
+
+        .tx-buyer-name {
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .tx-type-badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 50px;
+            text-transform: uppercase;
+        }
+
+        .tx-type-badge.farm { background: var(--green-bg); color: var(--green); }
+        .tx-type-badge.vua { background: var(--blue-bg); color: var(--blue); }
+        .tx-type-badge.expense { background: var(--red-bg); color: var(--red); }
+
+        .tx-amount {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--green-dark);
+        }
+
+        .tx-amount.red { color: var(--red); }
+
+        .tx-body {
+            padding: 12px 16px;
+        }
+
+        .tx-line {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px 0;
+        }
+
+        .tx-line-label {
+            font-size: 14px;
+            color: var(--text-soft);
+            font-weight: 600;
+        }
+
+        .tx-line-value {
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .tx-footer {
+            padding: 10px 16px;
+            background: var(--bg);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .action-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: none;
+            font-size: 13px;
+            font-weight: 800;
+            font-family: 'Nunito', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-pill.edit { background: #eff6ff; color: var(--blue); }
+        .action-pill.delete { background: var(--red-bg); color: var(--red); }
+        .action-pill:active { transform: scale(0.95); }
+
+        /* ── EMPTY STATE ── */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .empty-icon {
+            font-size: 52px;
+            margin-bottom: 14px;
+        }
+
+        .empty-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-soft);
+            margin-bottom: 8px;
+        }
+
+        .empty-text {
+            font-size: 14px;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        /* ── TOAST ── */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+            width: 90%;
+            max-width: 380px;
+        }
+
+        .toast {
+            background: #1e293b;
+            color: #fff;
+            padding: 14px 18px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+            animation: slideDown 0.3s ease;
+        }
+
+        .toast.success { background: #15803d; }
+        .toast.error { background: #b91c1c; }
+        .toast.info { background: #1d4ed8; }
+        .toast.warning { background: #d97706; }
+
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* ── MODAL ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 200;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        .modal-sheet {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card);
+            border-radius: 28px 28px 0 0;
+            padding: 24px 20px 40px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-handle {
+            width: 44px;
+            height: 5px;
+            background: var(--border);
+            border-radius: 50px;
+            margin: 0 auto 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            height: 54px;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 800;
+            font-family: 'Nunito', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-btn.cancel { background: var(--bg); border: 2px solid var(--border); color: var(--text-soft); }
+        .modal-btn.confirm { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; }
+        .modal-btn.confirm.blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .modal-btn.confirm.red { background: linear-gradient(135deg, #ef4444, #b91c1c); }
+        .modal-btn:active { transform: scale(0.97); }
+
+        /* ── CONFIRM MODAL STYLES ── */
+        .confirm-summary-box {
+            background: var(--bg);
+            border-radius: 16px;
+            padding: 14px 16px;
+            border: 1.5px solid var(--border);
+            margin-bottom: 12px;
+        }
+        .confirm-summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 0;
+            border-bottom: 1px dashed var(--border);
+            font-size: 15px;
+        }
+        .confirm-summary-row:last-child {
+            border-bottom: none;
+        }
+        .confirm-summary-label {
+            color: var(--text-soft);
+            font-weight: 700;
+        }
+        .confirm-summary-val {
+            color: var(--text);
+            font-weight: 800;
+            text-align: right;
+        }
+        .confirm-flower-item {
+            background: #fff;
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .confirm-total-banner {
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+            border: 2px solid #86efac;
+            border-radius: 16px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+        .confirm-total-banner.blue {
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            border-color: #93c5fd;
+        }
+        .confirm-total-label {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--text-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .confirm-total-val {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--green);
+        }
+        .confirm-total-banner.blue .confirm-total-val {
+            color: var(--blue);
+        }
+
+        /* ── LOADING ── */
+        .loading-spinner {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fa-spin { animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── MISC ── */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 16px 0;
+        }
+
+        .info-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .info-chip.green { background: var(--green-bg); color: var(--green); }
+        .info-chip.blue { background: var(--blue-bg); color: var(--blue); }
+        .info-chip.red { background: var(--red-bg); color: var(--red); }
+
+        /* ── STATUS BADGE ── */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 50px;
+        }
+        
+        .status-done { background: #dcfce7; color: #15803d; }
+        .status-pending { background: #fef3c7; color: #b45309; }
+
+        /* ── SECTION DIVIDER ── */
+        .report-section-title {
+            font-size: 15px;
+            font-weight: 900;
+            color: var(--text-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 20px 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ── DATE PICKER WRAPPER ── */
+        .date-input-wrapper {
+            position: relative;
+        }
+
+        .date-input-wrapper input[type="date"] {
+            padding-right: 16px;
+        }
+
+        /* ── VỰA COST BREAKDOWN ── */
+        .cost-breakdown {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 12px;
+            border: 1.5px solid var(--border);
+        }
+
+        .cost-breakdown .cost-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            font-size: 14px;
+        }
+
+        .cost-breakdown .cost-row .cost-label { color: var(--text-soft); font-weight: 600; }
+        .cost-breakdown .cost-row .cost-val { font-weight: 800; }
+        .cost-breakdown .cost-row.total { 
+            border-top: 1.5px dashed var(--border); 
+            margin-top: 8px; 
+            padding-top: 10px; 
+            font-size: 16px;
+        }
+        .cost-breakdown .cost-row.total .cost-val { color: var(--blue); font-size: 18px; }
+
+        /* ── PROFIT ROW (CAN BE SIGNED) ── */
+        .signed-input-wrapper {
+            position: relative;
+        }
+
+        .signed-hint {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: var(--text-light);
+            font-weight: 700;
+            pointer-events: none;
+        }
+
+        /* iOS Safe Area */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            body { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+        }
+
+        /* Large text mode helper for elderly */
+        .text-xl { font-size: 20px !important; }
+
+        /* ── RESPONSIVE FINE-TUNING ── */
+        @media (max-width: 375px) {
+            :root { --font-size-base: 16px; --input-h: 54px; }
+            .kpi-value { font-size: 17px; }
+        }
+
+        @media (min-width: 428px) {
+            :root { --input-h: 60px; }
+        }
+
+        /* ── REPORT FILTER PILLS ── */
+        .report-filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            overflow-x: auto;
+            padding: 2px 2px 6px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .report-filter-pill {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: #ffffff;
+            color: var(--text-soft);
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .report-filter-pill:active { transform: scale(0.96); }
+        .report-filter-pill.active {
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            color: #ffffff;
+            border-color: #16a34a;
+            box-shadow: 0 3px 10px rgba(22, 163, 74, 0.28);
+        }
+        .kpi-sub {
+            font-size: 11px;
+            color: var(--text-soft);
+            margin-top: 4px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- ══════════ LOGIN SCREEN ══════════ -->
+<div id="login-screen">
+    <div class="login-logo">🌸</div>
+    <h1 class="login-title">The Harvest 7</h1>
+    <p class="login-subtitle">Nhập đơn hàng hoa ngày</p>
+
+    <div class="login-card">
+        <div class="login-field">
+            <label for="login-user">Tên đăng nhập</label>
+            <input type="text" id="login-user" placeholder="Nhập tên đăng nhập..." autocapitalize="none" autocorrect="off" autocomplete="username">
+        </div>
+        <div class="login-field">
+            <label for="login-pass">Mật khẩu</label>
+            <input type="password" id="login-pass" placeholder="Nhập mật khẩu..." autocomplete="current-password">
+        </div>
+        <button class="login-btn" id="login-submit-btn" onclick="doLogin()">
+            <i class="fa-solid fa-right-to-bracket" style="margin-right:6px"></i> Đăng Nhập
+        </button>
+        <div class="login-error" id="login-error-msg"></div>
+        <div style="text-align: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed rgba(0,0,0,0.08);">
+            <a href="index.html" style="color: #64748b; font-size: 14px; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-desktop"></i> Về hệ thống quản trị chính
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ APP SCREEN ══════════ -->
+<div id="app-screen" style="display:none;">
+
+    <!-- HEADER -->
+    <div class="app-header">
+        <div class="header-inner">
+            <div class="header-title">
+                <div class="header-icon">🌸</div>
+                <div class="header-text">
+                    <h1>The Harvest</h1>
+                    <p id="header-user-name">Nhập đơn hàng</p>
+                </div>
+            </div>
+            <div class="header-date">
+                <div style="display: flex; gap: 6px; align-items: center; justify-content: flex-end;">
+                    <div class="date-badge" id="header-date">--/--/----</div>
+                    <span id="sync-status-badge" style="display:none; font-size:12px; font-weight:800; padding:4px 10px; border-radius:50px; background:rgba(234,179,8,0.25); color:#fef08a; align-items:center;"></span>
+                </div>
+                <button class="sync-btn" onclick="loadTodayData()">
+                    <i class="fa-solid fa-rotate-right" id="sync-icon"></i> Làm mới
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB BAR -->
+    <div class="tab-bar">
+        <button class="tab-btn farm" onclick="switchTab('farm', this)">
+            <i class="fa-solid fa-seedling"></i> Farm
+        </button>
+        <button class="tab-btn vua" onclick="switchTab('vua', this)">
+            <i class="fa-solid fa-truck"></i> Vựa
+        </button>
+        <button class="tab-btn report active" onclick="switchTab('report', this); loadTodayData();">
+            <i class="fa-solid fa-chart-bar"></i> Báo cáo ngày
+        </button>
+    </div>
+
+    <div class="main-content">
+
+        <!-- ══ FARM VIEW ══ -->
+        <div class="view-section" id="view-farm">
+            <div class="section-header">
+                <div class="section-icon green"><i class="fa-solid fa-seedling" style="color:#16a34a"></i></div>
+                <div class="section-title">
+                    <h2>Nhập đơn Farm</h2>
+                    <p>Bán hoa trực tiếp từ vườn</p>
+                </div>
+            </div>
+
+            <!-- Date -->
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-calendar-days" style="color:#16a34a"></i> Ngày & Khách hàng</div>
+                <div class="form-field">
+                    <label>Ngày <span>*</span></label>
+                    <input type="date" class="field-input" id="farm-date">
+                </div>
+                <div class="form-field">
+                    <label>Tên khách hàng <span>*</span></label>
+                    <input type="text" class="field-input" id="farm-buyer" placeholder="Nhập tên khách..." autocapitalize="words" list="farm-buyer-list">
+                    <datalist id="farm-buyer-list"></datalist>
+                </div>
+                <div class="form-field">
+                    <label>Trạng thái</label>
+                    <select class="field-select" id="farm-status">
+                        <option value="">⏳ Chưa thu tiền</option>
+                        <option value="Xong">✅ Đã thu tiền (Xong)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Flower items -->
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-spa" style="color:#16a34a"></i> Danh sách hoa</div>
+                <div id="farm-flowers-container"></div>
+                <button class="add-item-btn green" onclick="addFarmFlower()">
+                    <i class="fa-solid fa-plus"></i> Thêm loại hoa
+                </button>
+
+                <!-- Summary -->
+                <div class="summary-box" id="farm-summary">
+                    <div class="summary-row">
+                        <span class="summary-label">📦 Tổng số lượng</span>
+                        <span class="summary-value" id="farm-total-qty">0 bông</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">💰 Tổng doanh thu</span>
+                        <span class="summary-value big" id="farm-total-revenue">0 ₫</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Note -->
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-note-sticky" style="color:#64748b"></i> Ghi chú</div>
+                <div class="form-field" style="margin-bottom:0">
+                    <textarea class="field-input" id="farm-note" placeholder="Nhập ghi chú (không bắt buộc)..." rows="3"></textarea>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <button class="submit-btn green" id="farm-submit-btn" onclick="submitFarmOrder()">
+                <i class="fa-solid fa-paper-plane"></i> Lưu Đơn Farm
+            </button>
+        </div>
+
+        <!-- ══ VỰA VIEW ══ -->
+        <div class="view-section" id="view-vua">
+            <div class="section-header">
+                <div class="section-icon blue"><i class="fa-solid fa-truck" style="color:#2563eb"></i></div>
+                <div class="section-title">
+                    <h2>Nhập đơn Vựa</h2>
+                    <p>Đối soát & tính lợi nhuận vựa</p>
+                </div>
+            </div>
+
+            <!-- Date & Tên vựa -->
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-calendar-days" style="color:#2563eb"></i> Ngày & Tên vựa</div>
+                <div class="form-field">
+                    <label>Ngày <span>*</span></label>
+                    <input type="date" class="field-input blue" id="vua-date">
+                </div>
+                <div class="form-field">
+                    <label>Tên Vựa <span>*</span></label>
+                    <input type="text" class="field-input blue" id="vua-buyer" placeholder="Nhập tên vựa..." autocapitalize="words" list="vua-buyer-list">
+                    <datalist id="vua-buyer-list"></datalist>
+                </div>
+                <div class="quick-pills" id="vua-quick-buyers">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Flower list for Vua -->
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-boxes-stacked" style="color:#2563eb"></i> Danh sách hoa (giá vốn)</div>
+                <div id="vua-flowers-container"></div>
+                <button class="add-item-btn blue" onclick="addVuaFlower()">
+                    <i class="fa-solid fa-plus"></i> Thêm loại hoa
+                </button>
+            </div>
+
+            <!-- Chi phí vận chuyển + Lợi nhuận -->
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-coins" style="color:#2563eb"></i> Chi phí & Lợi nhuận</div>
+                <div class="form-field">
+                    <label>Chi phí vận chuyển</label>
+                    <input type="text" class="field-input blue money-input" id="vua-shipping" placeholder="0" oninput="recalcVua()" value="0">
+                </div>
+                <div class="form-field">
+                    <label>Chi phí vật tư khác</label>
+                    <input type="text" class="field-input blue money-input" id="vua-vattu" placeholder="150.000" value="150.000" readonly style="background: #f1f5f9; color: var(--text-soft); font-weight: 800; cursor: not-allowed;">
+                </div>
+                <div class="form-field">
+                    <label>Lợi Nhuận</label>
+                    <input type="text" class="field-input blue money-input" id="vua-profit" placeholder="0" oninput="recalcVua()" value="0">
+                </div>
+
+                <!-- Cost breakdown -->
+                <div class="cost-breakdown" id="vua-cost-breakdown">
+                    <div class="cost-row">
+                        <span class="cost-label">Giá vốn hoa</span>
+                        <span class="cost-val" id="bd-cost">0 ₫</span>
+                    </div>
+                    <div class="cost-row">
+                        <span class="cost-label">Vận chuyển</span>
+                        <span class="cost-val" id="bd-shipping">0 ₫</span>
+                    </div>
+                    <div class="cost-row">
+                        <span class="cost-label">Vật tư khác</span>
+                        <span class="cost-val" id="bd-vattu">0 ₫</span>
+                    </div>
+                    <div class="cost-row">
+                        <span class="cost-label">Lợi nhuận</span>
+                        <span class="cost-val" id="bd-profit" style="color:#16a34a">0 ₫</span>
+                    </div>
+                    <div class="cost-row total">
+                        <span class="cost-label" style="font-weight:900">💰 Tiền Phải Thu</span>
+                        <span class="cost-val" id="bd-total">0 ₫</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trạng thái -->
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-circle-check" style="color:#64748b"></i> Trạng thái thanh toán</div>
+                <div class="form-field" style="margin-bottom:0">
+                    <select class="field-select" id="vua-status">
+                        <option value="">⏳ Chưa thu tiền</option>
+                        <option value="Xong">✅ Đã thu tiền (Xong)</option>
+                    </select>
+                </div>
+                <div class="form-field" style="margin-bottom:0; margin-top:12px;">
+                    <label>Ghi chú</label>
+                    <textarea class="field-input" id="vua-note" placeholder="Ghi chú (không bắt buộc)..." rows="2"></textarea>
+                </div>
+            </div>
+
+            <button class="submit-btn blue" id="vua-submit-btn" onclick="submitVuaOrder()">
+                <i class="fa-solid fa-paper-plane"></i> Lưu Đơn Vựa
+            </button>
+        </div>
+
+        <!-- ══ REPORT VIEW ══ -->
+        <div class="view-section active" id="view-report">
+            <div class="section-header">
+                <div class="section-icon amber"><i class="fa-solid fa-chart-bar" style="color:#d97706"></i></div>
+                <div class="section-title">
+                    <h2>Báo cáo ngày</h2>
+                    <p>Dữ liệu hôm nay đã nhập</p>
+                </div>
+            </div>
+
+            <!-- Date picker for report -->
+            <div class="card" style="padding:14px 16px;">
+                <div class="form-field" style="margin-bottom:0">
+                    <label><i class="fa-solid fa-calendar" style="color:#d97706"></i> Chọn ngày xem báo cáo</label>
+                    <input type="date" class="field-input" id="report-date-picker" onchange="renderReport()">
+                </div>
+                <!-- Filter Pills: All / Farm / Vựa -->
+                <div class="report-filter-bar">
+                    <button class="report-filter-pill active" id="pill-filter-all" onclick="setReportFilter('all', this)">
+                        <i class="fa-solid fa-layer-group"></i> Tất cả
+                    </button>
+                    <button class="report-filter-pill" id="pill-filter-farm" onclick="setReportFilter('farm', this)">
+                        <i class="fa-solid fa-seedling"></i> Chỉ Farm
+                    </button>
+                    <button class="report-filter-pill" id="pill-filter-vua" onclick="setReportFilter('vua', this)">
+                        <i class="fa-solid fa-truck"></i> Chỉ Vựa
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI -->
+            <div class="kpi-grid" id="report-kpi">
+                <div class="kpi-card">
+                    <div class="kpi-label">📦 Tổng SL</div>
+                    <div class="kpi-value green" id="kpi-qty">--</div>
+                    <div class="kpi-sub" id="kpi-sub-qty"></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">💰 Doanh thu</div>
+                    <div class="kpi-value blue" id="kpi-revenue">--</div>
+                    <div class="kpi-sub" id="kpi-sub-rev"></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">🔴 Chi phí</div>
+                    <div class="kpi-value red" id="kpi-expense">--</div>
+                    <div class="kpi-sub" id="kpi-sub-exp"></div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">✅ Lợi nhuận</div>
+                    <div class="kpi-value amber" id="kpi-profit">--</div>
+                    <div class="kpi-sub" id="kpi-sub-prof"></div>
+                </div>
+            </div>
+
+            <!-- Farm transactions -->
+            <div id="report-farm-section">
+                <div class="report-section-title">
+                    <i class="fa-solid fa-seedling" style="color:#16a34a"></i> Đơn Farm
+                    <span class="info-chip green" id="farm-count-chip">0 đơn</span>
+                </div>
+                <div id="farm-tx-list"></div>
+            </div>
+
+            <!-- Vua transactions -->
+            <div id="report-vua-section">
+                <div class="report-section-title">
+                    <i class="fa-solid fa-truck" style="color:#2563eb"></i> Đơn Vựa
+                    <span class="info-chip blue" id="vua-count-chip">0 đơn</span>
+                </div>
+                <div id="vua-tx-list"></div>
+            </div>
+
+            <!-- Expense transactions -->
+            <div id="report-expense-section">
+                <div class="report-section-title">
+                    <i class="fa-solid fa-receipt" style="color:#dc2626"></i> Chi phí
+                    <span class="info-chip red" id="expense-count-chip">0 khoản</span>
+                </div>
+                <div id="expense-tx-list"></div>
+            </div>
+
+            <div id="report-loading" style="text-align:center; padding:40px; display:none;">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:30px; color:var(--text-light)"></i>
+                <p style="margin-top:12px; color:var(--text-soft); font-weight:700">Đang tải dữ liệu...</p>
+            </div>
+        </div>
+
+    </div><!-- /main-content -->
+</div><!-- /app-screen -->
+
+<!-- ══════════ EDIT MODAL ══════════ -->
+<div class="modal-overlay" id="edit-modal">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title" id="edit-modal-title">Chỉnh sửa đơn hàng</div>
+
+        <div id="edit-modal-body">
+            <!-- Dynamic content injected by JS -->
+        </div>
+
+        <div class="modal-actions">
+            <button class="modal-btn cancel" onclick="closeEditModal()">Hủy</button>
+            <button class="modal-btn confirm" id="edit-modal-confirm">Lưu</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ ORDER CONFIRM MODAL (XÁC NHẬN LƯU / SỬA) ══════════ -->
+<div class="modal-overlay" id="order-confirm-modal" style="z-index: 250;">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title" id="confirm-modal-title">📋 Xác nhận đơn hàng</div>
+        
+        <div id="confirm-modal-body" style="padding: 4px 0 10px;">
+            <!-- Dynamic summary content -->
+        </div>
+
+        <div class="modal-actions">
+            <button class="modal-btn cancel" onclick="closeConfirmModal()">Hủy bỏ</button>
+            <button class="modal-btn confirm" id="confirm-modal-proceed-btn">✅ Xác nhận</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ DELETE CONFIRM MODAL ══════════ -->
+<div class="modal-overlay" id="delete-modal">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-title">⚠️ Xác nhận xóa</div>
+        <p style="text-align:center; color:var(--text-soft); font-weight:600; font-size:15px; margin-bottom:8px;">
+            Bạn có chắc muốn xóa đơn hàng này không?
+        </p>
+        <p style="text-align:center; font-size:14px; color:var(--text-light); font-weight:600;">
+            Thao tác này không thể hoàn tác.
+        </p>
+        <div class="modal-actions">
+            <button class="modal-btn cancel" onclick="closeDeleteModal()">Hủy bỏ</button>
+            <button class="modal-btn confirm red" id="delete-confirm-btn">Xóa ngay</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  CONSTANTS & CONFIG
+// ═══════════════════════════════════════════
+const WEB_APP_URL = (typeof CONFIG !== 'undefined' && CONFIG.WEB_APP_URL) ? CONFIG.WEB_APP_URL : '';
+const SHEET_ID = '1eOTLVBUOJg9ppOu4tkLUXbzfrOHAGK0bEPSwTbl7v4U';
+
+const FLOWER_TYPES = [
+    'Ô Hồng','Lạc Thần','Vitto','Trắng','Hỷ','Lạc','Xô','Đỏ',
+    'Bạch Tuyết','Phấn','Cam','Tím','Vàng HL','Thần','Thái'
+];
+
+const EXPENSE_TYPES = [
+    'Vận Chuyển','Thuốc','Phân','Lãi','Công','Mua Bông','Vật Tư KD','Expensed','Chi Phí Khác'
+];
+
+const VUA_KNOWN = ['Đoan CR', 'Thanh Lam', 'Quân', 'Cô Lisu', 'Ngọc', 'Chiến'];
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let currentToken = null;
+let currentUserName = null;
+let currentUserRole = null;
+let todayData = []; // cached farm data
+let pendingDeleteRow = null;
+let farmFlowerCount = 0;
+let vuaFlowerCount = 0;
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+function today() {
+    const d = new Date();
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+}
+
+function todayInputValue() {
+    const d = new Date();
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yyyy = d.getFullYear();
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+function inputToVN(dateStr) {
+    if (!dateStr) return today();
+    const [y,m,d] = dateStr.split('-');
+    return `${d}/${m}/${y}`;
+}
+
+function parseMoney(v) {
+    if (v === null || v === undefined) return 0;
+    if (typeof v === 'number') return isNaN(v) ? 0 : v;
+    let s = String(v).trim();
+    if (!s) return 0;
+    const isNeg = s.startsWith('-');
+    const digits = s.replace(/[^\d]/g, '');
+    if (!digits) return 0;
+    const n = parseInt(digits, 10) || 0;
+    return isNeg ? -n : n;
+}
+
+// Robust sheet number parser (properly handles "2.000" as 2000, "400.000" as 400000, negatives)
+function parseSheetNum(val) {
+    if (val === null || val === undefined) return 0;
+    if (typeof val === 'number') return isNaN(val) ? 0 : val;
+    let s = String(val).trim();
+    if (!s) return 0;
+    const isNegative = s.startsWith('-');
+    s = s.replace(/[^\d]/g, '');
+    let n = parseFloat(s);
+    if (isNaN(n)) return 0;
+    return isNegative ? -n : n;
+}
+
+// Matches date from sheet ("04/10/2026", "4/10/2026", "04-10-2026") or YYYY-MM-DD with input[type=date] ("2026-10-04")
+function isDateMatch(rowDateVal, targetInputVal) {
+    if (!rowDateVal || !targetInputVal) return false;
+    const [tY, tM, tD] = targetInputVal.split('-').map(Number);
+    const parts = String(rowDateVal).trim().split(/[-/]/);
+    if (parts.length === 3) {
+        let d, m, y;
+        if (parts[0].length === 4) {
+            // Format YYYY-MM-DD
+            y = parseInt(parts[0], 10);
+            m = parseInt(parts[1], 10);
+            d = parseInt(parts[2], 10);
+        } else {
+            // Format DD/MM/YYYY
+            d = parseInt(parts[0], 10);
+            m = parseInt(parts[1], 10);
+            y = parseInt(parts[2], 10);
+            if (y < 100) y += 2000;
+        }
+        return y === tY && m === tM && d === tD;
+    }
+    return false;
+}
+
+function isAdmin() {
+    const r = (currentUserRole || sessionStorage.getItem('m_role') || sessionStorage.getItem('user-role') || localStorage.getItem('mobile_saved_role') || '').toUpperCase();
+    return r === 'ADMIN';
+}
+
+function isDateToday(rowDateVal) {
+    if (!rowDateVal) return true;
+    return isDateMatch(rowDateVal, todayInputValue());
+}
+
+function showLockedNotice() {
+    showToast('🔒 Vui lòng thông báo huytran97 để edit', 'warning', 4500);
+    showConfirmModal({
+        title: '🔒 Đơn Hàng Đã Khóa',
+        htmlContent: `
+            <div style="text-align: center; padding: 12px 5px;">
+                <div style="font-size: 32px; margin-bottom: 8px;">🔒</div>
+                <div style="font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 8px;">
+                    Chỉ cho phép chỉnh sửa các đơn trong ngày hôm nay!
+                </div>
+                <div style="font-size: 14px; color: var(--red); font-weight: 700; background: rgba(239, 68, 68, 0.08); padding: 10px; border-radius: 10px;">
+                    Vui lòng thông báo huytran97 để edit
+                </div>
+            </div>
+        `,
+        confirmBtnText: 'Đã hiểu',
+        confirmBtnClass: 'confirm blue',
+        onProceed: () => closeConfirmModal()
+    });
+}
+
+function showLockedEntryNotice() {
+    showToast('🔒 Vui lòng thông báo huytran97', 'warning', 4500);
+    showConfirmModal({
+        title: '🔒 Giới Hạn Nhập Đơn',
+        htmlContent: `
+            <div style="text-align: center; padding: 12px 5px;">
+                <div style="font-size: 32px; margin-bottom: 8px;">🔒</div>
+                <div style="font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 8px;">
+                    Chỉ cho phép nhập đơn trong ngày hôm nay!
+                </div>
+                <div style="font-size: 14px; color: var(--red); font-weight: 700; background: rgba(239, 68, 68, 0.08); padding: 10px; border-radius: 10px;">
+                    Vui lòng thông báo huytran97
+                </div>
+            </div>
+        `,
+        confirmBtnText: 'Đã hiểu',
+        confirmBtnClass: 'confirm blue',
+        onProceed: () => closeConfirmModal()
+    });
+}
+
+let currentReportFilter = 'all';
+
+function setReportFilter(filter, el) {
+    currentReportFilter = filter;
+    document.querySelectorAll('.report-filter-pill').forEach(p => p.classList.remove('active'));
+    if (el) el.classList.add('active');
+    renderReport();
+}
+
+function fmtMoney(n) {
+    if (!n && n !== 0) return '0 ₫';
+    return new Intl.NumberFormat('vi-VN').format(n) + ' ₫';
+}
+
+function fmtNum(n) {
+    return new Intl.NumberFormat('vi-VN').format(n || 0);
+}
+
+function formatMoneyInput(input) {
+    const isNeg = input.value.trim().startsWith('-');
+    const v = parseMoney(input.value);
+    if (v === 0 && !isNeg) { input.value = ''; return; }
+    const pos = input.selectionStart;
+    const oldLen = input.value.length;
+    input.value = (isNeg && v === 0 ? '-' : '') + new Intl.NumberFormat('vi-VN').format(v);
+    const newLen = input.value.length;
+    try { input.setSelectionRange(pos + (newLen - oldLen), pos + (newLen - oldLen)); } catch(e) {}
+}
+
+// Auto-format all money inputs
+document.addEventListener('input', e => {
+    if (e.target.classList.contains('money-input')) {
+        formatMoneyInput(e.target);
+    }
+});
+
+// ═══════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════
+function showToast(msg, type = 'info', duration = 3000) {
+    const icon = { success:'fa-check-circle', error:'fa-circle-xmark', warning:'fa-triangle-exclamation', info:'fa-circle-info' }[type] || 'fa-circle-info';
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<i class="fa-solid ${icon}"></i> ${msg}`;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), duration);
+}
+
+// ═══════════════════════════════════════════
+//  CONFIRM MODAL HANDLER
+// ═══════════════════════════════════════════
+let onConfirmProceedCallback = null;
+
+function showConfirmModal({ title, htmlContent, confirmBtnText = '✅ Xác nhận', confirmBtnClass = 'confirm', onProceed }) {
+    document.getElementById('confirm-modal-title').innerHTML = title;
+    document.getElementById('confirm-modal-body').innerHTML = htmlContent;
+    const btn = document.getElementById('confirm-modal-proceed-btn');
+    btn.className = `modal-btn ${confirmBtnClass}`;
+    btn.innerHTML = confirmBtnText;
+    onConfirmProceedCallback = onProceed;
+    btn.onclick = () => {
+        const cb = onConfirmProceedCallback;
+        closeConfirmModal();
+        if (typeof cb === 'function') {
+            cb();
+        }
+    };
+    document.getElementById('order-confirm-modal').classList.add('open');
+}
+
+function closeConfirmModal() {
+    document.getElementById('order-confirm-modal').classList.remove('open');
+    onConfirmProceedCallback = null;
+}
+
+// ═══════════════════════════════════════════
+//  API CALL
+// ═══════════════════════════════════════════
+async function callAPI(payload) {
+    if (!WEB_APP_URL) throw new Error('Chưa cấu hình WEB_APP_URL!');
+    const res = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ ...payload, token: currentToken })
+    });
+    return await res.json();
+}
+
+// ═══════════════════════════════════════════
+//  BACKGROUND SYNC QUEUE & OPTIMISTIC ENGINE
+// ═══════════════════════════════════════════
+let syncQueue = JSON.parse(localStorage.getItem('mobile_sync_queue') || '[]');
+let isSyncingQueue = false;
+
+function enqueueSync(payload, tempRowIds = []) {
+    const item = {
+        id: 'sync_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+        payload: payload,
+        tempRowIds: tempRowIds,
+        createdAt: Date.now()
+    };
+    syncQueue.push(item);
+    localStorage.setItem('mobile_sync_queue', JSON.stringify(syncQueue));
+    updateSyncBadge();
+}
+
+function updateSyncBadge() {
+    const badge = document.getElementById('sync-status-badge');
+    const syncIcon = document.getElementById('sync-icon');
+    if (!badge) return;
+
+    if (syncQueue.length > 0) {
+        badge.style.display = 'inline-flex';
+        badge.innerHTML = `<i class="fa-solid fa-cloud-arrow-up fa-fade" style="margin-right:4px"></i> Đang lưu (${syncQueue.length})`;
+        badge.style.background = 'rgba(234, 179, 8, 0.25)';
+        badge.style.color = '#fef08a';
+        if (syncIcon) syncIcon.classList.add('fa-spin');
+    } else {
+        if (isSyncingQueue) {
+            badge.style.display = 'inline-flex';
+            badge.innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="margin-right:4px"></i> Đang gửi...`;
+            badge.style.background = 'rgba(59, 130, 246, 0.25)';
+            badge.style.color = '#bfdbfe';
+        } else {
+            badge.style.display = 'none';
+            if (syncIcon) syncIcon.classList.remove('fa-spin');
+        }
+    }
+}
+
+async function processSyncQueue() {
+    if (isSyncingQueue) return;
+    if (syncQueue.length === 0) {
+        updateSyncBadge();
+        return;
+    }
+
+    isSyncingQueue = true;
+    updateSyncBadge();
+
+    while (syncQueue.length > 0) {
+        const item = syncQueue[0];
+        try {
+            const res = await callAPI(item.payload);
+            if (res && res.status === 'success') {
+                if (item.tempRowIds) {
+                    todayData.forEach(r => {
+                        if (item.tempRowIds.includes(String(r._row))) {
+                            r._isPendingSync = false;
+                        }
+                    });
+                }
+                syncQueue.shift();
+                localStorage.setItem('mobile_sync_queue', JSON.stringify(syncQueue));
+                updateSyncBadge();
+                renderReport();
+            } else {
+                console.warn('Sync server returned non-success:', res);
+                break;
+            }
+        } catch (err) {
+            console.warn('Sync connection error:', err);
+            break;
+        }
+    }
+
+    isSyncingQueue = false;
+    updateSyncBadge();
+
+    // Silently refresh from Google Sheets once queue is completely drained
+    if (syncQueue.length === 0) {
+        loadTodayData(true);
+    }
+}
+
+function cancelPendingRow(rowId) {
+    todayData = todayData.filter(r => String(r._row) !== String(rowId));
+    syncQueue = syncQueue.filter(item => !(item.tempRowIds && item.tempRowIds.includes(String(rowId))));
+    localStorage.setItem('mobile_sync_queue', JSON.stringify(syncQueue));
+    updateSyncBadge();
+    renderReport();
+    showToast('🗑️ Đã hủy đơn hàng tạm!', 'info');
+}
+
+window.addEventListener('online', () => {
+    showToast('📶 Đã có kết nối mạng, tiếp tục đồng bộ...', 'info');
+    processSyncQueue();
+});
+
+// ═══════════════════════════════════════════
+//  LOGIN
+// ═══════════════════════════════════════════
+async function doLogin() {
+    const user = document.getElementById('login-user').value.trim();
+    const pass = document.getElementById('login-pass').value.trim();
+    const errEl = document.getElementById('login-error-msg');
+    const btn = document.getElementById('login-submit-btn');
+
+    if (!user || !pass) { errEl.textContent='Vui lòng nhập đầy đủ thông tin!'; errEl.style.display='block'; return; }
+
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xác thực...';
+    btn.disabled = true;
+    errEl.style.display = 'none';
+
+    // Offline fallback
+    const offlineUsers = {
+        'huytran97': { name: 'Huy Trần', role: 'ADMIN', pw: 'huytran97' },
+        'admin': { name: 'Huy Trần', role: 'ADMIN', pw: 'huytran97' },
+        'emp1': { name: 'Nhân viên 1', role: 'EMP_LV1', pw: 'nth66' },
+        'emp2': { name: 'Nhân viên 2', role: 'EMP_LV2', pw: 'haitran63' }
+    };
+
+    try {
+        let success = false;
+        let userName = '';
+        let userRole = 'EMP_LV1';
+
+        if (WEB_APP_URL) {
+            const res = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: 'login', username: user, password: pass })
+            });
+            const data = await res.json();
+            if (data.status === 'success') {
+                success = true;
+                userName = data.userName || user;
+                userRole = data.role || (user === 'admin' || user === 'huytran97' ? 'ADMIN' : (user === 'emp1' ? 'EMP_LV1' : 'EMP_LV2'));
+                currentToken = (data.userLogin || user) + ':' + pass;
+            } else {
+                errEl.textContent = data.message || 'Sai tên đăng nhập hoặc mật khẩu!';
+                errEl.style.display = 'block';
+            }
+        } else {
+            // Pure offline
+            if (offlineUsers[user] && offlineUsers[user].pw === pass) {
+                success = true;
+                userName = offlineUsers[user].name;
+                userRole = offlineUsers[user].role;
+                currentToken = user + ':' + pass;
+            } else {
+                errEl.textContent = 'Sai tên đăng nhập hoặc mật khẩu!';
+                errEl.style.display = 'block';
+            }
+        }
+
+        if (success) {
+            currentUserName = userName;
+            currentUserRole = userRole;
+            sessionStorage.setItem('m_token', currentToken);
+            sessionStorage.setItem('m_name', userName);
+            sessionStorage.setItem('m_role', userRole);
+            localStorage.setItem('mobile_saved_token', currentToken);
+            localStorage.setItem('mobile_saved_name', userName);
+            localStorage.setItem('mobile_saved_role', userRole);
+            initApp();
+        }
+    } catch(e) {
+        errEl.textContent = 'Lỗi kết nối! Kiểm tra mạng và thử lại.';
+        errEl.style.display = 'block';
+    } finally {
+        btn.innerHTML = '<i class="fa-solid fa-right-to-bracket" style="margin-right:6px"></i> Đăng Nhập';
+        btn.disabled = false;
+    }
+}
+
+document.getElementById('login-pass').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+});
+
+// ═══════════════════════════════════════════
+//  APP INIT
+// ═══════════════════════════════════════════
+function initApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'block';
+
+    document.getElementById('header-user-name').textContent = 'Xin chào, ' + (currentUserName || 'Bạn');
+    document.getElementById('header-date').textContent = today();
+
+    // Set dates to today
+    const tv = todayInputValue();
+    const farmDateInput = document.getElementById('farm-date');
+    const vuaDateInput = document.getElementById('vua-date');
+    if (farmDateInput) farmDateInput.value = tv;
+    if (vuaDateInput) vuaDateInput.value = tv;
+    document.getElementById('report-date-picker').value = tv;
+
+    // Apply EMP restrictions for entry dates (only allowed to enter today)
+    if (!isAdmin()) {
+        if (farmDateInput) {
+            farmDateInput.min = tv;
+            farmDateInput.max = tv;
+        }
+        if (vuaDateInput) {
+            vuaDateInput.min = tv;
+            vuaDateInput.max = tv;
+        }
+    } else {
+        if (farmDateInput) {
+            farmDateInput.removeAttribute('min');
+            farmDateInput.removeAttribute('max');
+        }
+        if (vuaDateInput) {
+            vuaDateInput.removeAttribute('min');
+            vuaDateInput.removeAttribute('max');
+        }
+    }
+
+    if (!window._dateLockListenersAttached) {
+        window._dateLockListenersAttached = true;
+        ['change', 'input'].forEach(evt => {
+            document.getElementById('farm-date')?.addEventListener(evt, function() {
+                if (!isAdmin() && this.value && !isDateToday(this.value)) {
+                    showLockedEntryNotice();
+                    this.value = todayInputValue();
+                }
+            });
+            document.getElementById('vua-date')?.addEventListener(evt, function() {
+                if (!isAdmin() && this.value && !isDateToday(this.value)) {
+                    showLockedEntryNotice();
+                    this.value = todayInputValue();
+                }
+            });
+        });
+    }
+
+    // Init forms
+    initFarmForm();
+    initVuaForm();
+
+    // Populate known vựa names
+    const vuaQuick = document.getElementById('vua-quick-buyers');
+    VUA_KNOWN.forEach(name => {
+        const btn = document.createElement('button');
+        btn.className = 'quick-pill blue';
+        btn.textContent = name;
+        btn.onclick = () => {
+            document.getElementById('vua-buyer').value = name;
+            vuaQuick.querySelectorAll('.quick-pill').forEach(p => p.classList.remove('active-pill'));
+            btn.classList.add('active-pill');
+        };
+        vuaQuick.appendChild(btn);
+    });
+
+    // Default to Báo cáo ngày tab on refresh / load
+    switchTab('report');
+
+    // Load today data
+    loadTodayData();
+    processSyncQueue();
+}
+
+// Check saved session
+window.addEventListener('DOMContentLoaded', () => {
+    const savedToken = sessionStorage.getItem('m_token') || sessionStorage.getItem('user-token') || localStorage.getItem('mobile_saved_token');
+    const savedName = sessionStorage.getItem('m_name') || sessionStorage.getItem('user-name') || localStorage.getItem('mobile_saved_name');
+    const savedRole = sessionStorage.getItem('m_role') || sessionStorage.getItem('user-role') || localStorage.getItem('mobile_saved_role');
+    if (savedToken) {
+        currentToken = savedToken;
+        currentUserName = savedName || 'Người dùng';
+        currentUserRole = savedRole || (savedToken.toLowerCase().startsWith('admin') || savedToken.toLowerCase().startsWith('huytran97') ? 'ADMIN' : 'EMP_LV1');
+        initApp();
+    }
+});
+
+// ═══════════════════════════════════════════
+//  TAB SWITCHER
+// ═══════════════════════════════════════════
+function switchTab(tabId, btn) {
+    document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    const targetSection = document.getElementById('view-' + tabId);
+    if (targetSection) targetSection.classList.add('active');
+    if (btn) {
+        btn.classList.add('active');
+    } else {
+        const matchingBtn = document.querySelector(`.tab-btn.${tabId}`);
+        if (matchingBtn) matchingBtn.classList.add('active');
+    }
+    if (tabId === 'report') {
+        renderReport();
+    }
+}
+
+// ═══════════════════════════════════════════
+//  FARM FORM
+// ═══════════════════════════════════════════
+function initFarmForm() {
+    addFarmFlower(); // Add first flower row
+}
+
+function addFarmFlower() {
+    farmFlowerCount++;
+    const container = document.getElementById('farm-flowers-container');
+    const div = document.createElement('div');
+    div.className = 'flower-item';
+    div.dataset.id = farmFlowerCount;
+    div.innerHTML = `
+        <div class="item-header">
+            <span class="item-number">${farmFlowerCount}</span>
+            <button class="del-item-btn" onclick="removeFarmFlower(this)" title="Xóa">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        </div>
+        <div class="form-field">
+            <label>Loại hoa</label>
+            <input type="text" class="field-input farm-type" placeholder="Tên loại hoa..." list="flower-types-datalist"
+                oninput="calcFarmTotals()">
+        </div>
+        <div class="quick-pills" style="margin-top:-4px; margin-bottom:12px;">
+            ${FLOWER_TYPES.slice(0,8).map(f => `<button class="quick-pill" onclick="setFarmType(this,'${f}')">${f}</button>`).join('')}
+        </div>
+        <div class="field-row">
+            <div class="form-field">
+                <label>Số lượng (bông)</label>
+                <input type="number" class="field-input farm-qty" placeholder="0" min="0" oninput="calcFarmTotals()" inputmode="numeric">
+            </div>
+            <div class="form-field">
+                <label>Đơn giá (₫)</label>
+                <input type="text" class="field-input farm-price money-input" placeholder="0" oninput="calcFarmTotals()">
+            </div>
+        </div>
+        <div class="item-total-display farm-row-total">= 0 ₫</div>
+    `;
+    container.appendChild(div);
+    div.querySelector('.farm-type').focus();
+}
+
+function setFarmType(btn, val) {
+    const item = btn.closest('.flower-item');
+    const typeInput = item.querySelector('.farm-type');
+    typeInput.value = val;
+    // Highlight pill
+    item.querySelectorAll('.quick-pill').forEach(p => p.classList.remove('active-pill'));
+    btn.classList.add('active-pill');
+    // Auto-focus qty
+    const qtyInput = item.querySelector('.farm-qty');
+    if (qtyInput && !qtyInput.value) qtyInput.focus();
+    calcFarmTotals();
+}
+
+function removeFarmFlower(btn) {
+    const container = document.getElementById('farm-flowers-container');
+    if (container.querySelectorAll('.flower-item').length <= 1) {
+        showToast('Phải có ít nhất 1 loại hoa!', 'warning');
+        return;
+    }
+    btn.closest('.flower-item').remove();
+    calcFarmTotals();
+}
+
+function calcFarmTotals() {
+    let totalQty = 0, totalRev = 0;
+    document.querySelectorAll('#farm-flowers-container .flower-item').forEach(item => {
+        const qty = parseFloat(item.querySelector('.farm-qty')?.value) || 0;
+        const price = parseMoney(item.querySelector('.farm-price')?.value);
+        const rowTotal = qty * price;
+        const totalEl = item.querySelector('.farm-row-total');
+        if (totalEl) totalEl.textContent = `= ${fmtMoney(rowTotal)}`;
+        totalQty += qty;
+        totalRev += rowTotal;
+    });
+    document.getElementById('farm-total-qty').textContent = fmtNum(totalQty) + ' bông';
+    document.getElementById('farm-total-revenue').textContent = fmtMoney(totalRev);
+}
+
+function submitFarmOrder() {
+    const farmDateVal = document.getElementById('farm-date').value;
+    if (!isAdmin() && !isDateToday(farmDateVal)) {
+        showLockedEntryNotice();
+        document.getElementById('farm-date').value = todayInputValue();
+        return;
+    }
+    const dateVN = inputToVN(farmDateVal);
+    const buyer = document.getElementById('farm-buyer').value.trim();
+    const status = document.getElementById('farm-status').value;
+    const note = document.getElementById('farm-note').value.trim();
+
+    if (!buyer) { 
+        showToast('Vui lòng nhập tên khách hàng!', 'warning'); 
+        document.getElementById('farm-buyer').focus(); 
+        return; 
+    }
+
+    // Collect flowers
+    const flowers = [];
+    let hasError = false;
+    document.querySelectorAll('#farm-flowers-container .flower-item').forEach(item => {
+        const type = item.querySelector('.farm-type')?.value?.trim();
+        const qty = parseFloat(item.querySelector('.farm-qty')?.value) || 0;
+        const price = parseMoney(item.querySelector('.farm-price')?.value);
+        if (!type || qty <= 0 || price <= 0) { hasError = true; return; }
+        flowers.push({ type, qty, price, total: qty * price });
+    });
+
+    if (hasError || flowers.length === 0) {
+        showToast('Vui lòng điền đầy đủ thông tin hoa (loại, số lượng, giá)!', 'warning');
+        return;
+    }
+
+    const totalQty = flowers.reduce((s, f) => s + f.qty, 0);
+    const totalRev = flowers.reduce((s, f) => s + f.total, 0);
+    const statusLabel = status === 'Xong' ? '✅ Đã thu tiền' : '⏳ Chưa thu tiền';
+
+    const flowersHtml = flowers.map(f => `
+        <div class="confirm-flower-item">
+            <div>
+                <div style="font-weight:800; font-size:15px; color:var(--text);">${f.type}</div>
+                <div style="font-size:13px; color:var(--text-soft); font-weight:700;">${fmtNum(f.qty)} bông × ${fmtMoney(f.price)}</div>
+            </div>
+            <div style="font-weight:900; font-size:16px; color:var(--green);">${fmtMoney(f.total)}</div>
+        </div>
+    `).join('');
+
+    const htmlContent = `
+        <div class="confirm-summary-box">
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">👤 Khách hàng</span>
+                <span class="confirm-summary-val">${buyer}</span>
+            </div>
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">📅 Ngày đơn</span>
+                <span class="confirm-summary-val">${dateVN}</span>
+            </div>
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">📦 Tổng số lượng</span>
+                <span class="confirm-summary-val" style="color:var(--green); font-size:16px;">${fmtNum(totalQty)} bông</span>
+            </div>
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">📌 Trạng thái</span>
+                <span class="confirm-summary-val">${statusLabel}</span>
+            </div>
+            ${note ? `
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">📝 Ghi chú</span>
+                <span class="confirm-summary-val" style="font-size:13px; font-weight:600;">${note}</span>
+            </div>` : ''}
+        </div>
+        <div style="font-size:13px; font-weight:800; color:var(--text-soft); margin-bottom:6px; text-transform:uppercase;">Chi tiết hoa (${flowers.length} loại):</div>
+        <div style="max-height: 180px; overflow-y: auto; margin-bottom: 10px;">
+            ${flowersHtml}
+        </div>
+        <div class="confirm-total-banner">
+            <div>
+                <div class="confirm-total-label">TỔNG TIỀN ĐƠN FARM</div>
+                <div style="font-size:12px; color:var(--text-soft); font-weight:700;">${fmtNum(totalQty)} bông</div>
+            </div>
+            <div class="confirm-total-val">${fmtMoney(totalRev)}</div>
+        </div>
+    `;
+
+    showConfirmModal({
+        title: '🌱 Xác Nhận Lưu Đơn Farm',
+        htmlContent: htmlContent,
+        confirmBtnText: '✅ Xác Nhận Lưu Đơn',
+        confirmBtnClass: 'confirm',
+        onProceed: () => {
+            executeSubmitFarmOrder({ farmDateVal, dateVN, buyer, status, note, flowers, totalQty, totalRev });
+        }
+    });
+}
+
+function executeSubmitFarmOrder({ farmDateVal, dateVN, buyer, status, note, flowers, totalQty, totalRev }) {
+    const btn = document.getElementById('farm-submit-btn');
+
+    // 1. OPTIMISTIC IN-MEMORY INSERTION (instantly appears in Báo cáo ngày)
+    const createdTempIds = [];
+    for (let i = flowers.length - 1; i >= 0; i--) {
+        const f = flowers[i];
+        const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        createdTempIds.unshift(tempId);
+        todayData.unshift({
+            _row: tempId,
+            _clientId: tempId,
+            _isPendingSync: true,
+            'Ngày': dateVN,
+            'Người Mua': buyer,
+            'Phân Loại Bông': f.type,
+            'Số lượng': String(f.qty),
+            'Giá': String(f.price),
+            'Doanh Thu Bông': String(f.total),
+            'Status': status || '',
+            'Ghi Chú': note || '',
+            'Đã Thu': status === 'Xong' ? String(f.total) : '',
+            'Tiền Phải Thu': '',
+            'Ghi Chú thu': '',
+            'Doanh Thu Khác': '',
+            'Loại DT': 'Farm',
+            'Chi Phí': '',
+            'Loại CP': '',
+            'Ghi Chú Chi Phí': ''
+        });
+    }
+
+    // 2. ENQUEUE FOR BACKGROUND SYNC
+    flowers.forEach((f, idx) => {
+        enqueueSync({
+            action: 'add',
+            data: {
+                'Ngày': dateVN,
+                'Người Mua': buyer,
+                'Phân Loại Bông': f.type,
+                'Số lượng': f.qty,
+                'Giá': f.price,
+                'Doanh Thu Bông': f.total,
+                'Status': status || '',
+                'Ghi Chú': note,
+                'Loại DT': 'Farm'
+            }
+        }, [createdTempIds[idx]]);
+    });
+
+    // 3. SET REPORT DATE PICKER TO MATCH ORDER DATE & RENDER REPORT INSTANTLY
+    const reportPicker = document.getElementById('report-date-picker');
+    if (reportPicker && farmDateVal) {
+        reportPicker.value = farmDateVal;
+    }
+    renderReport();
+
+    // 4. INSTANT RESET OF FORM (ready for next input without any waiting)
+    document.getElementById('farm-buyer').value = '';
+    document.getElementById('farm-note').value = '';
+    document.getElementById('farm-status').value = '';
+    document.getElementById('farm-flowers-container').innerHTML = '';
+    farmFlowerCount = 0;
+    addFarmFlower();
+    document.querySelectorAll('#farm-quick-buyers .quick-pill').forEach(p => p.classList.remove('active-pill'));
+
+    // Visual button feedback
+    if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã lưu đơn!';
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Lưu Đơn Farm';
+        }, 700);
+    }
+
+    // 5. TOAST NOTIFICATION
+    showToast(`⚡ Đã lưu đơn Farm "${buyer}" (${fmtMoney(totalRev)})! Đang đồng bộ nền và đã hiển thị trên Báo cáo.`, 'success', 3500);
+
+    // 6. PROCESS SYNC IN BACKGROUND
+    processSyncQueue();
+}
+
+// ═══════════════════════════════════════════
+//  VỰA FORM
+// ═══════════════════════════════════════════
+function initVuaForm() {
+    const vattuEl = document.getElementById('vua-vattu');
+    if (vattuEl) vattuEl.value = '150.000';
+    addVuaFlower();
+    recalcVua();
+}
+
+function addVuaFlower() {
+    vuaFlowerCount++;
+    const container = document.getElementById('vua-flowers-container');
+    const div = document.createElement('div');
+    div.className = 'flower-item';
+    div.dataset.id = vuaFlowerCount;
+    div.innerHTML = `
+        <div class="item-header">
+            <span class="item-number blue">${vuaFlowerCount}</span>
+            <button class="del-item-btn" onclick="removeVuaFlower(this)">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        </div>
+        <div class="form-field">
+            <label>Loại hoa</label>
+            <input type="text" class="field-input blue vua-type" placeholder="Tên loại hoa..." list="flower-types-datalist" oninput="recalcVua()">
+        </div>
+        <div class="quick-pills" style="margin-top:-4px; margin-bottom:12px;">
+            ${FLOWER_TYPES.slice(0,8).map(f => `<button class="quick-pill blue" onclick="setVuaType(this,'${f}')">${f}</button>`).join('')}
+        </div>
+        <div class="field-row">
+            <div class="form-field">
+                <label>Số lượng (bông)</label>
+                <input type="number" class="field-input blue vua-qty" placeholder="0" min="0" oninput="recalcVua()" inputmode="numeric">
+            </div>
+            <div class="form-field">
+                <label>Giá vốn (₫)</label>
+                <input type="text" class="field-input blue vua-price money-input" placeholder="0" oninput="recalcVua()">
+            </div>
+        </div>
+        <div class="item-total-display blue vua-row-total">= 0 ₫</div>
+    `;
+    container.appendChild(div);
+    div.querySelector('.vua-type').focus();
+    recalcVua();
+}
+
+function setVuaType(btn, val) {
+    const item = btn.closest('.flower-item');
+    item.querySelector('.vua-type').value = val;
+    item.querySelectorAll('.quick-pill').forEach(p => p.classList.remove('active-pill'));
+    btn.classList.add('active-pill');
+    const qtyInput = item.querySelector('.vua-qty');
+    if (qtyInput && !qtyInput.value) qtyInput.focus();
+    recalcVua();
+}
+
+function removeVuaFlower(btn) {
+    const container = document.getElementById('vua-flowers-container');
+    if (container.querySelectorAll('.flower-item').length <= 1) {
+        showToast('Phải có ít nhất 1 loại hoa!', 'warning');
+        return;
+    }
+    btn.closest('.flower-item').remove();
+    recalcVua();
+}
+
+function recalcVua() {
+    let totalCost = 0;
+    document.querySelectorAll('#vua-flowers-container .flower-item').forEach(item => {
+        const qty = parseFloat(item.querySelector('.vua-qty')?.value) || 0;
+        const price = parseMoney(item.querySelector('.vua-price')?.value);
+        const rowTotal = qty * price;
+        const rowTotalEl = item.querySelector('.vua-row-total');
+        if (rowTotalEl) rowTotalEl.textContent = `= ${fmtMoney(rowTotal)}`;
+        totalCost += rowTotal;
+    });
+
+    const shipping = parseMoney(document.getElementById('vua-shipping').value);
+    const vattu = parseMoney(document.getElementById('vua-vattu').value);
+    const profit = parseMoney(document.getElementById('vua-profit').value);
+    const total = totalCost + shipping + vattu + profit;
+
+    document.getElementById('bd-cost').textContent = fmtMoney(totalCost);
+    document.getElementById('bd-shipping').textContent = fmtMoney(shipping);
+    document.getElementById('bd-vattu').textContent = fmtMoney(vattu);
+    const profitEl = document.getElementById('bd-profit');
+    profitEl.textContent = fmtMoney(profit);
+    profitEl.style.color = profit >= 0 ? 'var(--green)' : 'var(--red)';
+    document.getElementById('bd-total').textContent = fmtMoney(total);
+}
+
+function submitVuaOrder() {
+    const vuaDateVal = document.getElementById('vua-date').value;
+    if (!isAdmin() && !isDateToday(vuaDateVal)) {
+        showLockedEntryNotice();
+        document.getElementById('vua-date').value = todayInputValue();
+        return;
+    }
+    const dateVN = inputToVN(vuaDateVal);
+    const buyer = document.getElementById('vua-buyer').value.trim();
+    const status = document.getElementById('vua-status').value;
+    const note = document.getElementById('vua-note').value.trim();
+
+    if (!buyer) { 
+        showToast('Vui lòng nhập tên vựa!', 'warning'); 
+        document.getElementById('vua-buyer').focus(); 
+        return; 
+    }
+
+    const flowers = [];
+    let hasError = false;
+    document.querySelectorAll('#vua-flowers-container .flower-item').forEach(item => {
+        const type = item.querySelector('.vua-type')?.value?.trim();
+        const qty = parseFloat(item.querySelector('.vua-qty')?.value) || 0;
+        const price = parseMoney(item.querySelector('.vua-price')?.value);
+        if (!type || qty <= 0 || price <= 0) { hasError = true; return; }
+        flowers.push({ type, qty, price, total: qty * price });
+    });
+
+    if (hasError || flowers.length === 0) {
+        showToast('Vui lòng điền đầy đủ thông tin hoa (loại, số lượng, giá vốn)!', 'warning');
+        return;
+    }
+
+    const totalCost = flowers.reduce((s, f) => s + f.total, 0);
+    const shipping = parseMoney(document.getElementById('vua-shipping').value);
+    const vattu = parseMoney(document.getElementById('vua-vattu').value);
+    const profit = parseMoney(document.getElementById('vua-profit').value);
+    const totalCollect = totalCost + shipping + vattu + profit;
+    const totalQty = flowers.reduce((s, f) => s + f.qty, 0);
+    const loaiCP = shipping > 0 ? 'Vận Chuyển' : '';
+
+    const statusLabel = status === 'Xong' ? '✅ Đã thu tiền' : '⏳ Chưa thu tiền';
+
+    const flowersHtml = flowers.map(f => `
+        <div class="confirm-flower-item">
+            <div>
+                <div style="font-weight:800; font-size:15px; color:var(--text);">${f.type}</div>
+                <div style="font-size:13px; color:var(--text-soft); font-weight:700;">${fmtNum(f.qty)} bông × ${fmtMoney(f.price)}</div>
+            </div>
+            <div style="font-weight:900; font-size:16px; color:var(--blue);">${fmtMoney(f.total)}</div>
+        </div>
+    `).join('');
+
+    const htmlContent = `
+        <div class="confirm-summary-box">
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">👤 Tên Vựa</span>
+                <span class="confirm-summary-val">${buyer}</span>
+            </div>
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">📅 Ngày đơn</span>
+                <span class="confirm-summary-val">${dateVN}</span>
+            </div>
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">📦 Tổng số lượng</span>
+                <span class="confirm-summary-val" style="color:var(--blue); font-size:16px;">${fmtNum(totalQty)} bông</span>
+            </div>
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">💐 Tiền bông</span>
+                <span class="confirm-summary-val">${fmtMoney(totalCost)}</span>
+            </div>
+            ${shipping > 0 ? `
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">🚚 Vận chuyển</span>
+                <span class="confirm-summary-val" style="color:var(--red);">${fmtMoney(shipping)}</span>
+            </div>` : ''}
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">📦 Vật tư khác (Cố định)</span>
+                <span class="confirm-summary-val" style="color:var(--text-soft); font-weight:700;">${fmtMoney(vattu)}</span>
+            </div>
+            ${profit !== 0 ? `
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">✨ Lợi nhuận</span>
+                <span class="confirm-summary-val" style="color:${profit >= 0 ? 'var(--green)' : 'var(--red)'};">${fmtMoney(profit)}</span>
+            </div>` : ''}
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">📌 Trạng thái</span>
+                <span class="confirm-summary-val">${statusLabel}</span>
+            </div>
+            ${note ? `
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">📝 Ghi chú</span>
+                <span class="confirm-summary-val" style="font-size:13px; font-weight:600;">${note}</span>
+            </div>` : ''}
+        </div>
+        <div style="font-size:13px; font-weight:800; color:var(--text-soft); margin-bottom:6px; text-transform:uppercase;">Chi tiết hoa (${flowers.length} loại):</div>
+        <div style="max-height: 180px; overflow-y: auto; margin-bottom: 10px;">
+            ${flowersHtml}
+        </div>
+        <div class="confirm-total-banner blue">
+            <div>
+                <div class="confirm-total-label">TỔNG TIỀN PHẢI THU VỰA</div>
+                <div style="font-size:12px; color:var(--text-soft); font-weight:700;">${fmtNum(totalQty)} bông</div>
+            </div>
+            <div class="confirm-total-val">${fmtMoney(totalCollect)}</div>
+        </div>
+    `;
+
+    showConfirmModal({
+        title: '🚛 Xác Nhận Lưu Đơn Vựa',
+        htmlContent: htmlContent,
+        confirmBtnText: '✅ Xác Nhận Lưu Đơn Vựa',
+        confirmBtnClass: 'confirm blue',
+        onProceed: () => {
+            executeSubmitVuaOrder({
+                vuaDateVal, dateVN, buyer, status, note, flowers,
+                totalCost, shipping, vattu, profit, totalCollect, totalQty, loaiCP
+            });
+        }
+    });
+}
+
+function executeSubmitVuaOrder({
+    vuaDateVal, dateVN, buyer, status, note, flowers,
+    totalCost, shipping, vattu, profit, totalCollect, totalQty, loaiCP
+}) {
+    const btn = document.getElementById('vua-submit-btn');
+
+    // 1. OPTIMISTIC IN-MEMORY INSERTION (instantly visible on Báo cáo ngày)
+    const orderId = 'vua_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+    const createdTempIds = [];
+    for (let i = flowers.length - 1; i >= 0; i--) {
+        const f = flowers[i];
+        const isFirst = (i === 0);
+        const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        createdTempIds.unshift(tempId);
+
+        todayData.unshift({
+            _row: tempId,
+            _clientId: tempId,
+            _orderId: orderId,
+            _isPendingSync: true,
+            'Ngày': dateVN,
+            'Status': status || '',
+            'Người Mua': buyer,
+            'Số lượng': String(f.qty),
+            'Giá': String(f.price),
+            'Doanh Thu Bông': String(f.total),
+            'Phân Loại Bông': f.type,
+            'Ghi Chú': isFirst ? (note || '') : '',
+            'Đã Thu': (status === 'Xong' && isFirst) ? String(totalCollect) : '',
+            'Tiền Phải Thu': isFirst ? String(totalCollect) : '',
+            'Ghi Chú thu': orderId,
+            'Doanh Thu Khác': (isFirst && profit !== 0) ? String(profit) : '',
+            'Loại DT': 'Vựa',
+            'Chi Phí': (isFirst && shipping > 0) ? String(shipping) : '',
+            'Loại CP': (isFirst && shipping > 0) ? 'Vận Chuyển' : '',
+            'Ghi Chú Chi Phí': ''
+        });
+    }
+
+    // 2. ENQUEUE FOR BACKGROUND SYNC
+    for (let i = 0; i < flowers.length; i++) {
+        const f = flowers[i];
+        const isFirst = (i === 0);
+        enqueueSync({
+            action: 'add',
+            data: {
+                'Ngày': dateVN,
+                'Status': status || '',
+                'Người Mua': buyer,
+                'Số lượng': f.qty,
+                'Giá': f.price,
+                'Doanh Thu Bông': f.total,
+                'Phân Loại Bông': f.type,
+                'Ghi Chú': isFirst ? (note || '') : '',
+                'Đã Thu': (status === 'Xong' && isFirst) ? totalCollect : '',
+                'Tiền Phải Thu': isFirst ? totalCollect : '',
+                'Ghi Chú thu': orderId,
+                'Doanh Thu Khác': (isFirst && profit !== 0) ? profit : '',
+                'Loại DT': 'Vựa',
+                'Chi Phí': (isFirst && shipping > 0) ? shipping : '',
+                'Loại CP': (isFirst && shipping > 0) ? 'Vận Chuyển' : '',
+                'Ghi Chú Chi Phí': ''
+            }
+        }, [createdTempIds[i]]);
+    }
+
+    // 3. SET REPORT DATE PICKER TO MATCH ORDER DATE & RENDER REPORT INSTANTLY
+    const reportPicker = document.getElementById('report-date-picker');
+    if (reportPicker && vuaDateVal) {
+        reportPicker.value = vuaDateVal;
+    }
+    renderReport();
+
+    // 4. INSTANT RESET OF FORM (ready for next input without any waiting)
+    document.getElementById('vua-buyer').value = '';
+    document.getElementById('vua-note').value = '';
+    document.getElementById('vua-status').value = '';
+    document.getElementById('vua-shipping').value = '0';
+    document.getElementById('vua-vattu').value = '150.000';
+    document.getElementById('vua-profit').value = '0';
+    document.getElementById('vua-flowers-container').innerHTML = '';
+    vuaFlowerCount = 0;
+    addVuaFlower();
+    document.getElementById('vua-quick-buyers').querySelectorAll('.quick-pill').forEach(p => p.classList.remove('active-pill'));
+    recalcVua();
+
+    // Visual button feedback
+    if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã lưu đơn!';
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Lưu Đơn Vựa';
+        }, 700);
+    }
+
+    // 5. TOAST NOTIFICATION
+    showToast(`⚡ Đã lưu đơn Vựa "${buyer}" (Thu: ${fmtMoney(totalCollect)})! Đang đồng bộ nền và đã hiển thị trên Báo cáo.`, 'success', 3500);
+
+    // 6. PROCESS SYNC IN BACKGROUND
+    processSyncQueue();
+}
+
+// ═══════════════════════════════════════════
+//  LOAD TODAY DATA (via JSONP gviz)
+// ═══════════════════════════════════════════
+function loadTodayData(isSilent = false) {
+    const icon = document.getElementById('sync-icon');
+    if (icon && !isSilent) icon.classList.add('fa-spin');
+
+    // Remove existing script
+    const old = document.getElementById('gviz-script');
+    if (old) old.remove();
+
+    window._gvizCb = function(data) {
+        const s = document.getElementById('gviz-script');
+        if (s) s.remove();
+        if (icon) icon.classList.remove('fa-spin');
+
+        if (data.status === 'error') {
+            if (!isSilent) showToast('Lỗi tải dữ liệu!', 'error');
+            return;
+        }
+
+        const cols = data.table.cols.map(c => c ? c.label : '');
+        const serverRows = data.table.rows.map((row, idx) => {
+            const item = { _row: idx + 2 };
+            cols.forEach((col, i) => {
+                if (!col) return;
+                const cell = row.c[i];
+                let val = '';
+                if (cell !== null && cell !== undefined) {
+                    val = cell.f !== undefined ? cell.f : (cell.v !== null ? cell.v : '');
+                }
+                item[col] = String(val);
+            });
+            if (item['Ghi Chú thu'] && String(item['Ghi Chú thu']).startsWith('vua_')) {
+                item._orderId = String(item['Ghi Chú thu']);
+            }
+            return item;
+        });
+
+        // Filter out any rows pending deletion in syncQueue
+        const pendingDeleteRowNums = syncQueue
+            .filter(item => item.payload && item.payload.action === 'deleteByRow')
+            .map(item => String(item.payload.rowNumber));
+        let activeServerRows = serverRows.filter(sr => !pendingDeleteRowNums.includes(String(sr._row)));
+
+        // Apply any pending updates in syncQueue
+        syncQueue
+            .filter(item => item.payload && item.payload.action === 'update')
+            .forEach(item => {
+                const r = activeServerRows.find(sr => String(sr._row) === String(item.payload.rowNumber));
+                if (r && item.payload.updates) {
+                    Object.assign(r, item.payload.updates);
+                    r._isPendingSync = true;
+                }
+            });
+
+        // Retain optimistic local items that haven't shown up in serverRows yet
+        const pendingLocalItems = todayData.filter(localRow => {
+            if (!localRow._clientId) return false;
+            const foundOnServer = activeServerRows.some(sr => 
+                (isDateMatch(sr['Ngày'], localRow['Ngày']) || sr['Ngày'] === localRow['Ngày']) &&
+                String(sr['Người Mua']).trim().toLowerCase() === String(localRow['Người Mua']).trim().toLowerCase() &&
+                String(sr['Phân Loại Bông']).trim().toLowerCase() === String(localRow['Phân Loại Bông']).trim().toLowerCase() &&
+                parseSheetNum(sr['Số lượng']) === parseSheetNum(localRow['Số lượng'])
+            );
+            return !foundOnServer;
+        });
+
+        todayData = [...pendingLocalItems, ...activeServerRows];
+        renderReport();
+    };
+
+    const script = document.createElement('script');
+    script.id = 'gviz-script';
+    script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=responseHandler:_gvizCb&sheet=Data`;
+    script.onerror = () => {
+        if (icon) icon.classList.remove('fa-spin');
+        if (!isSilent) showToast('Không tải được dữ liệu. Kiểm tra kết nối!', 'warning');
+    };
+    document.body.appendChild(script);
+}
+
+// ═══════════════════════════════════════════
+//  GROUP VỰA ORDERS (Multi-flower support)
+// ═══════════════════════════════════════════
+function groupVuaOrders(vuaRows) {
+    const groups = [];
+    const processedIndices = new Set();
+
+    // 1. Group by explicit orderId (from _orderId or 'Ghi Chú thu')
+    const orderIdMap = new Map();
+    vuaRows.forEach((r, idx) => {
+        const orderId = r._orderId || (String(r['Ghi Chú thu'] || '').startsWith('vua_') ? String(r['Ghi Chú thu']) : null);
+        if (orderId) {
+            if (!orderIdMap.has(orderId)) orderIdMap.set(orderId, []);
+            orderIdMap.get(orderId).push({ row: r, idx });
+        }
+    });
+
+    orderIdMap.forEach((items, orderId) => {
+        items.forEach(it => processedIndices.add(it.idx));
+        const rows = items.map(it => it.row);
+        const master = rows.find(r => parseSheetNum(r['Tiền Phải Thu']) > 0) || rows[0];
+        groups.push({
+            orderId: orderId,
+            rows: rows,
+            masterRow: master
+        });
+    });
+
+    // 2. For remaining rows without explicit orderId:
+    // Group consecutive rows for the same buyer where subsequent rows have empty/0 Tiền Phải Thu
+    for (let i = 0; i < vuaRows.length; i++) {
+        if (processedIndices.has(i)) continue;
+
+        const current = vuaRows[i];
+        processedIndices.add(i);
+
+        const currentGroup = [current];
+        const buyer = String(current['Người Mua'] || '').trim().toLowerCase();
+
+        let j = i + 1;
+        while (j < vuaRows.length && !processedIndices.has(j)) {
+            const next = vuaRows[j];
+            const nextBuyer = String(next['Người Mua'] || '').trim().toLowerCase();
+            const nextPt = parseSheetNum(next['Tiền Phải Thu']);
+
+            if (nextBuyer === buyer && nextPt === 0) {
+                currentGroup.push(next);
+                processedIndices.add(j);
+                j++;
+            } else {
+                break;
+            }
+        }
+
+        const master = currentGroup.find(r => parseSheetNum(r['Tiền Phải Thu']) > 0) || currentGroup[0];
+        const syntheticOrderId = 'vua_grp_' + (master._row || i);
+        groups.push({
+            orderId: syntheticOrderId,
+            rows: currentGroup,
+            masterRow: master
+        });
+    }
+
+    return groups;
+}
+
+// ═══════════════════════════════════════════
+//  RENDER REPORT
+// ═══════════════════════════════════════════
+function renderReport() {
+    const reportDateInput = document.getElementById('report-date-picker');
+    const selectedInputVal = reportDateInput ? reportDateInput.value : todayInputValue();
+
+    // Filter by date matching
+    const dayData = todayData.filter(r => isDateMatch(r['Ngày'], selectedInputVal));
+
+    // Categorize
+    const farmRows = [];
+    const vuaRows = [];
+    const expenseRows = [];
+
+    dayData.forEach(r => {
+        const loaiDT = String(r['Loại DT'] || '').trim().toLowerCase();
+        const isVua = loaiDT.includes('vựa') || loaiDT.includes('vua');
+        const sl = parseSheetNum(r['Số lượng']);
+        const dtBong = parseSheetNum(r['Doanh Thu Bông']);
+        const cp = parseSheetNum(r['Chi Phí']);
+        const daThu = parseSheetNum(r['Đã Thu']);
+
+        if (isVua) {
+            vuaRows.push(r);
+        } else if (sl > 0 || dtBong > 0 || (daThu > 0 && cp === 0)) {
+            farmRows.push(r);
+        }
+
+        // Any row with expense > 0 is tracked in expense list
+        if (cp > 0) {
+            expenseRows.push(r);
+        }
+    });
+
+    // KPI Calculations (Total and Breakdown)
+    let totalQty = 0, totalRevenue = 0, totalExpense = 0;
+    let farmQty = 0, farmRevenue = 0, farmExpense = 0;
+    let vuaQty = 0, vuaRevenue = 0, vuaExpense = 0;
+
+    dayData.forEach(r => {
+        const loaiDT = String(r['Loại DT'] || '').trim().toLowerCase();
+        const isVua = loaiDT.includes('vựa') || loaiDT.includes('vua');
+        const q = parseSheetNum(r['Số lượng']);
+        const dtBong = parseSheetNum(r['Doanh Thu Bông']);
+        const dtKhac = parseSheetNum(r['Doanh Thu Khác']);
+        const cp = parseSheetNum(r['Chi Phí']);
+
+        totalQty += q;
+        totalRevenue += (dtBong + dtKhac);
+        totalExpense += cp;
+
+        if (isVua) {
+            vuaQty += q;
+            vuaRevenue += (dtBong + dtKhac);
+            vuaExpense += cp;
+        } else {
+            farmQty += q;
+            farmRevenue += (dtBong + dtKhac);
+            farmExpense += cp;
+        }
+    });
+
+    // Display numbers according to currentReportFilter ('all', 'farm', 'vua')
+    let dispQty = totalQty, dispRevenue = totalRevenue, dispExpense = totalExpense;
+    let subQtyText = `Farm: ${fmtNum(farmQty)} · Vựa: ${fmtNum(vuaQty)}`;
+    let subRevText = `Farm: ${shortMoney(farmRevenue)} · Vựa: ${shortMoney(vuaRevenue)}`;
+    let subExpText = vuaExpense > 0 ? `Vựa: ${shortMoney(vuaExpense)}${farmExpense > 0 ? ' · Farm: ' + shortMoney(farmExpense) : ''}` : (farmExpense > 0 ? `Farm: ${shortMoney(farmExpense)}` : 'Không có chi phí');
+
+    if (currentReportFilter === 'farm') {
+        dispQty = farmQty;
+        dispRevenue = farmRevenue;
+        dispExpense = farmExpense;
+        subQtyText = `Toàn bộ hoa vườn`;
+        subRevText = `Bán hoa trực tiếp`;
+        subExpText = farmExpense > 0 ? `Chi phí vườn: ${shortMoney(farmExpense)}` : `Không có chi phí`;
+    } else if (currentReportFilter === 'vua') {
+        dispQty = vuaQty;
+        dispRevenue = vuaRevenue;
+        dispExpense = vuaExpense;
+        subQtyText = `Hoa cung cấp vựa`;
+        subRevText = `Bông + Lợi nhuận`;
+        subExpText = vuaExpense > 0 ? `Vận chuyển: ${shortMoney(vuaExpense)}` : `Không có chi phí`;
+    }
+
+    const dispProfit = dispRevenue - dispExpense;
+
+    document.getElementById('kpi-qty').textContent = fmtNum(dispQty);
+    document.getElementById('kpi-revenue').textContent = shortMoney(dispRevenue);
+    document.getElementById('kpi-expense').textContent = shortMoney(dispExpense);
+    document.getElementById('kpi-profit').textContent = shortMoney(dispProfit);
+    document.getElementById('kpi-profit').style.color = dispProfit >= 0 ? 'var(--amber)' : 'var(--red)';
+
+    // Sub-hints under KPI cards
+    const subQtyEl = document.getElementById('kpi-sub-qty');
+    if (subQtyEl) subQtyEl.textContent = subQtyText;
+    const subRevEl = document.getElementById('kpi-sub-rev');
+    if (subRevEl) subRevEl.textContent = subRevText;
+    const subExpEl = document.getElementById('kpi-sub-exp');
+    if (subExpEl) subExpEl.textContent = subExpText;
+    const subProfEl = document.getElementById('kpi-sub-prof');
+    if (subProfEl) {
+        const margin = dispRevenue > 0 ? ((dispProfit / dispRevenue) * 100).toFixed(1) + '%' : '0%';
+        subProfEl.textContent = `Tỷ suất LN: ${margin}`;
+    }
+
+    // Group vua orders for card rendering
+    const vuaGroups = groupVuaOrders(vuaRows);
+
+    // Counts
+    document.getElementById('farm-count-chip').textContent = farmRows.length + ' đơn';
+    document.getElementById('vua-count-chip').textContent = vuaGroups.length + ' đơn';
+    document.getElementById('expense-count-chip').textContent = expenseRows.length + ' khoản';
+
+    // Visibility toggle based on filter
+    const farmSec = document.getElementById('report-farm-section');
+    const vuaSec = document.getElementById('report-vua-section');
+    const expSec = document.getElementById('report-expense-section');
+    if (farmSec) farmSec.style.display = (currentReportFilter === 'vua') ? 'none' : 'block';
+    if (vuaSec) vuaSec.style.display = (currentReportFilter === 'farm') ? 'none' : 'block';
+    if (expSec) expSec.style.display = 'block';
+
+    // Render farm rows
+    const farmList = document.getElementById('farm-tx-list');
+    if (farmRows.length === 0) {
+        farmList.innerHTML = `<div class="empty-state"><div class="empty-icon">🌱</div><div class="empty-title">Không có đơn Farm ngày này</div><div class="empty-text">Chọn ngày khác hoặc nhập đơn ở tab Farm</div></div>`;
+    } else {
+        farmList.innerHTML = farmRows.map(r => renderFarmCard(r)).join('');
+    }
+
+    // Render vua groups
+    const vuaList = document.getElementById('vua-tx-list');
+    if (vuaGroups.length === 0) {
+        vuaList.innerHTML = `<div class="empty-state"><div class="empty-icon">🚛</div><div class="empty-title">Không có đơn Vựa ngày này</div><div class="empty-text">Chọn ngày khác hoặc nhập đơn ở tab Vựa</div></div>`;
+    } else {
+        vuaList.innerHTML = vuaGroups.map(grp => renderVuaCard(grp)).join('');
+    }
+
+    // Render expense rows
+    const expList = document.getElementById('expense-tx-list');
+    if (expenseRows.length === 0) {
+        expList.innerHTML = `<div class="empty-state"><div class="empty-icon">💸</div><div class="empty-title">Không có chi phí ngày này</div></div>`;
+    } else {
+        expList.innerHTML = expenseRows.map(r => renderExpenseCard(r)).join('');
+    }
+}
+
+function shortMoney(n) {
+    if (!n && n !== 0) return '0 ₫';
+    const num = typeof n === 'number' ? n : parseSheetNum(n);
+    if (num === 0) return '0 ₫';
+    const sign = num < 0 ? '-' : '';
+    const abs = Math.abs(num);
+    if (abs >= 1000000000) return sign + (abs / 1000000000).toFixed(2).replace(/\.00$/, '') + ' tỷ';
+    if (abs >= 1000000) return sign + (abs / 1000000).toFixed(1).replace(/\.0$/, '') + 'tr';
+    if (abs >= 1000) return sign + (abs / 1000).toFixed(0) + 'k';
+    return sign + fmtNum(abs) + ' ₫';
+}
+
+function renderFarmCard(r) {
+    const qty = parseSheetNum(r['Số lượng']);
+    const price = parseSheetNum(r['Giá']);
+    const dt = parseSheetNum(r['Doanh Thu Bông']);
+    const daThu = parseSheetNum(r['Đã Thu']);
+    const isDone = (r['Status'] || '').trim().toLowerCase() === 'xong';
+    const isPaymentOnly = (qty === 0 && dt === 0 && daThu > 0);
+    const rowNum = r._row;
+    const isPending = r._isPendingSync === true;
+    const isLockedDay = !isAdmin() && !isDateToday(r['Ngày']);
+
+    if (isPaymentOnly) {
+        return `
+        <div class="tx-card card-done" style="border-left: 4px solid var(--green);">
+            <div class="tx-header">
+                <div class="tx-buyer">
+                    <div class="tx-avatar farm" style="background: rgba(34,197,94,0.15); color: var(--green);">💰</div>
+                    <div>
+                        <div class="tx-buyer-name">${r['Người Mua'] || '—'}</div>
+                        <span class="tx-type-badge farm" style="background: #dcfce7; color: #166534;">Thu Tiền Nợ</span>
+                    </div>
+                </div>
+                <div style="text-align:right">
+                    <div class="tx-amount" style="color: var(--green); font-weight: 900;">+${fmtMoney(daThu)}</div>
+                    ${isPending 
+                        ? `<span class="status-badge" style="background:#fef3c7;color:#b45309;"><i class="fa-solid fa-cloud-arrow-up fa-fade"></i> Đang gửi...</span>`
+                        : `<span class="status-badge status-done">✅ Đã thu</span>`}
+                </div>
+            </div>
+            ${r['Ghi Chú'] ? `<div class="tx-body"><div class="tx-line"><span class="tx-line-label">📝 Ghi chú</span><span class="tx-line-value">${r['Ghi Chú']}</span></div></div>` : ''}
+            <div class="tx-footer">
+                <button class="action-pill delete" onclick="confirmDelete('${rowNum}')">
+                    <i class="fa-solid ${isLockedDay ? 'fa-lock' : 'fa-trash'}"></i> ${isPending ? 'Hủy' : 'Xóa'}
+                </button>
+            </div>
+        </div>`;
+    }
+
+    return `
+    <div class="tx-card ${isDone ? 'card-done' : ''}" style="${isPending ? 'border-left: 4px solid var(--amber); background: #fffdf9;' : ''}">
+        <div class="tx-header">
+            <div class="tx-buyer">
+                <div class="tx-avatar farm">🌿</div>
+                <div>
+                    <div class="tx-buyer-name">${r['Người Mua'] || '—'}</div>
+                    <span class="tx-type-badge farm">Farm</span>
+                </div>
+            </div>
+            <div style="text-align:right">
+                <div class="tx-amount">${fmtMoney(dt)}</div>
+                ${isPending 
+                    ? `<span class="status-badge" style="background:#fef3c7;color:#b45309;"><i class="fa-solid fa-cloud-arrow-up fa-fade"></i> Đang gửi...</span>`
+                    : `<span class="status-badge ${isDone ? 'status-done' : 'status-pending'}">${isDone ? '✅ Xong' : '⏳ Chưa thu'}</span>`}
+            </div>
+        </div>
+        <div class="tx-body">
+            <div class="tx-line">
+                <span class="tx-line-label">🌸 Loại hoa</span>
+                <span class="tx-line-value font-bold">${r['Phân Loại Bông'] || '—'}</span>
+            </div>
+            <div class="tx-line">
+                <span class="tx-line-label">📦 Số lượng</span>
+                <span class="tx-line-value font-bold" style="color: var(--green);">${fmtNum(qty)} bông</span>
+            </div>
+            <div class="tx-line">
+                <span class="tx-line-label">💵 Đơn giá</span>
+                <span class="tx-line-value">${fmtMoney(price)}</span>
+            </div>
+            ${r['Ghi Chú'] ? `<div class="tx-line"><span class="tx-line-label">📝 Ghi chú</span><span class="tx-line-value" style="font-size:13px;color:var(--text-soft)">${r['Ghi Chú']}</span></div>` : ''}
+        </div>
+        <div class="tx-footer">
+            ${isPending ? `
+                <button class="action-pill" style="opacity:0.6; cursor:not-allowed;" title="Đơn đang lưu nền lên Google Sheet">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Đang gửi
+                </button>
+            ` : `
+                <button class="action-pill edit" onclick="openEditFarmModal(${rowNum})">
+                    <i class="fa-solid ${isLockedDay ? 'fa-lock' : 'fa-pen'}"></i> Sửa
+                </button>
+            `}
+            <button class="action-pill delete" onclick="confirmDelete('${rowNum}')">
+                <i class="fa-solid ${isLockedDay ? 'fa-lock' : 'fa-trash'}"></i> ${isPending ? 'Hủy' : 'Xóa'}
+            </button>
+        </div>
+    </div>`;
+}
+
+function renderVuaCard(group) {
+    const master = group.masterRow;
+    const buyer = master['Người Mua'] || '—';
+    const isDone = (master['Status'] || '').trim().toLowerCase() === 'xong';
+    const isPending = group.rows.some(r => r._isPendingSync === true);
+    const orderId = group.orderId;
+    const isLockedDay = !isAdmin() && !isDateToday(master ? master['Ngày'] : '');
+
+    const flowers = group.rows.map(r => {
+        const q = parseSheetNum(r['Số lượng']);
+        const p = parseSheetNum(r['Giá']);
+        const t = parseSheetNum(r['Doanh Thu Bông']) || (q * p);
+        return {
+            rowNum: r._row,
+            type: r['Phân Loại Bông'] || '—',
+            qty: q,
+            price: p,
+            total: t
+        };
+    });
+
+    const totalQty = flowers.reduce((s, f) => s + f.qty, 0);
+    const flowerTotal = flowers.reduce((s, f) => s + f.total, 0);
+    const cp = parseSheetNum(master['Chi Phí']);
+    const vattu = 150000;
+    let pt = parseSheetNum(master['Tiền Phải Thu']);
+    let ln = parseSheetNum(master['Doanh Thu Khác']);
+
+    if (pt > 0) {
+        ln = pt - flowerTotal - cp - vattu;
+    } else {
+        pt = flowerTotal + cp + vattu + ln;
+    }
+
+    const note = master['Ghi Chú'] || '';
+
+    return `
+    <div class="tx-card ${isDone ? 'card-done' : ''}" style="${isPending ? 'border-left: 4px solid var(--blue); background: #f8fafc;' : ''}">
+        <div class="tx-header">
+            <div class="tx-buyer">
+                <div class="tx-avatar vua">🚛</div>
+                <div>
+                    <div class="tx-buyer-name">${buyer}</div>
+                    <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                        <span class="tx-type-badge vua">Đơn Vựa</span>
+                        <span style="font-size:12px; font-weight:700; color:var(--text-soft);">${flowers.length} loại hoa · ${fmtNum(totalQty)} bông</span>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align:right">
+                <div class="tx-amount blue" style="color:var(--blue); font-weight: 900;">${fmtMoney(pt)}</div>
+                ${isPending 
+                    ? `<span class="status-badge" style="background:#dbeafe;color:#1e40af;"><i class="fa-solid fa-cloud-arrow-up fa-fade"></i> Đang gửi...</span>`
+                    : `<span class="status-badge ${isDone ? 'status-done' : 'status-pending'}">${isDone ? '✅ Đã thu' : '⏳ Chưa thu'}</span>`}
+            </div>
+        </div>
+        <div class="tx-body">
+            <!-- Chi tiết các loại hoa trong đơn -->
+            <div style="background: rgba(37,99,235,0.04); border: 1.5px solid rgba(37,99,235,0.14); border-radius: 12px; padding: 10px 14px; margin-bottom: 8px;">
+                <div style="font-size: 11px; font-weight: 800; color: var(--text-soft); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Chi tiết hoa (${flowers.length} loại):</div>
+                ${flowers.map(f => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 13px;">
+                        <div>
+                            <span style="font-weight: 700; color: var(--text);">🌸 ${f.type}</span>
+                            <span style="color: var(--text-soft); font-weight: 600; font-size: 12px;"> · ${fmtNum(f.qty)} bông × ${fmtMoney(f.price)}</span>
+                        </div>
+                        <div style="font-weight: 800; color: var(--blue);">${fmtMoney(f.total)}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            <div class="tx-line">
+                <span class="tx-line-label">💐 Tổng tiền hoa</span>
+                <span class="tx-line-value font-bold">${fmtMoney(flowerTotal)}</span>
+            </div>
+            ${cp > 0 ? `
+            <div class="tx-line">
+                <span class="tx-line-label">🚚 Chi phí (${master['Loại CP'] || 'Vận chuyển'})</span>
+                <span class="tx-line-value" style="color:var(--red); font-weight:700;">-${fmtMoney(cp)}</span>
+            </div>` : ''}
+            <div class="tx-line">
+                <span class="tx-line-label">📦 Vật tư khác (Cố định)</span>
+                <span class="tx-line-value" style="color:var(--text-soft); font-weight:700;">150.000 ₫</span>
+            </div>
+            ${ln !== 0 ? `
+            <div class="tx-line">
+                <span class="tx-line-label">✨ Lợi nhuận / Đóng gói</span>
+                <span class="tx-line-value" style="color:${ln >= 0 ? 'var(--green)':'var(--red)'}; font-weight:800;">+${fmtMoney(ln)}</span>
+            </div>` : ''}
+            ${note ? `<div class="tx-line"><span class="tx-line-label">📝 Ghi chú</span><span class="tx-line-value" style="font-size:13px;color:var(--text-soft)">${note}</span></div>` : ''}
+        </div>
+        <div class="tx-footer">
+            ${isPending ? `
+                <button class="action-pill" style="opacity:0.6; cursor:not-allowed;" title="Đơn đang lưu nền lên Google Sheet">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Đang gửi
+                </button>
+            ` : `
+                <button class="action-pill edit" onclick="openEditVuaGroupModal('${orderId}')">
+                    <i class="fa-solid ${isLockedDay ? 'fa-lock' : 'fa-pen'}"></i> Sửa
+                </button>
+            `}
+            <button class="action-pill delete" onclick="confirmDeleteVuaGroup('${orderId}')">
+                <i class="fa-solid ${isLockedDay ? 'fa-lock' : 'fa-trash'}"></i> ${isPending ? 'Hủy' : 'Xóa'}
+            </button>
+        </div>
+    </div>`;
+}
+
+function renderExpenseCard(r) {
+    const cp = parseSheetNum(r['Chi Phí']);
+    const rowNum = r._row;
+    const loaiDT = (r['Loại DT'] || '').trim();
+    const loaiCP = r['Loại CP'] || 'Chi phí';
+    const note = r['Ghi Chú Chi Phí'] || r['Ghi Chú'] || '';
+    const buyer = r['Người Mua'] || '';
+
+    const loaiDTLower = loaiDT.toLowerCase();
+    const loaiCPLower = loaiCP.toLowerCase();
+    const isVuaExpense = loaiDTLower.includes('vựa') || loaiDTLower.includes('vua') || loaiCPLower === 'vận chuyển' || (r._orderId && r._orderId.startsWith('vua_'));
+    const isLockedDay = !isAdmin() && !isDateToday(r['Ngày']);
+
+    return `
+    <div class="tx-card">
+        <div class="tx-header">
+            <div class="tx-buyer">
+                <div class="tx-avatar expense">💸</div>
+                <div>
+                    <div class="tx-buyer-name">${loaiCP}</div>
+                    <span class="tx-type-badge expense">${loaiDT ? loaiDT : 'Chi phí'}</span>
+                </div>
+            </div>
+            <div class="tx-amount red" style="color:var(--red); font-weight: 900;">-${fmtMoney(cp)}</div>
+        </div>
+        <div class="tx-body">
+            ${buyer ? `
+            <div class="tx-line">
+                <span class="tx-line-label">👤 Liên quan</span>
+                <span class="tx-line-value">${buyer}</span>
+            </div>` : ''}
+            ${note ? `
+            <div class="tx-line">
+                <span class="tx-line-label">📝 Ghi chú</span>
+                <span class="tx-line-value">${note}</span>
+            </div>` : ''}
+        </div>
+        ${isVuaExpense ? `
+        <div class="tx-footer" style="justify-content: flex-end; align-items: center;">
+            <span style="font-size: 12px; font-weight: 700; color: var(--text-soft); display: inline-flex; align-items: center; gap: 6px;">
+                <i class="fa-solid fa-lock" style="color: var(--text-light); font-size: 11px;"></i> Chi phí theo đơn Vựa
+            </span>
+        </div>` : `
+        <div class="tx-footer">
+            <button class="action-pill delete" onclick="confirmDelete('${rowNum}', 'expense')">
+                <i class="fa-solid ${isLockedDay ? 'fa-lock' : 'fa-trash'}"></i> Xóa
+            </button>
+        </div>`}
+    </div>`;
+}
+
+function recalcEditFarm() {
+    const q = parseFloat(document.getElementById('edit-qty')?.value) || 0;
+    const p = parseMoney(document.getElementById('edit-price')?.value);
+    const total = q * p;
+    const el = document.getElementById('edit-farm-total-val');
+    if (el) el.textContent = fmtMoney(total);
+}
+
+function addEditVuaFlower(type = '', qty = 0, price = 0) {
+    const container = document.getElementById('edit-vua-flowers-container');
+    if (!container) return;
+    const count = container.querySelectorAll('.edit-vua-flower-item').length + 1;
+    const div = document.createElement('div');
+    div.className = 'edit-vua-flower-item';
+    div.style.cssText = 'background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 12px; margin-bottom: 10px; position: relative;';
+    div.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 12px; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: 0.5px;">Loại hoa #${count}</span>
+            <button type="button" onclick="removeEditVuaFlower(this)" style="background: rgba(239, 68, 68, 0.1); border: none; color: var(--red); font-size: 13px; font-weight: 700; cursor: pointer; padding: 4px 8px; border-radius: 8px; display: flex; align-items: center; gap: 4px;" title="Xóa loại hoa này">
+                <i class="fa-solid fa-trash-can"></i> Xóa
+            </button>
+        </div>
+        <div class="form-field" style="margin-bottom: 8px;">
+            <label style="font-size: 11px;">Tên loại hoa</label>
+            <input type="text" class="field-input blue edit-vua-type" value="${type}" list="flower-types-datalist" placeholder="Chọn hoặc nhập tên hoa (vd: Đỏ, Xô...)">
+        </div>
+        <div class="field-row" style="margin-bottom: 6px;">
+            <div class="form-field" style="margin-bottom: 0;">
+                <label style="font-size: 11px;">Số lượng</label>
+                <input type="number" class="field-input blue edit-vua-qty" value="${qty || ''}" placeholder="0" inputmode="numeric" oninput="recalcEditVuaGroup('qty')">
+            </div>
+            <div class="form-field" style="margin-bottom: 0;">
+                <label style="font-size: 11px;">Đơn giá vốn</label>
+                <input type="text" class="field-input blue money-input edit-vua-price" value="${price > 0 ? fmtNum(price) : ''}" placeholder="0" oninput="recalcEditVuaGroup('price')">
+            </div>
+        </div>
+        <div class="edit-vua-row-subtotal" style="font-size: 12px; font-weight: 800; color: var(--blue); text-align: right; margin-top: 4px;">
+            = ${fmtMoney((qty || 0) * (price || 0))}
+        </div>
+    `;
+    container.appendChild(div);
+    recalcEditVuaGroup('default');
+}
+
+function removeEditVuaFlower(btn) {
+    const container = document.getElementById('edit-vua-flowers-container');
+    if (!container) return;
+    const items = container.querySelectorAll('.edit-vua-flower-item');
+    if (items.length <= 1) {
+        showToast('Đơn hàng phải có ít nhất 1 loại hoa!', 'warning');
+        return;
+    }
+    btn.closest('.edit-vua-flower-item').remove();
+    container.querySelectorAll('.edit-vua-flower-item').forEach((it, idx) => {
+        const label = it.querySelector('span');
+        if (label) label.textContent = `Loại hoa #${idx + 1}`;
+    });
+    recalcEditVuaGroup('default');
+}
+
+function recalcEditVuaGroup(source = 'default') {
+    const container = document.getElementById('edit-vua-flowers-container');
+    if (!container) return;
+
+    let flowerTotal = 0;
+    container.querySelectorAll('.edit-vua-flower-item').forEach(it => {
+        const q = parseFloat(it.querySelector('.edit-vua-qty')?.value) || 0;
+        const p = parseMoney(it.querySelector('.edit-vua-price')?.value);
+        const rowTot = q * p;
+        const subEl = it.querySelector('.edit-vua-row-subtotal');
+        if (subEl) subEl.textContent = '= ' + fmtMoney(rowTot);
+        flowerTotal += rowTot;
+    });
+
+    const flowerEl = document.getElementById('edit-vua-flower-total-val');
+    if (flowerEl) flowerEl.textContent = fmtMoney(flowerTotal);
+
+    const shipping = parseMoney(document.getElementById('edit-vua-cost')?.value);
+    const vattu = 150000;
+    const ptInput = document.getElementById('edit-vua-pt');
+    const profitInput = document.getElementById('edit-vua-profit');
+    const totalEl = document.getElementById('edit-vua-total-val');
+
+    if (source === 'profit') {
+        const profit = parseMoney(profitInput?.value);
+        const autoPt = flowerTotal + shipping + vattu + profit;
+        if (ptInput) ptInput.value = fmtNum(autoPt);
+        if (totalEl) totalEl.textContent = fmtMoney(autoPt);
+    } else {
+        const currentPt = parseMoney(ptInput?.value);
+        const autoProfit = currentPt - flowerTotal - shipping - vattu;
+        if (profitInput) profitInput.value = fmtNum(autoProfit);
+        if (totalEl) totalEl.textContent = fmtMoney(currentPt);
+    }
+}
+
+function recalcEditVua(source = 'default') {
+    recalcEditVuaGroup(source);
+}
+
+// ═══════════════════════════════════════════
+//  EDIT MODAL – Farm
+// ═══════════════════════════════════════════
+function openEditFarmModal(rowNum) {
+    if (typeof rowNum === 'string' && rowNum.startsWith('temp_')) {
+        showToast('Đơn này đang gửi nền lên máy chủ, vui lòng đợi vài giây để hoàn tất!', 'warning', 3000);
+        return;
+    }
+    const row = todayData.find(r => String(r._row) === String(rowNum));
+    if (!row) return;
+
+    if (!isAdmin() && !isDateToday(row['Ngày'])) {
+        showLockedNotice();
+        return;
+    }
+
+    const modal = document.getElementById('edit-modal');
+    document.getElementById('edit-modal-title').textContent = '✏️ Sửa đơn Farm';
+
+    const qty = parseSheetNum(row['Số lượng']);
+    const price = parseSheetNum(row['Giá']);
+    const initialTotal = qty * price;
+
+    document.getElementById('edit-modal-body').innerHTML = `
+        <div class="form-field">
+            <label>Tên khách</label>
+            <input type="text" class="field-input" id="edit-buyer" value="${row['Người Mua'] || ''}">
+        </div>
+        <div class="form-field">
+            <label>Loại hoa</label>
+            <input type="text" class="field-input" id="edit-type" value="${row['Phân Loại Bông'] || ''}" list="flower-types-datalist">
+        </div>
+        <div class="field-row">
+            <div class="form-field">
+                <label>Số lượng</label>
+                <input type="number" class="field-input" id="edit-qty" value="${qty}" inputmode="numeric" oninput="recalcEditFarm()">
+            </div>
+            <div class="form-field">
+                <label>Đơn giá</label>
+                <input type="text" class="field-input money-input" id="edit-price" value="${fmtNum(price)}" oninput="recalcEditFarm()">
+            </div>
+        </div>
+        <div class="form-field">
+            <label>Thành tiền (₫)</label>
+            <div id="edit-farm-total-display" style="background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 2px solid #86efac; border-radius: 14px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; font-weight: 800; color: var(--text-soft); text-transform: uppercase;">Thành tiền</span>
+                <span id="edit-farm-total-val" style="font-size: 22px; font-weight: 900; color: var(--green);">${fmtMoney(initialTotal)}</span>
+            </div>
+        </div>
+        <div class="form-field">
+            <label>Trạng thái</label>
+            <select class="field-select" id="edit-status">
+                <option value="" ${!row['Status'] || row['Status']==='Chưa Xong' ? 'selected':''}>⏳ Chưa thu tiền</option>
+                <option value="Xong" ${row['Status']==='Xong' ? 'selected':''}>✅ Đã thu tiền</option>
+            </select>
+        </div>
+        <div class="form-field">
+            <label>Ghi chú</label>
+            <textarea class="field-input" id="edit-note" rows="2">${row['Ghi Chú'] || ''}</textarea>
+        </div>
+    `;
+
+    const confirmBtn = document.getElementById('edit-modal-confirm');
+    confirmBtn.className = 'modal-btn confirm';
+    confirmBtn.textContent = '💾 Lưu thay đổi';
+    confirmBtn.onclick = () => {
+        const newBuyer = document.getElementById('edit-buyer').value.trim();
+        const newType = document.getElementById('edit-type').value.trim();
+        const newQty = parseFloat(document.getElementById('edit-qty').value) || 0;
+        const newPrice = parseMoney(document.getElementById('edit-price').value);
+        const newStatus = document.getElementById('edit-status').value;
+        const newNote = document.getElementById('edit-note').value.trim();
+
+        if (!newBuyer) { showToast('Vui lòng nhập tên khách!', 'warning'); document.getElementById('edit-buyer').focus(); return; }
+        if (!newType) { showToast('Vui lòng nhập loại hoa!', 'warning'); document.getElementById('edit-type').focus(); return; }
+        if (newQty <= 0) { showToast('Số lượng phải lớn hơn 0!', 'warning'); document.getElementById('edit-qty').focus(); return; }
+
+        const newTotal = newQty * newPrice;
+        const updates = {
+            'Người Mua': newBuyer,
+            'Phân Loại Bông': newType,
+            'Số lượng': String(newQty),
+            'Giá': String(newPrice),
+            'Doanh Thu Bông': String(newTotal),
+            'Status': newStatus,
+            'Đã Thu': newStatus === 'Xong' ? String(newTotal) : '',
+            'Loại DT': 'Farm',
+            'Ghi Chú': newNote
+        };
+
+        const statusLabel = newStatus === 'Xong' ? '✅ Đã thu tiền' : '⏳ Chưa thu tiền';
+
+        showConfirmModal({
+            title: '✏️ Xác Nhận Sửa Đơn Farm',
+            htmlContent: `
+                <div class="confirm-summary-box">
+                    <div class="confirm-summary-row">
+                        <span class="confirm-summary-label">👤 Khách hàng</span>
+                        <span class="confirm-summary-val">${newBuyer}</span>
+                    </div>
+                    <div class="confirm-summary-row">
+                        <span class="confirm-summary-label">🌸 Loại hoa</span>
+                        <span class="confirm-summary-val">${newType}</span>
+                    </div>
+                    <div class="confirm-summary-row">
+                        <span class="confirm-summary-label">📦 Số lượng</span>
+                        <span class="confirm-summary-val" style="color:var(--green); font-size:16px;">${fmtNum(newQty)} bông</span>
+                    </div>
+                    <div class="confirm-summary-row">
+                        <span class="confirm-summary-label">💵 Đơn giá</span>
+                        <span class="confirm-summary-val">${fmtMoney(newPrice)}</span>
+                    </div>
+                    <div class="confirm-summary-row">
+                        <span class="confirm-summary-label">📌 Trạng thái</span>
+                        <span class="confirm-summary-val">${statusLabel}</span>
+                    </div>
+                    ${newNote ? `
+                    <div class="confirm-summary-row">
+                        <span class="confirm-summary-label">📝 Ghi chú</span>
+                        <span class="confirm-summary-val" style="font-size:13px; font-weight:600;">${newNote}</span>
+                    </div>` : ''}
+                </div>
+                <div class="confirm-total-banner">
+                    <div>
+                        <div class="confirm-total-label">THÀNH TIỀN MỚI</div>
+                        <div style="font-size:12px; color:var(--text-soft); font-weight:700;">Đơn Farm</div>
+                    </div>
+                    <div class="confirm-total-val">${fmtMoney(newTotal)}</div>
+                </div>
+            `,
+            confirmBtnText: '✅ Xác Nhận Sửa',
+            confirmBtnClass: 'confirm',
+            onProceed: () => {
+                doUpdateOptimistic(rowNum, updates);
+            }
+        });
+    };
+
+    modal.classList.add('open');
+}
+
+// ═══════════════════════════════════════════
+//  EDIT MODAL – Vựa (Grouped Multi-flower support)
+// ═══════════════════════════════════════════
+function openEditVuaGroupModal(orderId) {
+    const vuaRows = todayData.filter(r => {
+        const loaiDT = String(r['Loại DT'] || '').trim().toLowerCase();
+        return loaiDT.includes('vựa') || loaiDT.includes('vua');
+    });
+    const groups = groupVuaOrders(vuaRows);
+    const group = groups.find(g => g.orderId === orderId);
+    if (!group) {
+        showToast('Không tìm thấy thông tin đơn Vựa!', 'error');
+        return;
+    }
+
+    if (group.rows.some(r => typeof r._row === 'string' && r._row.startsWith('temp_'))) {
+        showToast('Đơn này đang gửi nền lên máy chủ, vui lòng đợi vài giây để hoàn tất!', 'warning', 3000);
+        return;
+    }
+
+    const master = group.masterRow;
+    if (!isAdmin() && !isDateToday(master ? master['Ngày'] : '')) {
+        showLockedNotice();
+        return;
+    }
+
+    const modal = document.getElementById('edit-modal');
+    document.getElementById('edit-modal-title').textContent = '✏️ Sửa đơn Vựa';
+
+    const flowers = group.rows.map(r => ({
+        type: r['Phân Loại Bông'] || '',
+        qty: parseSheetNum(r['Số lượng']),
+        price: parseSheetNum(r['Giá']),
+        total: parseSheetNum(r['Doanh Thu Bông']) || (parseSheetNum(r['Số lượng']) * parseSheetNum(r['Giá']))
+    }));
+
+    const flowerTotal = flowers.reduce((s, f) => s + f.total, 0);
+    const cp = parseSheetNum(master['Chi Phí']);
+    const vattu = 150000;
+    let pt = parseSheetNum(master['Tiền Phải Thu']);
+    let ln = parseSheetNum(master['Doanh Thu Khác']);
+
+    if (pt > 0) {
+        ln = pt - flowerTotal - cp - vattu;
+    } else {
+        pt = flowerTotal + cp + vattu + ln;
+    }
+
+    document.getElementById('edit-modal-body').innerHTML = `
+        <div class="form-field">
+            <label>Tên Vựa</label>
+            <input type="text" class="field-input blue" id="edit-vua-buyer" value="${master['Người Mua'] || ''}">
+        </div>
+
+        <div style="font-size: 13px; font-weight: 800; color: var(--text-soft); text-transform: uppercase; margin-bottom: 8px;">
+            Danh sách loại hoa:
+        </div>
+        <div id="edit-vua-flowers-container"></div>
+        <button type="button" class="add-item-btn blue" onclick="addEditVuaFlower()" style="margin-top: 4px; margin-bottom: 12px; width: 100%; justify-content: center;">
+            <i class="fa-solid fa-plus"></i> Thêm loại hoa
+        </button>
+
+        <div class="form-field">
+            <label>Tổng tiền hoa (Số lượng × Đơn giá)</label>
+            <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; font-weight: 800; color: var(--text-soft);">TIỀN HOA</span>
+                <span id="edit-vua-flower-total-val" style="font-size: 18px; font-weight: 900; color: var(--blue);">${fmtMoney(flowerTotal)}</span>
+            </div>
+        </div>
+
+        <div class="field-row">
+            <div class="form-field">
+                <label>Chi phí vận chuyển</label>
+                <input type="text" class="field-input blue money-input" id="edit-vua-cost" value="${fmtNum(cp)}" oninput="recalcEditVuaGroup('cost')">
+            </div>
+            <div class="form-field">
+                <label>Chi phí vật tư khác</label>
+                <input type="text" class="field-input blue money-input" id="edit-vua-vattu" value="150.000" readonly style="background: #f1f5f9; color: var(--text-soft); font-weight: 800; cursor: not-allowed;">
+            </div>
+        </div>
+        <div class="form-field">
+            <label>Lợi nhuận đóng gói</label>
+            <input type="text" class="field-input blue money-input" id="edit-vua-profit" value="${fmtNum(ln)}" oninput="recalcEditVuaGroup('profit')">
+        </div>
+        <div class="form-field">
+            <label>Tổng tiền phải thu (₫)</label>
+            <input type="text" class="field-input blue money-input" id="edit-vua-pt" value="${fmtNum(pt)}" oninput="recalcEditVuaGroup('pt')">
+            <div id="edit-vua-total-display" style="margin-top: 8px; background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 2px solid #93c5fd; border-radius: 14px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 13px; font-weight: 800; color: var(--text-soft); text-transform: uppercase;">Thành tiền phải thu</span>
+                <span id="edit-vua-total-val" style="font-size: 22px; font-weight: 900; color: var(--blue);">${fmtMoney(pt)}</span>
+            </div>
+        </div>
+        <div class="form-field">
+            <label>Trạng thái</label>
+            <select class="field-select" id="edit-vua-status">
+                <option value="" ${!master['Status'] || master['Status']==='Chưa Xong' ? 'selected':''}>⏳ Chưa thu tiền</option>
+                <option value="Xong" ${master['Status']==='Xong' ? 'selected':''}>✅ Đã thu tiền</option>
+            </select>
+        </div>
+        <div class="form-field">
+            <label>Ghi chú</label>
+            <textarea class="field-input" id="edit-vua-note" rows="2">${master['Ghi Chú'] || ''}</textarea>
+        </div>
+    `;
+
+    // Populate existing flower items
+    flowers.forEach(f => {
+        addEditVuaFlower(f.type, f.qty, f.price);
+    });
+
+    const confirmBtn = document.getElementById('edit-modal-confirm');
+    confirmBtn.className = 'modal-btn confirm blue';
+    confirmBtn.textContent = '💾 Lưu thay đổi';
+    confirmBtn.onclick = () => {
+        const newBuyer = document.getElementById('edit-vua-buyer').value.trim();
+        if (!newBuyer) {
+            showToast('Vui lòng nhập tên Vựa!', 'warning');
+            document.getElementById('edit-vua-buyer').focus();
+            return;
+        }
+
+        const newFlowers = [];
+        let hasError = false;
+        document.querySelectorAll('#edit-vua-flowers-container .edit-vua-flower-item').forEach(it => {
+            const t = it.querySelector('.edit-vua-type')?.value?.trim();
+            const q = parseFloat(it.querySelector('.edit-vua-qty')?.value) || 0;
+            const p = parseMoney(it.querySelector('.edit-vua-price')?.value);
+            if (!t || q <= 0 || p <= 0) {
+                hasError = true;
+                return;
+            }
+            newFlowers.push({ type: t, qty: q, price: p, total: q * p });
+        });
+
+        if (hasError || newFlowers.length === 0) {
+            showToast('Vui lòng điền đầy đủ thông tin từng loại hoa (tên, số lượng, giá vốn > 0)!', 'warning');
+            return;
+        }
+
+        const newCost = parseMoney(document.getElementById('edit-vua-cost').value);
+        const newProfit = parseMoney(document.getElementById('edit-vua-profit').value);
+        const newPt = parseMoney(document.getElementById('edit-vua-pt').value);
+        const newStatus = document.getElementById('edit-vua-status').value;
+        const newNote = document.getElementById('edit-vua-note').value.trim();
+
+        const totalFlowerTotal = newFlowers.reduce((s, f) => s + f.total, 0);
+        const totalFlowerQty = newFlowers.reduce((s, f) => s + f.qty, 0);
+        const statusLabel = newStatus === 'Xong' ? '✅ Đã thu tiền' : '⏳ Chưa thu tiền';
+
+        const flowersSummaryHtml = newFlowers.map(f => `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:13px;">
+                <div>
+                    <span style="font-weight:700;">🌸 ${f.type}</span>
+                    <span style="color:var(--text-soft); font-size:12px;"> · ${fmtNum(f.qty)} bông × ${fmtMoney(f.price)}</span>
+                </div>
+                <div style="font-weight:800; color:var(--blue);">${fmtMoney(f.total)}</div>
+            </div>
+        `).join('');
+
+        showConfirmModal({
+            title: '✏️ Xác Nhận Sửa Đơn Vựa',
+            htmlContent: `
+                <div class="confirm-summary-box">
+                    <div class="confirm-summary-row">
+                        <span class="confirm-summary-label">👤 Tên Vựa</span>
+                        <span class="confirm-summary-val">${newBuyer}</span>
+                    </div>
+                    <div class="confirm-summary-row">
+                        <span class="confirm-summary-label">📦 Tổng số lượng</span>
+                        <span class="confirm-summary-val" style="color:var(--blue); font-size:16px;">${fmtNum(totalFlowerQty)} bông (${newFlowers.length} loại)</span>
+                    </div>
+                    <div style="background: rgba(37,99,235,0.04); border: 1px solid rgba(37,99,235,0.12); border-radius: 10px; padding: 8px 12px; margin: 8px 0;">
+                        ${flowersSummaryHtml}
+                    </div>
+                    <div class="confirm-summary-row">
+                        <span class="confirm-summary-label">💐 Tổng tiền hoa</span>
+                        <span class="confirm-summary-val font-bold">${fmtMoney(totalFlowerTotal)}</span>
+                    </div>
+                    ${newCost > 0 ? `
+                    <div class="confirm-summary-row">
+                        <span class="confirm-summary-label">🚚 Chi phí VC</span>
+                        <span class="confirm-summary-val" style="color:var(--red);">${fmtMoney(newCost)}</span>
+                    </div>` : ''}
+                    <div class="confirm-summary-row">
+                        <span class="confirm-summary-label">📦 Vật tư khác (Cố định)</span>
+                        <span class="confirm-summary-val" style="color:var(--text-soft); font-weight:700;">150.000 ₫</span>
+                    </div>
+                    ${newProfit !== 0 ? `
+                    <div class="confirm-summary-row">
+                        <span class="confirm-summary-label">✨ Lợi nhuận</span>
+                        <span class="confirm-summary-val" style="color:${newProfit >= 0 ? 'var(--green)' : 'var(--red)'};">${fmtMoney(newProfit)}</span>
+                    </div>` : ''}
+                    <div class="confirm-summary-row">
+                        <span class="confirm-summary-label">📌 Trạng thái</span>
+                        <span class="confirm-summary-val">${statusLabel}</span>
+                    </div>
+                    ${newNote ? `
+                    <div class="confirm-summary-row">
+                        <span class="confirm-summary-label">📝 Ghi chú</span>
+                        <span class="confirm-summary-val" style="font-size:13px; font-weight:600;">${newNote}</span>
+                    </div>` : ''}
+                </div>
+                <div class="confirm-total-banner blue">
+                    <div>
+                        <div class="confirm-total-label">TỔNG PHẢI THU MỚI</div>
+                        <div style="font-size:12px; color:var(--text-soft); font-weight:700;">Đơn Vựa</div>
+                    </div>
+                    <div class="confirm-total-val">${fmtMoney(newPt)}</div>
+                </div>
+            `,
+            confirmBtnText: '✅ Xác Nhận Sửa',
+            confirmBtnClass: 'confirm blue',
+            onProceed: () => {
+                doUpdateVuaGroupOptimistic({
+                    orderId,
+                    newBuyer,
+                    newFlowers,
+                    newCost,
+                    newProfit,
+                    newPt,
+                    newStatus,
+                    newNote
+                });
+            }
+        });
+    };
+
+    modal.classList.add('open');
+}
+
+function openEditVuaModal(rowNum) {
+    const row = todayData.find(r => String(r._row) === String(rowNum));
+    if (!row) return;
+    const orderId = row._orderId || (String(row['Ghi Chú thu'] || '').startsWith('vua_') ? String(row['Ghi Chú thu']) : null);
+    if (orderId) {
+        openEditVuaGroupModal(orderId);
+        return;
+    }
+    const vuaRows = todayData.filter(r => {
+        const loaiDT = String(r['Loại DT'] || '').trim().toLowerCase();
+        return loaiDT.includes('vựa') || loaiDT.includes('vua');
+    });
+    const groups = groupVuaOrders(vuaRows);
+    const grp = groups.find(g => g.rows.some(r => String(r._row) === String(rowNum)));
+    if (grp) {
+        openEditVuaGroupModal(grp.orderId);
+    } else {
+        openEditVuaGroupModal('vua_grp_' + rowNum);
+    }
+}
+
+function doUpdateVuaGroupOptimistic({
+    orderId, newBuyer, newFlowers, newCost, newProfit, newPt, newStatus, newNote
+}) {
+    closeEditModal();
+
+    const vuaRows = todayData.filter(r => {
+        const loaiDT = String(r['Loại DT'] || '').trim().toLowerCase();
+        return loaiDT.includes('vựa') || loaiDT.includes('vua');
+    });
+    const groups = groupVuaOrders(vuaRows);
+    const group = groups.find(g => g.orderId === orderId);
+    if (!group) return;
+
+    const origRows = group.rows;
+    const M = origRows.length;
+    const K = newFlowers.length;
+    const orderDate = origRows[0]['Ngày'] || today();
+    const maxLen = Math.max(M, K);
+
+    for (let i = 0; i < maxLen; i++) {
+        if (i < K && i < M) {
+            const r = origRows[i];
+            const nf = newFlowers[i];
+            const isFirst = (i === 0);
+            const updates = {
+                'Người Mua': newBuyer,
+                'Phân Loại Bông': nf.type,
+                'Số lượng': String(nf.qty),
+                'Giá': String(nf.price),
+                'Doanh Thu Bông': String(nf.total),
+                'Chi Phí': (isFirst && newCost > 0) ? String(newCost) : '',
+                'Loại CP': (isFirst && newCost > 0) ? 'Vận Chuyển' : '',
+                'Doanh Thu Khác': (isFirst && newProfit !== 0) ? String(newProfit) : '',
+                'Tiền Phải Thu': isFirst ? String(newPt) : '',
+                'Status': newStatus,
+                'Đã Thu': (isFirst && newStatus === 'Xong') ? String(newPt) : '',
+                'Loại DT': 'Vựa',
+                'Ghi Chú': isFirst ? newNote : ''
+            };
+            Object.assign(r, updates);
+            r._isPendingSync = true;
+            if (typeof r._row === 'number' || (typeof r._row === 'string' && !r._row.startsWith('temp_'))) {
+                enqueueSync({
+                    action: 'update',
+                    rowNumber: Number(r._row),
+                    updates: updates
+                }, [String(r._row)]);
+            }
+        } else if (i >= K && i < M) {
+            const r = origRows[i];
+            const idx = todayData.findIndex(td => String(td._row) === String(r._row));
+            if (idx !== -1) todayData.splice(idx, 1);
+            if (typeof r._row === 'number' || (typeof r._row === 'string' && !r._row.startsWith('temp_'))) {
+                enqueueSync({
+                    action: 'deleteByRow',
+                    rowNumber: Number(r._row)
+                }, [String(r._row)]);
+            }
+        } else if (i >= M && i < K) {
+            const nf = newFlowers[i];
+            const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            const newRowData = {
+                'Ngày': orderDate,
+                'Status': newStatus,
+                'Người Mua': newBuyer,
+                'Số lượng': String(nf.qty),
+                'Giá': String(nf.price),
+                'Doanh Thu Bông': String(nf.total),
+                'Phân Loại Bông': nf.type,
+                'Ghi Chú': '',
+                'Đã Thu': '',
+                'Tiền Phải Thu': '',
+                'Ghi Chú thu': orderId,
+                'Doanh Thu Khác': '',
+                'Loại DT': 'Vựa',
+                'Chi Phí': '',
+                'Loại CP': '',
+                'Ghi Chú Chi Phí': ''
+            };
+            todayData.push({
+                _row: tempId,
+                _clientId: tempId,
+                _orderId: orderId,
+                _isPendingSync: true,
+                ...newRowData
+            });
+            enqueueSync({
+                action: 'add',
+                data: newRowData
+            }, [tempId]);
+        }
+    }
+
+    renderReport();
+    showToast('⚡ Đã cập nhật đơn Vựa! Đang đồng bộ nền...', 'success', 3000);
+    processSyncQueue();
+}
+
+function confirmDeleteVuaGroup(orderId) {
+    const vuaRows = todayData.filter(r => {
+        const loaiDT = String(r['Loại DT'] || '').trim().toLowerCase();
+        return loaiDT.includes('vựa') || loaiDT.includes('vua');
+    });
+    const groups = groupVuaOrders(vuaRows);
+    const group = groups.find(g => g.orderId === orderId);
+    if (!group) return;
+
+    const rowDate = group.masterRow ? group.masterRow['Ngày'] : '';
+    if (!isAdmin() && !isDateToday(rowDate)) {
+        showLockedNotice();
+        return;
+    }
+
+    const buyer = group.masterRow['Người Mua'] || '—';
+    const flowerCount = group.rows.length;
+    const pt = parseSheetNum(group.masterRow['Tiền Phải Thu']);
+
+    showConfirmModal({
+        title: '⚠️ Xác Nhận Xóa Đơn Vựa',
+        htmlContent: `
+            <div style="text-align:center; padding:10px 0;">
+                <div style="font-size:16px; font-weight:800; color:var(--text); margin-bottom:8px;">
+                    Bạn có chắc muốn xóa toàn bộ đơn Vựa của <b>${buyer}</b>?
+                </div>
+                <div style="font-size:14px; color:var(--text-soft); font-weight:600;">
+                    Đơn hàng gồm <b>${flowerCount}</b> loại hoa · Tổng tiền: <b style="color:var(--blue);">${fmtMoney(pt)}</b>
+                </div>
+                <div style="font-size:13px; color:var(--red); margin-top:10px; font-weight:700;">
+                    Thao tác này sẽ xóa toàn bộ các dòng hoa của đơn hàng này.
+                </div>
+            </div>
+        `,
+        confirmBtnText: '🗑️ Xóa Đơn Ngay',
+        confirmBtnClass: 'confirm red',
+        onProceed: () => {
+            closeConfirmModal();
+            const rowNumsToDelete = group.rows.map(r => r._row);
+            todayData = todayData.filter(r => !rowNumsToDelete.includes(r._row));
+            renderReport();
+
+            group.rows.forEach(r => {
+                if (typeof r._row === 'number' || (typeof r._row === 'string' && !r._row.startsWith('temp_'))) {
+                    enqueueSync({
+                        action: 'deleteByRow',
+                        rowNumber: Number(r._row)
+                    });
+                }
+            });
+
+            showToast('🗑️ Đã xóa toàn bộ đơn Vựa! Đang đồng bộ nền...', 'info', 3000);
+            processSyncQueue();
+        }
+    });
+}
+
+function closeEditModal() {
+    document.getElementById('edit-modal').classList.remove('open');
+}
+
+function doUpdateOptimistic(rowNum, updates) {
+    // 1. Close edit modal
+    closeEditModal();
+
+    // 2. Optimistically update in-memory row
+    const row = todayData.find(r => String(r._row) === String(rowNum));
+    if (row) {
+        Object.keys(updates).forEach(k => {
+            row[k] = String(updates[k]);
+        });
+        row._isPendingSync = true;
+    }
+
+    // 3. Immediately re-render report (KPI, totals, cards update instantly)
+    renderReport();
+
+    // 4. Enqueue into sync queue for background syncing
+    enqueueSync({
+        action: 'update',
+        rowNumber: Number(rowNum),
+        updates: updates
+    }, [String(rowNum)]);
+
+    // 5. Toast notification
+    showToast('⚡ Đã cập nhật đơn hàng! Đang đồng bộ nền...', 'success', 3000);
+
+    // 6. Process sync queue in background
+    processSyncQueue();
+}
+
+async function doUpdate(rowNum, updates) {
+    doUpdateOptimistic(rowNum, updates);
+}
+
+// ═══════════════════════════════════════════
+//  DELETE
+// ═══════════════════════════════════════════
+let pendingDeleteContext = 'all';
+
+function confirmDelete(rowNum, context = 'all') {
+    const targetRow = todayData.find(r => String(r._row) === String(rowNum) || String(r._clientId) === String(rowNum));
+    if (targetRow) {
+        if (!isAdmin() && !isDateToday(targetRow['Ngày'])) {
+            showLockedNotice();
+            return;
+        }
+        if (context === 'expense') {
+            const loaiDT = String(targetRow['Loại DT'] || '').trim().toLowerCase();
+            const loaiCP = String(targetRow['Loại CP'] || '').trim().toLowerCase();
+            if (loaiDT.includes('vựa') || loaiDT.includes('vua') || loaiCP === 'vận chuyển') {
+                showToast('🔒 Chi phí vận chuyển gắn liền với đơn Vựa. Vui lòng chỉnh sửa hoặc xóa từ đơn Vựa!', 'warning', 3500);
+                return;
+            }
+        }
+    }
+    if (typeof rowNum === 'string' && rowNum.startsWith('temp_')) {
+        cancelPendingRow(rowNum);
+        return;
+    }
+    pendingDeleteRow = rowNum;
+    pendingDeleteContext = context;
+    document.getElementById('delete-modal').classList.add('open');
+    document.getElementById('delete-confirm-btn').onclick = doDelete;
+}
+
+function closeDeleteModal() {
+    pendingDeleteRow = null;
+    pendingDeleteContext = 'all';
+    document.getElementById('delete-modal').classList.remove('open');
+}
+
+function doDelete() {
+    if (!pendingDeleteRow) return;
+    const rowNum = pendingDeleteRow;
+    const context = pendingDeleteContext;
+
+    // 1. Close modal immediately
+    closeDeleteModal();
+
+    // 2. Optimistically remove from todayData
+    todayData = todayData.filter(r => String(r._row) !== String(rowNum));
+
+    // 3. Immediately re-render report (KPI, totals, cards update instantly)
+    renderReport();
+
+    // 4. Enqueue into sync queue for background syncing
+    enqueueSync({
+        action: 'deleteByRow',
+        rowNumber: Number(rowNum),
+        context: context
+    });
+
+    // 5. Toast notification
+    showToast('🗑️ Đã xóa đơn hàng! Đang đồng bộ nền...', 'info', 3000);
+
+    // 6. Process sync queue in background
+    processSyncQueue();
+}
+
+// ═══════════════════════════════════════════
+//  DATALIST for flower types
+// ═══════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+    // Create shared datalist
+    const dl = document.createElement('datalist');
+    dl.id = 'flower-types-datalist';
+    FLOWER_TYPES.forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f;
+        dl.appendChild(opt);
+    });
+    document.body.appendChild(dl);
+});
+
+// ═══════════════════════════════════════════
+//  CLOSE MODALS ON OVERLAY CLICK
+// ═══════════════════════════════════════════
+document.getElementById('edit-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('edit-modal')) closeEditModal();
+});
+document.getElementById('delete-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('delete-modal')) closeDeleteModal();
+});
+document.getElementById('order-confirm-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('order-confirm-modal')) closeConfirmModal();
+});
+
+// ═══════════════════════════════════════════
+//  PREVENT SCROLL BOUNCE on iOS
+// ═══════════════════════════════════════════
+document.addEventListener('touchmove', e => {
+    if (e.target.closest('.modal-sheet')) return;
+}, { passive: true });
+</script>
+</body>
+</html>
