@@ -1534,7 +1534,7 @@
 
             <!-- Farm transactions -->
             <div id="report-farm-section">
-                <div class="report-section-title">
+                <div class="report-section-title" id="farm-report-title" style="display:none">
                     <i class="fa-solid fa-seedling" style="color:#16a34a"></i> Đơn Farm
                     <span class="info-chip green" id="farm-count-chip">0 đơn</span>
                 </div>
@@ -3185,6 +3185,248 @@ function groupVuaOrders(vuaRows) {
     return groups;
 }
 
+function escapeAttr(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/'/g, '&#39;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+// ═══════════════════════════════════════════
+//  GROUP FARM ORDERS BY BUYER (Match Image 2)
+// ═══════════════════════════════════════════
+function groupFarmOrders(farmRows) {
+    const map = new Map();
+
+    farmRows.forEach(r => {
+        const rawBuyer = (r['Người Mua'] || '').trim() || 'Khách lẻ';
+        const key = rawBuyer.toLowerCase();
+        if (!map.has(key)) {
+            map.set(key, {
+                buyerName: rawBuyer,
+                rows: []
+            });
+        }
+        map.get(key).rows.push(r);
+    });
+
+    const groups = [];
+    map.forEach(grp => {
+        let totalQty = 0;
+        let totalRevenue = 0;
+        let isAllDone = grp.rows.length > 0;
+        let hasPending = false;
+
+        const items = grp.rows.map(r => {
+            const q = parseSheetNum(r['Số lượng']);
+            const p = parseSheetNum(r['Giá']);
+            const dt = parseSheetNum(r['Doanh Thu Bông']) || (q * p);
+            const daThu = parseSheetNum(r['Đã Thu']);
+            const isDone = (r['Status'] || '').trim().toLowerCase() === 'xong';
+            if (!isDone) isAllDone = false;
+            if (r._isPendingSync === true) hasPending = true;
+
+            const isPaymentOnly = (q === 0 && dt === 0 && daThu > 0);
+            const rev = isPaymentOnly ? daThu : dt;
+
+            totalQty += q;
+            totalRevenue += rev;
+
+            return {
+                rowNum: r._row,
+                flower: r['Phân Loại Bông'] || 'Hoa',
+                qty: q,
+                price: p,
+                rev: rev,
+                isPaymentOnly: isPaymentOnly,
+                status: r['Status'] || '',
+                isDone: isDone,
+                note: r['Ghi Chú'] || '',
+                isPending: r._isPendingSync === true
+            };
+        });
+
+        groups.push({
+            buyerName: grp.buyerName,
+            rows: grp.rows,
+            items: items,
+            totalQty: totalQty,
+            totalRevenue: totalRevenue,
+            isAllDone: isAllDone,
+            hasPending: hasPending
+        });
+    });
+
+    // Sort descending by total revenue (highest revenue buyer first, matching Image 2)
+    groups.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+    return groups;
+}
+
+function renderFarmGroupCard(grp, totalFarmRev) {
+    const buyer = grp.buyerName;
+    const buyerPct = totalFarmRev > 0 ? ((grp.totalRevenue / totalFarmRev) * 100).toFixed(0) : 0;
+    const c = '#0ea5e9';
+    const buyerBg = 'rgba(14, 165, 233, 0.06)';
+    const buyerBorder = 'rgba(14, 165, 233, 0.22)';
+    const buyerIcon = 'fa-user';
+    const isAllDone = grp.isAllDone;
+
+    const itemsHtml = grp.items.map(it => {
+        const unitPrice = it.price > 0 ? it.price : (it.qty > 0 && it.rev > 0 ? Math.round(it.rev / it.qty) : 0);
+        const priceStr = unitPrice > 0 ? ` x ${fmtNum(unitPrice)}` : '';
+        const qtyStr = it.qty > 0 ? ` (${fmtNum(it.qty)} bông)` : '';
+        const isDone = it.isDone;
+
+        if (it.isPaymentOnly) {
+            return `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 12px 7px 46px; border-top:1px dashed rgba(14,165,233,0.15); background:#ffffff;">
+                    <div style="display:flex; align-items:center; gap:6px; min-width:0; flex-wrap:wrap;">
+                        <span style="font-size:13px; font-weight:700; color:#16a34a;">💰 Thu Tiền Nợ</span>
+                        ${it.note ? `<span style="font-size:12px; color:#64748b;">(${escapeAttr(it.note)})</span>` : ''}
+                        <button type="button" onclick="confirmDelete('${it.rowNum}')"
+                            style="background:none; border:none; color:#ef4444; cursor:pointer; padding:2px 4px; font-size:11px; opacity:0.75;" title="Xóa dòng này">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                        <span style="font-size:13.5px; font-weight:800; color:#16a34a;">+${fmtMoney(it.rev)}</span>
+                    </div>
+                </div>`;
+        }
+
+        const itemLabel = `${escapeAttr(it.flower)}<span style="color:#64748b; font-weight:500;">${qtyStr}</span>${priceStr ? ` <span style="color:#0284c7; font-weight:700;">${priceStr}</span>` : ''}`;
+
+        return `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 12px 7px 46px; border-top:1px dashed rgba(14,165,233,0.15); background:#ffffff;">
+                <div style="display:flex; align-items:center; gap:5px; min-width:0; flex-wrap:wrap;">
+                    <span style="font-size:13.5px; color:#334155; font-weight:600;">${itemLabel}</span>
+                    <button type="button" onclick="openEditFarmModal('${it.rowNum}')"
+                        style="background:none; border:none; color:#0284c7; cursor:pointer; padding:2px 4px; font-size:12px; opacity:0.85;" title="Chỉnh sửa mặt hàng này">
+                        <i class="fa-solid fa-pen" style="pointer-events:none;"></i>
+                    </button>
+                    <button type="button" onclick="confirmDelete('${it.rowNum}')"
+                        style="background:none; border:none; color:#ef4444; cursor:pointer; padding:2px 4px; font-size:11px; opacity:0.65;" title="Xóa mặt hàng này">
+                        <i class="fa-solid fa-trash" style="pointer-events:none;"></i>
+                    </button>
+                    ${it.note ? `<div style="width:100%; font-size:11.5px; color:#64748b; font-style:italic; padding-left:2px;">📝 ${escapeAttr(it.note)}</div>` : ''}
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                    ${isDone ? `<span style="font-size:11px; background:#d1fae5; color:#059669; border-radius:4px; padding:1px 6px; font-weight:700;">✓ Xong</span>` : ''}
+                    <span style="font-size:13.5px; font-weight:800; color:#0284c7;">${fmtMoney(it.rev)}</span>
+                </div>
+            </div>`;
+    }).join('');
+
+    return `
+        <div class="farm-buyer-card" style="border-radius:14px; overflow:hidden; border:1.5px solid ${buyerBorder}; background:#ffffff; box-shadow:0 1px 4px rgba(0,0,0,0.02); margin-bottom:10px;">
+            <!-- Buyer Header -->
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:${buyerBg}; gap:8px;">
+                <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                    <span style="width:28px; height:28px; border-radius:8px; background:rgba(14,165,233,0.18); color:#0ea5e9; display:flex; align-items:center; justify-content:center; font-size:0.75rem; flex-shrink:0;">
+                        <i class="fa-solid ${buyerIcon}"></i>
+                    </span>
+                    <div style="min-width:0;">
+                        <div style="font-weight:800; font-size:0.95rem; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeAttr(buyer)}</div>
+                        <div style="font-size:0.72rem; color:#64748b; font-weight:600;">${grp.items.length} mặt hàng · ${buyerPct}% tổng doanh thu</div>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                    ${!isAllDone ? `
+                    <button type="button" onclick="openEditFarmBuyer('${escapeAttr(buyer)}')"
+                        style="background:white; color:#0284c7; border:1px solid rgba(14,165,233,0.4); padding:3px 9px; border-radius:6px; font-size:0.75rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:all 0.2s;">
+                        <i class="fa-solid fa-pen-to-square"></i> Sửa
+                    </button>` : `
+                    <span style="font-size:0.75rem; color:#059669; font-weight:700; background:#d1fae5; border:1px solid #a7f3d0; padding:3px 9px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                        <i class="fa-solid fa-check" style="font-size:0.7rem;"></i> Xong
+                    </span>`}
+                    <span style="font-weight:900; font-size:0.98rem; color:#0284c7; white-space:nowrap;">${fmtMoney(grp.totalRevenue)}</span>
+                </div>
+            </div>
+            <!-- Items rows -->
+            ${itemsHtml}
+        </div>`;
+}
+
+function renderFarmGroupedContainer(farmGroups, totalFarmRev) {
+    const cardsHtml = farmGroups.map(grp => renderFarmGroupCard(grp, totalFarmRev)).join('');
+
+    return `
+        <div class="rev-frame farm-frame" style="background:#ffffff; border-radius:18px; border:1.5px solid rgba(14,165,233,0.22); box-shadow:0 4px 16px rgba(0,0,0,0.03); overflow:hidden; margin-bottom:14px;">
+            <div class="rev-frame-header farm" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:linear-gradient(135deg, rgba(14,165,233,0.08) 0%, rgba(56,189,248,0.04) 100%); border-bottom:1.5px solid rgba(14,165,233,0.15);">
+                <div class="rev-frame-title" style="display:flex; align-items:center; gap:10px;">
+                    <span class="rev-frame-icon farm" style="width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.15rem; background:#f0f9ff; border:1px solid #bae6fd; box-shadow:0 2px 6px rgba(0,0,0,0.05);">🌸</span>
+                    <div>
+                        <div class="rev-frame-name" style="font-size:0.92rem; font-weight:800; color:#1e293b; letter-spacing:0.5px; text-transform:uppercase;">ĐƠN FARM / KHÁCH LẺ</div>
+                        <div class="rev-frame-subtitle" style="font-size:0.75rem; color:#64748b; font-weight:600;">${farmGroups.length} khách hàng</div>
+                    </div>
+                </div>
+                <div class="rev-frame-total farm" style="font-size:1.15rem; font-weight:900; color:#0284c7; white-space:nowrap; border-bottom:2px solid #0284c7; padding-bottom:1px;">${fmtMoney(totalFarmRev)}</div>
+            </div>
+            <div class="rev-frame-body" style="padding:12px; display:flex; flex-direction:column; gap:10px;">
+                ${cardsHtml}
+            </div>
+        </div>`;
+}
+
+function openEditFarmBuyer(buyerName) {
+    const reportDateInput = document.getElementById('report-date-picker');
+    const selectedInputVal = reportDateInput ? reportDateInput.value : todayInputValue();
+    const dayRows = todayData.filter(r => {
+        const isDate = isDateMatch(r['Ngày'], selectedInputVal);
+        const b = (r['Người Mua'] || '').trim().toLowerCase();
+        return isDate && b === buyerName.toLowerCase();
+    });
+
+    if (dayRows.length === 0) {
+        showToast('Không tìm thấy đơn hàng của khách ' + buyerName, 'error');
+        return;
+    }
+
+    if (dayRows.length === 1) {
+        openEditFarmModal(dayRows[0]._row);
+        return;
+    }
+
+    const modal = document.getElementById('edit-modal');
+    document.getElementById('edit-modal-title').textContent = `✏️ Mặt hàng của khách ${buyerName}`;
+    document.getElementById('edit-modal-body').innerHTML = `
+        <div style="font-size:13px; color:var(--text-soft); font-weight:700; margin-bottom:12px;">
+            Khách có ${dayRows.length} mặt hàng trong ngày. Bấm "Sửa" vào mặt hàng bạn muốn điều chỉnh:
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            ${dayRows.map(r => {
+                const q = parseSheetNum(r['Số lượng']);
+                const p = parseSheetNum(r['Giá']);
+                const t = parseSheetNum(r['Doanh Thu Bông']) || (q * p);
+                const flower = r['Phân Loại Bông'] || 'Hoa';
+                return `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px;">
+                    <div>
+                        <div style="font-weight:800; color:var(--text); font-size:14px;">🌸 ${escapeAttr(flower)}</div>
+                        <div style="font-size:12px; color:var(--text-soft); font-weight:600;">${fmtNum(q)} bông × ${fmtMoney(p)} = <strong style="color:var(--blue);">${fmtMoney(t)}</strong></div>
+                    </div>
+                    <button type="button" class="action-pill edit" style="padding:6px 12px; font-size:12px;" onclick="closeEditModal(); openEditFarmModal('${r._row}');">
+                        <i class="fa-solid fa-pen"></i> Sửa
+                    </button>
+                </div>`;
+            }).join('')}
+        </div>
+    `;
+
+    const confirmBtn = document.getElementById('edit-modal-confirm');
+    confirmBtn.className = 'modal-btn cancel';
+    confirmBtn.textContent = 'Đóng';
+    confirmBtn.onclick = () => {
+        closeEditModal();
+    };
+
+    modal.classList.add('open');
+}
+
 // ═══════════════════════════════════════════
 //  RENDER REPORT
 // ═══════════════════════════════════════════
@@ -3291,11 +3533,15 @@ function renderReport() {
         subProfEl.textContent = `Tỷ suất LN: ${margin}`;
     }
 
+    // Group farm orders by buyer name
+    const farmGroups = groupFarmOrders(farmRows);
+
     // Group vua orders for card rendering
     const vuaGroups = groupVuaOrders(vuaRows);
 
     // Counts
-    document.getElementById('farm-count-chip').textContent = farmRows.length + ' đơn';
+    const farmChip = document.getElementById('farm-count-chip');
+    if (farmChip) farmChip.textContent = `${farmGroups.length} khách (${farmRows.length} mặt hàng)`;
     document.getElementById('vua-count-chip').textContent = vuaGroups.length + ' đơn';
     document.getElementById('expense-count-chip').textContent = expenseRows.length + ' khoản';
 
@@ -3307,12 +3553,12 @@ function renderReport() {
     if (vuaSec) vuaSec.style.display = (currentReportFilter === 'farm') ? 'none' : 'block';
     if (expSec) expSec.style.display = 'block';
 
-    // Render farm rows
+    // Render farm rows grouped by buyer matching Image 2
     const farmList = document.getElementById('farm-tx-list');
     if (farmRows.length === 0) {
         farmList.innerHTML = `<div class="empty-state"><div class="empty-icon">🌱</div><div class="empty-title">Không có đơn Farm ngày này</div><div class="empty-text">Chọn ngày khác hoặc nhập đơn ở tab Farm</div></div>`;
     } else {
-        farmList.innerHTML = farmRows.map(r => renderFarmCard(r)).join('');
+        farmList.innerHTML = renderFarmGroupedContainer(farmGroups, farmRevenue);
     }
 
     // Render vua groups
