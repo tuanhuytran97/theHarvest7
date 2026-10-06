@@ -288,6 +288,7 @@
 
         .tab-btn.active.farm { color: var(--green); border-color: var(--green); background: var(--green-bg); }
         .tab-btn.active.vua { color: var(--blue); border-color: var(--blue); background: var(--blue-bg); }
+        .tab-btn.active.expense { color: var(--red); border-color: var(--red); background: var(--red-bg); }
         .tab-btn.active.report { color: var(--amber); border-color: var(--amber); background: var(--amber-bg); }
 
         /* ── MAIN CONTENT ── */
@@ -387,7 +388,8 @@
             background: #fff;
         }
 
-        .field-input.blue:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12); }
+        .field-input.blue:focus, .field-select.blue:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12); }
+        .field-input.red:focus, .field-select.red:focus { border-color: var(--red); box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12); }
 
         textarea.field-input {
             height: auto;
@@ -428,6 +430,7 @@
         .quick-pill:active { transform: scale(0.95); }
         .quick-pill.active-pill { background: var(--green); border-color: var(--green); color: #fff; }
         .quick-pill.blue.active-pill { background: var(--blue); border-color: var(--blue); color: #fff; }
+        .quick-pill.red.active-pill { background: var(--red); border-color: var(--red); color: #fff; }
 
         /* ── FLOWER ITEMS ── */
         .flower-item {
@@ -460,6 +463,7 @@
         }
 
         .item-number.blue { background: var(--blue); }
+        .item-number.red { background: var(--red); }
 
         .del-item-btn {
             width: 36px;
@@ -515,6 +519,7 @@
         .add-item-btn:active { background: var(--bg); }
         .add-item-btn.green { border-color: var(--green); color: var(--green); }
         .add-item-btn.blue { border-color: var(--blue); color: var(--blue); }
+        .add-item-btn.red { border-color: var(--red); color: var(--red); }
 
         /* ── SUMMARY BOX ── */
         .summary-box {
@@ -529,6 +534,11 @@
         .summary-box.blue {
             background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
             border-color: #93c5fd;
+        }
+
+        .summary-box.red {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-color: #fca5a5;
         }
 
         .summary-row {
@@ -553,6 +563,7 @@
         }
 
         .summary-value.blue { color: var(--blue); }
+        .summary-value.red { color: var(--red); }
         .summary-value.big {
             font-size: 22px;
         }
@@ -585,6 +596,12 @@
             background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
             color: #fff;
             box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
+        }
+
+        .submit-btn.red {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: #fff;
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35);
         }
 
         .submit-btn:active { transform: scale(0.97); }
@@ -1233,6 +1250,9 @@
         <button class="tab-btn vua" onclick="switchTab('vua', this)">
             <i class="fa-solid fa-truck"></i> Vựa
         </button>
+        <button class="tab-btn expense" onclick="switchTab('expense', this)">
+            <i class="fa-solid fa-receipt"></i> Chi phí
+        </button>
         <button class="tab-btn report active" onclick="switchTab('report', this); loadTodayData();">
             <i class="fa-solid fa-chart-bar"></i> Báo cáo ngày
         </button>
@@ -1400,6 +1420,61 @@
 
             <button class="submit-btn blue" id="vua-submit-btn" onclick="submitVuaOrder()">
                 <i class="fa-solid fa-paper-plane"></i> Lưu Đơn Vựa
+            </button>
+        </div>
+
+        <!-- ══ EXPENSE VIEW ══ -->
+        <div class="view-section" id="view-expense">
+            <div class="section-header">
+                <div class="section-icon red"><i class="fa-solid fa-receipt" style="color:var(--red)"></i></div>
+                <div class="section-title">
+                    <h2>Nhập Liệu Chi Phí</h2>
+                    <p>Ghi nhận chi phí phân, thuốc, công, vận chuyển...</p>
+                </div>
+            </div>
+
+            <!-- Date -->
+            <div class="card">
+                <div class="card-title"><i class="fa-solid fa-calendar-days" style="color:var(--red)"></i> Ngày ghi nhận ★</div>
+                <div class="form-field" style="margin-bottom:0">
+                    <label>Ngày <span>*</span></label>
+                    <input type="date" class="field-input red" id="expense-date">
+                </div>
+            </div>
+
+            <!-- Expense List -->
+            <div class="card">
+                <div class="card-title" style="justify-content:space-between">
+                    <span style="display:inline-flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-file-invoice-dollar" style="color:var(--red)"></i> Danh Sách Chi Phí
+                    </span>
+                    <button type="button" class="quick-pill red" onclick="addExpenseRow()" style="margin:0; padding:4px 10px; font-size:12px; border-color:var(--red); color:var(--red); background:var(--red-bg);">
+                        <i class="fa-solid fa-plus"></i> Thêm chi phí
+                    </button>
+                </div>
+
+                <div id="expense-items-container"></div>
+
+                <button type="button" class="add-item-btn red" onclick="addExpenseRow()">
+                    <i class="fa-solid fa-plus"></i> Thêm Chi Phí
+                </button>
+
+                <!-- Summary -->
+                <div class="summary-box red" id="expense-summary">
+                    <div class="summary-row">
+                        <span class="summary-label">🧾 Số khoản chi</span>
+                        <span class="summary-value red" id="expense-total-count">0 khoản</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">💸 Tổng chi phí</span>
+                        <span class="summary-value big red" id="expense-total-amount">0 ₫</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <button class="submit-btn red" id="expense-submit-btn" onclick="submitExpenseOrder()">
+                <i class="fa-solid fa-floppy-disk"></i> Ghi Nhận Chi Phí
             </button>
         </div>
 
@@ -1573,6 +1648,7 @@ let todayData = []; // cached farm data
 let pendingDeleteRow = null;
 let farmFlowerCount = 0;
 let vuaFlowerCount = 0;
+let expenseRowCount = 0;
 
 // ═══════════════════════════════════════════
 //  UTILS
@@ -1984,8 +2060,10 @@ function initApp() {
     const tv = todayInputValue();
     const farmDateInput = document.getElementById('farm-date');
     const vuaDateInput = document.getElementById('vua-date');
+    const expenseDateInput = document.getElementById('expense-date');
     if (farmDateInput) farmDateInput.value = tv;
     if (vuaDateInput) vuaDateInput.value = tv;
+    if (expenseDateInput) expenseDateInput.value = tv;
     document.getElementById('report-date-picker').value = tv;
 
     // Apply EMP restrictions for entry dates (only allowed to enter today)
@@ -1998,6 +2076,10 @@ function initApp() {
             vuaDateInput.min = tv;
             vuaDateInput.max = tv;
         }
+        if (expenseDateInput) {
+            expenseDateInput.min = tv;
+            expenseDateInput.max = tv;
+        }
     } else {
         if (farmDateInput) {
             farmDateInput.removeAttribute('min');
@@ -2006,6 +2088,10 @@ function initApp() {
         if (vuaDateInput) {
             vuaDateInput.removeAttribute('min');
             vuaDateInput.removeAttribute('max');
+        }
+        if (expenseDateInput) {
+            expenseDateInput.removeAttribute('min');
+            expenseDateInput.removeAttribute('max');
         }
     }
 
@@ -2024,12 +2110,19 @@ function initApp() {
                     this.value = todayInputValue();
                 }
             });
+            document.getElementById('expense-date')?.addEventListener(evt, function() {
+                if (!isAdmin() && this.value && !isDateToday(this.value)) {
+                    showLockedEntryNotice();
+                    this.value = todayInputValue();
+                }
+            });
         });
     }
 
     // Init forms
     initFarmForm();
     initVuaForm();
+    initExpenseForm();
 
     // Populate known vựa names
     const vuaQuick = document.getElementById('vua-quick-buyers');
@@ -2660,6 +2753,291 @@ function executeSubmitVuaOrder({
 }
 
 // ═══════════════════════════════════════════
+//  EXPENSE FORM
+// ═══════════════════════════════════════════
+function initExpenseForm() {
+    const d = document.getElementById('expense-date');
+    if (d && !d.value) d.value = todayInputValue();
+    if (document.querySelectorAll('#expense-items-container .expense-item-card').length === 0) {
+        addExpenseRow();
+    }
+}
+
+function addExpenseRow() {
+    expenseRowCount++;
+    const container = document.getElementById('expense-items-container');
+    if (!container) return;
+    const div = document.createElement('div');
+    div.className = 'flower-item expense-item-card';
+    div.dataset.id = expenseRowCount;
+    const rowIdx = container.children.length + 1;
+    div.innerHTML = `
+        <div class="item-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span class="item-number red">${rowIdx}</span>
+                <span style="font-weight:800; font-size:14px; color:var(--red);">Khoản chi</span>
+            </div>
+            <button type="button" class="del-item-btn" onclick="removeExpenseRow(this)" title="Xóa">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+        </div>
+        <div class="form-field">
+            <label>Hạng mục <span>*</span></label>
+            <select class="field-select red exp-type" onchange="onExpTypeChange(this)">
+                <option value="Chi Phí Khác" selected>Chi Phí Khác</option>
+                <option value="Thuốc">Thuốc</option>
+                <option value="Phân">Phân</option>
+                <option value="Lãi">Lãi</option>
+                <option value="Công">Công</option>
+                <option value="Mua Bông">Mua Bông</option>
+                <option value="Vật Tư KD">Vật Tư KD</option>
+                <option value="Vận Chuyển">Vận Chuyển</option>
+                <option value="Expensed">Expensed</option>
+            </select>
+        </div>
+        <div class="quick-pills exp-quick-types" style="margin-top:-4px; margin-bottom:12px;">
+            <button type="button" class="quick-pill red active-pill" onclick="setExpType(this, 'Chi Phí Khác')">Chi Phí Khác</button>
+            <button type="button" class="quick-pill red" onclick="setExpType(this, 'Thuốc')">Thuốc</button>
+            <button type="button" class="quick-pill red" onclick="setExpType(this, 'Phân')">Phân</button>
+            <button type="button" class="quick-pill red" onclick="setExpType(this, 'Công')">Công</button>
+            <button type="button" class="quick-pill red" onclick="setExpType(this, 'Mua Bông')">Mua Bông</button>
+            <button type="button" class="quick-pill red" onclick="setExpType(this, 'Vận Chuyển')">Vận Chuyển</button>
+            <button type="button" class="quick-pill red" onclick="setExpType(this, 'Vật Tư KD')">Vật Tư KD</button>
+            <button type="button" class="quick-pill red" onclick="setExpType(this, 'Lãi')">Lãi</button>
+            <button type="button" class="quick-pill red" onclick="setExpType(this, 'Expensed')">Expensed</button>
+        </div>
+        <div class="form-field">
+            <label>Số tiền (₫) <span>*</span></label>
+            <input type="text" class="field-input red exp-amount money-input" placeholder="0" oninput="recalcExpenseTotals()" inputmode="numeric">
+        </div>
+        <div class="form-field" style="margin-bottom:0">
+            <label>Ghi chú chi phí</label>
+            <input type="text" class="field-input red exp-note" placeholder="Chi tiết / ghi chú chi phí...">
+        </div>
+        <div class="item-total-display red exp-row-total" style="background:var(--red-bg); border-color:#fecaca; color:var(--red);">= 0 ₫</div>
+    `;
+    container.appendChild(div);
+    recalcExpenseTotals();
+}
+
+function setExpType(btn, val) {
+    const item = btn.closest('.expense-item-card');
+    if (!item) return;
+    const select = item.querySelector('.exp-type');
+    if (select) select.value = val;
+    item.querySelectorAll('.exp-quick-types .quick-pill').forEach(p => p.classList.remove('active-pill'));
+    btn.classList.add('active-pill');
+    const amountInput = item.querySelector('.exp-amount');
+    if (amountInput && !amountInput.value) amountInput.focus();
+    recalcExpenseTotals();
+}
+
+function onExpTypeChange(select) {
+    const item = select.closest('.expense-item-card');
+    if (!item) return;
+    const val = select.value;
+    item.querySelectorAll('.exp-quick-types .quick-pill').forEach(p => {
+        if (p.textContent.trim() === val) p.classList.add('active-pill');
+        else p.classList.remove('active-pill');
+    });
+    recalcExpenseTotals();
+}
+
+function removeExpenseRow(btn) {
+    const container = document.getElementById('expense-items-container');
+    if (container.querySelectorAll('.expense-item-card').length <= 1) {
+        showToast('Phải có ít nhất 1 dòng chi phí!', 'warning');
+        return;
+    }
+    btn.closest('.expense-item-card').remove();
+    renumberExpenseRows();
+    recalcExpenseTotals();
+}
+
+function renumberExpenseRows() {
+    const items = document.querySelectorAll('#expense-items-container .expense-item-card');
+    items.forEach((item, index) => {
+        const numEl = item.querySelector('.item-number');
+        if (numEl) numEl.textContent = index + 1;
+    });
+}
+
+function recalcExpenseTotals() {
+    let totalCount = 0;
+    let totalAmount = 0;
+    document.querySelectorAll('#expense-items-container .expense-item-card').forEach(item => {
+        const amount = parseMoney(item.querySelector('.exp-amount')?.value);
+        const totalEl = item.querySelector('.exp-row-total');
+        if (totalEl) totalEl.textContent = `= ${fmtMoney(amount)}`;
+        if (amount > 0) {
+            totalCount++;
+            totalAmount += amount;
+        }
+    });
+    const countEl = document.getElementById('expense-total-count');
+    if (countEl) countEl.textContent = `${totalCount} khoản`;
+    const amountEl = document.getElementById('expense-total-amount');
+    if (amountEl) amountEl.textContent = fmtMoney(totalAmount);
+}
+
+function submitExpenseOrder() {
+    const expDateVal = document.getElementById('expense-date').value;
+    if (!isAdmin() && !isDateToday(expDateVal)) {
+        showLockedEntryNotice();
+        document.getElementById('expense-date').value = todayInputValue();
+        return;
+    }
+    const dateVN = inputToVN(expDateVal);
+
+    const expItems = [];
+    let hasError = false;
+    document.querySelectorAll('#expense-items-container .expense-item-card').forEach(item => {
+        const type = item.querySelector('.exp-type')?.value?.trim() || 'Chi Phí Khác';
+        const amount = parseMoney(item.querySelector('.exp-amount')?.value);
+        const note = item.querySelector('.exp-note')?.value?.trim() || '';
+        if (amount <= 0) {
+            hasError = true;
+            return;
+        }
+        expItems.push({ type, amount, note });
+    });
+
+    if (hasError && expItems.length === 0) {
+        showToast('Vui lòng nhập số tiền chi phí lớn hơn 0!', 'warning');
+        return;
+    }
+    if (expItems.length === 0) {
+        showToast('Vui lòng nhập ít nhất 1 khoản chi phí hợp lệ!', 'warning');
+        return;
+    }
+
+    const totalExp = expItems.reduce((s, it) => s + it.amount, 0);
+
+    const itemsHtml = expItems.map(it => `
+        <div class="confirm-flower-item">
+            <div>
+                <div style="font-weight:800; font-size:15px; color:var(--text);">${it.type}</div>
+                ${it.note ? `<div style="font-size:13px; color:var(--text-soft); font-weight:700;">${it.note}</div>` : ''}
+            </div>
+            <div style="font-weight:900; font-size:16px; color:var(--red);">- ${fmtMoney(it.amount)}</div>
+        </div>
+    `).join('');
+
+    const htmlContent = `
+        <div class="confirm-summary-box">
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">📅 Ngày chi</span>
+                <span class="confirm-summary-val">${dateVN}</span>
+            </div>
+            <div class="confirm-summary-row">
+                <span class="confirm-summary-label">🧾 Số khoản chi</span>
+                <span class="confirm-summary-val" style="color:var(--red); font-size:16px;">${expItems.length} khoản</span>
+            </div>
+        </div>
+        <div style="font-size:13px; font-weight:800; color:var(--text-soft); margin-bottom:6px; text-transform:uppercase;">Chi tiết các khoản chi (${expItems.length}):</div>
+        <div style="max-height: 180px; overflow-y: auto; margin-bottom: 10px;">
+            ${itemsHtml}
+        </div>
+        <div class="confirm-total-banner" style="background:linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-color:#fca5a5;">
+            <div>
+                <div class="confirm-total-label" style="color:#991b1b;">TỔNG TIỀN CHI PHÍ</div>
+                <div style="font-size:12px; color:var(--text-soft); font-weight:700;">${expItems.length} khoản chi</div>
+            </div>
+            <div class="confirm-total-val" style="color:var(--red);">${fmtMoney(totalExp)}</div>
+        </div>
+    `;
+
+    showConfirmModal({
+        title: '💸 Xác Nhận Ghi Nhận Chi Phí',
+        htmlContent: htmlContent,
+        confirmBtnText: '✅ Xác Nhận Chi Phí',
+        confirmBtnClass: 'confirm red',
+        onProceed: () => {
+            executeSubmitExpenseOrder({ expDateVal, dateVN, expItems, totalExp });
+        }
+    });
+}
+
+function executeSubmitExpenseOrder({ expDateVal, dateVN, expItems, totalExp }) {
+    const btn = document.getElementById('expense-submit-btn');
+
+    // 1. OPTIMISTIC IN-MEMORY INSERTION (instantly appears in Báo cáo ngày)
+    const createdTempIds = [];
+    for (let i = expItems.length - 1; i >= 0; i--) {
+        const it = expItems[i];
+        const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        createdTempIds.unshift(tempId);
+        todayData.unshift({
+            _row: tempId,
+            _clientId: tempId,
+            _isPendingSync: true,
+            'Ngày': dateVN,
+            'Người Mua': '',
+            'Phân Loại Bông': '',
+            'Số lượng': '',
+            'Giá': '',
+            'Doanh Thu Bông': '',
+            'Status': 'Xong',
+            'Ghi Chú': it.note || '',
+            'Đã Thu': '',
+            'Tiền Phải Thu': '',
+            'Ghi Chú thu': '',
+            'Doanh Thu Khác': '',
+            'Loại DT': 'Chi Phí',
+            'Chi Phí': String(it.amount),
+            'Loại CP': it.type,
+            'Ghi Chú Chi Phí': it.note || ''
+        });
+    }
+
+    // 2. ENQUEUE FOR BACKGROUND SYNC
+    expItems.forEach((it, idx) => {
+        enqueueSync({
+            action: 'add_expense',
+            data: {
+                'Ngày': dateVN,
+                'Status': 'Xong',
+                'Người Mua': '',
+                'Chi Phí': String(it.amount),
+                'Loại CP': it.type,
+                'Ghi Chú Chi Phí': it.note || ''
+            }
+        }, [createdTempIds[idx]]);
+    });
+
+    // 3. SET REPORT DATE PICKER TO MATCH ORDER DATE & RENDER REPORT INSTANTLY
+    const reportPicker = document.getElementById('report-date-picker');
+    if (reportPicker && expDateVal) {
+        reportPicker.value = expDateVal;
+    }
+    renderReport();
+
+    // 4. INSTANT RESET OF FORM
+    document.getElementById('expense-items-container').innerHTML = '';
+    expenseRowCount = 0;
+    addExpenseRow();
+
+    // Visual button feedback
+    if (btn) {
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã ghi nhận!';
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Ghi Nhận Chi Phí';
+        }, 700);
+    }
+
+    // 5. TOAST NOTIFICATION
+    showToast(`💸 Đã ghi nhận ${fmtMoney(totalExp)} chi phí! Đang đồng bộ nền...`, 'success', 3500);
+
+    // 6. SWITCH TO REPORT VIEW
+    setTimeout(() => {
+        switchTab('report');
+    }, 350);
+
+    // 7. PROCESS QUEUE
+    processSyncQueue();
+}
+
+// ═══════════════════════════════════════════
 //  LOAD TODAY DATA (via JSONP gviz)
 // ═══════════════════════════════════════════
 function loadTodayData(isSilent = false) {
@@ -3171,7 +3549,7 @@ function renderExpenseCard(r) {
 
     const loaiDTLower = loaiDT.toLowerCase();
     const loaiCPLower = loaiCP.toLowerCase();
-    const isVuaExpense = loaiDTLower.includes('vựa') || loaiDTLower.includes('vua') || loaiCPLower === 'vận chuyển' || (r._orderId && r._orderId.startsWith('vua_'));
+    const isVuaExpense = loaiDTLower.includes('vựa') || loaiDTLower.includes('vua') || (r._orderId && String(r._orderId).startsWith('vua_'));
     const isLockedDay = !isAdmin() && !isDateToday(r['Ngày']);
 
     return `
@@ -3912,7 +4290,7 @@ function confirmDelete(rowNum, context = 'all') {
         if (context === 'expense') {
             const loaiDT = String(targetRow['Loại DT'] || '').trim().toLowerCase();
             const loaiCP = String(targetRow['Loại CP'] || '').trim().toLowerCase();
-            if (loaiDT.includes('vựa') || loaiDT.includes('vua') || loaiCP === 'vận chuyển') {
+            if (loaiDT.includes('vựa') || loaiDT.includes('vua') || (targetRow._orderId && String(targetRow._orderId).startsWith('vua_'))) {
                 showToast('🔒 Chi phí vận chuyển gắn liền với đơn Vựa. Vui lòng chỉnh sửa hoặc xóa từ đơn Vựa!', 'warning', 3500);
                 return;
             }

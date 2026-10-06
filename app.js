@@ -5,6 +5,30 @@ var getToken = () => sessionStorage.getItem("user-token");
 var isConfigured = () => {
     return typeof CONFIG !== 'undefined' && CONFIG.WEB_APP_URL && CONFIG.WEB_APP_URL !== "" && CONFIG.WEB_APP_URL !== "YOUR_WEB_APP_URL_HERE" && CONFIG.WEB_APP_URL !== "NOT_CONFIGURED";
 };
+var isAdmin = () => {
+    const r = (getRole() || sessionStorage.getItem('m_role') || localStorage.getItem('mobile_saved_role') || '').toUpperCase();
+    return r === 'ADMIN';
+};
+window.isAdmin = isAdmin;
+
+function isDateToday(rowDateVal) {
+    if (!rowDateVal) return true;
+    const now = new Date();
+    if (rowDateVal instanceof Date) {
+        return rowDateVal.getDate() === now.getDate() &&
+               rowDateVal.getMonth() === now.getMonth() &&
+               rowDateVal.getFullYear() === now.getFullYear();
+    }
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    const todayVN = `${dd}/${mm}/${yyyy}`;
+    const todayISO = `${yyyy}-${mm}-${dd}`;
+    const s = String(rowDateVal).trim();
+    return s === todayVN || s === todayISO;
+}
+window.isDateToday = isDateToday;
+
 window.notifyAdminToEdit = function () {
     alert("Vui lòng thông báo huytran97 để edit");
 };
@@ -2079,6 +2103,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 3. Table Rendering Logic
     function renderTable(dataToRender) {
         dataToRenderRef = dataToRender; // expose to delete handler
+        if (!tableBody) return;
         tableBody.innerHTML = '';
 
         // Cập nhật Header tiêu đề cột dựa trên Tab
@@ -4643,10 +4668,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const dd = String(today.getDate()).padStart(2, '0');
         reportDateInput.value = `${yyyy}-${mm}-${dd}`;
 
-        reportDateInput.addEventListener('change', () => {
+        const handleDateChange = () => {
             updateDashboard();
             syncMainToComparison();
-        });
+        };
+        reportDateInput.addEventListener('change', handleDateChange);
+        reportDateInput.addEventListener('input', handleDateChange);
     }
 
     if (reportMonthSelect) {
@@ -4863,9 +4890,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 let selectedDay = now.getDate();
                 const dateInput = document.getElementById('report-date');
                 if (dateInput && dateInput.value) {
-                    const parsed = new Date(dateInput.value);
-                    if (!isNaN(parsed.getTime())) {
-                        selectedDay = parsed.getDate();
+                    const parts = dateInput.value.split('-');
+                    if (parts.length === 3) {
+                        selectedDay = parseInt(parts[2], 10);
                     }
                 }
                 return rowDay <= selectedDay;
@@ -4922,11 +4949,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const dateInput = document.getElementById('report-date');
         if (isDayRange && dateInput && dateInput.value) {
-            const parsed = new Date(dateInput.value);
-            if (!isNaN(parsed.getTime())) {
-                selectedYear = parsed.getFullYear();
-                selectedMonth = parsed.getMonth() + 1;
-                selectedDay = parsed.getDate();
+            const parts = dateInput.value.split('-');
+            if (parts.length === 3) {
+                selectedYear = parseInt(parts[0], 10);
+                selectedMonth = parseInt(parts[1], 10);
+                selectedDay = parseInt(parts[2], 10);
             }
         }
 
@@ -5738,12 +5765,64 @@ document.addEventListener("DOMContentLoaded", () => {
             expenseGroups[loaiCP].items.push({ cp, ghiChu: ghiChuCP, sheetRowNumber: row._sheetRowNumber || null, rawRow: row, loaiCP });
         });
 
-        const loaiCPOrder = ['Expensed', 'Phân', 'Thuốc', 'Công', 'Lãi', 'Vật Tư', 'Vật Tư KD', 'Mua Bông', 'Vận Chuyển', 'Chi Phí Khác'];
+        const loaiCPOrder = ['Expensed', 'Vật Tư', 'Vật Tư KD', 'Mua Bông', 'Phân', 'Thuốc', 'Công', 'Lãi', 'Vận Chuyển', 'Chi Phí Khác'];
         const sortedExpKeys = Object.keys(expenseGroups).sort((a, b) => {
             const ai = loaiCPOrder.findIndex(l => l.toLowerCase() === a.toLowerCase());
             const bi = loaiCPOrder.findIndex(l => l.toLowerCase() === b.toLowerCase());
             return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
         });
+
+        // Classify category into one of the 3 frames: Expensed, Chi Phí Vựa, Chi Phí Vận Hành (matching Image 2)
+        function getExpenseFrameType(loaiCP) {
+            const s = String(loaiCP || '').trim().toLowerCase();
+            if (s === 'expensed') return 'expensed';
+            if (s.includes('vật tư') || s.includes('vat tu') || s.includes('mua bông') || s.includes('mua bong')) {
+                return 'vua';
+            }
+            return 'ops'; // Phân bón, Thuốc, Lương/Công, Lãi, Vận Chuyển, Chi Phí Khác...
+        }
+
+        // Render individual category box with its sub-items
+        function renderExpCategoryCard(key, grp) {
+            const cfg = getCatCfg(key);
+            const pct = totalExpense > 0 ? ((grp.total / totalExpense) * 100).toFixed(0) : 0;
+            let cardHtml = `
+                <div style="border-radius:12px; overflow:hidden; border:1px solid ${cfg.color}25; background:#ffffff; box-shadow:0 1px 4px rgba(0,0,0,0.02);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:${cfg.bg}; gap:8px;">
+                        <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                            <span style="width:28px; height:28px; border-radius:8px; background:${cfg.color}20; color:${cfg.color}; display:flex; align-items:center; justify-content:center; font-size:0.75rem; flex-shrink:0;">
+                                <i class="fa-solid ${cfg.icon}"></i>
+                            </span>
+                            <div style="min-width:0;">
+                                <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark, #1e293b);">${cfg.label}</div>
+                                <div style="font-size:0.72rem; color:#94a3b8;">${grp.items.length} khoản · ${pct}% tổng CP</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                            <button type="button" onclick="editExpenseCategoryDirect('${escapeAttr(key)}', ${day}, ${month}, ${year})"
+                                style="background:white; color:${cfg.color}; border:1px solid ${cfg.color}40; padding:3px 8px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:3px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                                <i class="fa-solid fa-pen-to-square"></i> Sửa
+                            </button>
+                            <span style="font-weight:800; font-size:0.95rem; color:${cfg.color}; white-space:nowrap;">${fmt(grp.total)}</span>
+                        </div>
+                    </div>`;
+
+            cardHtml += grp.items.map(item => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px 6px 48px; border-top:1px dashed ${cfg.color}15; background:white;">
+                    <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+                        <span style="font-size:0.82rem; color:#64748b; font-style:${item.ghiChu ? 'normal' : 'italic'}; overflow:hidden; text-overflow:ellipsis;">${escapeAttr(item.ghiChu) || '(Không có ghi chú)'}</span>
+                        <button type="button" onclick="editSingleExpense(${item.sheetRowNumber})"
+                            style="background:none; border:none; color:${cfg.color}; cursor:pointer; padding:2px 5px; font-size:0.75rem; border-radius:4px; opacity:0.8;" title="Sửa khoản chi này">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                    </div>
+                    <span style="font-size:0.82rem; font-weight:600; color:${cfg.color}; white-space:nowrap;">${fmt(item.cp)}</span>
+                </div>
+            `).join('');
+
+            cardHtml += `</div>`;
+            return cardHtml;
+        }
 
         let expHtml = '';
         if (sortedExpKeys.length === 0) {
@@ -5772,53 +5851,265 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </div>`;
 
-            sortedExpKeys.forEach(key => {
-                const grp = expenseGroups[key];
-                const cfg = getCatCfg(key);
-                const pct = totalExpense > 0 ? ((grp.total / totalExpense) * 100).toFixed(0) : 0;
+            // Separate categories into 3 frames: Expensed, Chi Phí Vựa, Chi Phí Vận Hành
+            const expensedKeys = sortedExpKeys.filter(k => getExpenseFrameType(k) === 'expensed');
+            const vuaKeys = sortedExpKeys.filter(k => getExpenseFrameType(k) === 'vua');
+            const opsKeys = sortedExpKeys.filter(k => getExpenseFrameType(k) === 'ops');
 
-                expHtml += `
-                    <div style="border-radius:10px; overflow:hidden; margin-bottom:8px; border:1px solid ${cfg.color}22;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:${cfg.bg}; gap:8px;">
-                            <div style="display:flex; align-items:center; gap:8px; min-width:0;">
-                                <span style="width:28px; height:28px; border-radius:8px; background:${cfg.color}20; color:${cfg.color}; display:flex; align-items:center; justify-content:center; font-size:0.75rem; flex-shrink:0;">
-                                    <i class="fa-solid ${cfg.icon}"></i>
-                                </span>
-                                <div style="min-width:0;">
-                                    <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark);">${cfg.label}</div>
-                                    <div style="font-size:0.72rem; color:#94a3b8;">${grp.items.length} khoản · ${pct}% tổng CP</div>
+            const totalExpensed = expensedKeys.reduce((s, k) => s + expenseGroups[k].total, 0);
+            const countExpensed = expensedKeys.reduce((s, k) => s + expenseGroups[k].items.length, 0);
+
+            const totalVua = vuaKeys.reduce((s, k) => s + expenseGroups[k].total, 0);
+            const countVua = vuaKeys.reduce((s, k) => s + expenseGroups[k].items.length, 0);
+
+            const totalOps = opsKeys.reduce((s, k) => s + expenseGroups[k].total, 0);
+            const countOps = opsKeys.reduce((s, k) => s + expenseGroups[k].items.length, 0);
+
+            // Assemble frames: only render frames that have recorded expenses (hide empty frames)
+            let framesHtml = '';
+
+            // 1. KHUNG 1: EXPENSED (Chỉ hiển thị khi có chi phí)
+            if (expensedKeys.length > 0) {
+                let expensedCards = '';
+                expensedKeys.forEach(k => {
+                    expensedCards += renderExpCategoryCard(k, expenseGroups[k]);
+                });
+                framesHtml += `
+                    <div class="exp-frame expensed-frame">
+                        <div class="exp-frame-header expensed">
+                            <div class="exp-frame-title">
+                                <span class="exp-frame-icon expensed">🏛️</span>
+                                <div>
+                                    <div class="exp-frame-name">Expensed</div>
+                                    <div class="exp-frame-subtitle">${countExpensed} khoản chi</div>
                                 </div>
                             </div>
-                            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-                                <button type="button" onclick="editExpenseCategoryDirect('${escapeAttr(key)}', ${day}, ${month}, ${year})"
-                                    style="background:white; color:${cfg.color}; border:1px solid ${cfg.color}40; padding:3px 8px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:3px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-                                    <i class="fa-solid fa-pen-to-square"></i> Sửa
-                                </button>
-                                <span style="font-weight:800; font-size:0.95rem; color:${cfg.color}; white-space:nowrap;">${fmt(grp.total)}</span>
-                            </div>
-                        </div>`;
-
-                expHtml += grp.items.map(item => `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px 6px 48px; border-top:1px dashed ${cfg.color}15; background:white;">
-                        <div style="display:flex; align-items:center; gap:6px; min-width:0;">
-                            <span style="font-size:0.82rem; color:#64748b; font-style:${item.ghiChu ? 'normal' : 'italic'}; overflow:hidden; text-overflow:ellipsis;">${item.ghiChu || '(Không có ghi chú)'}</span>
-                            <button type="button" onclick="editSingleExpense(${item.sheetRowNumber})"
-                                style="background:none; border:none; color:${cfg.color}; cursor:pointer; padding:2px 5px; font-size:0.75rem; border-radius:4px; opacity:0.8;" title="Sửa khoản chi này">
-                                <i class="fa-solid fa-pen"></i>
-                            </button>
+                            <div class="exp-frame-total expensed">${fmt(totalExpensed)}</div>
                         </div>
-                        <span style="font-size:0.82rem; font-weight:600; color:${cfg.color}; white-space:nowrap;">${fmt(item.cp)}</span>
-                    </div>
-                `).join('');
+                        <div class="exp-frame-body">
+                            ${expensedCards}
+                        </div>
+                    </div>`;
+            }
 
-                expHtml += `</div>`;
-            });
+            // 2. KHUNG 2: CHI PHÍ VỰA (Chỉ hiển thị khi có chi phí)
+            if (vuaKeys.length > 0) {
+                let vuaCards = '';
+                vuaKeys.forEach(k => {
+                    vuaCards += renderExpCategoryCard(k, expenseGroups[k]);
+                });
+                framesHtml += `
+                    <div class="exp-frame vua-frame">
+                        <div class="exp-frame-header vua">
+                            <div class="exp-frame-title">
+                                <span class="exp-frame-icon vua">📦</span>
+                                <div>
+                                    <div class="exp-frame-name">Chi Phí Vựa</div>
+                                    <div class="exp-frame-subtitle">${countVua} khoản · Vật tư & Mua bông</div>
+                                </div>
+                            </div>
+                            <div class="exp-frame-total vua">${fmt(totalVua)}</div>
+                        </div>
+                        <div class="exp-frame-body">
+                            ${vuaCards}
+                        </div>
+                    </div>`;
+            }
+
+            // 3. KHUNG 3: CHI PHÍ VẬN HÀNH (Chỉ hiển thị khi có chi phí)
+            if (opsKeys.length > 0) {
+                let opsCards = '';
+                opsKeys.forEach(k => {
+                    opsCards += renderExpCategoryCard(k, expenseGroups[k]);
+                });
+                framesHtml += `
+                    <div class="exp-frame ops-frame">
+                        <div class="exp-frame-header ops">
+                            <div class="exp-frame-title">
+                                <span class="exp-frame-icon ops">⚙️</span>
+                                <div>
+                                    <div class="exp-frame-name">Chi Phí Vận Hành</div>
+                                    <div class="exp-frame-subtitle">${countOps} khoản · Phân, Thuốc, Lương, Lãi, Vận chuyển...</div>
+                                </div>
+                            </div>
+                            <div class="exp-frame-total ops">${fmt(totalOps)}</div>
+                        </div>
+                        <div class="exp-frame-body">
+                            ${opsCards}
+                        </div>
+                    </div>`;
+            }
+
+            expHtml += `
+                <div class="daily-exp-grid-container">
+                    ${framesHtml}
+                </div>`;
         }
         expenseEl.innerHTML = expHtml;
 
         // ---- REVENUE SIDE ----
-        const buyerGroups = {};
-        dayRows.forEach(row => {
+        function fmtNum(n) {
+            if (!n && n !== 0) return '0';
+            const num = typeof n === 'number' ? n : (parseFloat(String(n).replace(/[^\d.-]/g, '')) || 0);
+            return Math.round(num).toLocaleString('vi-VN');
+        }
+        function fmtMoney(n) {
+            if (!n && n !== 0) return '0 ₫';
+            const num = typeof n === 'number' ? n : (parseFloat(String(n).replace(/[^\d.-]/g, '')) || 0);
+            return Math.round(num).toLocaleString('vi-VN') + ' ₫';
+        }
+
+        // Group Vựa rows (supporting multi-flower orders)
+        function groupVuaOrdersForDaily(vuaList) {
+            const groups = [];
+            const processedIndices = new Set();
+
+            // 1. Group by explicit orderId (from _orderId or 'Ghi Chú thu' or 'Ghi Chú Vựa thu')
+            const orderIdMap = new Map();
+            vuaList.forEach((r, idx) => {
+                const orderId = r._orderId ||
+                    (String(r['Ghi Chú thu'] || '').startsWith('vua_') ? String(r['Ghi Chú thu']) : null) ||
+                    (String(r['Ghi Chú Vựa thu'] || '').startsWith('vua_') ? String(r['Ghi Chú Vựa thu']) : null);
+                if (orderId) {
+                    if (!orderIdMap.has(orderId)) orderIdMap.set(orderId, []);
+                    orderIdMap.get(orderId).push({ row: r, idx });
+                }
+            });
+
+            orderIdMap.forEach((items, orderId) => {
+                items.forEach(it => processedIndices.add(it.idx));
+                const rows = items.map(it => it.row);
+                const master = rows.find(r => (parseFloat(r['Tiền Phải Thu']) || 0) > 0) || rows[0];
+                groups.push({
+                    orderId: orderId,
+                    rows: rows,
+                    masterRow: master
+                });
+            });
+
+            // 2. For remaining rows without explicit orderId:
+            for (let i = 0; i < vuaList.length; i++) {
+                if (processedIndices.has(i)) continue;
+
+                const current = vuaList[i];
+                processedIndices.add(i);
+
+                const currentGroup = [current];
+                const buyer = String(current['Người Mua'] || '').trim().toLowerCase();
+
+                let j = i + 1;
+                while (j < vuaList.length && !processedIndices.has(j)) {
+                    const next = vuaList[j];
+                    const nextBuyer = String(next['Người Mua'] || '').trim().toLowerCase();
+                    const nextPt = parseFloat(next['Tiền Phải Thu']) || 0;
+
+                    if (nextBuyer === buyer && nextPt === 0) {
+                        currentGroup.push(next);
+                        processedIndices.add(j);
+                        j++;
+                    } else {
+                        break;
+                    }
+                }
+
+                const master = currentGroup.find(r => (parseFloat(r['Tiền Phải Thu']) || 0) > 0) || currentGroup[0];
+                const syntheticOrderId = 'vua_grp_' + (master._sheetRowNumber || master._row || i);
+                groups.push({
+                    orderId: syntheticOrderId,
+                    rows: currentGroup,
+                    masterRow: master
+                });
+            }
+
+            return groups;
+        }
+
+        const vuaRows = dayRows.filter(r => {
+            const loaiDT = String(r['Loại DT'] || '').trim().toLowerCase();
+            return loaiDT.includes('vựa') || loaiDT.includes('vua');
+        });
+
+        const farmRows = dayRows.filter(r => {
+            const loaiDT = String(r['Loại DT'] || '').trim().toLowerCase();
+            if (loaiDT.includes('vựa') || loaiDT.includes('vua')) return false;
+            const rev = (parseFloat(r['Doanh Thu Bông']) || 0) + (parseFloat(r['Doanh Thu Khác']) || 0);
+            const q = parseFloat(r['Số lượng']) || 0;
+            return rev > 0 || q > 0;
+        });
+
+        const vuaGroups = groupVuaOrdersForDaily(vuaRows);
+        window._currentDailyVuaGroups = vuaGroups;
+
+        vuaGroups.forEach(group => {
+            const master = group.masterRow;
+            const buyer = (master['Người Mua'] || '—').trim();
+            const isDone = (master['Status'] || '').trim().toLowerCase() === 'xong';
+            const orderId = group.orderId;
+
+            const flowers = group.rows
+                .filter(r => (r['Phân Loại Bông'] && r['Phân Loại Bông'].trim()) || (parseFloat(r['Số lượng']) || 0) > 0)
+                .map(r => {
+                    const q = parseFloat(r['Số lượng']) || 0;
+                    const p = parseFloat(r['Giá']) || 0;
+                    const t = (parseFloat(r['Doanh Thu Bông']) || 0) || (q * p);
+                    return {
+                        rowNum: r._sheetRowNumber || r._row,
+                        type: (r['Phân Loại Bông'] || '—').trim(),
+                        qty: q,
+                        price: p,
+                        total: t,
+                        rawRow: r
+                    };
+                });
+
+            if (flowers.length === 0) {
+                const q = parseFloat(master['Số lượng']) || 0;
+                const p = parseFloat(master['Giá']) || 0;
+                const t = (parseFloat(master['Doanh Thu Bông']) || 0) || (q * p);
+                flowers.push({
+                    rowNum: master._sheetRowNumber || master._row,
+                    type: (master['Phân Loại Bông'] || 'Hoa').trim(),
+                    qty: q,
+                    price: p,
+                    total: t,
+                    rawRow: master
+                });
+            }
+
+            const totalQty = flowers.reduce((s, f) => s + f.qty, 0);
+            const flowerTotal = flowers.reduce((s, f) => s + f.total, 0);
+            const cp = parseFloat(master['Chi Phí']) || 0;
+            const loaiCP = master['Loại CP'] || 'Vận Chuyển';
+            const vattu = 150000;
+            let pt = parseFloat(master['Tiền Phải Thu']) || 0;
+            let ln = parseFloat(master['Doanh Thu Khác']) || 0;
+
+            if (pt > 0) {
+                ln = pt - flowerTotal - cp - vattu;
+            } else {
+                pt = flowerTotal + cp + vattu + ln;
+            }
+
+            const note = (master['Ghi Chú'] || '').trim();
+
+            group.computed = {
+                buyer,
+                isDone,
+                orderId,
+                flowers,
+                totalQty,
+                flowerTotal,
+                cp,
+                loaiCP,
+                vattu,
+                pt,
+                ln,
+                note
+            };
+        });
+
+        const farmBuyerGroups = {};
+        farmRows.forEach(row => {
             const dtBong = parseFloat(row['Doanh Thu Bông']) || 0;
             const dtKhac = parseFloat(row['Doanh Thu Khác']) || 0;
             const rev = dtBong + dtKhac;
@@ -5832,12 +6123,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const status = (row['Status'] || '').trim();
             const sheetRowNumber = row._sheetRowNumber || null;
 
-            if (!buyerGroups[buyer]) buyerGroups[buyer] = { total: 0, items: [], typeDT };
-            buyerGroups[buyer].total += rev;
-            buyerGroups[buyer].items.push({ rev, flower, qty, price, typeDT, status, sheetRowNumber, rawRow: row });
+            if (!farmBuyerGroups[buyer]) farmBuyerGroups[buyer] = { total: 0, items: [], typeDT };
+            farmBuyerGroups[buyer].total += rev;
+            farmBuyerGroups[buyer].items.push({ rev, flower, qty, price, typeDT, status, sheetRowNumber, rawRow: row });
         });
 
-        const sortedBuyers = Object.entries(buyerGroups).sort((a, b) => b[1].total - a[1].total);
+        const vuaRevenueTotal = vuaGroups.reduce((sum, g) => sum + (g.computed ? g.computed.pt : 0), 0);
+        const vuaFlowerQtyTotal = vuaGroups.reduce((sum, g) => sum + (g.computed ? g.computed.totalQty : 0), 0);
+        const sortedFarmBuyers = Object.entries(farmBuyerGroups).sort((a, b) => b[1].total - a[1].total);
+        const farmRevenueTotal = sortedFarmBuyers.reduce((sum, [_, grp]) => sum + grp.total, 0);
+
         const profitColor = totalProfit >= 0 ? '#10b981' : '#ef4444';
         const profitBg = totalProfit >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)';
         const profitBorder = totalProfit >= 0 ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)';
@@ -5845,7 +6140,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const margin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : '0';
 
         let revHtml = '';
-        if (sortedBuyers.length === 0) {
+        if (vuaGroups.length === 0 && sortedFarmBuyers.length === 0) {
             revHtml = `
                 <div style="text-align:center; padding:3rem 1rem;">
                     <i class="fa-solid fa-inbox" style="color:#cbd5e1; font-size:2.5rem; display:block; margin-bottom:12px;"></i>
@@ -5854,12 +6149,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>`;
         } else {
             // Summary pills
+            const totalCustomers = vuaGroups.length + sortedFarmBuyers.length;
             revHtml += `
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
                     <div style="background:rgba(14,165,233,0.06); border:1px solid rgba(14,165,233,0.15); border-radius:12px; padding:10px 14px;">
                         <div style="font-size:0.72rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Tổng doanh thu</div>
                         <div style="font-size:1.15rem; font-weight:900; color:#0ea5e9; line-height:1.3;">${fmt(totalRevenue)}</div>
-                        <div style="font-size:0.72rem; color:#94a3b8;">${sortedBuyers.length} khách hàng</div>
+                        <div style="font-size:0.72rem; color:#94a3b8;">${totalCustomers} khách hàng (${vuaGroups.length} vựa · ${sortedFarmBuyers.length} farm)</div>
                     </div>
                     <div style="background:${profitBg}; border:1px solid ${profitBorder}; border-radius:12px; padding:10px 14px;">
                         <div style="font-size:0.72rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">Lợi nhuận</div>
@@ -5868,68 +6164,195 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </div>`;
 
-            sortedBuyers.forEach(([buyer, grp]) => {
-                const buyerPct = totalRevenue > 0 ? ((grp.total / totalRevenue) * 100).toFixed(0) : 0;
-                const isVua = grp.typeDT && (grp.typeDT.toLowerCase().includes('vựa') || grp.typeDT.toLowerCase().includes('vua'));
-                const c = isVua ? '#f59e0b' : '#0ea5e9';
-                const buyerBg = isVua ? 'rgba(245,158,11,0.06)' : 'rgba(14,165,233,0.06)';
-                const buyerBorder = isVua ? 'rgba(245,158,11,0.2)' : 'rgba(14,165,233,0.15)';
-                const buyerIcon = isVua ? 'fa-store' : 'fa-user';
-                const isAllDone = grp.items.length > 0 && grp.items.every(i => i.status && i.status.toLowerCase() === 'xong');
+            // 1. Build Vựa HTML
+            let vuaHtml = '';
+            if (vuaGroups.length === 0) {
+                vuaHtml = `
+                    <div class="rev-frame-empty">
+                        <i class="fa-solid fa-truck-ramp-box"></i>
+                        <span>Chưa có đơn vựa trong ngày</span>
+                    </div>`;
+            } else {
+                vuaGroups.forEach(group => {
+                    const c = group.computed;
+                    const masterRow = group.masterRow;
+                    const isLockedDay = !isAdmin() && !isDateToday(masterRow ? (masterRow.parsedDate || masterRow['Ngày']) : '');
 
-                revHtml += `
-                    <div style="border-radius:10px; overflow:hidden; margin-bottom:8px; border:1px solid ${buyerBorder};">
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:${buyerBg}; gap:8px;">
-                            <div style="display:flex; align-items:center; gap:8px; min-width:0;">
-                                <span style="width:28px; height:28px; border-radius:8px; background:${c}20; color:${c}; display:flex; align-items:center; justify-content:center; font-size:0.75rem; flex-shrink:0;">
-                                    <i class="fa-solid ${buyerIcon}"></i>
-                                </span>
-                                <div style="min-width:0;">
-                                    <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${buyer}</div>
-                                    <div style="font-size:0.72rem; color:#94a3b8;">${grp.items.length} mặt hàng · ${buyerPct}% doanh thu</div>
+                    vuaHtml += `
+                    <div class="tx-card ${c.isDone ? 'card-done' : ''}" style="margin-bottom:0;">
+                        <div class="tx-header">
+                            <div class="tx-buyer">
+                                <div class="tx-avatar vua">🚛</div>
+                                <div>
+                                    <div class="tx-buyer-name">${escapeAttr(c.buyer)}</div>
+                                    <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                                        <span class="tx-type-badge vua">Đơn Vựa</span>
+                                        <span style="font-size:12px; font-weight:700; color:var(--text-soft, #64748b);">${c.flowers.length} loại hoa · ${fmtNum(c.totalQty)} bông</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-                                ${!isAllDone ? `
-                                <button type="button" onclick="editBuyerRevenueDirect('${escapeAttr(buyer)}', ${day}, ${month}, ${year})"
-                                    style="background:white; color:${c}; border:1px solid ${c}40; padding:3px 9px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:all 0.2s;">
-                                    <i class="fa-solid fa-pen-to-square"></i> Sửa
-                                </button>` : `
-                                <span style="font-size:0.75rem; color:#059669; font-weight:700; background:#d1fae5; border:1px solid #a7f3d0; padding:3px 9px; border-radius:6px; display:inline-flex; align-items:center; gap:4px; opacity:0.9;" title="Đơn hàng đã hoàn thành (Xong) - không thể chỉnh sửa">
-                                    <i class="fa-solid fa-lock" style="font-size:0.7rem;"></i> Đã Xong
-                                </span>`}
-                                <span style="font-weight:800; font-size:0.95rem; color:${c}; white-space:nowrap;">${fmt(grp.total)}</span>
+                            <div style="text-align:right">
+                                <div class="tx-amount blue" style="color:var(--blue, #2563eb); font-weight: 900;">${fmtMoney(c.pt)}</div>
+                                <span class="status-badge ${c.isDone ? 'status-done' : 'status-pending'}">${c.isDone ? '✅ Đã thu' : '⏳ Chưa thu'}</span>
                             </div>
-                        </div>`;
-
-                revHtml += grp.items.map(item => {
-                    const unitPrice = item.price > 0 ? item.price : (item.qty > 0 && item.rev > 0 ? Math.round(item.rev / item.qty) : 0);
-                    const priceStr = unitPrice > 0 ? ` x ${unitPrice.toLocaleString('vi-VN')}` : '';
-                    const qtyStr = item.qty > 0 ? ` (${item.qty.toLocaleString('vi-VN')} bông)` : '';
-                    const itemLabel = item.flower
-                        ? `${item.flower}<span style="color:#64748b; font-weight:500;">${qtyStr}</span>${priceStr ? ` <span style="color:#0284c7; font-weight:700;">${priceStr}</span>` : ''}`
-                        : (item.typeDT !== 'Farm' ? item.typeDT : 'Doanh thu khác');
-                    const isDone = item.status && item.status.toLowerCase() === 'xong';
-                    return `
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px 6px 48px; border-top:1px dashed ${c}15; background:white;">
-                            <div style="display:flex; align-items:center; gap:6px;">
-                                <span style="font-size:0.82rem; color:#64748b;">${itemLabel}</span>
-                                ${!isDone ? `
-                                <button type="button" class="btn-edit-line" onclick="editSingleRevenueLine(${item.sheetRowNumber})"
-                                    style="background:none; border:none; color:${c}; cursor:pointer; padding:2px 6px; font-size:0.78rem; border-radius:4px; opacity:0.85;" title="Chỉnh sửa mặt hàng này">
-                                    <i class="fa-solid fa-pen" style="pointer-events:none;"></i>
-                                </button>` : ''}
+                        </div>
+                        <div class="tx-body">
+                            <!-- Chi tiết các loại hoa trong đơn -->
+                            <div style="background: rgba(37,99,235,0.04); border: 1.5px solid rgba(37,99,235,0.14); border-radius: 12px; padding: 10px 14px; margin-bottom: 8px;">
+                                <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Chi tiết hoa (${c.flowers.length} loại):</div>
+                                ${c.flowers.map(f => `
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 13px;">
+                                        <div>
+                                            <span style="font-weight: 700; color: var(--text-dark, #1e293b);">🌸 ${escapeAttr(f.type)}</span>
+                                            <span style="color: #64748b; font-weight: 600; font-size: 12px;"> · ${fmtNum(f.qty)} bông × ${fmtMoney(f.price)}</span>
+                                        </div>
+                                        <div style="font-weight: 800; color: #2563eb;">${fmtMoney(f.total)}</div>
+                                    </div>
+                                `).join('')}
                             </div>
-                            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-                                ${isDone ? `<span style="font-size:0.68rem; background:#d1fae5; color:#059669; border-radius:4px; padding:1px 6px; font-weight:700;">✓ Xong</span>` : ''}
-                                <span style="font-size:0.82rem; font-weight:600; color:${c};">${fmt(item.rev)}</span>
+
+                            <div class="tx-line">
+                                <span class="tx-line-label">💐 Tổng tiền hoa</span>
+                                <span class="tx-line-value font-bold">${fmtMoney(c.flowerTotal)}</span>
                             </div>
-                        </div>`;
-                }).join('');
+                            ${c.cp > 0 ? `
+                            <div class="tx-line">
+                                <span class="tx-line-label">🚚 Chi phí (${escapeAttr(c.loaiCP || 'Vận chuyển')})</span>
+                                <span class="tx-line-value" style="color:var(--danger, #ef4444); font-weight:700;">-${fmtMoney(c.cp)}</span>
+                            </div>` : ''}
+                            <div class="tx-line">
+                                <span class="tx-line-label">📦 Vật tư khác (Cố định)</span>
+                                <span class="tx-line-value" style="color:#64748b; font-weight:700;">150.000 ₫</span>
+                            </div>
+                            ${c.ln !== 0 ? `
+                            <div class="tx-line">
+                                <span class="tx-line-label">✨ Lợi nhuận / Đóng gói</span>
+                                <span class="tx-line-value" style="color:${c.ln >= 0 ? '#10b981' : '#ef4444'}; font-weight:800;">${c.ln >= 0 ? '+' : ''}${fmtMoney(c.ln)}</span>
+                            </div>` : ''}
+                            ${c.note ? `<div class="tx-line"><span class="tx-line-label">📝 Ghi chú</span><span class="tx-line-value" style="font-size:13px;color:#64748b">${escapeAttr(c.note)}</span></div>` : ''}
+                        </div>
+                        <div class="tx-footer">
+                            <button class="action-pill edit" type="button" onclick="openEditVuaOrderModal('${escapeAttr(c.orderId)}')">
+                                <i class="fa-solid ${isLockedDay ? 'fa-lock' : 'fa-pen'}"></i> Sửa
+                            </button>
+                            <button class="action-pill delete" type="button" onclick="confirmDeleteVuaOrder('${escapeAttr(c.orderId)}')">
+                                <i class="fa-solid ${isLockedDay ? 'fa-lock' : 'fa-trash'}"></i> Xóa
+                            </button>
+                        </div>
+                    </div>`;
+                });
+            }
 
-                revHtml += `</div>`;
-            });
+            // 2. Build Farm HTML
+            let farmHtml = '';
+            if (sortedFarmBuyers.length === 0) {
+                farmHtml = `
+                    <div class="rev-frame-empty">
+                        <i class="fa-solid fa-seedling"></i>
+                        <span>Chưa có đơn farm trong ngày</span>
+                    </div>`;
+            } else {
+                sortedFarmBuyers.forEach(([buyer, grp]) => {
+                    const buyerPct = totalRevenue > 0 ? ((grp.total / totalRevenue) * 100).toFixed(0) : 0;
+                    const c = '#0ea5e9';
+                    const buyerBg = 'rgba(14,165,233,0.06)';
+                    const buyerBorder = 'rgba(14,165,233,0.18)';
+                    const buyerIcon = 'fa-user';
+                    const isAllDone = grp.items.length > 0 && grp.items.every(i => i.status && i.status.toLowerCase() === 'xong');
 
+                    farmHtml += `
+                        <div style="border-radius:14px; overflow:hidden; border:1px solid ${buyerBorder}; background:#ffffff; box-shadow:0 1px 4px rgba(0,0,0,0.02);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:${buyerBg}; gap:8px;">
+                                <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                                    <span style="width:28px; height:28px; border-radius:8px; background:${c}20; color:${c}; display:flex; align-items:center; justify-content:center; font-size:0.75rem; flex-shrink:0;">
+                                        <i class="fa-solid ${buyerIcon}"></i>
+                                    </span>
+                                    <div style="min-width:0;">
+                                        <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeAttr(buyer)}</div>
+                                        <div style="font-size:0.72rem; color:#94a3b8;">${grp.items.length} mặt hàng · ${buyerPct}% tổng doanh thu</div>
+                                    </div>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                                    ${!isAllDone ? `
+                                    <button type="button" onclick="editBuyerRevenueDirect('${escapeAttr(buyer)}', ${day}, ${month}, ${year})"
+                                        style="background:white; color:${c}; border:1px solid ${c}40; padding:3px 9px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:all 0.2s;">
+                                        <i class="fa-solid fa-pen-to-square"></i> Sửa
+                                    </button>` : `
+                                    <span style="font-size:0.75rem; color:#059669; font-weight:700; background:#d1fae5; border:1px solid #a7f3d0; padding:3px 9px; border-radius:6px; display:inline-flex; align-items:center; gap:4px; opacity:0.9;" title="Đơn hàng đã hoàn thành (Xong) - không thể chỉnh sửa">
+                                        <i class="fa-solid fa-lock" style="font-size:0.7rem;"></i> Đã Xong
+                                    </span>`}
+                                    <span style="font-weight:800; font-size:0.95rem; color:${c}; white-space:nowrap;">${fmt(grp.total)}</span>
+                                </div>
+                            </div>`;
+
+                    farmHtml += grp.items.map(it => {
+                        const unitPrice = it.price > 0 ? it.price : (it.qty > 0 && it.rev > 0 ? Math.round(it.rev / it.qty) : 0);
+                        const priceStr = unitPrice > 0 ? ` x ${unitPrice.toLocaleString('vi-VN')}` : '';
+                        const qtyStr = it.qty > 0 ? ` (${it.qty.toLocaleString('vi-VN')} bông)` : '';
+                        const itemLabel = it.flower
+                            ? `${it.flower}<span style="color:#64748b; font-weight:500;">${qtyStr}</span>${priceStr ? ` <span style="color:#0284c7; font-weight:700;">${priceStr}</span>` : ''}`
+                            : (it.typeDT !== 'Farm' ? it.typeDT : 'Doanh thu khác');
+                        const isDone = it.status && it.status.toLowerCase() === 'xong';
+                        return `
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px 6px 48px; border-top:1px dashed ${c}15; background:white;">
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <span style="font-size:0.82rem; color:#64748b;">${itemLabel}</span>
+                                    ${!isDone ? `
+                                    <button type="button" class="btn-edit-line" onclick="editSingleRevenueLine(${it.sheetRowNumber})"
+                                        style="background:none; border:none; color:${c}; cursor:pointer; padding:2px 6px; font-size:0.78rem; border-radius:4px; opacity:0.85;" title="Chỉnh sửa mặt hàng này">
+                                        <i class="fa-solid fa-pen" style="pointer-events:none;"></i>
+                                    </button>` : ''}
+                                </div>
+                                <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                                    ${isDone ? `<span style="font-size:0.68rem; background:#d1fae5; color:#059669; border-radius:4px; padding:1px 6px; font-weight:700;">✓ Xong</span>` : ''}
+                                    <span style="font-size:0.82rem; font-weight:600; color:${c};">${fmt(it.rev)}</span>
+                                </div>
+                            </div>`;
+                    }).join('');
+
+                    farmHtml += `</div>`;
+                });
+            }
+
+            // 3. Assemble Dual Grid Frames (Đơn Vựa & Đơn Farm)
+            revHtml += `
+                <div class="daily-rev-grid-container">
+                    <!-- KHUNG ĐƠN VỰA -->
+                    <div class="rev-frame vua-frame">
+                        <div class="rev-frame-header vua">
+                            <div class="rev-frame-title">
+                                <span class="rev-frame-icon vua">🚛</span>
+                                <div>
+                                    <div class="rev-frame-name">Đơn Vựa</div>
+                                    <div class="rev-frame-subtitle">${vuaGroups.length} đơn · ${fmtNum(vuaFlowerQtyTotal)} bông</div>
+                                </div>
+                            </div>
+                            <div class="rev-frame-total vua">${fmtMoney(vuaRevenueTotal)}</div>
+                        </div>
+                        <div class="rev-frame-body">
+                            ${vuaHtml}
+                        </div>
+                    </div>
+
+                    <!-- KHUNG ĐƠN FARM -->
+                    <div class="rev-frame farm-frame">
+                        <div class="rev-frame-header farm">
+                            <div class="rev-frame-title">
+                                <span class="rev-frame-icon farm">🌸</span>
+                                <div>
+                                    <div class="rev-frame-name">Đơn Farm / Khách Lẻ</div>
+                                    <div class="rev-frame-subtitle">${sortedFarmBuyers.length} khách hàng</div>
+                                </div>
+                            </div>
+                            <div class="rev-frame-total farm">${fmtMoney(farmRevenueTotal)}</div>
+                        </div>
+                        <div class="rev-frame-body">
+                            ${farmHtml}
+                        </div>
+                    </div>
+                </div>`;
+
+            // Bottom summary bar
             revHtml += `
                 <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-radius:12px; background:${profitBg}; border:1.5px solid ${profitBorder}; margin-top:6px;">
                     <div style="display:flex; align-items:center; gap:8px;">
@@ -5946,6 +6369,282 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         revenueEl.innerHTML = revHtml;
     }
+
+    // Modal Handlers for Vựa Order Edit & Delete in Daily Report
+    window.openEditVuaOrderModal = function(orderId) {
+        const groups = window._currentDailyVuaGroups || [];
+        const group = groups.find(g => g.orderId === orderId);
+        if (!group) {
+            alert("Không tìm thấy thông tin đơn Vựa!");
+            return;
+        }
+        const master = group.masterRow;
+        const isToday = isDateToday(master ? master['Ngày'] : '');
+        if (typeof getRole === 'function' && getRole() !== 'ADMIN' && !isToday) {
+            if (typeof notifyAdminToEdit === 'function') notifyAdminToEdit();
+            else alert("Chỉ quản trị viên mới có thể chỉnh sửa đơn các ngày trước!");
+            return;
+        }
+
+        const modal = document.getElementById('modal-edit-vua-order');
+        if (!modal) return;
+
+        const c = group.computed;
+        document.getElementById('edit-vua-input-buyer').value = c.buyer;
+        document.getElementById('edit-vua-input-cost').value = (c.cp > 0 ? formatMoneyStr(c.cp) : '');
+        document.getElementById('edit-vua-input-profit').value = (c.ln !== 0 ? formatMoneyStr(c.ln) : '');
+        document.getElementById('edit-vua-input-pt').value = (c.pt > 0 ? formatMoneyStr(c.pt) : '');
+        document.getElementById('edit-vua-select-status').value = c.isDone ? 'Xong' : '';
+        document.getElementById('edit-vua-input-note').value = c.note || '';
+        document.getElementById('modal-edit-vua-subtitle').textContent = `Đơn Vựa: ${c.buyer} · ${c.flowers.length} loại hoa`;
+
+        const container = document.getElementById('edit-vua-flowers-container');
+        container.innerHTML = '';
+
+        function renderFlowerRow(type = '', qty = '', price = '') {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'edit-vua-flower-row';
+            itemDiv.style.cssText = 'display:flex; gap:6px; align-items:center; background:#f8fafc; padding:6px 10px; border-radius:8px; border:1px solid #e2e8f0;';
+            itemDiv.innerHTML = `
+                <input type="text" class="fw-type" value="${escapeAttr(type)}" placeholder="Loại hoa" style="flex:2; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; font-size:0.85rem;">
+                <input type="number" class="fw-qty" value="${qty}" placeholder="SL" style="flex:1.2; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; font-size:0.85rem;">
+                <input type="text" class="fw-price money-input" value="${price ? formatMoneyStr(price) : ''}" placeholder="Giá" style="flex:1.5; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; font-size:0.85rem;">
+                <span class="fw-item-total" style="flex:1.8; text-align:right; font-weight:800; color:#2563eb; font-size:0.85rem;">0 ₫</span>
+                <button type="button" class="btn-del-fw" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:4px 6px; font-size:0.85rem;" title="Xóa loại hoa này">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            `;
+            itemDiv.querySelector('.btn-del-fw').onclick = () => {
+                itemDiv.remove();
+                recalcEditVuaModal('flower');
+            };
+            const inpType = itemDiv.querySelector('.fw-type');
+            const inpQty = itemDiv.querySelector('.fw-qty');
+            const inpPrice = itemDiv.querySelector('.fw-price');
+
+            inpPrice.addEventListener('input', (e) => {
+                const raw = parseMoney(e.target.value);
+                e.target.value = raw > 0 ? formatMoneyStr(raw) : '';
+                recalcEditVuaModal('flower');
+            });
+            inpQty.addEventListener('input', () => recalcEditVuaModal('flower'));
+            inpType.addEventListener('input', () => recalcEditVuaModal('flower'));
+
+            container.appendChild(itemDiv);
+        }
+
+        c.flowers.forEach(f => renderFlowerRow(f.type, f.qty, f.price));
+        if (c.flowers.length === 0) renderFlowerRow('', '', '');
+
+        document.getElementById('btn-add-edit-vua-flower').onclick = () => {
+            renderFlowerRow('', '', '');
+            recalcEditVuaModal('flower');
+        };
+
+        function recalcEditVuaModal(source) {
+            let fTotal = 0;
+            container.querySelectorAll('.edit-vua-flower-row').forEach(row => {
+                const q = parseFloat(row.querySelector('.fw-qty').value) || 0;
+                const p = parseMoney(row.querySelector('.fw-price').value);
+                const tot = q * p;
+                fTotal += tot;
+                row.querySelector('.fw-item-total').textContent = (tot).toLocaleString('vi-VN') + ' ₫';
+            });
+            document.getElementById('edit-vua-flower-total-display').textContent = (fTotal).toLocaleString('vi-VN') + ' ₫';
+
+            const cost = parseMoney(document.getElementById('edit-vua-input-cost').value);
+            const vattu = 150000;
+
+            if (source === 'pt') {
+                const pt = parseMoney(document.getElementById('edit-vua-input-pt').value);
+                const ln = pt - fTotal - cost - vattu;
+                document.getElementById('edit-vua-input-profit').value = ln !== 0 ? formatMoneyStr(ln) : '0';
+            } else {
+                const ln = parseSignedMoney(document.getElementById('edit-vua-input-profit').value);
+                const pt = fTotal + cost + vattu + ln;
+                document.getElementById('edit-vua-input-pt').value = pt > 0 ? formatMoneyStr(pt) : '0';
+            }
+        }
+
+        const inpCost = document.getElementById('edit-vua-input-cost');
+        const inpProfit = document.getElementById('edit-vua-input-profit');
+        const inpPt = document.getElementById('edit-vua-input-pt');
+
+        inpCost.oninput = (e) => {
+            const val = parseMoney(e.target.value);
+            e.target.value = val > 0 ? formatMoneyStr(val) : '';
+            recalcEditVuaModal('cost');
+        };
+        inpProfit.oninput = () => {
+            recalcEditVuaModal('profit');
+        };
+        inpPt.oninput = (e) => {
+            const val = parseMoney(e.target.value);
+            e.target.value = val > 0 ? formatMoneyStr(val) : '';
+            recalcEditVuaModal('pt');
+        };
+
+        recalcEditVuaModal('init');
+
+        const btnConfirm = document.getElementById('btn-confirm-edit-vua');
+        const btnCancel = document.getElementById('btn-cancel-edit-vua');
+
+        btnCancel.onclick = () => { modal.style.display = 'none'; };
+
+        btnConfirm.onclick = async () => {
+            const newBuyer = document.getElementById('edit-vua-input-buyer').value.trim();
+            if (!newBuyer) {
+                alert("Vui lòng nhập tên Vựa!");
+                return;
+            }
+            const newFlowers = [];
+            let hasError = false;
+            container.querySelectorAll('.edit-vua-flower-row').forEach(row => {
+                const t = row.querySelector('.fw-type').value.trim();
+                const q = parseFloat(row.querySelector('.fw-qty').value) || 0;
+                const p = parseMoney(row.querySelector('.fw-price').value);
+                if (!t || q <= 0 || p <= 0) {
+                    hasError = true;
+                    return;
+                }
+                newFlowers.push({ type: t, qty: q, price: p, total: q * p });
+            });
+            if (hasError || newFlowers.length === 0) {
+                alert("Vui lòng điền đầy đủ thông tin từng loại hoa (tên hoa, số lượng, đơn giá > 0)!");
+                return;
+            }
+
+            const newCost = parseMoney(inpCost.value);
+            const newProfit = parseSignedMoney(inpProfit.value);
+            const newPt = parseMoney(inpPt.value);
+            const newStatus = document.getElementById('edit-vua-select-status').value;
+            const newNote = document.getElementById('edit-vua-input-note').value.trim();
+
+            btnConfirm.disabled = true;
+            btnConfirm.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
+
+            try {
+                const origRows = group.rows;
+                const M = origRows.length;
+                const K = newFlowers.length;
+                const maxLen = Math.max(M, K);
+
+                for (let i = 0; i < maxLen; i++) {
+                    if (i < K && i < M) {
+                        const r = origRows[i];
+                        const nf = newFlowers[i];
+                        const isFirst = (i === 0);
+                        const updates = {
+                            'Người Mua': newBuyer,
+                            'Phân Loại Bông': nf.type,
+                            'Số lượng': String(nf.qty),
+                            'Giá': String(nf.price),
+                            'Doanh Thu Bông': String(nf.total),
+                            'Chi Phí': (isFirst && newCost > 0) ? String(newCost) : '',
+                            'Loại CP': (isFirst && newCost > 0) ? 'Vận Chuyển' : '',
+                            'Doanh Thu Khác': (isFirst && newProfit !== 0) ? String(newProfit) : '',
+                            'Tiền Phải Thu': isFirst ? String(newPt) : '',
+                            'Status': newStatus,
+                            'Đã Thu': (isFirst && newStatus === 'Xong') ? String(newPt) : '',
+                            'Loại DT': 'Vựa',
+                            'Ghi Chú': isFirst ? newNote : ''
+                        };
+                        Object.assign(r, updates);
+                        r['Số lượng'] = nf.qty;
+                        r['Giá'] = nf.price;
+                        r['Doanh Thu Bông'] = nf.total;
+                        r['Tiền Phải Thu'] = isFirst ? newPt : 0;
+                        r['Chi Phí'] = (isFirst && newCost > 0) ? newCost : 0;
+                        r['Doanh Thu Khác'] = (isFirst && newProfit !== 0) ? newProfit : 0;
+
+                        if (r._sheetRowNumber && !String(r._sheetRowNumber).startsWith('OFFLINE_')) {
+                            await fetch(CONFIG.WEB_APP_URL, {
+                                method: "POST",
+                                body: JSON.stringify({ action: "update", rowNumber: Number(r._sheetRowNumber), updates, context: "all", token: getToken() }),
+                                headers: { "Content-Type": "text/plain;charset=utf-8" }
+                            });
+                        }
+                    } else if (i >= K && i < M) {
+                        const r = origRows[i];
+                        const fIdx = farmData.indexOf(r);
+                        if (fIdx !== -1) farmData.splice(fIdx, 1);
+                        if (r._sheetRowNumber && !String(r._sheetRowNumber).startsWith('OFFLINE_')) {
+                            await fetch(CONFIG.WEB_APP_URL, {
+                                method: "POST",
+                                body: JSON.stringify({ action: "deleteByRow", rowNumber: Number(r._sheetRowNumber), context: "all", token: getToken() }),
+                                headers: { "Content-Type": "text/plain;charset=utf-8" }
+                            });
+                        }
+                    }
+                }
+
+                modal.style.display = 'none';
+                if (window.showToast) window.showToast("Cập nhật đơn Vựa thành công!", "success");
+                else alert("Cập nhật đơn Vựa thành công!");
+
+                if (typeof updateDashboard === 'function') updateDashboard();
+                if (typeof applyFiltersAndRender === 'function') applyFiltersAndRender();
+            } catch (err) {
+                console.error(err);
+                alert("Có lỗi khi cập nhật đơn Vựa: " + (err.message || err));
+            } finally {
+                btnConfirm.disabled = false;
+                btnConfirm.innerHTML = '<i class="fa-solid fa-check"></i> Lưu thay đổi';
+            }
+        };
+
+        modal.style.display = 'flex';
+    };
+
+    window.confirmDeleteVuaOrder = async function(orderId) {
+        const groups = window._currentDailyVuaGroups || [];
+        const group = groups.find(g => g.orderId === orderId);
+        if (!group) {
+            alert("Không tìm thấy đơn Vựa để xóa!");
+            return;
+        }
+        const master = group.masterRow;
+        const isToday = isDateToday(master ? master['Ngày'] : '');
+        if (typeof getRole === 'function' && getRole() !== 'ADMIN' && !isToday) {
+            if (typeof notifyAdminToEdit === 'function') notifyAdminToEdit();
+            else alert("Chỉ quản trị viên mới có thể xóa đơn các ngày trước!");
+            return;
+        }
+
+        const buyer = group.computed ? group.computed.buyer : (master['Người Mua'] || 'Vựa');
+        const flowerCount = group.rows.length;
+        const ptStr = group.computed ? group.computed.pt.toLocaleString('vi-VN') + ' ₫' : '';
+
+        if (!confirm(`Bạn có chắc chắn muốn xóa toàn bộ đơn Vựa của "${buyer}" (${flowerCount} loại hoa · ${ptStr})?`)) {
+            return;
+        }
+
+        try {
+            document.body.style.cursor = 'wait';
+            for (const r of group.rows) {
+                const fIdx = farmData.indexOf(r);
+                if (fIdx !== -1) farmData.splice(fIdx, 1);
+                if (r._sheetRowNumber && !String(r._sheetRowNumber).startsWith('OFFLINE_')) {
+                    await fetch(CONFIG.WEB_APP_URL, {
+                        method: "POST",
+                        body: JSON.stringify({ action: "deleteByRow", rowNumber: Number(r._sheetRowNumber), context: "all", token: getToken() }),
+                        headers: { "Content-Type": "text/plain;charset=utf-8" }
+                    });
+                }
+            }
+
+            if (window.showToast) window.showToast(`Đã xóa toàn bộ đơn Vựa của "${buyer}"!`, "success");
+            else alert(`Đã xóa đơn Vựa của "${buyer}"!`);
+
+            if (typeof updateDashboard === 'function') updateDashboard();
+            if (typeof applyFiltersAndRender === 'function') applyFiltersAndRender();
+        } catch (err) {
+            console.error(err);
+            alert("Lỗi khi xóa đơn Vựa: " + (err.message || err));
+        } finally {
+            document.body.style.cursor = 'default';
+        }
+    };
 
     function updateDashboardFinancialRatios(year, targetConfig = null) {
         const config = targetConfig || {
@@ -10255,8 +10954,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    searchBuyerInput.addEventListener('input', applyFiltersAndRender);
-    filterStatusSelect.addEventListener('change', applyFiltersAndRender);
+    if (searchBuyerInput) searchBuyerInput.addEventListener('input', applyFiltersAndRender);
+    if (filterStatusSelect) filterStatusSelect.addEventListener('change', applyFiltersAndRender);
 
     headers.forEach(th => {
         th.addEventListener('click', () => {
@@ -10286,7 +10985,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    form.addEventListener('submit', async (e) => {
+    if (form) {
+        form.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (!isAuthorizedForEntry()) {
             alert("Bạn không có quyền nhập liệu!");
@@ -10615,7 +11315,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Asynchronously process the queue in the background
         processSyncQueue();
-    });
+        });
+    }
 
     // Load More
     const loadMoreBtnEl = document.getElementById('load-more-btn');
