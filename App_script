@@ -342,6 +342,18 @@ function doPost(e) {
                 }
             }
 
+            // Tự động gán Đã Thu nếu đơn Farm có trạng thái Xong mà chưa truyền Đã Thu
+            const statusNorm = String(data["Status"] || data["status"] || "").trim().toLowerCase();
+            const loaiDTNorm = String(data["Loại DT"] || data["loaiDT"] || "").trim().toLowerCase();
+            if (statusNorm === "xong" && (data["Đã Thu"] === undefined || data["Đã Thu"] === null || data["Đã Thu"] === "")) {
+                if (loaiDTNorm === "farm" || loaiDTNorm === "") {
+                    const dtBong = parseFloat(data["Doanh Thu Bông"]) || (parseFloat(data["Số lượng"]) * parseFloat(data["Giá"])) || 0;
+                    if (dtBong > 0) {
+                        data["Đã Thu"] = dtBong;
+                    }
+                }
+            }
+
             const isVuaEntry = String(data["Loại DT"]).trim() === "Vụa" || String(data["Loại DT"]).trim() === "Vựa";
 
             // Nếu KHÔNG phải đơn Vựa, mới tìm dòng trống để điền vào
@@ -1437,7 +1449,7 @@ function recalculateFromDate(sheet, headers, date) {
 
     // Build column map once
     const colMap = {};
-    ["Cash", "Đã Thu", "Chi Phí", "Loại DT", "Doanh Thu Bông", "Doanh Thu Khác", "Ngày", "Khoản Thu Chi Bất Thường"]
+    ["Cash", "Đã Thu", "Chi Phí", "Loại DT", "Doanh Thu Bông", "Doanh Thu Khác", "Ngày", "Khoản Thu Chi Bất Thường", "Status", "Ghi Chú"]
         .forEach(n => colMap[n] = getColumnIdx(headers, n));
 
     const colCash = colMap["Cash"];
@@ -1531,6 +1543,9 @@ function recalculateMonthCash(monthRows, colMap, openingBalance, allUpdates) {
     const cLoai = colMap["Loại DT"];
     const cOth = colMap["Doanh Thu Khác"] > -1 ? colMap["Doanh Thu Khác"] : 11;
     const cAdj = colMap["Khoản Thu Chi Bất Thường"] > -1 ? colMap["Khoản Thu Chi Bất Thường"] : 17;
+    const cStatus = colMap["Status"];
+    const cDTBong = colMap["Doanh Thu Bông"];
+    const cGhiChu = colMap["Ghi Chú"];
 
     let running = openingBalance;
     for (const row of monthRows) {
@@ -1540,7 +1555,16 @@ function recalculateMonthCash(monthRows, colMap, openingBalance, allUpdates) {
         if (loaiDT === "ADJ") {
             running += valR;
         } else {
-            const valI = parseFloat(row.values[cPaid]) || 0;
+            let valI = parseFloat(row.values[cPaid]) || 0;
+            // Fallback: nếu đơn Farm có Status = "Xong" nhưng cột Đã Thu để trống, và không phải nợ cũ chốt sau
+            if (valI === 0 && (loaiDT === "Farm" || loaiDT === "")) {
+                const statusStr = cStatus > -1 ? String(row.values[cStatus] || "").trim().toLowerCase() : "";
+                const noteStr = cGhiChu > -1 ? String(row.values[cGhiChu] || "") : "";
+                if (statusStr === "xong" && !noteStr.includes("[Chốt thanh toán") && !noteStr.includes("[Gạch toa")) {
+                    const dtBong = cDTBong > -1 ? (parseFloat(row.values[cDTBong]) || 0) : 0;
+                    if (dtBong > 0) valI = dtBong;
+                }
+            }
             running += valI;
             if (loaiDT === "Company") {
                 const valOther = parseFloat(row.values[cOth]) || 0;

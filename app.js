@@ -16,8 +16,8 @@ function isDateToday(rowDateVal) {
     const now = new Date();
     if (rowDateVal instanceof Date) {
         return rowDateVal.getDate() === now.getDate() &&
-               rowDateVal.getMonth() === now.getMonth() &&
-               rowDateVal.getFullYear() === now.getFullYear();
+            rowDateVal.getMonth() === now.getMonth() &&
+            rowDateVal.getFullYear() === now.getFullYear();
     }
     const dd = String(now.getDate()).padStart(2, '0');
     const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -6473,7 +6473,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Modal Handlers for Vựa Order Edit & Delete in Daily Report
-    window.openEditVuaOrderModal = function(orderId) {
+    window.openEditVuaOrderModal = function (orderId) {
         const groups = window._currentDailyVuaGroups || [];
         const group = groups.find(g => g.orderId === orderId);
         if (!group) {
@@ -6698,7 +6698,7 @@ document.addEventListener("DOMContentLoaded", () => {
         modal.style.display = 'flex';
     };
 
-    window.confirmDeleteVuaOrder = async function(orderId) {
+    window.confirmDeleteVuaOrder = async function (orderId) {
         const groups = window._currentDailyVuaGroups || [];
         const group = groups.find(g => g.orderId === orderId);
         if (!group) {
@@ -6894,7 +6894,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return lbl.includes("MỤC TIÊU TĂNG TRƯỞNG VCSH") && !lbl.includes("%") && !lbl.includes("(");
             });
             const goalValRaw = mucTieuRow ? (Number(mucTieuRow[yearIdx]) || 0)
-                             : (findVal("MỤC TIÊU") || 0);
+                : (findVal("MỤC TIÊU") || 0);
             const goalVal = goalValRaw;
             const remainingGoal = goalVal - equityCurr; // cả 2 đơn vị triệu đồng
 
@@ -6931,10 +6931,10 @@ document.addEventListener("DOMContentLoaded", () => {
                             <span style="font-size:0.85rem; opacity:0.85;">${formatBalanceVal(goalVal)}</span>
                             <span style="font-size:0.78rem; font-weight:800; color:${remainingGoal <= 0 ? '#34d399' : '#fca5a5'}; background:${remainingGoal <= 0 ? 'rgba(52,211,153,0.15)' : 'rgba(252,165,165,0.15)'}; border-radius:5px; padding:1px 7px;">
                                 ${remainingGoal <= 0
-                                    ? `✅ Passed · +${formatBalanceVal(Math.abs(remainingGoal))} vượt`
-                                    : `❌ Failed · -${formatBalanceVal(remainingGoal)} thiếu`}
+                        ? `✅ Passed · +${formatBalanceVal(Math.abs(remainingGoal))} vượt`
+                        : `❌ Failed · -${formatBalanceVal(remainingGoal)} thiếu`}
                             </span>
-                            ${goalPct !== null ? `<span style="font-size:0.72rem; color:${remainingGoal <= 0 ? '#34d399' : '#fbbf24'}; opacity:0.9;">${goalPct.toLocaleString('vi-VN',{maximumFractionDigits:1})}% hoàn thành</span>` : ''}
+                            ${goalPct !== null ? `<span style="font-size:0.72rem; color:${remainingGoal <= 0 ? '#34d399' : '#fbbf24'}; opacity:0.9;">${goalPct.toLocaleString('vi-VN', { maximumFractionDigits: 1 })}% hoàn thành</span>` : ''}
                         </span>
                     ` : `<span class="ratio-value currency-val" style="color:#94a3b8; font-size:0.9rem;">Chưa có mục tiêu</span>`}
                 </div>
@@ -10561,30 +10561,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        // 2. Số dư cuối kỳ = Cash (Q) của dòng cuối cùng TRONG thời kỳ được chọn
-        let currentCash = openingBalance; // fallback nếu chưa có dữ liệu
-        let lastInMonthDate = null;
-
-        farmData.forEach(row => {
-            if (!row.parsedDate) return;
-            const ry = row.parsedDate.getFullYear(), rm = row.parsedDate.getMonth() + 1;
-            let isInPeriod;
-            if (selMonthVal === "all") {
-                isInPeriod = ry === selYear;
-            } else {
-                const selMonth = parseInt(selMonthVal);
-                isInPeriod = ry === selYear && rm === selMonth;
-            }
-            if (isInPeriod) {
-                if (!lastInMonthDate || row.parsedDate >= lastInMonthDate) {
-                    lastInMonthDate = row.parsedDate;
-                    const cashVal = parseFloat(row["Cash"]);
-                    if (!isNaN(cashVal)) currentCash = cashVal;
-                }
-            }
-        });
-
-        // 3. Tính breakdown để hiển thị (chỉ phục vụ UI)
+        // 2. Tính breakdown thu chi trong thời kỳ được chọn
         let cashIn = 0, cashOut = 0, adjTotal = 0;
         farmData.forEach(row => {
             if (!row.parsedDate) return;
@@ -10593,7 +10570,15 @@ document.addEventListener("DOMContentLoaded", () => {
             if (selMonthVal !== "all" && rm !== parseInt(selMonthVal)) return;
 
             const loaiDT = (row["Loại DT"] || "").trim();
-            const valI = parseFloat(row["Đã Thu"]) || 0;
+            let valI = parseFloat(row["Đã Thu"]) || 0;
+            const statusStr = (row["Status"] || "").trim().toLowerCase();
+            const noteStr = (row["Ghi Chú"] || "").trim();
+            // Fallback: nếu đơn Farm có Status = "Xong" nhưng cột Đã Thu bị để trống, và không phải nợ cũ chốt sau
+            if (valI === 0 && statusStr === "xong" && (loaiDT === "Farm" || loaiDT === "") && !noteStr.includes("[Chốt thanh toán") && !noteStr.includes("[Gạch toa")) {
+                const dtBong = parseFloat(row["Doanh Thu Bông"]) || 0;
+                if (dtBong > 0) valI = dtBong;
+            }
+
             const valExp = parseFloat(row["Chi Phí"]) || 0;
             const valR = parseFloat(row["Khoản Thu Chi Bất Thường"]) || 0;
             if (loaiDT === "ADJ") {
@@ -10605,6 +10590,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 adjTotal += valR;
             }
         });
+
+        // 3. Số dư cuối kỳ = Số dư đầu kỳ + Chênh lệch thu chi trong kỳ
+        const cashDiff = cashIn - cashOut + adjTotal;
+        const currentCash = openingBalance + cashDiff;
 
         // 4. Cập nhật UI
         const cashEl = document.getElementById('kpi-cash-hand');
@@ -10635,7 +10624,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const diffEl = document.getElementById('cash-diff-total');
         if (diffEl) {
-            const cashDiff = cashIn - cashOut + adjTotal;
             if (cashDiff > 0) {
                 diffEl.innerText = '+' + formatCurrency(cashDiff);
                 diffEl.style.color = '#10b981';
@@ -10667,12 +10655,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (entryInEl) entryInEl.innerText = formatCurrency(cashIn);
         if (entryOutEl) entryOutEl.innerText = formatCurrency(cashOut);
         if (entryDiffEl) {
-            const cashDiff2 = cashIn - cashOut + adjTotal;
-            if (cashDiff2 > 0) {
-                entryDiffEl.innerText = '+' + formatCurrency(cashDiff2);
+            if (cashDiff > 0) {
+                entryDiffEl.innerText = '+' + formatCurrency(cashDiff);
                 entryDiffEl.style.color = '#10b981';
-            } else if (cashDiff2 < 0) {
-                entryDiffEl.innerText = formatCurrency(cashDiff2);
+            } else if (cashDiff < 0) {
+                entryDiffEl.innerText = formatCurrency(cashDiff);
+                entryDiffEl.style.color = '#ef4444';
                 entryDiffEl.style.color = '#ef4444';
             } else {
                 entryDiffEl.innerText = '0 ₫';
@@ -11089,263 +11077,263 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (form) {
         form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (!isAuthorizedForEntry()) {
-            alert("Bạn không có quyền nhập liệu!");
-            return;
-        }
-
-        const _rawDateVal = document.getElementById('date-input').value; // "YYYY-MM-DD"
-        if (getRole() !== 'ADMIN' && _rawDateVal !== formatDateInput(new Date())) {
-            window.notifyAdminToEntry();
-            return;
-        }
-
-        if (!confirm("Bạn có chắc chắn muốn lưu các dòng dữ liệu này?")) {
-            return;
-        }
-
-        const entryMode = entryTypeSelect ? entryTypeSelect.value : 'farm';
-        // Shared fields
-        // Parse date as LOCAL midnight (not UTC) to match server-side date parsing
-        // Avoid new Date("YYYY-MM-DD") which creates UTC midnight, causing +7h offset vs local dates from server
-        const [_yr, _mo, _dd] = _rawDateVal.split('-').map(Number);
-        const dInput = new Date(_yr, _mo - 1, _dd); // Local midnight — consistent với processRawSheetData
-        const dateStr = formatDateVietnamese(dInput); // Dùng định dạng chuẩn DD/MM/YYYY để khớp với Sheet
-        const statusVal = document.getElementById('status-input').value; // Removed default "Chưa Xong"
-        const buyerVal = document.getElementById('buyer-input').value;
-        const noteVal = statusVal === 'Xong' ? `Đã thu tiền ngày ${dateStr}` : "";
-
-        const submitBtn = form.querySelector('button[type="submit"]');
-
-        let payloadRowsStr = [];
-        let payloadRowsParsed = [];
-
-        if (entryMode === 'farm') {
-            const items = flowerItemsContainer.querySelectorAll('.flower-item');
-
-            if (items.length === 0) {
-                alert("Vui lòng thêm ít nhất 1 dòng bông!");
+            e.preventDefault();
+            if (!isAuthorizedForEntry()) {
+                alert("Bạn không có quyền nhập liệu!");
                 return;
             }
 
-            items.forEach((item, index) => {
-                const typeStr = item.querySelector('.fw-type').value || "Bông";
-                const qValue = parseFloat(item.querySelector('.fw-qty').value) || 0;
-                const pValue = parseMoney(item.querySelector('.fw-price').value);
-                const dtBong = qValue * pValue;
+            const _rawDateVal = document.getElementById('date-input').value; // "YYYY-MM-DD"
+            if (getRole() !== 'ADMIN' && _rawDateVal !== formatDateInput(new Date())) {
+                window.notifyAdminToEntry();
+                return;
+            }
 
-                payloadRowsStr.push({
-                    "Ngày": dateStr,
-                    "Status": statusVal,
-                    "Người Mua": buyerVal,
-                    "Số lượng": qValue.toString(),
-                    "Giá": pValue.toString(),
-                    "Doanh Thu Bông": dtBong.toString(),
-                    "Phân Loại Bông": typeStr,
-                    "Ghi Chú": noteVal,
-                    "Đã Thu": statusVal === 'Xong' ? dtBong.toString() : "",
-                    "Tiền Phải Thu": "", "Ghi Chú Vựa thu": "", "Doanh Thu Khác": "",
-                    "Loại DT": "Farm", "Chi Phí": "", "Loại CP": "", "Ghi Chú Chi Phí": ""
-                });
+            if (!confirm("Bạn có chắc chắn muốn lưu các dòng dữ liệu này?")) {
+                return;
+            }
 
-                payloadRowsParsed.push({
-                    "Ngày": dateStr, "Status": statusVal, "Người Mua": buyerVal, "Phân Loại Bông": typeStr, "Ghi Chú": noteVal,
-                    parsedDate: dInput, "Số lượng": qValue, "Giá": pValue, "Doanh Thu Bông": dtBong,
-                    "Đã Thu": statusVal === 'Xong' ? dtBong : 0,
-                    "Chi Phí": 0, "Tiền Phải Thu": 0, "Doanh Thu Khác": 0, "Loại DT": "Farm"
-                });
-            });
-        } else if (entryMode === 'vua') {
-            // Vựa Mode
-            const shipCost = parseMoney(vuaShipCostInput.value);
-            const vattuCost = parseMoney(vuaVattuCostInput.value);
-            const packingCost = parseSignedMoney(document.getElementById('vua-packing-cost') ? document.getElementById('vua-packing-cost').value : "0");
-            const totalCollect = parseMoney(vuaTotalCollectInput.value);
-            const outsideFlowerCost = parseMoney(vuaOutsideFlowerCostInput ? vuaOutsideFlowerCostInput.value : "0");
-            const outsideFlowerNote = vuaOutsideFlowerNoteInput ? vuaOutsideFlowerNoteInput.value.trim() : "";
-            const items = flowerItemsContainer.querySelectorAll('.flower-item');
+            const entryMode = entryTypeSelect ? entryTypeSelect.value : 'farm';
+            // Shared fields
+            // Parse date as LOCAL midnight (not UTC) to match server-side date parsing
+            // Avoid new Date("YYYY-MM-DD") which creates UTC midnight, causing +7h offset vs local dates from server
+            const [_yr, _mo, _dd] = _rawDateVal.split('-').map(Number);
+            const dInput = new Date(_yr, _mo - 1, _dd); // Local midnight — consistent với processRawSheetData
+            const dateStr = formatDateVietnamese(dInput); // Dùng định dạng chuẩn DD/MM/YYYY để khớp với Sheet
+            const statusVal = document.getElementById('status-input').value; // Removed default "Chưa Xong"
+            const buyerVal = document.getElementById('buyer-input').value;
+            const noteVal = statusVal === 'Xong' ? `Đã thu tiền ngày ${dateStr}` : "";
 
-            let sumCost = 0;
-            items.forEach((item) => {
-                const q = parseFloat(item.querySelector('.fw-qty').value) || 0;
-                const p = parseMoney(item.querySelector('.fw-price').value);
-                sumCost += (q * p);
-            });
-            const expectedRevenue = packingCost; // User wants Profit recorded as Revenue
+            const submitBtn = form.querySelector('button[type="submit"]');
 
-            items.forEach((item, index) => {
-                const typeStr = item.querySelector('.fw-type').value || "Bông";
-                const qValue = parseFloat(item.querySelector('.fw-qty').value) || 0;
-                const pValue = parseMoney(item.querySelector('.fw-price').value);
-                const dtBong = qValue * pValue;
+            let payloadRowsStr = [];
+            let payloadRowsParsed = [];
 
-                const tPhaiThuStr = index === 0 ? totalCollect.toString() : "";
-                const dtKhacStr = index === 0 ? expectedRevenue.toString() : "";
-                const daThuStr = (statusVal === 'Xong' && index === 0) ? totalCollect.toString() : "";
+            if (entryMode === 'farm') {
+                const items = flowerItemsContainer.querySelectorAll('.flower-item');
 
-                let chiPhiStr = "";
-                let loaiCPStr = "";
-
-                if (index === 0 && shipCost > 0) {
-                    chiPhiStr = shipCost.toString();
-                    loaiCPStr = "Vận Chuyển";
+                if (items.length === 0) {
+                    alert("Vui lòng thêm ít nhất 1 dòng bông!");
+                    return;
                 }
 
-                payloadRowsStr.push({
-                    "Ngày": dateStr, "Status": statusVal, "Người Mua": buyerVal, "Số lượng": qValue.toString(), "Giá": pValue.toString(), "Doanh Thu Bông": dtBong.toString(), "Phân Loại Bông": typeStr, "Ghi Chú": noteVal,
-                    "Đã Thu": daThuStr, "Tiền Phải Thu": tPhaiThuStr, "Ghi Chú Vựa thu": "", "Doanh Thu Khác": dtKhacStr, "Loại DT": "Vựa", "Chi Phí": chiPhiStr, "Loại CP": loaiCPStr, "Ghi Chú Chi Phí": ""
-                });
+                items.forEach((item, index) => {
+                    const typeStr = item.querySelector('.fw-type').value || "Bông";
+                    const qValue = parseFloat(item.querySelector('.fw-qty').value) || 0;
+                    const pValue = parseMoney(item.querySelector('.fw-price').value);
+                    const dtBong = qValue * pValue;
 
-                payloadRowsParsed.push({
-                    "Ngày": dateStr, "Status": statusVal, "Người Mua": buyerVal, "Phân Loại Bông": typeStr, "Ghi Chú": noteVal, "Loại DT": "Vựa", "Loại CP": loaiCPStr,
-                    parsedDate: dInput, "Số lượng": qValue, "Giá": pValue, "Doanh Thu Bông": dtBong,
-                    "Đã Thu": (statusVal === 'Xong' && index === 0) ? totalCollect : 0,
-                    "Tiền Phải Thu": index === 0 ? totalCollect : 0, "Chi Phí": index === 0 ? shipCost : 0, "Doanh Thu Khác": index === 0 ? expectedRevenue : 0
-                });
-            });
-
-            // Add outside flower cost row if greater than 0
-            if (outsideFlowerCost > 0) {
-                const noteCP = outsideFlowerNote || "Mua bông ngoài";
-                payloadRowsStr.push({
-                    "Ngày": dateStr,
-                    "Status": statusVal,
-                    "Người Mua": buyerVal,
-                    "Số lượng": "0",
-                    "Giá": "0",
-                    "Doanh Thu Bông": "0",
-                    "Phân Loại Bông": "",
-                    "Ghi Chú": noteCP,
-                    "Đã Thu": "",
-                    "Tiền Phải Thu": "",
-                    "Ghi Chú Vựa thu": "",
-                    "Doanh Thu Khác": "",
-                    "Loại DT": "Vựa",
-                    "Chi Phí": outsideFlowerCost.toString(),
-                    "Loại CP": "Mua Bông",
-                    "Ghi Chú Chi Phí": noteCP
-                });
-
-                payloadRowsParsed.push({
-                    "Ngày": dateStr,
-                    "Status": statusVal,
-                    "Người Mua": buyerVal,
-                    "Phân Loại Bông": "",
-                    "Ghi Chú": noteCP,
-                    "Loại DT": "Vựa",
-                    "Loại CP": "Mua Bông",
-                    "Ghi Chú Chi Phí": noteCP,
-                    parsedDate: dInput,
-                    "Số lượng": 0,
-                    "Giá": 0,
-                    "Doanh Thu Bông": 0,
-                    "Đã Thu": 0,
-                    "Tiền Phải Thu": 0,
-                    "Chi Phí": outsideFlowerCost,
-                    "Doanh Thu Khác": 0
-                });
-            }
-        } else if (entryMode === 'expense') {
-            const expItems = expenseItemsContainer.querySelectorAll('.expense-item');
-
-            expItems.forEach(item => {
-                const expType = item.querySelector('.exp-type').value;
-                const expAmount = parseMoney(item.querySelector('.exp-amount').value);
-                const expNote = item.querySelector('.exp-note').value;
-
-                if (expAmount > 0) {
                     payloadRowsStr.push({
-                        "action": "add_expense",
-                        "data": {
-                            "Ngày": dateStr,
-                            "Status": "Xong",
-                            "Người Mua": buyerVal,
-                            "Chi Phí": expAmount.toString(),
-                            "Loại CP": expType,
-                            "Ghi Chú Chi Phí": expNote
-                        }
+                        "Ngày": dateStr,
+                        "Status": statusVal,
+                        "Người Mua": buyerVal,
+                        "Số lượng": qValue.toString(),
+                        "Giá": pValue.toString(),
+                        "Doanh Thu Bông": dtBong.toString(),
+                        "Phân Loại Bông": typeStr,
+                        "Ghi Chú": noteVal,
+                        "Đã Thu": statusVal === 'Xong' ? dtBong.toString() : "",
+                        "Tiền Phải Thu": "", "Ghi Chú Vựa thu": "", "Doanh Thu Khác": "",
+                        "Loại DT": "Farm", "Chi Phí": "", "Loại CP": "", "Ghi Chú Chi Phí": ""
                     });
 
                     payloadRowsParsed.push({
-                        "Ngày": dateStr, "Status": "Xong", "Người Mua": buyerVal, "Chi Phí": expAmount, "Loại CP": expType, "Ghi Chú Chi Phí": expNote,
-                        parsedDate: dInput, "Số lượng": 0, "Giá": 0, "Doanh Thu Bông": 0, "Tiền Phải Thu": 0, "Doanh Thu Khác": 0
+                        "Ngày": dateStr, "Status": statusVal, "Người Mua": buyerVal, "Phân Loại Bông": typeStr, "Ghi Chú": noteVal,
+                        parsedDate: dInput, "Số lượng": qValue, "Giá": pValue, "Doanh Thu Bông": dtBong,
+                        "Đã Thu": statusVal === 'Xong' ? dtBong : 0,
+                        "Chi Phí": 0, "Tiền Phải Thu": 0, "Doanh Thu Khác": 0, "Loại DT": "Farm"
+                    });
+                });
+            } else if (entryMode === 'vua') {
+                // Vựa Mode
+                const shipCost = parseMoney(vuaShipCostInput.value);
+                const vattuCost = parseMoney(vuaVattuCostInput.value);
+                const packingCost = parseSignedMoney(document.getElementById('vua-packing-cost') ? document.getElementById('vua-packing-cost').value : "0");
+                const totalCollect = parseMoney(vuaTotalCollectInput.value);
+                const outsideFlowerCost = parseMoney(vuaOutsideFlowerCostInput ? vuaOutsideFlowerCostInput.value : "0");
+                const outsideFlowerNote = vuaOutsideFlowerNoteInput ? vuaOutsideFlowerNoteInput.value.trim() : "";
+                const items = flowerItemsContainer.querySelectorAll('.flower-item');
+
+                let sumCost = 0;
+                items.forEach((item) => {
+                    const q = parseFloat(item.querySelector('.fw-qty').value) || 0;
+                    const p = parseMoney(item.querySelector('.fw-price').value);
+                    sumCost += (q * p);
+                });
+                const expectedRevenue = packingCost; // User wants Profit recorded as Revenue
+
+                items.forEach((item, index) => {
+                    const typeStr = item.querySelector('.fw-type').value || "Bông";
+                    const qValue = parseFloat(item.querySelector('.fw-qty').value) || 0;
+                    const pValue = parseMoney(item.querySelector('.fw-price').value);
+                    const dtBong = qValue * pValue;
+
+                    const tPhaiThuStr = index === 0 ? totalCollect.toString() : "";
+                    const dtKhacStr = index === 0 ? expectedRevenue.toString() : "";
+                    const daThuStr = (statusVal === 'Xong' && index === 0) ? totalCollect.toString() : "";
+
+                    let chiPhiStr = "";
+                    let loaiCPStr = "";
+
+                    if (index === 0 && shipCost > 0) {
+                        chiPhiStr = shipCost.toString();
+                        loaiCPStr = "Vận Chuyển";
+                    }
+
+                    payloadRowsStr.push({
+                        "Ngày": dateStr, "Status": statusVal, "Người Mua": buyerVal, "Số lượng": qValue.toString(), "Giá": pValue.toString(), "Doanh Thu Bông": dtBong.toString(), "Phân Loại Bông": typeStr, "Ghi Chú": noteVal,
+                        "Đã Thu": daThuStr, "Tiền Phải Thu": tPhaiThuStr, "Ghi Chú Vựa thu": "", "Doanh Thu Khác": dtKhacStr, "Loại DT": "Vựa", "Chi Phí": chiPhiStr, "Loại CP": loaiCPStr, "Ghi Chú Chi Phí": ""
+                    });
+
+                    payloadRowsParsed.push({
+                        "Ngày": dateStr, "Status": statusVal, "Người Mua": buyerVal, "Phân Loại Bông": typeStr, "Ghi Chú": noteVal, "Loại DT": "Vựa", "Loại CP": loaiCPStr,
+                        parsedDate: dInput, "Số lượng": qValue, "Giá": pValue, "Doanh Thu Bông": dtBong,
+                        "Đã Thu": (statusVal === 'Xong' && index === 0) ? totalCollect : 0,
+                        "Tiền Phải Thu": index === 0 ? totalCollect : 0, "Chi Phí": index === 0 ? shipCost : 0, "Doanh Thu Khác": index === 0 ? expectedRevenue : 0
+                    });
+                });
+
+                // Add outside flower cost row if greater than 0
+                if (outsideFlowerCost > 0) {
+                    const noteCP = outsideFlowerNote || "Mua bông ngoài";
+                    payloadRowsStr.push({
+                        "Ngày": dateStr,
+                        "Status": statusVal,
+                        "Người Mua": buyerVal,
+                        "Số lượng": "0",
+                        "Giá": "0",
+                        "Doanh Thu Bông": "0",
+                        "Phân Loại Bông": "",
+                        "Ghi Chú": noteCP,
+                        "Đã Thu": "",
+                        "Tiền Phải Thu": "",
+                        "Ghi Chú Vựa thu": "",
+                        "Doanh Thu Khác": "",
+                        "Loại DT": "Vựa",
+                        "Chi Phí": outsideFlowerCost.toString(),
+                        "Loại CP": "Mua Bông",
+                        "Ghi Chú Chi Phí": noteCP
+                    });
+
+                    payloadRowsParsed.push({
+                        "Ngày": dateStr,
+                        "Status": statusVal,
+                        "Người Mua": buyerVal,
+                        "Phân Loại Bông": "",
+                        "Ghi Chú": noteCP,
+                        "Loại DT": "Vựa",
+                        "Loại CP": "Mua Bông",
+                        "Ghi Chú Chi Phí": noteCP,
+                        parsedDate: dInput,
+                        "Số lượng": 0,
+                        "Giá": 0,
+                        "Doanh Thu Bông": 0,
+                        "Đã Thu": 0,
+                        "Tiền Phải Thu": 0,
+                        "Chi Phí": outsideFlowerCost,
+                        "Doanh Thu Khác": 0
                     });
                 }
+            } else if (entryMode === 'expense') {
+                const expItems = expenseItemsContainer.querySelectorAll('.expense-item');
+
+                expItems.forEach(item => {
+                    const expType = item.querySelector('.exp-type').value;
+                    const expAmount = parseMoney(item.querySelector('.exp-amount').value);
+                    const expNote = item.querySelector('.exp-note').value;
+
+                    if (expAmount > 0) {
+                        payloadRowsStr.push({
+                            "action": "add_expense",
+                            "data": {
+                                "Ngày": dateStr,
+                                "Status": "Xong",
+                                "Người Mua": buyerVal,
+                                "Chi Phí": expAmount.toString(),
+                                "Loại CP": expType,
+                                "Ghi Chú Chi Phí": expNote
+                            }
+                        });
+
+                        payloadRowsParsed.push({
+                            "Ngày": dateStr, "Status": "Xong", "Người Mua": buyerVal, "Chi Phí": expAmount, "Loại CP": expType, "Ghi Chú Chi Phí": expNote,
+                            parsedDate: dInput, "Số lượng": 0, "Giá": 0, "Doanh Thu Bông": 0, "Tiền Phải Thu": 0, "Doanh Thu Khác": 0
+                        });
+                    }
+                });
+            }
+
+            // Final check for Vua/Farm mode to add action if missing
+            if (entryMode !== 'expense') {
+                payloadRowsStr = payloadRowsStr.map(row => ({
+                    "action": "add",
+                    "data": row
+                }));
+            }
+
+            if (!isConfigured()) {
+                alert("Vui lòng cấu hình WEB_APP_URL! Dữ liệu hiện tại chỉ lưu tạm.");
+                payloadRowsParsed.forEach(p => farmData.unshift(p));
+                applyFiltersAndRender();
+                return;
+            }
+
+            let queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+
+            // IF EDIT MODE: Delete old row first (or remove from queue if it was offline)
+            if (currentEditRowData) {
+                const sheetRow = currentEditRowData._sheetRowNumber;
+                if (sheetRow) {
+                    if (typeof sheetRow === 'string' && sheetRow.startsWith('OFFLINE_')) {
+                        // Just filter it out of the local queue
+                        queue = queue.filter(item => item.clientId !== sheetRow);
+                    } else {
+                        // Queue a delete action for the server
+                        const context = currentTableTab === 'adjustment' ? 'adjustment' : (currentTableTab === 'expense' ? 'expense' : 'all');
+                        queue.push({ action: 'delete', rowNumber: sheetRow, context: context, clientId: "DEL_" + sheetRow });
+                    }
+                }
+                // Remove old row from local data
+                const fidx = farmData.indexOf(currentEditRowData);
+                if (fidx >= 0) farmData.splice(fidx, 1);
+            }
+
+            // Add new rows to queue
+            const timestampId = "OFFLINE_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+            payloadRowsStr.forEach((p, pIdx) => {
+                const rowClientId = `${timestampId}_${pIdx}`;
+                queue.push({ action: 'add', payload: p, clientId: rowClientId });
+
+                // Map the clientId to the optimistic parsed row
+                if (payloadRowsParsed[pIdx]) {
+                    payloadRowsParsed[pIdx]._sheetRowNumber = rowClientId;
+                }
             });
-        }
 
-        // Final check for Vua/Farm mode to add action if missing
-        if (entryMode !== 'expense') {
-            payloadRowsStr = payloadRowsStr.map(row => ({
-                "action": "add",
-                "data": row
-            }));
-        }
+            // Save queue
+            localStorage.setItem('harvest_sync_queue', JSON.stringify(queue));
 
-        if (!isConfigured()) {
-            alert("Vui lòng cấu hình WEB_APP_URL! Dữ liệu hiện tại chỉ lưu tạm.");
+            // Optimistic UI update
             payloadRowsParsed.forEach(p => farmData.unshift(p));
             applyFiltersAndRender();
-            return;
-        }
+            populateYears();
+            if (typeof updateConnectionStatus === 'function') updateConnectionStatus();
+            if (document.getElementById('view-report').style.display === 'block') updateDashboard();
 
-        let queue = JSON.parse(localStorage.getItem('harvest_sync_queue') || '[]');
+            showToast("Đang lưu giao dịch vào danh sách chờ...", "success");
 
-        // IF EDIT MODE: Delete old row first (or remove from queue if it was offline)
-        if (currentEditRowData) {
-            const sheetRow = currentEditRowData._sheetRowNumber;
-            if (sheetRow) {
-                if (typeof sheetRow === 'string' && sheetRow.startsWith('OFFLINE_')) {
-                    // Just filter it out of the local queue
-                    queue = queue.filter(item => item.clientId !== sheetRow);
-                } else {
-                    // Queue a delete action for the server
-                    const context = currentTableTab === 'adjustment' ? 'adjustment' : (currentTableTab === 'expense' ? 'expense' : 'all');
-                    queue.push({ action: 'delete', rowNumber: sheetRow, context: context, clientId: "DEL_" + sheetRow });
-                }
-            }
-            // Remove old row from local data
-            const fidx = farmData.indexOf(currentEditRowData);
-            if (fidx >= 0) farmData.splice(fidx, 1);
-        }
+            currentEditRowData = null; // Clear edit mode
+            const cancelBtn = document.getElementById('cancel-edit-btn');
+            if (cancelBtn) cancelBtn.remove();
 
-        // Add new rows to queue
-        const timestampId = "OFFLINE_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-        payloadRowsStr.forEach((p, pIdx) => {
-            const rowClientId = `${timestampId}_${pIdx}`;
-            queue.push({ action: 'add', payload: p, clientId: rowClientId });
+            // Immediate reset of form inputs & submit button to allow next input instantly
+            submitBtn.disabled = false;
+            form.reset();
+            document.getElementById('date-input').value = formatDateInput(new Date());
 
-            // Map the clientId to the optimistic parsed row
-            if (payloadRowsParsed[pIdx]) {
-                payloadRowsParsed[pIdx]._sheetRowNumber = rowClientId;
-            }
-        });
-
-        // Save queue
-        localStorage.setItem('harvest_sync_queue', JSON.stringify(queue));
-
-        // Optimistic UI update
-        payloadRowsParsed.forEach(p => farmData.unshift(p));
-        applyFiltersAndRender();
-        populateYears();
-        if (typeof updateConnectionStatus === 'function') updateConnectionStatus();
-        if (document.getElementById('view-report').style.display === 'block') updateDashboard();
-
-        showToast("Đang lưu giao dịch vào danh sách chờ...", "success");
-
-        currentEditRowData = null; // Clear edit mode
-        const cancelBtn = document.getElementById('cancel-edit-btn');
-        if (cancelBtn) cancelBtn.remove();
-
-        // Immediate reset of form inputs & submit button to allow next input instantly
-        submitBtn.disabled = false;
-        form.reset();
-        document.getElementById('date-input').value = formatDateInput(new Date());
-
-        // Reset flower items container to default single row
-        if (flowerItemsContainer) {
-            flowerItemsContainer.innerHTML = `
+            // Reset flower items container to default single row
+            if (flowerItemsContainer) {
+                flowerItemsContainer.innerHTML = `
                 <div class="flower-item">
                     <div class="form-group" style="margin: 0;">
                         <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Loại mặt hàng</label>
@@ -11370,18 +11358,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 </div>
             `;
-            attachFlowerRowEvents(flowerItemsContainer.querySelector('.flower-item'));
-            updateFlowerSummaryTotals();
-        }
+                attachFlowerRowEvents(flowerItemsContainer.querySelector('.flower-item'));
+                updateFlowerSummaryTotals();
+            }
 
-        if (entryTypeSelect && entryTypeSelect.value === 'vua') {
-            setVuaCollectLock(false);
-            calculateVuaTotals();
-        }
+            if (entryTypeSelect && entryTypeSelect.value === 'vua') {
+                setVuaCollectLock(false);
+                calculateVuaTotals();
+            }
 
-        // Reset expense items container to default single row
-        if (expenseItemsContainer) {
-            expenseItemsContainer.innerHTML = `
+            // Reset expense items container to default single row
+            if (expenseItemsContainer) {
+                expenseItemsContainer.innerHTML = `
                 <div class="expense-item">
                     <div class="form-group" style="margin: 0;">
                         <label style="font-size: 0.7rem; color: #64748b; font-weight: 700;">Hạng mục</label>
@@ -11408,15 +11396,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button type="button" class="del-expense-btn" title="Xoá"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
             `;
-            attachExpenseRowEvents(expenseItemsContainer.querySelector('.expense-item'));
-        }
+                attachExpenseRowEvents(expenseItemsContainer.querySelector('.expense-item'));
+            }
 
-        if (entryTypeSelect) {
-            entryTypeSelect.dispatchEvent(new Event('change'));
-        }
+            if (entryTypeSelect) {
+                entryTypeSelect.dispatchEvent(new Event('change'));
+            }
 
-        // Asynchronously process the queue in the background
-        processSyncQueue();
+            // Asynchronously process the queue in the background
+            processSyncQueue();
         });
     }
 

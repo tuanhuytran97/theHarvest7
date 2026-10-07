@@ -82,7 +82,7 @@
         const oldLen = input.value.length;
         input.value = (isNeg && v === 0 ? '-' : '') + new Intl.NumberFormat('vi-VN').format(v);
         const newLen = input.value.length;
-        try { input.setSelectionRange(pos + (newLen - oldLen), pos + (newLen - oldLen)); } catch (e) {}
+        try { input.setSelectionRange(pos + (newLen - oldLen), pos + (newLen - oldLen)); } catch (e) { }
     }
 
     function showToast(msg, type = 'info', duration = 3500) {
@@ -236,7 +236,12 @@
             <div class="item-total-display farm-row-total">= 0 ₫</div>
         `;
         container.appendChild(div);
-        div.querySelector('.farm-type').focus();
+        div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        const typeInp = div.querySelector('.farm-type');
+        if (typeInp) {
+            typeInp.focus();
+            setTimeout(() => typeInp.focus(), 20);
+        }
         calcFarmTotals();
     }
 
@@ -379,7 +384,14 @@
                 'Doanh Thu Bông': f.total,
                 'Status': status || '',
                 'Ghi Chú': note || '',
-                'Loại DT': 'Farm'
+                'Đã Thu': status === 'Xong' ? f.total : '',
+                'Tiền Phải Thu': '',
+                'Ghi Chú thu': status === 'Xong' ? ('Đã thu tiền ngày ' + dateVN) : '',
+                'Doanh Thu Khác': '',
+                'Loại DT': 'Farm',
+                'Chi Phí': '',
+                'Loại CP': '',
+                'Ghi Chú Chi Phí': ''
             };
 
             queue.push({
@@ -399,14 +411,15 @@
                     'Doanh Thu Bông': f.total,
                     'Status': status || '',
                     'Ghi Chú': note || '',
-                    'Đã Thu': status === 'Xong' ? f.total : 0,
+                    'Đã Thu': status === 'Xong' ? (parseFloat(f.total) || 0) : 0,
                     'Tiền Phải Thu': 0,
-                    'Ghi Chú thu': '',
+                    'Ghi Chú thu': status === 'Xong' ? ('Đã thu tiền ngày ' + dateVN) : '',
                     'Doanh Thu Khác': 0,
                     'Loại DT': 'Farm',
                     'Chi Phí': 0,
                     'Loại CP': '',
                     'Ghi Chú Chi Phí': '',
+                    'Khoản Thu Chi Bất Thường': 0,
                     parsedDate: dateObj
                 });
             }
@@ -511,7 +524,12 @@
             <div class="item-total-display blue vua-row-total">= 0 ₫</div>
         `;
         container.appendChild(div);
-        div.querySelector('.vua-type').focus();
+        div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        const typeInp = div.querySelector('.vua-type');
+        if (typeInp) {
+            typeInp.focus();
+            setTimeout(() => typeInp.focus(), 20);
+        }
         recalcVua();
     }
 
@@ -1044,6 +1062,94 @@
         document.addEventListener('input', e => {
             if (e.target && e.target.classList.contains('money-input')) {
                 formatMoneyInput(e.target);
+            }
+        });
+
+        // Keyboard navigation: Enter on unit price -> auto-add new row or move to next row
+        document.addEventListener('keydown', e => {
+            if (e.key !== 'Enter') return;
+            if (e.isComposing || e.keyCode === 229) return;
+            if (e.shiftKey || e.ctrlKey || e.altKey) return;
+
+            const target = e.target;
+            if (!target) return;
+
+            // --- Farm form navigation ---
+            if (target.classList.contains('farm-price')) {
+                e.preventDefault();
+                const currentRow = target.closest('.flower-item');
+                const nextRow = currentRow ? currentRow.nextElementSibling : null;
+                if (nextRow && nextRow.classList.contains('flower-item')) {
+                    const nextType = nextRow.querySelector('.farm-type');
+                    if (nextType) {
+                        nextType.focus();
+                        nextType.select?.();
+                    }
+                } else {
+                    addFarmFlower();
+                }
+            } else if (target.classList.contains('farm-qty')) {
+                e.preventDefault();
+                const row = target.closest('.flower-item');
+                const price = row?.querySelector('.farm-price');
+                if (price) {
+                    price.focus();
+                    price.select?.();
+                }
+            } else if (target.classList.contains('farm-type')) {
+                e.preventDefault();
+                const row = target.closest('.flower-item');
+                const qty = row?.querySelector('.farm-qty');
+                if (qty) {
+                    qty.focus();
+                    qty.select?.();
+                }
+            } else if (target.id === 'farm-buyer') {
+                e.preventDefault();
+                const firstType = document.querySelector('#farm-flowers-container .flower-item .farm-type');
+                if (firstType) {
+                    firstType.focus();
+                    firstType.select?.();
+                }
+            }
+
+            // --- Vựa form navigation ---
+            else if (target.classList.contains('vua-price')) {
+                e.preventDefault();
+                const currentRow = target.closest('.flower-item');
+                const nextRow = currentRow ? currentRow.nextElementSibling : null;
+                if (nextRow && nextRow.classList.contains('flower-item')) {
+                    const nextType = nextRow.querySelector('.vua-type');
+                    if (nextType) {
+                        nextType.focus();
+                        nextType.select?.();
+                    }
+                } else {
+                    addVuaFlower();
+                }
+            } else if (target.classList.contains('vua-qty')) {
+                e.preventDefault();
+                const row = target.closest('.flower-item');
+                const price = row?.querySelector('.vua-price');
+                if (price) {
+                    price.focus();
+                    price.select?.();
+                }
+            } else if (target.classList.contains('vua-type')) {
+                e.preventDefault();
+                const row = target.closest('.flower-item');
+                const qty = row?.querySelector('.vua-qty');
+                if (qty) {
+                    qty.focus();
+                    qty.select?.();
+                }
+            } else if (target.id === 'vua-buyer') {
+                e.preventDefault();
+                const firstType = document.querySelector('#vua-flowers-container .flower-item .vua-type');
+                if (firstType) {
+                    firstType.focus();
+                    firstType.select?.();
+                }
             }
         });
 
