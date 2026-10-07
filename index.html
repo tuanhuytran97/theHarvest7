@@ -225,7 +225,9 @@
             margin-bottom: 8px !important;
         }
 
-        .cash-modal-overlay .cash-modal-field input {
+        .cash-modal-overlay .cash-modal-field input,
+        .cash-modal-overlay .cash-modal-field select,
+        .cash-modal-overlay .cash-modal-field textarea {
             width: 100% !important;
             padding: 14px 16px !important;
             background: #f8fafc !important;
@@ -237,9 +239,19 @@
             transition: all 0.2s !important;
             outline: none !important;
             box-sizing: border-box !important;
+            display: block !important;
         }
 
-        .cash-modal-overlay .cash-modal-field input:focus {
+        .cash-modal-overlay .cash-modal-field textarea {
+            min-height: 70px !important;
+            resize: vertical !important;
+            font-family: inherit !important;
+            line-height: 1.4 !important;
+        }
+
+        .cash-modal-overlay .cash-modal-field input:focus,
+        .cash-modal-overlay .cash-modal-field select:focus,
+        .cash-modal-overlay .cash-modal-field textarea:focus {
             background: white !important;
             border-color: #f59e0b !important;
             box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15) !important;
@@ -278,6 +290,222 @@
             font-weight: 700 !important;
             cursor: pointer !important;
             font-size: 0.95rem !important;
+        }
+
+        /* Specialized styles for Sửa đơn Vựa modal on Desktop (Matching Mobile Entry Card Look) */
+        #modal-edit-vua-order {
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 1.5rem !important;
+            backdrop-filter: blur(6px) !important;
+            -webkit-backdrop-filter: blur(6px) !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-box {
+            max-width: 500px !important;
+            width: 95% !important;
+            max-height: 90vh !important;
+            height: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            border-radius: 24px !important;
+            background: #ffffff !important;
+            box-shadow: 0 25px 70px -15px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(226, 232, 240, 0.8) !important;
+            border: none !important;
+            position: relative !important;
+        }
+
+        #modal-edit-vua-order .modal-header-premium {
+            padding: 18px 24px 14px 24px !important;
+            flex-shrink: 0 !important;
+            background: #ffffff !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            position: relative !important;
+        }
+
+        #modal-edit-vua-order .drag-handle-pill {
+            width: 36px;
+            height: 4px;
+            background: #cbd5e1;
+            border-radius: 99px;
+            margin-bottom: 10px;
+        }
+
+        #modal-edit-vua-order .modal-close-btn-clean {
+            position: absolute !important;
+            top: 16px !important;
+            right: 18px !important;
+            background: #f1f5f9 !important;
+            border: none !important;
+            color: #64748b !important;
+            width: 34px !important;
+            height: 34px !important;
+            border-radius: 50% !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 0.95rem !important;
+            transition: all 0.2s ease !important;
+        }
+
+        #modal-edit-vua-order .modal-close-btn-clean:hover {
+            background: #e2e8f0 !important;
+            color: #0f172a !important;
+            transform: scale(1.05);
+        }
+
+        #modal-edit-vua-order .cash-modal-body {
+            flex: 1 1 auto !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            padding: 18px 22px !important;
+            max-height: calc(90vh - 145px) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
+            scrollbar-width: thin !important;
+            scrollbar-color: #cbd5e1 transparent !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-body::-webkit-scrollbar {
+            width: 6px !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-body::-webkit-scrollbar-track {
+            background: transparent !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-body::-webkit-scrollbar-thumb {
+            background: #cbd5e1 !important;
+            border-radius: 99px !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-body::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8 !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-field {
+            margin-bottom: 0 !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-field label {
+            margin-bottom: 6px !important;
+            font-size: 12px !important;
+            font-weight: 800 !important;
+            color: #64748b !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.4px !important;
+            display: block !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-field input,
+        #modal-edit-vua-order .cash-modal-field select,
+        #modal-edit-vua-order .cash-modal-field textarea {
+            width: 100% !important;
+            display: block !important;
+            padding: 0 16px !important;
+            height: 48px !important;
+            font-size: 15px !important;
+            font-family: inherit !important;
+            font-weight: 700 !important;
+            border-radius: 12px !important;
+            border: 1.5px solid #e2e8f0 !important;
+            background: #f8fafc !important;
+            box-sizing: border-box !important;
+            color: #1e293b !important;
+            outline: none !important;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-field select {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+            background-repeat: no-repeat !important;
+            background-position: right 14px center !important;
+            background-size: 15px !important;
+            padding-right: 40px !important;
+            cursor: pointer !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-field textarea {
+            height: auto !important;
+            min-height: 75px !important;
+            padding: 12px 16px !important;
+            resize: vertical !important;
+            line-height: 1.5 !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-field input:hover,
+        #modal-edit-vua-order .cash-modal-field select:hover,
+        #modal-edit-vua-order .cash-modal-field textarea:hover {
+            border-color: #cbd5e1 !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-field input:focus,
+        #modal-edit-vua-order .cash-modal-field select:focus,
+        #modal-edit-vua-order .cash-modal-field textarea:focus {
+            background: #ffffff !important;
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 3.5px rgba(37, 99, 235, 0.12) !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-actions {
+            padding: 14px 22px !important;
+            flex-shrink: 0 !important;
+            background: #ffffff !important;
+            border-top: 1px solid #f1f5f9 !important;
+            border-radius: 0 0 24px 24px !important;
+            display: flex !important;
+            justify-content: flex-end !important;
+            align-items: center !important;
+            gap: 12px !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-actions .btn-save-premium {
+            flex: initial !important;
+            padding: 11px 24px !important;
+            border-radius: 12px !important;
+            font-size: 14.5px !important;
+            font-weight: 800 !important;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+            color: #ffffff !important;
+            border: none !important;
+            cursor: pointer !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3) !important;
+            transition: all 0.2s ease !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-actions .btn-save-premium:hover {
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-actions .btn-cancel-premium {
+            flex: initial !important;
+            padding: 11px 20px !important;
+            border-radius: 12px !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            background: #f1f5f9 !important;
+            color: #475569 !important;
+            border: none !important;
+            cursor: pointer !important;
+            transition: all 0.2s ease !important;
+        }
+
+        #modal-edit-vua-order .cash-modal-actions .btn-cancel-premium:hover {
+            background: #e2e8f0 !important;
+            color: #0f172a !important;
         }
 
         /* Investment Philosophy Panel Responsive Fix */
@@ -1609,11 +1837,20 @@
 
                         <!-- ══ FARM VIEW ══ -->
                         <div class="view-section active" id="view-farm">
-                            <div class="section-header">
-                                <div class="section-icon green"><i class="fa-solid fa-seedling" style="color:#16a34a"></i></div>
-                                <div class="section-title">
-                                    <h2>Nhập đơn Farm</h2>
-                                    <p>Bán hoa trực tiếp từ vườn</p>
+                            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div class="section-icon green"><i class="fa-solid fa-seedling" style="color:#16a34a"></i></div>
+                                    <div class="section-title">
+                                        <h2>Nhập đơn Farm</h2>
+                                        <p>Bán hoa trực tiếp từ vườn</p>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <button type="button" id="import-text-btn-header" class="btn-import-ai" onclick="openImportModal('farm')" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); color: #1d4ed8; border: 1.5px solid #93c5fd; padding: 8px 16px; border-radius: 12px; font-weight: 800; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12); transition: all 0.2s;">
+                                        <i class="fa-solid fa-camera" style="font-size: 1rem; color: #2563eb;"></i>
+                                        <i class="fa-solid fa-wand-magic-sparkles" style="color: #7c3aed; font-size: 0.85rem;"></i>
+                                        <span>Nhập bằng Hình Ảnh / AI</span>
+                                    </button>
                                 </div>
                             </div>
 
@@ -1651,13 +1888,20 @@
                                 <!-- Right Column: Flowers List & Summary -->
                                 <div class="entry-right-col">
                                     <div class="entry-card-box" id="farm-card-flowers">
-                                        <div class="card-title" style="justify-content:space-between">
+                                        <div class="card-title" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
                                             <span style="display:inline-flex; align-items:center; gap:8px;">
                                                 <i class="fa-solid fa-spa" style="color:#16a34a"></i> Danh sách hoa
                                             </span>
-                                            <button type="button" class="quick-pill" onclick="addFarmFlower()" style="padding:4px 10px; font-size:12px; border-color:var(--me-green); color:var(--me-green); background:var(--me-green-bg);">
-                                                <i class="fa-solid fa-plus"></i> Thêm hoa
-                                            </button>
+                                            <div style="display:inline-flex; align-items:center; gap:8px;">
+                                                <button type="button" id="import-text-btn" class="quick-pill" onclick="openImportModal('farm')" style="padding: 5px 12px; font-size: 12.5px; font-weight: 800; border: 1.5px solid #3b82f6; color: #1d4ed8; background: #eff6ff; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border-radius: 8px; transition: all 0.2s; box-shadow: 0 2px 6px rgba(59, 130, 246, 0.15);">
+                                                    <i class="fa-solid fa-camera" style="color: #2563eb;"></i>
+                                                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #7c3aed; font-size: 11px;"></i>
+                                                    <span>Nhập ảnh / AI</span>
+                                                </button>
+                                                <button type="button" class="quick-pill" onclick="addFarmFlower()" style="padding:4px 10px; font-size:12px; border-color:var(--me-green); color:var(--me-green); background:var(--me-green-bg);">
+                                                    <i class="fa-solid fa-plus"></i> Thêm hoa
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <div id="farm-flowers-container"></div>
@@ -1711,7 +1955,7 @@
                                             <div class="quick-pills" id="vua-quick-buyers"></div>
                                         </div>
                                         <div class="form-field" style="margin-bottom:0">
-                                            <label>Trạng thái</label>
+                                            <label>Trạng thái thu tiền</label>
                                             <select class="field-select blue" id="vua-status">
                                                 <option value="">⏳ Chưa thu tiền</option>
                                                 <option value="Xong">✅ Đã thu tiền (Xong)</option>
@@ -1726,8 +1970,13 @@
                                             <input type="text" class="field-input blue money-input" id="vua-shipping" placeholder="0" oninput="recalcVua()" value="0">
                                         </div>
                                         <div class="form-field">
-                                            <label>Vật tư khác cố định (₫)</label>
-                                            <input type="text" class="field-input blue money-input" id="vua-vattu" placeholder="150.000" value="150.000" readonly style="background: #f1f5f9; color: var(--me-text-soft); font-weight: 800; cursor: not-allowed;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                                <label style="margin: 0;">Vật tư khác cố định (₫)</label>
+                                                <button type="button" id="btn-lock-vattu" onclick="toggleDesktopVuaVattuLock()" title="Bấm để mở khóa chỉnh sửa chi phí vật tư" style="background: #f1f5f9; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 3px 10px; font-size: 11.5px; font-weight: 800; color: #64748b; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                                    <i class="fa-solid fa-lock" id="icon-lock-vattu"></i> <span id="label-lock-vattu">Mở khóa</span>
+                                                </button>
+                                            </div>
+                                            <input type="text" class="field-input blue money-input" id="vua-vattu" placeholder="150.000" value="150.000" readonly style="background: #f8fafc; color: var(--me-text-soft); font-weight: 800; cursor: not-allowed; transition: all 0.2s;" oninput="recalcVua()">
                                         </div>
                                         <div class="form-field">
                                             <label>Lợi nhuận / Đóng gói (₫)</label>
@@ -1761,7 +2010,7 @@
                                     <div class="entry-card-box" id="vua-card-note">
                                         <div class="card-title"><i class="fa-solid fa-note-sticky" style="color:#64748b"></i> Ghi chú</div>
                                         <div class="form-field" style="margin-bottom:0">
-                                            <textarea class="field-input" id="vua-note" placeholder="Ghi chú (không bắt buộc)..." rows="2"></textarea>
+                                            <textarea class="field-input" id="vua-note" placeholder="Ghi chú (không bắt buộc)..." rows="2" style="width: 100% !important; box-sizing: border-box !important; display: block !important; resize: vertical !important;"></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -1769,13 +2018,20 @@
                                 <!-- Right Column: Flowers List (Giá vốn) & Summary -->
                                 <div class="entry-right-col">
                                     <div class="entry-card-box" id="vua-card-flowers">
-                                        <div class="card-title" style="justify-content:space-between">
+                                        <div class="card-title" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
                                             <span style="display:inline-flex; align-items:center; gap:8px;">
                                                 <i class="fa-solid fa-boxes-stacked" style="color:#2563eb"></i> Danh sách hoa (Giá vốn)
                                             </span>
-                                            <button type="button" class="quick-pill blue" onclick="addVuaFlower()" style="padding:4px 10px; font-size:12px; border-color:var(--me-blue); color:var(--me-blue); background:var(--me-blue-bg);">
-                                                <i class="fa-solid fa-plus"></i> Thêm hoa
-                                            </button>
+                                            <div style="display:inline-flex; align-items:center; gap:8px;">
+                                                <button type="button" id="import-vua-btn" class="quick-pill blue" onclick="openImportModal('vua')" style="padding: 5px 12px; font-size: 12.5px; font-weight: 800; border: 1.5px solid #3b82f6; color: #1d4ed8; background: #eff6ff; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; border-radius: 8px; transition: all 0.2s; box-shadow: 0 2px 6px rgba(59, 130, 246, 0.15);">
+                                                    <i class="fa-solid fa-camera" style="color: #2563eb;"></i>
+                                                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #7c3aed; font-size: 11px;"></i>
+                                                    <span>Nhập ảnh / AI</span>
+                                                </button>
+                                                <button type="button" class="quick-pill blue" onclick="addVuaFlower()" style="padding:4px 10px; font-size:12px; border-color:var(--me-blue); color:var(--me-blue); background:var(--me-blue-bg);">
+                                                    <i class="fa-solid fa-plus"></i> Thêm hoa
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <div id="vua-flowers-container"></div>
@@ -4284,109 +4540,104 @@
 
     <!-- MODAL: Chỉnh sửa Đơn Vựa -->
     <div id="modal-edit-vua-order" class="cash-modal-overlay" style="display:none; z-index: 10000;">
-        <div class="cash-modal-box glassmorphism" style="max-width: 540px !important; max-height: 90vh; overflow-y: auto;">
-            <div class="modal-header-premium"
-                style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;">
-                <div class="modal-icon-adjust" style="background: rgba(255, 255, 255, 0.15) !important; color: white;">
-                    <i class="fa-solid fa-truck"></i>
+        <div class="cash-modal-box">
+            <!-- Modal Header (Clean White iOS/Card Style matching Mobile Entry) -->
+            <div class="modal-header-premium">
+                <div class="drag-handle-pill"></div>
+                <h3 style="color: #0f172a; margin: 0; font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>✏️ Sửa đơn Vựa</span>
+                </h3>
+                <div style="margin-top: 4px; text-align: center;">
+                    <span id="modal-edit-vua-subtitle" style="display: inline-block; background: #eff6ff; color: #2563eb; font-size: 0.8rem; font-weight: 700; padding: 3px 12px; border-radius: 20px; border: 1px solid #dbeafe;">Đơn Vựa: Doan CR · 1 loại hoa</span>
                 </div>
-                <div class="modal-title-group">
-                    <h3 style="color: white; margin: 0; font-size: 1.15rem;">✏️ Sửa đơn Vựa</h3>
-                    <p id="modal-edit-vua-subtitle" style="color: #e0e7ff; margin: 2px 0 0 0; font-size: 0.82rem;">Cập nhật danh sách hoa, chi phí và lợi nhuận đơn vựa</p>
-                </div>
+                <button type="button" class="modal-close-btn-clean" onclick="document.getElementById('modal-edit-vua-order').style.display='none'" title="Đóng modal">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
 
-            <div class="cash-modal-body" style="padding: 1.25rem 1.5rem !important; display: flex; flex-direction: column; gap: 12px;">
+            <!-- Scrollable Body with smooth vertical scroll -->
+            <div class="cash-modal-body">
+                <!-- Tên Vựa -->
                 <div class="cash-modal-field">
-                    <label style="font-weight: 700; font-size: 0.82rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
-                        <i class="fa-solid fa-store" style="color: #0284c7;"></i> Tên Vựa
-                    </label>
-                    <input type="text" id="edit-vua-input-buyer"
-                        style="padding: 10px; border-radius: 8px; border: 1.5px solid #cbd5e1; outline: none; width: 100%; font-size: 0.95rem; font-weight: 700;"
-                        placeholder="Nhập tên vựa...">
+                    <label>Tên Vựa</label>
+                    <input type="text" id="edit-vua-input-buyer" placeholder="Nhập tên vựa...">
                 </div>
 
-                <div style="font-size: 13px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">
-                    <span>Danh sách loại hoa:</span>
-                </div>
-                <div id="edit-vua-flowers-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
-                <button type="button" id="btn-add-edit-vua-flower"
-                    style="margin-top: 4px; padding: 8px; border-radius: 8px; border: 1.5px dashed #0284c7; background: #f0f9ff; color: #0284c7; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.85rem;">
-                    <i class="fa-solid fa-plus"></i> Thêm loại hoa
-                </button>
-
-                <!-- Flower total box -->
-                <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-                    <span style="font-size: 13px; font-weight: 800; color: #64748b;">TỔNG TIỀN HOA</span>
-                    <span id="edit-vua-flower-total-display" style="font-size: 18px; font-weight: 900; color: #2563eb;">0 ₫</span>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
-                    <div class="cash-modal-field">
-                        <label style="font-weight: 700; font-size: 0.8rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                            🚚 Chi phí vận chuyển
-                        </label>
-                        <input type="text" id="edit-vua-input-cost" class="money-input"
-                            style="padding: 9px; border-radius: 8px; border: 1.5px solid #cbd5e1; outline: none; width: 100%; font-size: 0.92rem; font-weight: 700;"
-                            placeholder="0">
-                    </div>
-                    <div class="cash-modal-field">
-                        <label style="font-weight: 700; font-size: 0.8rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                            📦 Vật tư khác
-                        </label>
-                        <input type="text" value="150.000" readonly
-                            style="padding: 9px; border-radius: 8px; border: 1.5px solid #e2e8f0; background: #f8fafc; color: #64748b; outline: none; width: 100%; font-size: 0.92rem; font-weight: 800; cursor: not-allowed;">
-                    </div>
-                </div>
-
+                <!-- Trạng thái thu tiền (đặt ngay dưới Tên vựa) -->
                 <div class="cash-modal-field">
-                    <label style="font-weight: 700; font-size: 0.8rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                        ✨ Lợi nhuận đóng gói
-                    </label>
-                    <input type="text" id="edit-vua-input-profit" class="money-input"
-                        style="padding: 9px; border-radius: 8px; border: 1.5px solid #cbd5e1; outline: none; width: 100%; font-size: 0.92rem; font-weight: 700;"
-                        placeholder="0">
-                </div>
-
-                <div class="cash-modal-field">
-                    <label style="font-weight: 700; font-size: 0.8rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                        💰 Tổng tiền phải thu (₫)
-                    </label>
-                    <input type="text" id="edit-vua-input-pt" class="money-input"
-                        style="padding: 9px; border-radius: 8px; border: 1.5px solid #cbd5e1; outline: none; width: 100%; font-size: 0.92rem; font-weight: 700;"
-                        placeholder="0">
-                </div>
-
-                <div class="cash-modal-field">
-                    <label style="font-weight: 700; font-size: 0.8rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                        📌 Trạng thái
-                    </label>
-                    <select id="edit-vua-select-status"
-                        style="padding: 9px; border-radius: 8px; border: 1.5px solid #cbd5e1; outline: none; width: 100%; font-size: 0.92rem; font-weight: 700;">
+                    <label>Trạng thái thu tiền</label>
+                    <select id="edit-vua-select-status">
                         <option value="">⏳ Chưa thu tiền</option>
                         <option value="Xong">✅ Đã thu tiền</option>
                     </select>
                 </div>
 
+                <!-- Danh sách loại hoa -->
+                <div>
+                    <div style="font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">
+                        DANH SÁCH LOẠI HOA:
+                    </div>
+                    <div id="edit-vua-flowers-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                    <button type="button" id="btn-add-edit-vua-flower"
+                        style="width: 100%; margin-top: 4px; padding: 12px; border-radius: 14px; border: 2px dashed #93c5fd; background: #eff6ff; color: #2563eb; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.92rem; transition: all 0.2s;">
+                        <i class="fa-solid fa-plus"></i> Thêm loại hoa
+                    </button>
+                </div>
+
+                <!-- Banner tổng tiền hoa -->
+                <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 14px; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
+                    <span style="font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase;">TỔNG TIỀN HOA (SỐ LƯỢNG × ĐƠN GIÁ)</span>
+                    <span id="edit-vua-flower-total-display" style="font-size: 20px; font-weight: 900; color: #2563eb;">0 ₫</span>
+                </div>
+
+                <!-- Chi phí vận chuyển & Vật tư khác (2 cột) -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="cash-modal-field">
+                        <label>Chi phí vận chuyển</label>
+                        <input type="text" id="edit-vua-input-cost" class="money-input" placeholder="0">
+                    </div>
+                    <div class="cash-modal-field">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label style="margin: 0;">Vật tư khác</label>
+                            <button type="button" id="btn-lock-edit-vua-vattu" onclick="toggleDesktopEditVuaVattuLock()" title="Bấm để mở khóa chỉnh sửa chi phí vật tư" style="background: #f1f5f9; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 2px 8px; font-size: 11px; font-weight: 800; color: #64748b; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;">
+                                <i class="fa-solid fa-lock" id="icon-lock-edit-vua-vattu"></i> <span id="label-lock-edit-vua-vattu">Mở khóa</span>
+                            </button>
+                        </div>
+                        <input type="text" id="edit-vua-input-vattu" class="money-input" value="150.000" readonly
+                            style="background: #f8fafc; color: #64748b; cursor: not-allowed; transition: all 0.2s;">
+                    </div>
+                </div>
+
+                <!-- Lợi nhuận đóng gói -->
                 <div class="cash-modal-field">
-                    <label style="font-weight: 700; font-size: 0.8rem; color: #475569; display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                        📝 Ghi chú
-                    </label>
-                    <textarea id="edit-vua-input-note" rows="2"
-                        style="padding: 8px 10px; border-radius: 8px; border: 1.5px solid #cbd5e1; outline: none; width: 100%; font-size: 0.9rem;"
-                        placeholder="Ghi chú đơn hàng..."></textarea>
+                    <label>Lợi nhuận đóng gói</label>
+                    <input type="text" id="edit-vua-input-profit" class="money-input" placeholder="0">
+                </div>
+
+                <!-- Tổng tiền phải thu -->
+                <div class="cash-modal-field">
+                    <label>Tổng tiền phải thu (₫)</label>
+                    <input type="text" id="edit-vua-input-pt" class="money-input" placeholder="0">
+                    <div id="edit-vua-total-display" style="margin-top: 8px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 2px solid #93c5fd; border-radius: 14px; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 12.5px; font-weight: 800; color: #64748b; text-transform: uppercase;">Thành tiền phải thu</span>
+                        <span id="edit-vua-total-val" style="font-size: 22px; font-weight: 900; color: #2563eb;">0 ₫</span>
+                    </div>
+                </div>
+
+                <!-- Ghi chú -->
+                <div class="cash-modal-field">
+                    <label>Ghi chú</label>
+                    <textarea id="edit-vua-input-note" rows="2" placeholder="Ghi chú đơn hàng..."></textarea>
                 </div>
             </div>
 
-            <div class="cash-modal-actions"
-                style="padding: 1.25rem 1.5rem !important; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #f1f5f9;">
-                <button id="btn-confirm-edit-vua" class="btn-save-premium"
-                    style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.9rem;">
-                    <i class="fa-solid fa-check"></i> Lưu thay đổi
-                </button>
-                <button id="btn-cancel-edit-vua" class="btn-cancel-premium"
-                    style="background: #f1f5f9; color: #475569; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">
+            <!-- Fixed Footer Actions -->
+            <div class="cash-modal-actions">
+                <button id="btn-cancel-edit-vua" class="btn-cancel-premium">
                     Hủy bỏ
+                </button>
+                <button id="btn-confirm-edit-vua" class="btn-save-premium">
+                    <i class="fa-solid fa-check"></i> Lưu thay đổi
                 </button>
             </div>
         </div>
@@ -6030,10 +6281,13 @@ placeholder="Ví dụ:&#10;Ngày 3-7&#10;50 ôhg x 10&#10;Ngày 4-7&#10;60 ôhg 
                 </div>
             </div>
             <!-- Footer -->
-            <div style="padding: 1rem 1.5rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc; box-sizing: border-box;">
+            <div style="padding: 1rem 1.5rem; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; background: #f8fafc; box-sizing: border-box; flex-wrap: wrap;">
                 <button type="button" id="close-import-modal-btn2" class="btn-primary" style="background: #f1f5f9; color: #475569; border: none; box-shadow: none; cursor: pointer;">Hủy</button>
+                <button type="button" id="btn-fill-to-form" class="btn-primary" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; display: flex; align-items: center; gap: 8px; border:none; cursor:pointer; font-weight:700; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);" disabled>
+                    <i class="fa-solid fa-file-pen"></i> Điền Vào Form Farm
+                </button>
                 <button type="button" id="btn-save-import" class="btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; display: flex; align-items: center; gap: 8px; border:none; cursor:pointer; font-weight:700; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);" disabled>
-                    <i class="fa-solid fa-floppy-disk"></i> Lưu Tất Cả
+                    <i class="fa-solid fa-floppy-disk"></i> Lưu Tất Cả Vào Sheet
                 </button>
             </div>
         </div>

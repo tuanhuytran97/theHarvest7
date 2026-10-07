@@ -57,6 +57,16 @@ function formatCurrency(number) {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(number);
 }
 
+function escapeAttr(str) {
+    return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+window.escapeAttr = escapeAttr;
+
 function parseMoney(val) {
     if (!val) return 0;
     return parseFloat(String(val).replace(/[^\d]/g, '')) || 0;
@@ -1598,52 +1608,131 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- GLOBAL KEYBOARD LISTENERS ---
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            let handled = false;
+        if (e.key === 'Escape' || e.keyCode === 27) {
+            const isVisible = (el) => {
+                if (!el) return false;
+                const style = window.getComputedStyle(el);
+                return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0' && (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0);
+            };
 
-            // 1. Close Receipt Modal
-            const receiptModal = document.getElementById('receipt-modal');
-            if (receiptModal && (receiptModal.style.display === 'flex' || receiptModal.style.display === 'block')) {
-                if (typeof window.closeReceipt === 'function') window.closeReceipt();
-                else receiptModal.style.display = 'none';
-                handled = true;
+            // 1. Gather all open modal overlays/popups
+            const modalSelectors = [
+                '.modal-overlay',
+                '.cash-modal-overlay',
+                '.modal-backdrop',
+                '#import-text-modal',
+                '#desktop-entry-confirm-modal',
+                '#modal-edit-accumulation-target',
+                '#receipt-modal',
+                '#modal-adjust-cash',
+                '#modal-partial-pay',
+                '#modal-edit-line',
+                '#modal-edit-vua-order',
+                '#modal-edit-expense',
+                '#modal-edit-cashflow',
+                '#modal-invest-checklist',
+                '#modal-invest-transaction',
+                '#modal-inv-admin-auth',
+                '#modal-quick-price-update',
+                '#modal-edit-investment',
+                '#todo-modal',
+                '#export-text-modal',
+                '#queue-manager-modal',
+                '#profile-modal',
+                '#password-modal',
+                '#scientific-docs-modal',
+                '#book-detail-modal',
+                '#book-form-modal',
+                '#category-summary-modal'
+            ];
+
+            const openModals = Array.from(document.querySelectorAll(modalSelectors.join(', ')))
+                .filter(isVisible);
+
+            if (openModals.length > 0) {
+                // Sort to find the topmost modal (highest z-index, then last in DOM)
+                openModals.sort((a, b) => {
+                    const za = parseInt(window.getComputedStyle(a).zIndex) || 0;
+                    const zb = parseInt(window.getComputedStyle(b).zIndex) || 0;
+                    if (zb !== za) return zb - za;
+                    return (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_PRECEDING) ? -1 : 1;
+                });
+
+                const topModal = openModals[0];
+
+                // Specific close logic
+                if (topModal.id === 'import-text-modal') {
+                    if (typeof window.closeImportModal === 'function') window.closeImportModal();
+                    else {
+                        const btn = document.getElementById('close-import-modal-btn') || document.getElementById('close-import-modal-btn2');
+                        if (btn) btn.click();
+                        else topModal.style.display = 'none';
+                    }
+                    return;
+                }
+
+                if (topModal.id === 'desktop-entry-confirm-modal') {
+                    if (typeof window.closeDesktopConfirmModal === 'function') window.closeDesktopConfirmModal();
+                    else topModal.style.display = 'none';
+                    return;
+                }
+
+                if (topModal.id === 'modal-edit-accumulation-target') {
+                    if (typeof window.closeEditTargetModal === 'function') window.closeEditTargetModal();
+                    else topModal.style.display = 'none';
+                    return;
+                }
+
+                if (topModal.id === 'receipt-modal') {
+                    if (typeof window.closeReceipt === 'function') window.closeReceipt();
+                    else topModal.style.display = 'none';
+                    return;
+                }
+
+                if (topModal.id === 'category-summary-modal') {
+                    if (typeof window.closeCategorySummaryModal === 'function') window.closeCategorySummaryModal();
+                    else topModal.style.display = 'none';
+                    return;
+                }
+
+                if (topModal.id === 'book-form-modal') {
+                    if (typeof window.closeBookForm === 'function') window.closeBookForm();
+                    else topModal.style.display = 'none';
+                    return;
+                }
+
+                if (topModal.id === 'modal-inv-admin-auth') {
+                    if (typeof window.closeInvAdminAuthModal === 'function') window.closeInvAdminAuthModal();
+                    else topModal.style.display = 'none';
+                    return;
+                }
+
+                if (topModal.id === 'modal-edit-cashflow') {
+                    if (typeof window.closeEditCashflow === 'function') window.closeEditCashflow();
+                    else topModal.style.display = 'none';
+                    return;
+                }
+
+                // Check for cancel / close button inside topModal
+                const closeBtn = topModal.querySelector(
+                    '#close-modal, .btn-close-receipt, .btn-cancel-premium, .modal-btn.cancel, .action-btn.cancel, [id*="close"], button[onclick*="close"], button[onclick*="none"], .fa-xmark'
+                );
+
+                if (closeBtn) {
+                    const targetBtn = closeBtn.tagName.toLowerCase() === 'button' ? closeBtn : (closeBtn.closest('button') || closeBtn);
+                    targetBtn.click();
+                    return;
+                }
+
+                topModal.style.display = 'none';
+                return;
             }
 
-            // 2. Close Partial Payment Modal
-            if (!handled) {
-                const partialPayModal = document.getElementById('modal-partial-pay');
-                if (partialPayModal && (partialPayModal.style.display === 'flex' || partialPayModal.style.display === 'block')) {
-                    partialPayModal.style.display = 'none';
-                    handled = true;
-                }
-            }
-
-            // 3. Close Cash Adjustment Modal
-            if (!handled) {
-                const adjustModal = document.getElementById('modal-adjust-cash');
-                if (adjustModal && (adjustModal.style.display === 'flex' || adjustModal.style.display === 'block')) {
-                    adjustModal.style.display = 'none';
-                    handled = true;
-                }
-            }
-
-            // 4. Close Todo Modal
-            if (!handled) {
-                const todoModal = document.getElementById('todo-modal');
-                if (todoModal && (todoModal.style.display === 'flex' || todoModal.style.display === 'block')) {
-                    todoModal.style.display = 'none';
-                    handled = true;
-                }
-            }
-
-            // 5. Back from Debt Detail View to Master List
-            if (!handled) {
-                const detailView = document.getElementById('debt-detail-view');
-                if (detailView && detailView.style.display === 'block') {
-                    const btnBack = document.getElementById('btn-back-to-master');
-                    if (btnBack) btnBack.click();
-                    handled = true;
-                }
+            // 2. Back from Debt Detail View to Master List
+            const detailView = document.getElementById('debt-detail-view');
+            if (detailView && isVisible(detailView)) {
+                const btnBack = document.getElementById('btn-back-to-master');
+                if (btnBack) btnBack.click();
             }
         }
     });
@@ -5836,7 +5925,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!expenseEl || !revenueEl) return;
 
         const fmt = (v) => formatCurrency(v);
-        const escapeAttr = (str) => String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
         // Category style config for expenses
         const catConfig = {
@@ -6182,12 +6270,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const flowerTotal = flowers.reduce((s, f) => s + f.total, 0);
             const cp = parseFloat(master['Chi Phí']) || 0;
             const loaiCP = master['Loại CP'] || 'Vận Chuyển';
-            const vattu = 150000;
             let pt = parseFloat(master['Tiền Phải Thu']) || 0;
             let ln = parseFloat(master['Doanh Thu Khác']) || 0;
+            let vattu = 150000;
 
             if (pt > 0) {
-                ln = pt - flowerTotal - cp - vattu;
+                const calcVattu = pt - flowerTotal - cp - ln;
+                if (calcVattu > 0) vattu = calcVattu;
+                else ln = pt - flowerTotal - cp - vattu;
             } else {
                 pt = flowerTotal + cp + vattu + ln;
             }
@@ -6323,8 +6413,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <span class="tx-line-value" style="color:var(--danger, #ef4444); font-weight:700;">-${fmtMoney(c.cp)}</span>
                             </div>` : ''}
                             <div class="tx-line">
-                                <span class="tx-line-label">📦 Vật tư khác (Cố định)</span>
-                                <span class="tx-line-value" style="color:#64748b; font-weight:700;">150.000 ₫</span>
+                                <span class="tx-line-label">📦 Vật tư khác</span>
+                                <span class="tx-line-value" style="color:#64748b; font-weight:700;">${fmtMoney(c.vattu || 150000)}</span>
                             </div>
                             ${c.ln !== 0 ? `
                             <div class="tx-line">
@@ -6473,6 +6563,72 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Modal Handlers for Vựa Order Edit & Delete in Daily Report
+    let isDesktopEditVuaVattuUnlocked = false;
+
+    function toggleDesktopEditVuaVattuLock() {
+        const input = document.getElementById('edit-vua-input-vattu');
+        const btn = document.getElementById('btn-lock-edit-vua-vattu');
+        const icon = document.getElementById('icon-lock-edit-vua-vattu');
+        const label = document.getElementById('label-lock-edit-vua-vattu');
+        if (!input) return;
+
+        isDesktopEditVuaVattuUnlocked = !isDesktopEditVuaVattuUnlocked;
+
+        if (isDesktopEditVuaVattuUnlocked) {
+            input.readOnly = false;
+            input.style.background = '#ffffff';
+            input.style.color = '#1e293b';
+            input.style.cursor = 'text';
+            input.style.borderColor = '#3b82f6';
+            if (btn) {
+                btn.style.background = '#eff6ff';
+                btn.style.borderColor = '#3b82f6';
+                btn.style.color = '#1d4ed8';
+            }
+            if (icon) icon.className = 'fa-solid fa-lock-open';
+            if (label) label.textContent = 'Khóa lại';
+            input.focus();
+            input.select?.();
+        } else {
+            input.readOnly = true;
+            input.style.background = '#f8fafc';
+            input.style.color = '#64748b';
+            input.style.cursor = 'not-allowed';
+            input.style.borderColor = '#e2e8f0';
+            if (btn) {
+                btn.style.background = '#f1f5f9';
+                btn.style.borderColor = '#cbd5e1';
+                btn.style.color = '#64748b';
+            }
+            if (icon) icon.className = 'fa-solid fa-lock';
+            if (label) label.textContent = 'Mở khóa';
+        }
+    }
+
+    function resetDesktopEditVuaVattuLock() {
+        isDesktopEditVuaVattuUnlocked = false;
+        const input = document.getElementById('edit-vua-input-vattu');
+        const btn = document.getElementById('btn-lock-edit-vua-vattu');
+        const icon = document.getElementById('icon-lock-edit-vua-vattu');
+        const label = document.getElementById('label-lock-edit-vua-vattu');
+        if (input) {
+            input.readOnly = true;
+            input.style.background = '#f8fafc';
+            input.style.color = '#64748b';
+            input.style.cursor = 'not-allowed';
+            input.style.borderColor = '#e2e8f0';
+        }
+        if (btn) {
+            btn.style.background = '#f1f5f9';
+            btn.style.borderColor = '#cbd5e1';
+            btn.style.color = '#64748b';
+        }
+        if (icon) icon.className = 'fa-solid fa-lock';
+        if (label) label.textContent = 'Mở khóa';
+    }
+
+    window.toggleDesktopEditVuaVattuLock = toggleDesktopEditVuaVattuLock;
+
     window.openEditVuaOrderModal = function (orderId) {
         const groups = window._currentDailyVuaGroups || [];
         const group = groups.find(g => g.orderId === orderId);
@@ -6494,6 +6650,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const c = group.computed;
         document.getElementById('edit-vua-input-buyer').value = c.buyer;
         document.getElementById('edit-vua-input-cost').value = (c.cp > 0 ? formatMoneyStr(c.cp) : '');
+        const inpVattuEl = document.getElementById('edit-vua-input-vattu');
+        if (inpVattuEl) inpVattuEl.value = formatMoneyStr(c.vattu || 150000);
+        resetDesktopEditVuaVattuLock();
         document.getElementById('edit-vua-input-profit').value = (c.ln !== 0 ? formatMoneyStr(c.ln) : '');
         document.getElementById('edit-vua-input-pt').value = (c.pt > 0 ? formatMoneyStr(c.pt) : '');
         document.getElementById('edit-vua-select-status').value = c.isDone ? 'Xong' : '';
@@ -6504,29 +6663,69 @@ document.addEventListener("DOMContentLoaded", () => {
         container.innerHTML = '';
 
         function renderFlowerRow(type = '', qty = '', price = '') {
+            const count = container.querySelectorAll('.edit-vua-flower-row').length + 1;
             const itemDiv = document.createElement('div');
-            itemDiv.className = 'edit-vua-flower-row';
-            itemDiv.style.cssText = 'display:flex; gap:6px; align-items:center; background:#f8fafc; padding:6px 10px; border-radius:8px; border:1px solid #e2e8f0;';
+            itemDiv.className = 'edit-vua-flower-row edit-vua-flower-item';
+            itemDiv.style.cssText = 'background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; box-sizing: border-box; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02);';
             itemDiv.innerHTML = `
-                <input type="text" class="fw-type" value="${escapeAttr(type)}" placeholder="Loại hoa" style="flex:2; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; font-size:0.85rem;">
-                <input type="number" class="fw-qty" value="${qty}" placeholder="SL" style="flex:1.2; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; font-size:0.85rem;">
-                <input type="text" class="fw-price money-input" value="${price ? formatMoneyStr(price) : ''}" placeholder="Giá" style="flex:1.5; padding:6px 8px; border:1px solid #cbd5e1; border-radius:6px; font-weight:700; font-size:0.85rem;">
-                <span class="fw-item-total" style="flex:1.8; text-align:right; font-weight:800; color:#2563eb; font-size:0.85rem;">0 ₫</span>
-                <button type="button" class="btn-del-fw" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:4px 6px; font-size:0.85rem;" title="Xóa loại hoa này">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span class="fw-card-title" style="font-size: 12.5px; font-weight: 800; color: #2563eb; text-transform: uppercase; letter-spacing: 0.5px;">Loại hoa #${count}</span>
+                    <button type="button" class="btn-del-fw" style="background: #fef2f2; border: 1px solid #fee2e2; color: #ef4444; font-size: 11.5px; font-weight: 700; cursor: pointer; padding: 4px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;" title="Xóa loại hoa này">
+                        <i class="fa-solid fa-trash-can"></i> Xóa
+                    </button>
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <label style="font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: 5px; display: block; text-transform: uppercase; letter-spacing: 0.4px;">Tên loại hoa</label>
+                    <input type="text" class="fw-type" value="${escapeAttr(type)}" list="flower-types-datalist" placeholder="Chọn hoặc nhập tên hoa (vd: Đỏ, Xô...)" style="width: 100%; box-sizing: border-box; padding: 0 14px; height: 44px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14.5px; font-weight: 700; color: #1e293b; outline: none; background: #f8fafc; transition: all 0.2s;">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px;">
+                    <div>
+                        <label style="font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: 5px; display: block; text-transform: uppercase; letter-spacing: 0.4px;">Số lượng</label>
+                        <input type="number" class="fw-qty" value="${qty || ''}" placeholder="0" inputmode="numeric" style="width: 100%; box-sizing: border-box; padding: 0 14px; height: 44px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14.5px; font-weight: 700; color: #1e293b; outline: none; background: #f8fafc; transition: all 0.2s;">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: 5px; display: block; text-transform: uppercase; letter-spacing: 0.4px;">Đơn giá vốn</label>
+                        <input type="text" class="fw-price money-input" value="${price ? (typeof formatMoneyStr === 'function' ? formatMoneyStr(price) : price) : ''}" placeholder="0" style="width: 100%; box-sizing: border-box; padding: 0 14px; height: 44px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14.5px; font-weight: 700; color: #1e293b; outline: none; background: #f8fafc; transition: all 0.2s;">
+                    </div>
+                </div>
+                <div class="fw-item-total" style="font-size: 13px; font-weight: 800; color: #2563eb; text-align: right; margin-top: 6px;">
+                    = ${(qty * price || 0).toLocaleString('vi-VN')} ₫
+                </div>
             `;
             itemDiv.querySelector('.btn-del-fw').onclick = () => {
+                const totalItems = container.querySelectorAll('.edit-vua-flower-row').length;
+                if (totalItems <= 1) {
+                    if (window.showToast) window.showToast('Đơn hàng phải có ít nhất 1 loại hoa!', 'warning');
+                    else alert('Đơn hàng phải có ít nhất 1 loại hoa!');
+                    return;
+                }
                 itemDiv.remove();
+                container.querySelectorAll('.edit-vua-flower-row').forEach((row, idx) => {
+                    const title = row.querySelector('.fw-card-title');
+                    if (title) title.textContent = `Loại hoa #${idx + 1}`;
+                });
                 recalcEditVuaModal('flower');
             };
             const inpType = itemDiv.querySelector('.fw-type');
             const inpQty = itemDiv.querySelector('.fw-qty');
             const inpPrice = itemDiv.querySelector('.fw-price');
 
+            [inpType, inpQty, inpPrice].forEach(el => {
+                el.addEventListener('focus', () => {
+                    el.style.background = '#ffffff';
+                    el.style.borderColor = '#2563eb';
+                    el.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.12)';
+                });
+                el.addEventListener('blur', () => {
+                    el.style.background = '#f8fafc';
+                    el.style.borderColor = '#e2e8f0';
+                    el.style.boxShadow = 'none';
+                });
+            });
+
             inpPrice.addEventListener('input', (e) => {
                 const raw = parseMoney(e.target.value);
-                e.target.value = raw > 0 ? formatMoneyStr(raw) : '';
+                e.target.value = raw > 0 ? (typeof formatMoneyStr === 'function' ? formatMoneyStr(raw) : raw) : '';
                 recalcEditVuaModal('flower');
             });
             inpQty.addEventListener('input', () => recalcEditVuaModal('flower'));
@@ -6550,12 +6749,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 const p = parseMoney(row.querySelector('.fw-price').value);
                 const tot = q * p;
                 fTotal += tot;
-                row.querySelector('.fw-item-total').textContent = (tot).toLocaleString('vi-VN') + ' ₫';
+                row.querySelector('.fw-item-total').textContent = '= ' + (tot).toLocaleString('vi-VN') + ' ₫';
             });
             document.getElementById('edit-vua-flower-total-display').textContent = (fTotal).toLocaleString('vi-VN') + ' ₫';
 
             const cost = parseMoney(document.getElementById('edit-vua-input-cost').value);
-            const vattu = 150000;
+            const vattu = parseMoney(document.getElementById('edit-vua-input-vattu')?.value) || 150000;
 
             if (source === 'pt') {
                 const pt = parseMoney(document.getElementById('edit-vua-input-pt').value);
@@ -6566,9 +6765,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 const pt = fTotal + cost + vattu + ln;
                 document.getElementById('edit-vua-input-pt').value = pt > 0 ? formatMoneyStr(pt) : '0';
             }
+
+            const currentPt = parseMoney(document.getElementById('edit-vua-input-pt').value);
+            const totalDisplayVal = document.getElementById('edit-vua-total-val');
+            if (totalDisplayVal) totalDisplayVal.textContent = (currentPt > 0 ? currentPt.toLocaleString('vi-VN') : '0') + ' ₫';
         }
 
         const inpCost = document.getElementById('edit-vua-input-cost');
+        const inpVattu = document.getElementById('edit-vua-input-vattu');
         const inpProfit = document.getElementById('edit-vua-input-profit');
         const inpPt = document.getElementById('edit-vua-input-pt');
 
@@ -6577,6 +6781,13 @@ document.addEventListener("DOMContentLoaded", () => {
             e.target.value = val > 0 ? formatMoneyStr(val) : '';
             recalcEditVuaModal('cost');
         };
+        if (inpVattu) {
+            inpVattu.oninput = (e) => {
+                const val = parseMoney(e.target.value);
+                e.target.value = val > 0 ? formatMoneyStr(val) : '';
+                recalcEditVuaModal('vattu');
+            };
+        }
         inpProfit.oninput = () => {
             recalcEditVuaModal('profit');
         };
@@ -13084,6 +13295,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let parsedImportRows = [];
     let activeImportTab = 'text'; // 'text' or 'image'
     let uploadedImages = []; // Array of { id, base64Data, mimeType, name, previewUrl }
+    let currentImportTarget = 'farm'; // 'farm' or 'vua'
 
     const importTextBtn = document.getElementById('import-text-btn');
     const importTextModal = document.getElementById('import-text-modal');
@@ -13093,6 +13305,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnAddImportRowTop = document.getElementById('btn-add-import-row-top');
     const btnAddImportRow = document.getElementById('btn-add-import-row');
     const btnSaveImport = document.getElementById('btn-save-import');
+    const btnFillToForm = document.getElementById('btn-fill-to-form');
     const importTextArea = document.getElementById('import-text-area');
     const modalImportBuyer = document.getElementById('modal-import-buyer');
     const modalImportDate = document.getElementById('modal-import-date');
@@ -13268,21 +13481,129 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    function openImportModal(target = 'farm') {
+        currentImportTarget = target;
+        let buyer = '';
+        let date = '';
+        let status = '';
+
+        if (target === 'vua') {
+            buyer = (document.getElementById('vua-buyer')?.value || '').trim();
+            date = document.getElementById('vua-date')?.value || '';
+            status = document.getElementById('vua-status')?.value || '';
+        } else {
+            buyer = (document.getElementById('farm-buyer')?.value || document.getElementById('buyer-input')?.value || '').trim();
+            date = document.getElementById('farm-date')?.value || document.getElementById('date-input')?.value || '';
+            status = document.getElementById('farm-status')?.value || document.getElementById('status-input')?.value || '';
+        }
+
+        if (modalImportBuyer && buyer) {
+            modalImportBuyer.value = buyer;
+        }
+        if (modalImportDate) {
+            modalImportDate.value = date || formatDateInput(new Date());
+        }
+        if (modalImportStatus) {
+            modalImportStatus.value = (status === 'Xong' ? 'Xong' : 'Chưa Xong');
+        }
+
+        if (btnFillToForm) {
+            btnFillToForm.innerHTML = `<i class="fa-solid fa-file-pen"></i> Điền Vào Form ${target === 'vua' ? 'Vựa' : 'Farm'}`;
+        }
+
+        if (importTextModal) {
+            importTextModal.style.display = 'flex';
+            // Default to image tab for visual convenience
+            if (tabImportImage) {
+                tabImportImage.click();
+            }
+        }
+    }
+    window.openImportModal = openImportModal;
+
     if (importTextBtn && importTextModal) {
         importTextBtn.addEventListener('click', () => {
-            const buyerInput = document.getElementById('buyer-input');
-            const dateInput = document.getElementById('date-input');
-            const statusInput = document.getElementById('status-input');
-            if (modalImportBuyer && buyerInput) {
-                modalImportBuyer.value = buyerInput.value;
+            openImportModal('farm');
+        });
+    }
+
+    if (btnFillToForm) {
+        btnFillToForm.addEventListener('click', () => {
+            if (!parsedImportRows || parsedImportRows.length === 0) return;
+
+            const buyerVal = modalImportBuyer ? modalImportBuyer.value.trim() : '';
+            const dateVal = modalImportDate ? modalImportDate.value : '';
+            const statusVal = modalImportStatus ? modalImportStatus.value : 'Chưa Xong';
+
+            if (currentImportTarget === 'vua') {
+                const vuaBuyer = document.getElementById('vua-buyer');
+                const vuaDate = document.getElementById('vua-date');
+                const vuaStatus = document.getElementById('vua-status');
+                const vuaFlowersContainer = document.getElementById('vua-flowers-container');
+
+                if (vuaBuyer && buyerVal) vuaBuyer.value = buyerVal;
+                if (vuaDate && dateVal) vuaDate.value = dateVal;
+                if (vuaStatus) vuaStatus.value = (statusVal === 'Xong' ? 'Xong' : '');
+
+                if (vuaFlowersContainer) {
+                    vuaFlowersContainer.innerHTML = '';
+                    parsedImportRows.forEach(row => {
+                        if (typeof window.addVuaFlower === 'function') {
+                            window.addVuaFlower();
+                            const lastItem = vuaFlowersContainer.lastElementChild;
+                            if (lastItem) {
+                                const typeInput = lastItem.querySelector('.vua-type');
+                                const qtyInput = lastItem.querySelector('.vua-qty');
+                                const priceInput = lastItem.querySelector('.vua-price');
+                                if (typeInput) typeInput.value = row.type || 'Bông';
+                                if (qtyInput) qtyInput.value = row.qty || 0;
+                                if (priceInput && row.price !== '' && row.price !== null && row.price !== undefined) {
+                                    priceInput.value = new Intl.NumberFormat('vi-VN').format(row.price);
+                                }
+                            }
+                        }
+                    });
+                    if (typeof window.recalcVua === 'function') window.recalcVua();
+                }
+            } else {
+                const farmBuyer = document.getElementById('farm-buyer');
+                const farmDate = document.getElementById('farm-date');
+                const farmStatus = document.getElementById('farm-status');
+                const farmFlowersContainer = document.getElementById('farm-flowers-container');
+
+                if (farmBuyer && buyerVal) farmBuyer.value = buyerVal;
+                if (farmDate && dateVal) farmDate.value = dateVal;
+                if (farmStatus) farmStatus.value = (statusVal === 'Xong' ? 'Xong' : '');
+
+                if (farmFlowersContainer) {
+                    farmFlowersContainer.innerHTML = '';
+                    parsedImportRows.forEach(row => {
+                        if (typeof window.addFarmFlower === 'function') {
+                            window.addFarmFlower();
+                            const lastItem = farmFlowersContainer.lastElementChild;
+                            if (lastItem) {
+                                const typeInput = lastItem.querySelector('.farm-type');
+                                const qtyInput = lastItem.querySelector('.farm-qty');
+                                const priceInput = lastItem.querySelector('.farm-price');
+                                if (typeInput) typeInput.value = row.type || 'Bông';
+                                if (qtyInput) qtyInput.value = row.qty || 0;
+                                if (priceInput && row.price !== '' && row.price !== null && row.price !== undefined) {
+                                    priceInput.value = new Intl.NumberFormat('vi-VN').format(row.price);
+                                }
+                            }
+                        }
+                    });
+                    if (typeof window.calcFarmTotals === 'function') window.calcFarmTotals();
+                }
             }
-            if (modalImportDate) {
-                modalImportDate.value = (dateInput && dateInput.value) ? dateInput.value : formatDateInput(new Date());
+
+            closeImportModal();
+            const toastMsg = `Đã điền ${parsedImportRows.length} mặt hàng từ ảnh vào Form ${currentImportTarget === 'vua' ? 'Vựa' : 'Farm'} thành công!`;
+            if (typeof showToast === 'function') {
+                showToast(toastMsg, 'success');
+            } else if (window.showToast) {
+                window.showToast(toastMsg, 'success');
             }
-            if (modalImportStatus && statusInput) {
-                modalImportStatus.value = statusInput.value;
-            }
-            importTextModal.style.display = 'flex';
         });
     }
 
@@ -13309,6 +13630,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (importPreviewContainer) importPreviewContainer.style.display = 'none';
         if (importPreviewBody) importPreviewBody.innerHTML = '';
         if (btnSaveImport) btnSaveImport.disabled = true;
+        if (btnFillToForm) btnFillToForm.disabled = true;
         if (importImageFile) importImageFile.value = '';
         uploadedImages = [];
         renderUploadedImagesPreview();
@@ -13321,6 +13643,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (closeImportBtn) closeImportBtn.addEventListener('click', closeImportModal);
     if (closeImportBtn2) closeImportBtn2.addEventListener('click', closeImportModal);
+    window.closeImportModal = closeImportModal;
+    if (importTextModal) {
+        importTextModal.addEventListener('click', (e) => {
+            if (e.target === importTextModal) closeImportModal();
+        });
+    }
 
     const handleAddImportRow = () => {
         let lastDate = new Date();
@@ -13749,6 +14077,7 @@ Chỉ trả về JSON thuần túy (mảng các object). Không bao quanh bởi 
         importPreviewContainer.style.display = 'block';
         importCountSpan.innerText = parsedImportRows.length;
         btnSaveImport.disabled = parsedImportRows.length === 0;
+        if (btnFillToForm) btnFillToForm.disabled = parsedImportRows.length === 0;
 
         if (parsedImportRows.length === 0) {
             const emptyTr = document.createElement('tr');

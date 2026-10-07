@@ -4741,5 +4741,29 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(bindReset, 200);
 });
 
+// Close open modals on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+        const isVisible = (el) => {
+            if (!el) return false;
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0' && (el.offsetWidth > 0 || el.offsetHeight > 0);
+        };
+        const openModals = Array.from(document.querySelectorAll('.modal-overlay'))
+            .filter(isVisible);
+        if (openModals.length > 0) {
+            const topModal = openModals[openModals.length - 1];
+            const closeBtn = topModal.querySelector('#close-modal, button[onclick*="none"], button[onclick*="close"], .fa-xmark');
+            if (closeBtn) {
+                const btn = closeBtn.tagName.toLowerCase() === 'button' ? closeBtn : closeBtn.closest('button');
+                if (btn) btn.click();
+                else topModal.style.display = 'none';
+            } else {
+                topModal.style.display = 'none';
+            }
+        }
+    }
+});
+
 
 

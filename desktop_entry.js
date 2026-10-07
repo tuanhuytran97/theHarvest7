@@ -455,9 +455,73 @@
     // ═══════════════════════════════════════════
     //  VỰA CONTROLLER
     // ═══════════════════════════════════════════
+    let isDesktopVuaVattuUnlocked = false;
+
+    function toggleDesktopVuaVattuLock() {
+        const input = document.getElementById('vua-vattu');
+        const btn = document.getElementById('btn-lock-vattu');
+        const icon = document.getElementById('icon-lock-vattu');
+        const label = document.getElementById('label-lock-vattu');
+        if (!input) return;
+
+        isDesktopVuaVattuUnlocked = !isDesktopVuaVattuUnlocked;
+
+        if (isDesktopVuaVattuUnlocked) {
+            input.readOnly = false;
+            input.style.background = '#ffffff';
+            input.style.color = '#1e293b';
+            input.style.cursor = 'text';
+            input.style.borderColor = '#3b82f6';
+            if (btn) {
+                btn.style.background = '#eff6ff';
+                btn.style.borderColor = '#3b82f6';
+                btn.style.color = '#1d4ed8';
+            }
+            if (icon) icon.className = 'fa-solid fa-lock-open';
+            if (label) label.textContent = 'Khóa lại';
+            input.focus();
+            input.select?.();
+        } else {
+            input.readOnly = true;
+            input.style.background = '#f8fafc';
+            input.style.color = 'var(--me-text-soft, #64748b)';
+            input.style.cursor = 'not-allowed';
+            input.style.borderColor = '';
+            if (btn) {
+                btn.style.background = '#f1f5f9';
+                btn.style.borderColor = '#cbd5e1';
+                btn.style.color = '#64748b';
+            }
+            if (icon) icon.className = 'fa-solid fa-lock';
+            if (label) label.textContent = 'Mở khóa';
+        }
+    }
+
+    function resetDesktopVuaVattuLock() {
+        isDesktopVuaVattuUnlocked = false;
+        const input = document.getElementById('vua-vattu');
+        const btn = document.getElementById('btn-lock-vattu');
+        const icon = document.getElementById('icon-lock-vattu');
+        const label = document.getElementById('label-lock-vattu');
+        if (input) {
+            input.readOnly = true;
+            input.value = '150.000';
+            input.style.background = '#f8fafc';
+            input.style.color = 'var(--me-text-soft, #64748b)';
+            input.style.cursor = 'not-allowed';
+            input.style.borderColor = '';
+        }
+        if (btn) {
+            btn.style.background = '#f1f5f9';
+            btn.style.borderColor = '#cbd5e1';
+            btn.style.color = '#64748b';
+        }
+        if (icon) icon.className = 'fa-solid fa-lock';
+        if (label) label.textContent = 'Mở khóa';
+    }
+
     function initDesktopVuaForm() {
-        const vattuEl = document.getElementById('vua-vattu');
-        if (vattuEl) vattuEl.value = '150.000';
+        resetDesktopVuaVattuLock();
 
         const quickContainer = document.getElementById('vua-quick-buyers');
         if (quickContainer && quickContainer.children.length === 0) {
@@ -576,7 +640,8 @@
         });
 
         const shipping = parseMoneyVal(document.getElementById('vua-shipping')?.value);
-        const vattu = parseMoneyVal(document.getElementById('vua-vattu')?.value) || 150000;
+        const vattuStr = document.getElementById('vua-vattu')?.value?.trim();
+        const vattu = (vattuStr !== '' && vattuStr !== undefined) ? parseMoneyVal(vattuStr) : 150000;
         const profit = parseMoneyVal(document.getElementById('vua-profit')?.value);
         const totalCollect = totalCost + shipping + vattu + profit;
 
@@ -638,7 +703,8 @@
 
         const totalCost = flowers.reduce((s, f) => s + f.total, 0);
         const shipping = parseMoneyVal(document.getElementById('vua-shipping').value);
-        const vattu = parseMoneyVal(document.getElementById('vua-vattu')?.value) || 150000;
+        const vattuStr = document.getElementById('vua-vattu')?.value?.trim();
+        const vattu = (vattuStr !== '' && vattuStr !== undefined) ? parseMoneyVal(vattuStr) : 150000;
         const profit = parseMoneyVal(document.getElementById('vua-profit').value);
         const totalCollect = totalCost + shipping + vattu + profit;
         const totalQty = flowers.reduce((s, f) => s + f.qty, 0);
@@ -770,7 +836,7 @@
         document.getElementById('vua-note').value = '';
         document.getElementById('vua-status').value = '';
         document.getElementById('vua-shipping').value = '0';
-        document.getElementById('vua-vattu').value = '150.000';
+        resetDesktopVuaVattuLock();
         document.getElementById('vua-profit').value = '0';
         const container = document.getElementById('vua-flowers-container');
         if (container) container.innerHTML = '';
@@ -1180,6 +1246,8 @@
     window.removeVuaFlower = removeVuaFlower;
     window.recalcVua = recalcVua;
     window.submitVuaOrder = submitVuaOrder;
+    window.toggleDesktopVuaVattuLock = toggleDesktopVuaVattuLock;
+    window.toggleVuaVattuLock = toggleDesktopVuaVattuLock;
 
     window.addExpenseRow = addExpenseRow;
     window.setExpType = setExpType;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'theharvest7-cache-v17';
+const CACHE_NAME = 'theharvest7-cache-v25';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const ASSETS = [
   './styles.css',
   './todo_v2.css',
   './app.js',
+  './desktop_entry.js',
   './todo_v2.js',
   './formulas.js',
   './flower_cycles_db.js',

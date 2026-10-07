@@ -8012,10 +8012,12 @@ tr.swiping td:first-child::before {
 }
 
 .mobile-entry-container textarea.field-input {
+  width: 100% !important;
+  box-sizing: border-box !important;
   height: auto;
   min-height: 75px;
   padding: 10px 14px;
-  resize: none;
+  resize: vertical;
   line-height: 1.5;
 }
 

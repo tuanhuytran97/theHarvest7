@@ -402,10 +402,12 @@
         .field-input.red:focus, .field-select.red:focus { border-color: var(--red); box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12); }
 
         textarea.field-input {
+            width: 100% !important;
+            box-sizing: border-box !important;
             height: auto;
             min-height: 80px;
             padding: 14px 16px;
-            resize: none;
+            resize: vertical;
             line-height: 1.5;
         }
 
@@ -1306,7 +1308,14 @@
 
             <!-- Flower items -->
             <div class="card">
-                <div class="card-title"><i class="fa-solid fa-spa" style="color:#16a34a"></i> Danh sách hoa</div>
+                <div class="card-title" style="justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <span style="display:inline-flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-spa" style="color:#16a34a"></i> Danh sách hoa
+                    </span>
+                    <button type="button" class="quick-pill" onclick="openMobileImageModal('farm')" style="padding: 4px 10px; font-size: 12px; border-color: #3b82f6; color: #1d4ed8; background: #eff6ff; display: inline-flex; align-items: center; gap: 4px; border-radius: 8px; cursor: pointer; font-weight: 800;">
+                        <i class="fa-solid fa-camera"></i> Nhập ảnh / AI
+                    </button>
+                </div>
                 <div id="farm-flowers-container"></div>
                 <button class="add-item-btn green" onclick="addFarmFlower()">
                     <i class="fa-solid fa-plus"></i> Thêm loại hoa
@@ -1350,6 +1359,7 @@
             </div>
 
             <!-- Date & Tên vựa -->
+            <!-- Date & Tên vựa -->
             <div class="card">
                 <div class="card-title"><i class="fa-solid fa-calendar-days" style="color:#2563eb"></i> Ngày & Tên vựa</div>
                 <div class="form-field">
@@ -1364,11 +1374,25 @@
                 <div class="quick-pills" id="vua-quick-buyers">
                     <!-- Rendered by JS -->
                 </div>
+                <div class="form-field" style="margin-top: 14px; margin-bottom: 0;">
+                    <label>Trạng thái thu tiền</label>
+                    <select class="field-select" id="vua-status">
+                        <option value="">⏳ Chưa thu tiền</option>
+                        <option value="Xong">✅ Đã thu tiền (Xong)</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Flower list for Vua -->
             <div class="card">
-                <div class="card-title"><i class="fa-solid fa-boxes-stacked" style="color:#2563eb"></i> Danh sách hoa (giá vốn)</div>
+                <div class="card-title" style="justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <span style="display:inline-flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-boxes-stacked" style="color:#2563eb"></i> Danh sách hoa (giá vốn)
+                    </span>
+                    <button type="button" class="quick-pill" onclick="openMobileImageModal('vua')" style="padding: 4px 10px; font-size: 12px; border-color: #3b82f6; color: #1d4ed8; background: #eff6ff; display: inline-flex; align-items: center; gap: 4px; border-radius: 8px; cursor: pointer; font-weight: 800;">
+                        <i class="fa-solid fa-camera"></i> Nhập ảnh / AI
+                    </button>
+                </div>
                 <div id="vua-flowers-container"></div>
                 <button class="add-item-btn blue" onclick="addVuaFlower()">
                     <i class="fa-solid fa-plus"></i> Thêm loại hoa
@@ -1383,8 +1407,13 @@
                     <input type="text" class="field-input blue money-input" id="vua-shipping" placeholder="0" oninput="recalcVua()" value="0">
                 </div>
                 <div class="form-field">
-                    <label>Chi phí vật tư khác</label>
-                    <input type="text" class="field-input blue money-input" id="vua-vattu" placeholder="150.000" value="150.000" readonly style="background: #f1f5f9; color: var(--text-soft); font-weight: 800; cursor: not-allowed;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label style="margin: 0;">Vật tư khác cố định (₫)</label>
+                        <button type="button" id="btn-lock-vattu" onclick="toggleMobileVuaVattuLock()" title="Bấm để mở khóa chỉnh sửa chi phí vật tư" style="background: #f1f5f9; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 3px 10px; font-size: 11.5px; font-weight: 800; color: #64748b; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                            <i class="fa-solid fa-lock" id="icon-lock-vattu"></i> <span id="label-lock-vattu">Mở khóa</span>
+                        </button>
+                    </div>
+                    <input type="text" class="field-input blue money-input" id="vua-vattu" placeholder="150.000" value="150.000" readonly style="background: #f8fafc; color: var(--text-soft); font-weight: 800; cursor: not-allowed; transition: all 0.2s;" oninput="recalcVua()">
                 </div>
                 <div class="form-field">
                     <label>Lợi Nhuận</label>
@@ -1416,18 +1445,11 @@
                 </div>
             </div>
 
-            <!-- Trạng thái -->
+            <!-- Ghi chú -->
             <div class="card">
-                <div class="card-title"><i class="fa-solid fa-circle-check" style="color:#64748b"></i> Trạng thái thanh toán</div>
-                <div class="form-field" style="margin-bottom:0">
-                    <select class="field-select" id="vua-status">
-                        <option value="">⏳ Chưa thu tiền</option>
-                        <option value="Xong">✅ Đã thu tiền (Xong)</option>
-                    </select>
-                </div>
-                <div class="form-field" style="margin-bottom:0; margin-top:12px;">
-                    <label>Ghi chú</label>
-                    <textarea class="field-input" id="vua-note" placeholder="Ghi chú (không bắt buộc)..." rows="2"></textarea>
+                <div class="card-title"><i class="fa-solid fa-note-sticky" style="color:#64748b"></i> Ghi chú</div>
+                <div class="form-field" style="margin-bottom:0;">
+                    <textarea class="field-input" id="vua-note" placeholder="Ghi chú (không bắt buộc)..." rows="2" style="width: 100% !important; box-sizing: border-box !important; display: block !important; resize: vertical !important;"></textarea>
                 </div>
             </div>
 
@@ -1629,6 +1651,61 @@
         <div class="modal-actions">
             <button class="modal-btn cancel" onclick="closeDeleteModal()">Hủy bỏ</button>
             <button class="modal-btn confirm red" id="delete-confirm-btn">Xóa ngay</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ MOBILE IMAGE / AI IMPORT MODAL ══════════ -->
+<div class="modal-overlay" id="mobile-image-modal" style="z-index: 300;">
+    <div class="modal-sheet" style="max-height: 90vh; overflow-y: auto;">
+        <div class="modal-handle"></div>
+        <div class="modal-title" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+            <span style="display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-camera" style="color: #2563eb;"></i> Nhập Đơn Bằng Hình Ảnh
+            </span>
+            <span style="font-size: 11px; background: #eff6ff; color: #1d4ed8; padding: 2px 8px; border-radius: 999px; font-weight: 800;">Gemini AI</span>
+        </div>
+
+        <div style="padding: 6px 0 12px;">
+            <p style="font-size: 13.5px; color: var(--text-soft); font-weight: 600; margin-bottom: 12px;">
+                Chụp ảnh hoặc tải ảnh sổ tay ghi chép giao bông, hóa đơn để AI tự động trích xuất:
+            </p>
+
+            <div id="mobile-dropzone" style="border: 2px dashed #3b82f6; border-radius: 14px; padding: 18px 14px; text-align: center; background: #eff6ff; cursor: pointer; position: relative;">
+                <input type="file" id="mobile-image-file" accept="image/*" style="position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer;" onchange="handleMobileImageChosen(this)">
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 28px; color: #2563eb; margin-bottom: 6px;"></i>
+                <div style="font-size: 13.5px; font-weight: 800; color: #1e293b;" id="mobile-image-status">Bấm để chụp ảnh hoặc chọn ảnh từ thư viện</div>
+                <div style="font-size: 11.5px; color: #64748b; margin-top: 3px;">Hỗ trợ ảnh sổ tay viết tay, phiếu giao bông PNG, JPG</div>
+            </div>
+
+            <!-- Preview image -->
+            <div id="mobile-img-preview-box" style="display: none; margin-top: 10px; text-align: center; position: relative;">
+                <img id="mobile-img-preview" style="max-height: 160px; max-width: 100%; border-radius: 10px; border: 1px solid #cbd5e1; object-fit: contain;" />
+                <button type="button" onclick="clearMobileImage()" style="position: absolute; top: 4px; right: 10px; background: rgba(239, 68, 68, 0.9); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer;">
+                    <i class="fa-solid fa-xmark" style="font-size: 12px;"></i>
+                </button>
+            </div>
+
+            <!-- Parse button -->
+            <button type="button" id="btn-mobile-parse-image" onclick="parseMobileImageWithAI()" style="width: 100%; height: 44px; border: none; border-radius: 12px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; font-weight: 800; font-size: 14.5px; margin-top: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Phân Tích Hình Ảnh Bằng AI
+            </button>
+
+            <!-- Results container -->
+            <div id="mobile-parse-results" style="display: none; margin-top: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 13px; font-weight: 800; color: #1e293b;" id="mobile-parse-count-title">📋 Kết quả nhận diện (0 dòng):</span>
+                </div>
+                <div id="mobile-parsed-items-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; padding: 4px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc;">
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-actions">
+            <button class="modal-btn cancel" onclick="closeMobileImageModal()">Đóng</button>
+            <button class="modal-btn confirm" id="btn-mobile-apply-items" onclick="applyMobileParsedItems()" disabled>
+                <i class="fa-solid fa-file-pen"></i> Điền vào Form
+            </button>
         </div>
     </div>
 </div>
@@ -2633,9 +2710,76 @@ function executeSubmitFarmOrder({ farmDateVal, dateVN, buyer, status, note, flow
 // ═══════════════════════════════════════════
 //  VỰA FORM
 // ═══════════════════════════════════════════
+let isMobileVuaVattuUnlocked = false;
+
+function toggleMobileVuaVattuLock() {
+    const input = document.getElementById('vua-vattu');
+    const btn = document.getElementById('btn-lock-vattu');
+    const icon = document.getElementById('icon-lock-vattu');
+    const label = document.getElementById('label-lock-vattu');
+    if (!input) return;
+
+    isMobileVuaVattuUnlocked = !isMobileVuaVattuUnlocked;
+
+    if (isMobileVuaVattuUnlocked) {
+        input.readOnly = false;
+        input.style.background = '#ffffff';
+        input.style.color = 'var(--text, #1e293b)';
+        input.style.cursor = 'text';
+        input.style.borderColor = 'var(--blue, #3b82f6)';
+        if (btn) {
+            btn.style.background = '#eff6ff';
+            btn.style.borderColor = 'var(--blue, #3b82f6)';
+            btn.style.color = '#1d4ed8';
+        }
+        if (icon) icon.className = 'fa-solid fa-lock-open';
+        if (label) label.textContent = 'Khóa lại';
+        input.focus();
+        input.select?.();
+    } else {
+        input.readOnly = true;
+        input.style.background = '#f8fafc';
+        input.style.color = 'var(--text-soft, #64748b)';
+        input.style.cursor = 'not-allowed';
+        input.style.borderColor = '';
+        if (btn) {
+            btn.style.background = '#f1f5f9';
+            btn.style.borderColor = '#cbd5e1';
+            btn.style.color = '#64748b';
+        }
+        if (icon) icon.className = 'fa-solid fa-lock';
+        if (label) label.textContent = 'Mở khóa';
+    }
+}
+
+function resetMobileVuaVattuLock() {
+    isMobileVuaVattuUnlocked = false;
+    const input = document.getElementById('vua-vattu');
+    const btn = document.getElementById('btn-lock-vattu');
+    const icon = document.getElementById('icon-lock-vattu');
+    const label = document.getElementById('label-lock-vattu');
+    if (input) {
+        input.readOnly = true;
+        input.value = '150.000';
+        input.style.background = '#f8fafc';
+        input.style.color = 'var(--text-soft, #64748b)';
+        input.style.cursor = 'not-allowed';
+        input.style.borderColor = '';
+    }
+    if (btn) {
+        btn.style.background = '#f1f5f9';
+        btn.style.borderColor = '#cbd5e1';
+        btn.style.color = '#64748b';
+    }
+    if (icon) icon.className = 'fa-solid fa-lock';
+    if (label) label.textContent = 'Mở khóa';
+}
+
+window.toggleMobileVuaVattuLock = toggleMobileVuaVattuLock;
+window.toggleVuaVattuLock = toggleMobileVuaVattuLock;
+
 function initVuaForm() {
-    const vattuEl = document.getElementById('vua-vattu');
-    if (vattuEl) vattuEl.value = '150.000';
+    resetMobileVuaVattuLock();
     addVuaFlower();
     recalcVua();
 }
@@ -2927,7 +3071,7 @@ function executeSubmitVuaOrder({
     document.getElementById('vua-note').value = '';
     document.getElementById('vua-status').value = '';
     document.getElementById('vua-shipping').value = '0';
-    document.getElementById('vua-vattu').value = '150.000';
+    resetMobileVuaVattuLock();
     document.getElementById('vua-profit').value = '0';
     document.getElementById('vua-flowers-container').innerHTML = '';
     vuaFlowerCount = 0;
@@ -3900,12 +4044,14 @@ function renderVuaCard(group) {
     const totalQty = flowers.reduce((s, f) => s + f.qty, 0);
     const flowerTotal = flowers.reduce((s, f) => s + f.total, 0);
     const cp = parseSheetNum(master['Chi Phí']);
-    const vattu = 150000;
     let pt = parseSheetNum(master['Tiền Phải Thu']);
     let ln = parseSheetNum(master['Doanh Thu Khác']);
+    let vattu = 150000;
 
     if (pt > 0) {
-        ln = pt - flowerTotal - cp - vattu;
+        const calcVattu = pt - flowerTotal - cp - ln;
+        if (calcVattu > 0) vattu = calcVattu;
+        else ln = pt - flowerTotal - cp - vattu;
     } else {
         pt = flowerTotal + cp + vattu + ln;
     }
@@ -3957,8 +4103,8 @@ function renderVuaCard(group) {
                 <span class="tx-line-value" style="color:var(--red); font-weight:700;">-${fmtMoney(cp)}</span>
             </div>` : ''}
             <div class="tx-line">
-                <span class="tx-line-label">📦 Vật tư khác (Cố định)</span>
-                <span class="tx-line-value" style="color:var(--text-soft); font-weight:700;">150.000 ₫</span>
+                <span class="tx-line-label">📦 Vật tư khác</span>
+                <span class="tx-line-value" style="color:var(--text-soft); font-weight:700;">${fmtMoney(vattu)}</span>
             </div>
             ${ln !== 0 ? `
             <div class="tx-line">
@@ -4113,12 +4259,18 @@ function recalcEditVuaGroup(source = 'default') {
     if (flowerEl) flowerEl.textContent = fmtMoney(flowerTotal);
 
     const shipping = parseMoney(document.getElementById('edit-vua-cost')?.value);
-    const vattu = 150000;
+    const vattuInp = document.getElementById('edit-vua-vattu');
+    const vattu = vattuInp ? parseMoney(vattuInp.value) : 150000;
     const ptInput = document.getElementById('edit-vua-pt');
     const profitInput = document.getElementById('edit-vua-profit');
     const totalEl = document.getElementById('edit-vua-total-val');
 
     if (source === 'profit') {
+        const profit = parseMoney(profitInput?.value);
+        const autoPt = flowerTotal + shipping + vattu + profit;
+        if (ptInput) ptInput.value = fmtNum(autoPt);
+        if (totalEl) totalEl.textContent = fmtMoney(autoPt);
+    } else if (source === 'vattu' || source === 'cost') {
         const profit = parseMoney(profitInput?.value);
         const autoPt = flowerTotal + shipping + vattu + profit;
         if (ptInput) ptInput.value = fmtNum(autoPt);
@@ -4130,6 +4282,72 @@ function recalcEditVuaGroup(source = 'default') {
         if (totalEl) totalEl.textContent = fmtMoney(currentPt);
     }
 }
+
+let isEditMobileVuaVattuUnlocked = false;
+
+function toggleEditMobileVuaVattuLock() {
+    const input = document.getElementById('edit-vua-vattu');
+    const btn = document.getElementById('btn-lock-edit-vua-vattu');
+    const icon = document.getElementById('icon-lock-edit-vua-vattu');
+    const label = document.getElementById('label-lock-edit-vua-vattu');
+    if (!input) return;
+
+    isEditMobileVuaVattuUnlocked = !isEditMobileVuaVattuUnlocked;
+
+    if (isEditMobileVuaVattuUnlocked) {
+        input.readOnly = false;
+        input.style.background = '#ffffff';
+        input.style.color = 'var(--text, #1e293b)';
+        input.style.cursor = 'text';
+        input.style.borderColor = 'var(--blue, #3b82f6)';
+        if (btn) {
+            btn.style.background = '#eff6ff';
+            btn.style.borderColor = 'var(--blue, #3b82f6)';
+            btn.style.color = '#1d4ed8';
+        }
+        if (icon) icon.className = 'fa-solid fa-lock-open';
+        if (label) label.textContent = 'Khóa lại';
+        input.focus();
+        input.select?.();
+    } else {
+        input.readOnly = true;
+        input.style.background = '#f8fafc';
+        input.style.color = 'var(--text-soft, #64748b)';
+        input.style.cursor = 'not-allowed';
+        input.style.borderColor = '';
+        if (btn) {
+            btn.style.background = '#f1f5f9';
+            btn.style.borderColor = '#cbd5e1';
+            btn.style.color = '#64748b';
+        }
+        if (icon) icon.className = 'fa-solid fa-lock';
+        if (label) label.textContent = 'Mở khóa';
+    }
+}
+
+function resetEditMobileVuaVattuLock() {
+    isEditMobileVuaVattuUnlocked = false;
+    const input = document.getElementById('edit-vua-vattu');
+    const btn = document.getElementById('btn-lock-edit-vua-vattu');
+    const icon = document.getElementById('icon-lock-edit-vua-vattu');
+    const label = document.getElementById('label-lock-edit-vua-vattu');
+    if (input) {
+        input.readOnly = true;
+        input.style.background = '#f8fafc';
+        input.style.color = 'var(--text-soft, #64748b)';
+        input.style.cursor = 'not-allowed';
+        input.style.borderColor = '';
+    }
+    if (btn) {
+        btn.style.background = '#f1f5f9';
+        btn.style.borderColor = '#cbd5e1';
+        btn.style.color = '#64748b';
+    }
+    if (icon) icon.className = 'fa-solid fa-lock';
+    if (label) label.textContent = 'Mở khóa';
+}
+
+window.toggleEditMobileVuaVattuLock = toggleEditMobileVuaVattuLock;
 
 function recalcEditVua(source = 'default') {
     recalcEditVuaGroup(source);
@@ -4314,12 +4532,14 @@ function openEditVuaGroupModal(orderId) {
 
     const flowerTotal = flowers.reduce((s, f) => s + f.total, 0);
     const cp = parseSheetNum(master['Chi Phí']);
-    const vattu = 150000;
     let pt = parseSheetNum(master['Tiền Phải Thu']);
     let ln = parseSheetNum(master['Doanh Thu Khác']);
+    let vattu = 150000;
 
     if (pt > 0) {
-        ln = pt - flowerTotal - cp - vattu;
+        const calcVattu = pt - flowerTotal - cp - ln;
+        if (calcVattu > 0) vattu = calcVattu;
+        else ln = pt - flowerTotal - cp - vattu;
     } else {
         pt = flowerTotal + cp + vattu + ln;
     }
@@ -4328,6 +4548,14 @@ function openEditVuaGroupModal(orderId) {
         <div class="form-field">
             <label>Tên Vựa</label>
             <input type="text" class="field-input blue" id="edit-vua-buyer" value="${master['Người Mua'] || ''}">
+        </div>
+
+        <div class="form-field">
+            <label>Trạng thái thu tiền</label>
+            <select class="field-select" id="edit-vua-status" style="width: 100% !important; box-sizing: border-box !important;">
+                <option value="" ${!master['Status'] || master['Status']==='Chưa Xong' ? 'selected':''}>⏳ Chưa thu tiền</option>
+                <option value="Xong" ${master['Status']==='Xong' ? 'selected':''}>✅ Đã thu tiền</option>
+            </select>
         </div>
 
         <div style="font-size: 13px; font-weight: 800; color: var(--text-soft); text-transform: uppercase; margin-bottom: 8px;">
@@ -4352,8 +4580,13 @@ function openEditVuaGroupModal(orderId) {
                 <input type="text" class="field-input blue money-input" id="edit-vua-cost" value="${fmtNum(cp)}" oninput="recalcEditVuaGroup('cost')">
             </div>
             <div class="form-field">
-                <label>Chi phí vật tư khác</label>
-                <input type="text" class="field-input blue money-input" id="edit-vua-vattu" value="150.000" readonly style="background: #f1f5f9; color: var(--text-soft); font-weight: 800; cursor: not-allowed;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="margin: 0;">Chi phí vật tư khác</label>
+                    <button type="button" id="btn-lock-edit-vua-vattu" onclick="toggleEditMobileVuaVattuLock()" title="Bấm để mở khóa chỉnh sửa chi phí vật tư" style="background: #f1f5f9; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 2px 8px; font-size: 11px; font-weight: 800; color: #64748b; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;">
+                        <i class="fa-solid fa-lock" id="icon-lock-edit-vua-vattu"></i> <span id="label-lock-edit-vua-vattu">Mở khóa</span>
+                    </button>
+                </div>
+                <input type="text" class="field-input blue money-input" id="edit-vua-vattu" value="${fmtNum(vattu)}" readonly style="background: #f8fafc; color: var(--text-soft); font-weight: 800; cursor: not-allowed; transition: all 0.2s;" oninput="recalcEditVuaGroup('vattu')">
             </div>
         </div>
         <div class="form-field">
@@ -4368,16 +4601,9 @@ function openEditVuaGroupModal(orderId) {
                 <span id="edit-vua-total-val" style="font-size: 22px; font-weight: 900; color: var(--blue);">${fmtMoney(pt)}</span>
             </div>
         </div>
-        <div class="form-field">
-            <label>Trạng thái</label>
-            <select class="field-select" id="edit-vua-status">
-                <option value="" ${!master['Status'] || master['Status']==='Chưa Xong' ? 'selected':''}>⏳ Chưa thu tiền</option>
-                <option value="Xong" ${master['Status']==='Xong' ? 'selected':''}>✅ Đã thu tiền</option>
-            </select>
-        </div>
-        <div class="form-field">
+        <div class="form-field" style="margin-bottom: 0;">
             <label>Ghi chú</label>
-            <textarea class="field-input" id="edit-vua-note" rows="2">${master['Ghi Chú'] || ''}</textarea>
+            <textarea class="field-input" id="edit-vua-note" rows="2" style="width: 100% !important; box-sizing: border-box !important; display: block !important; resize: vertical !important; min-height: 70px;">${master['Ghi Chú'] || ''}</textarea>
         </div>
     `;
 
@@ -4416,6 +4642,7 @@ function openEditVuaGroupModal(orderId) {
         }
 
         const newCost = parseMoney(document.getElementById('edit-vua-cost').value);
+        const newVattu = parseMoney(document.getElementById('edit-vua-vattu')?.value) || 150000;
         const newProfit = parseMoney(document.getElementById('edit-vua-profit').value);
         const newPt = parseMoney(document.getElementById('edit-vua-pt').value);
         const newStatus = document.getElementById('edit-vua-status').value;
@@ -4460,8 +4687,8 @@ function openEditVuaGroupModal(orderId) {
                         <span class="confirm-summary-val" style="color:var(--red);">${fmtMoney(newCost)}</span>
                     </div>` : ''}
                     <div class="confirm-summary-row">
-                        <span class="confirm-summary-label">📦 Vật tư khác (Cố định)</span>
-                        <span class="confirm-summary-val" style="color:var(--text-soft); font-weight:700;">150.000 ₫</span>
+                        <span class="confirm-summary-label">📦 Vật tư khác</span>
+                        <span class="confirm-summary-val" style="color:var(--text-soft); font-weight:700;">${fmtMoney(newVattu)}</span>
                     </div>
                     ${newProfit !== 0 ? `
                     <div class="confirm-summary-row">
@@ -4503,6 +4730,7 @@ function openEditVuaGroupModal(orderId) {
         });
     };
 
+    resetEditMobileVuaVattuLock();
     modal.classList.add('open');
 }
 
@@ -4801,16 +5029,270 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ═══════════════════════════════════════════
-//  CLOSE MODALS ON OVERLAY CLICK
+//  MOBILE IMAGE AI OCR IMPORT LOGIC
 // ═══════════════════════════════════════════
-document.getElementById('edit-modal').addEventListener('click', e => {
+let mobileImportTarget = 'farm';
+let mobileUploadedImageBase64 = null;
+let mobileUploadedImageMime = 'image/png';
+let mobileParsedRows = [];
+
+function openMobileImageModal(target = 'farm') {
+    mobileImportTarget = target;
+    const modal = document.getElementById('mobile-image-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeMobileImageModal() {
+    const modal = document.getElementById('mobile-image-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function clearMobileImage() {
+    mobileUploadedImageBase64 = null;
+    const fileInput = document.getElementById('mobile-image-file');
+    if (fileInput) fileInput.value = '';
+    const previewBox = document.getElementById('mobile-img-preview-box');
+    if (previewBox) previewBox.style.display = 'none';
+    const status = document.getElementById('mobile-image-status');
+    if (status) status.innerText = 'Bấm để chụp ảnh hoặc chọn ảnh từ thư viện';
+    const resultsBox = document.getElementById('mobile-parse-results');
+    if (resultsBox) resultsBox.style.display = 'none';
+    const applyBtn = document.getElementById('btn-mobile-apply-items');
+    if (applyBtn) applyBtn.disabled = true;
+    mobileParsedRows = [];
+}
+
+function handleMobileImageChosen(input) {
+    if (!input || !input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    if (!file.type.startsWith('image/')) {
+        alert('Vui lòng chọn tệp hình ảnh hợp lệ!');
+        return;
+    }
+    mobileUploadedImageMime = file.type || 'image/png';
+    const reader = new FileReader();
+    reader.onload = e => {
+        const url = e.target.result;
+        mobileUploadedImageBase64 = url.split(',')[1];
+        const preview = document.getElementById('mobile-img-preview');
+        const previewBox = document.getElementById('mobile-img-preview-box');
+        if (preview && previewBox) {
+            preview.src = url;
+            previewBox.style.display = 'block';
+        }
+        const status = document.getElementById('mobile-image-status');
+        if (status) status.innerText = `Đã chọn: ${file.name || 'Ảnh'}`;
+    };
+    reader.readAsDataURL(file);
+}
+
+async function parseMobileImageWithAI() {
+    if (!mobileUploadedImageBase64) {
+        alert('Vui lòng chụp ảnh hoặc chọn ảnh từ thiết bị trước!');
+        return;
+    }
+    const parseBtn = document.getElementById('btn-mobile-parse-image');
+    const originalText = parseBtn ? parseBtn.innerHTML : '';
+    if (parseBtn) {
+        parseBtn.disabled = true;
+        parseBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích bằng Gemini AI...';
+    }
+
+    try {
+        const apiKey = (typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : '') || '';
+        if (!apiKey) throw new Error('Chưa cấu hình GEMINI_API_KEY trong file config.js!');
+
+        const prompt = `Bạn là trợ lý AI chuyên nghiệp phân tích hóa đơn, sổ tay ghi chép giao bông và tin nhắn đặt hàng nông sản (đặc biệt là hoa tươi Đà Lạt).
+Hãy trích xuất tất cả các dòng giao bông từ hình ảnh thành một mảng JSON các đối tượng.
+
+Cấu trúc mỗi phần tử:
+{
+  "date": "YYYY-MM-DD",
+  "type": "tên loại hoa chuẩn hóa",
+  "qty": số lượng,
+  "price": đơn giá
+}
+
+HƯỚNG DẪN QUAN TRỌNG VỀ NHẬN DIỆN CHỮ VIẾT TAY & CÔNG THỨC:
+1. Tên hoa phổ biến: Ô Hồng, Lạc Thần, Vitto, Trắng ủ, Hỷ Trứng, Vàng Hà Lan, Kem, Simmo, Xô ngoại, Xô nội, Ecuador, Pháp, Quốc Vương, Victor Vàng, Capu.
+2. Quy tắc đơn giá:
+   - Trong sổ tay thường ghi [Tên hoa] [SL] x [Đơn giá rút gọn] = [Thành tiền nghìn đồng]. Ví dụ: 800 x 19 = 1520 -> SL: 800, đơn giá: 1900đ.
+   - 400 x 25 = 1000 -> SL: 400, đơn giá: 2500đ.
+   - Đơn giá thực tế cho mỗi bông luôn trong khoảng 500đ đến 15.000đ.
+Chỉ trả về JSON thuần túy (mảng các object). Không bao quanh bởi markdown formatting.`;
+
+        const payload = {
+            contents: [{
+                parts: [
+                    { text: prompt },
+                    {
+                        inline_data: {
+                            mime_type: mobileUploadedImageMime,
+                            data: mobileUploadedImageBase64
+                        }
+                    }
+                ]
+            }],
+            generationConfig: { responseMimeType: 'application/json' }
+        };
+
+        const result = await callGeminiAPI(payload, apiKey);
+        let text = result.candidates[0].content.parts[0].text.trim();
+        if (text.startsWith('```json')) text = text.substring(7);
+        if (text.startsWith('```')) text = text.substring(3);
+        if (text.endsWith('```')) text = text.substring(0, text.length - 3);
+        text = text.trim();
+
+        const items = JSON.parse(text);
+        if (!Array.isArray(items) || items.length === 0) {
+            alert('Không tìm thấy dòng giao bông nào từ hình ảnh này!');
+            return;
+        }
+
+        mobileParsedRows = items.map(item => {
+            let p = parseFloat(item.price) || 0;
+            if (p > 0) {
+                while (p < 500 && p > 0) p = p * 10;
+            }
+            return {
+                type: item.type || 'Bông',
+                qty: parseFloat(item.qty) || 0,
+                price: p || ''
+            };
+        });
+
+        renderMobileParsedResults();
+    } catch (err) {
+        console.error('Gemini Mobile OCR Error:', err);
+        alert('Lỗi khi phân tích hình ảnh bằng AI: ' + err.message);
+    } finally {
+        if (parseBtn) {
+            parseBtn.disabled = false;
+            parseBtn.innerHTML = originalText;
+        }
+    }
+}
+
+function renderMobileParsedResults() {
+    const resultsBox = document.getElementById('mobile-parse-results');
+    const itemsList = document.getElementById('mobile-parsed-items-list');
+    const title = document.getElementById('mobile-parse-count-title');
+    const applyBtn = document.getElementById('btn-mobile-apply-items');
+
+    if (!resultsBox || !itemsList) return;
+    resultsBox.style.display = 'block';
+    if (title) title.innerText = `📋 Nhận diện được ${mobileParsedRows.length} mặt hàng:`;
+    if (applyBtn) applyBtn.disabled = mobileParsedRows.length === 0;
+
+    itemsList.innerHTML = '';
+    mobileParsedRows.forEach((row, idx) => {
+        const div = document.createElement('div');
+        div.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:white; border-radius:8px; border:1px solid #e2e8f0; font-size:13px; font-weight:700;';
+        const formattedPrice = row.price ? (new Intl.NumberFormat('vi-VN').format(row.price) + 'đ') : 'Chưa có giá';
+        div.innerHTML = `
+            <div>
+                <span style="color:#16a34a;">#${idx + 1}</span>
+                <strong style="margin-left:4px;">${row.type}</strong>
+            </div>
+            <div style="color:#2563eb;">
+                <span>${row.qty} bông</span> &bull; <span>${formattedPrice}</span>
+            </div>
+        `;
+        itemsList.appendChild(div);
+    });
+}
+
+function applyMobileParsedItems() {
+    if (!mobileParsedRows || mobileParsedRows.length === 0) return;
+
+    if (mobileImportTarget === 'vua') {
+        const container = document.getElementById('vua-flowers-container');
+        if (container) {
+            container.innerHTML = '';
+            mobileParsedRows.forEach(row => {
+                if (typeof addVuaFlower === 'function') {
+                    addVuaFlower();
+                    const last = container.lastElementChild;
+                    if (last) {
+                        const typeInp = last.querySelector('.vua-type');
+                        const qtyInp = last.querySelector('.vua-qty');
+                        const priceInp = last.querySelector('.vua-price');
+                        if (typeInp) typeInp.value = row.type || 'Bông';
+                        if (qtyInp) qtyInp.value = row.qty || 0;
+                        if (priceInp && row.price) priceInp.value = new Intl.NumberFormat('vi-VN').format(row.price);
+                    }
+                }
+            });
+            if (typeof recalcVua === 'function') recalcVua();
+        }
+    } else {
+        const container = document.getElementById('farm-flowers-container');
+        if (container) {
+            container.innerHTML = '';
+            mobileParsedRows.forEach(row => {
+                if (typeof addFarmFlower === 'function') {
+                    addFarmFlower();
+                    const last = container.lastElementChild;
+                    if (last) {
+                        const typeInp = last.querySelector('.farm-type');
+                        const qtyInp = last.querySelector('.farm-qty');
+                        const priceInp = last.querySelector('.farm-price');
+                        if (typeInp) typeInp.value = row.type || 'Bông';
+                        if (qtyInp) qtyInp.value = row.qty || 0;
+                        if (priceInp && row.price) priceInp.value = new Intl.NumberFormat('vi-VN').format(row.price);
+                    }
+                }
+            });
+            if (typeof calcFarmTotals === 'function') calcFarmTotals();
+        }
+    }
+
+    closeMobileImageModal();
+    showToast(`Đã điền ${mobileParsedRows.length} mặt hàng từ ảnh vào đơn hàng!`, 'success', 3500);
+}
+
+// ═══════════════════════════════════════════
+//  CLOSE MODALS ON OVERLAY CLICK & ESC KEY
+// ═══════════════════════════════════════════
+document.getElementById('mobile-image-modal')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('mobile-image-modal')) closeMobileImageModal();
+});
+document.getElementById('edit-modal')?.addEventListener('click', e => {
     if (e.target === document.getElementById('edit-modal')) closeEditModal();
 });
-document.getElementById('delete-modal').addEventListener('click', e => {
+document.getElementById('delete-modal')?.addEventListener('click', e => {
     if (e.target === document.getElementById('delete-modal')) closeDeleteModal();
 });
-document.getElementById('order-confirm-modal').addEventListener('click', e => {
+document.getElementById('order-confirm-modal')?.addEventListener('click', e => {
     if (e.target === document.getElementById('order-confirm-modal')) closeConfirmModal();
+});
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+        const isVisible = el => {
+            if (!el) return false;
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+        };
+        const openModals = Array.from(document.querySelectorAll('.modal-overlay'))
+            .filter(isVisible);
+        if (openModals.length > 0) {
+            const topModal = openModals[openModals.length - 1];
+            if (topModal.id === 'mobile-image-modal') {
+                closeMobileImageModal();
+            } else if (topModal.id === 'order-confirm-modal') {
+                closeConfirmModal();
+            } else if (topModal.id === 'delete-modal') {
+                closeDeleteModal();
+            } else if (topModal.id === 'edit-modal') {
+                closeEditModal();
+            } else {
+                const cancelBtn = topModal.querySelector('.modal-btn.cancel, [onclick*="close"], button');
+                if (cancelBtn) cancelBtn.click();
+                else topModal.style.display = 'none';
+            }
+        }
+    }
 });
 
 // ═══════════════════════════════════════════
