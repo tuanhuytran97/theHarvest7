@@ -1269,9 +1269,6 @@
         <button class="tab-btn report active" onclick="switchTab('report', this); loadTodayData();">
             <i class="fa-solid fa-chart-bar"></i> Báo cáo ngày
         </button>
-        <button id="tab-admin-bctc" class="tab-btn admin" onclick="goToAdminBCTC()" style="display:none; margin-left:auto;">
-            <i class="fa-solid fa-arrow-left"></i> Quản trị BCTC
-        </button>
     </div>
 
     <div class="main-content">
@@ -1501,23 +1498,6 @@
                 <div class="section-title">
                     <h2>Báo cáo ngày</h2>
                     <p>Dữ liệu hôm nay đã nhập</p>
-                </div>
-            </div>
-
-            <!-- Admin BCTC Full View Card (Visible only for admin) -->
-            <div id="report-admin-bctc-card" class="card" style="display:none; padding:14px 16px; margin-bottom:14px; background:linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color:#fff; border:1px solid rgba(255,255,255,0.2); box-shadow:0 4px 15px rgba(30,58,138,0.3); border-radius:16px;">
-                <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-                    <div>
-                        <div style="font-size:14px; font-weight:800; display:flex; align-items:center; gap:6px;">
-                            <i class="fa-solid fa-chart-pie" style="color:#60a5fa;"></i> Quản trị BCTC Toàn Diện
-                        </div>
-                        <div style="font-size:11.5px; opacity:0.85; margin-top:2px;">
-                            Xem P&L, dòng tiền, bảng cân đối & chu kỳ hoa
-                        </div>
-                    </div>
-                    <button type="button" onclick="goToAdminBCTC()" style="background:#ffffff; color:#1e40af; border:none; border-radius:10px; padding:7px 12px; font-weight:800; font-size:12.5px; font-family:'Nunito',sans-serif; cursor:pointer; flex-shrink:0; display:flex; align-items:center; gap:5px; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
-                        <i class="fa-solid fa-arrow-left"></i> Về BCTC
-                    </button>
                 </div>
             </div>
 
@@ -1763,6 +1743,25 @@ function isAdmin() {
 }
 
 function goToAdminBCTC() {
+    const token = currentToken || sessionStorage.getItem('m_token') || sessionStorage.getItem('user-token') || localStorage.getItem('mobile_saved_token');
+    const name = currentUserName || sessionStorage.getItem('m_name') || sessionStorage.getItem('user-name') || localStorage.getItem('mobile_saved_name');
+    const role = currentUserRole || sessionStorage.getItem('m_role') || sessionStorage.getItem('user-role') || localStorage.getItem('mobile_saved_role') || 'ADMIN';
+    
+    if (token) {
+        sessionStorage.setItem('user-token', token);
+        sessionStorage.setItem('m_token', token);
+        localStorage.setItem('mobile_saved_token', token);
+    }
+    if (name) {
+        sessionStorage.setItem('user-name', name);
+        sessionStorage.setItem('m_name', name);
+        localStorage.setItem('mobile_saved_name', name);
+    }
+    if (role) {
+        sessionStorage.setItem('user-role', role);
+        sessionStorage.setItem('m_role', role);
+        localStorage.setItem('mobile_saved_role', role);
+    }
     window.location.href = 'index.html';
 }
 window.goToAdminBCTC = goToAdminBCTC;
@@ -1771,12 +1770,6 @@ function updateAdminUI() {
     const adminMode = isAdmin();
     const headerBtn = document.getElementById('header-admin-bctc-btn');
     if (headerBtn) headerBtn.style.display = adminMode ? 'inline-flex' : 'none';
-
-    const tabBtn = document.getElementById('tab-admin-bctc');
-    if (tabBtn) tabBtn.style.display = adminMode ? 'inline-flex' : 'none';
-
-    const reportCard = document.getElementById('report-admin-bctc-card');
-    if (reportCard) reportCard.style.display = adminMode ? 'block' : 'none';
 }
 window.updateAdminUI = updateAdminUI;
 
@@ -2243,6 +2236,17 @@ window.addEventListener('DOMContentLoaded', () => {
         currentToken = savedToken;
         currentUserName = savedName || 'Người dùng';
         currentUserRole = savedRole || (savedToken.toLowerCase().startsWith('admin') || savedToken.toLowerCase().startsWith('huytran97') ? 'ADMIN' : 'EMP_LV1');
+        
+        sessionStorage.setItem('m_token', currentToken);
+        sessionStorage.setItem('user-token', currentToken);
+        sessionStorage.setItem('m_name', currentUserName);
+        sessionStorage.setItem('user-name', currentUserName);
+        sessionStorage.setItem('m_role', currentUserRole);
+        sessionStorage.setItem('user-role', currentUserRole);
+        localStorage.setItem('mobile_saved_token', currentToken);
+        localStorage.setItem('mobile_saved_name', currentUserName);
+        localStorage.setItem('mobile_saved_role', currentUserRole);
+
         initApp();
         updateAdminUI();
     }

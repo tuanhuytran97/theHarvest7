@@ -1,7 +1,7 @@
 // CONFIGURATION UTILITIES
-var getRole = () => sessionStorage.getItem("user-role");
-var getUserName = () => sessionStorage.getItem("user-name");
-var getToken = () => sessionStorage.getItem("user-token");
+var getRole = () => sessionStorage.getItem("user-role") || sessionStorage.getItem("m_role") || localStorage.getItem("mobile_saved_role");
+var getUserName = () => sessionStorage.getItem("user-name") || sessionStorage.getItem("m_name") || localStorage.getItem("mobile_saved_name");
+var getToken = () => sessionStorage.getItem("user-token") || sessionStorage.getItem("m_token") || localStorage.getItem("mobile_saved_token");
 var isConfigured = () => {
     return typeof CONFIG !== 'undefined' && CONFIG.WEB_APP_URL && CONFIG.WEB_APP_URL !== "" && CONFIG.WEB_APP_URL !== "YOUR_WEB_APP_URL_HERE" && CONFIG.WEB_APP_URL !== "NOT_CONFIGURED";
 };
@@ -828,6 +828,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Tài khoản role emp tự động chuyển hướng sang trang mobile entry
                 window.location.href = "mobile_entry.html";
                 return false;
+            }
+
+            // Sync from localStorage into sessionStorage so all legacy references work seamlessly
+            const token = getToken();
+            const name = getUserName();
+            if (token && !sessionStorage.getItem("user-token")) {
+                sessionStorage.setItem("user-token", token);
+                sessionStorage.setItem("m_token", token);
+            }
+            if (name && !sessionStorage.getItem("user-name")) {
+                sessionStorage.setItem("user-name", name);
+                sessionStorage.setItem("m_name", name);
+            }
+            if (role && !sessionStorage.getItem("user-role")) {
+                sessionStorage.setItem("user-role", role);
+                sessionStorage.setItem("m_role", role);
             }
 
             loginOverlay.style.display = "none";
