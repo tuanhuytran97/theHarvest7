@@ -1,7 +1,8 @@
-const CACHE_NAME = 'theharvest7-cache-v13';
+const CACHE_NAME = 'theharvest7-cache-v15';
 const ASSETS = [
   './',
   './index.html',
+  './mobile_entry.html',
   './todo_v2.html',
   './styles.css',
   './todo_v2.css',
@@ -13,6 +14,8 @@ const ASSETS = [
   './investment.js',
   './config.js',
   './manifest.json',
+  './favicon.png',
+  './favicon.ico',
   './leaf_icon.png',
   './Buffet1.png',
   './icon-192.png',

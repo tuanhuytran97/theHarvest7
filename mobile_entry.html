@@ -5,15 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="The Harvest">
-    <meta name="theme-color" content="#1b4332">
-    <title>🌸 Nhập Đơn Hàng – The Harvest</title>
+    <meta name="apple-mobile-web-app-title" content="The Harvest 7">
+    <meta name="theme-color" content="#1a3a1a">
+    <title>Nhập Đơn Hàng – The Harvest</title>
     <meta name="description" content="Ứng dụng nhập đơn hàng hoa ngày dành cho Farm & Vựa - The Harvest 7">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="64x64" href="favicon.png?v=3">
+    <link rel="shortcut icon" href="favicon.png?v=3">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png?v=3">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png?v=3">
+    <link rel="manifest" href="manifest.json?v=3">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -1209,11 +1210,6 @@
             <i class="fa-solid fa-right-to-bracket" style="margin-right:6px"></i> Đăng Nhập
         </button>
         <div class="login-error" id="login-error-msg"></div>
-        <div style="text-align: center; margin-top: 16px; padding-top: 12px; border-top: 1px dashed rgba(0,0,0,0.08);">
-            <a href="index.html" style="color: #64748b; font-size: 14px; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
-                <i class="fa-solid fa-desktop"></i> Về hệ thống quản trị chính
-            </a>
-        </div>
     </div>
 </div>
 
@@ -1235,9 +1231,14 @@
                     <div class="date-badge" id="header-date">--/--/----</div>
                     <span id="sync-status-badge" style="display:none; font-size:12px; font-weight:800; padding:4px 10px; border-radius:50px; background:rgba(234,179,8,0.25); color:#fef08a; align-items:center;"></span>
                 </div>
-                <button class="sync-btn" onclick="loadTodayData()">
-                    <i class="fa-solid fa-rotate-right" id="sync-icon"></i> Làm mới
-                </button>
+                <div style="display: flex; gap: 6px; align-items: center; justify-content: flex-end;">
+                    <button class="sync-btn" onclick="loadTodayData()">
+                        <i class="fa-solid fa-rotate-right" id="sync-icon"></i> Làm mới
+                    </button>
+                    <button class="sync-btn" onclick="doLogout()" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: #f87171;" title="Đăng xuất">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1994,24 +1995,37 @@ async function doLogin() {
         let userRole = 'EMP_LV1';
 
         if (WEB_APP_URL) {
-            const res = await fetch(WEB_APP_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: 'login', username: user, password: pass })
-            });
-            const data = await res.json();
-            if (data.status === 'success') {
-                success = true;
-                userName = data.userName || user;
-                userRole = data.role || (user === 'admin' || user === 'huytran97' ? 'ADMIN' : (user === 'emp1' ? 'EMP_LV1' : 'EMP_LV2'));
-                currentToken = (data.userLogin || user) + ':' + pass;
-            } else {
-                errEl.textContent = data.message || 'Sai tên đăng nhập hoặc mật khẩu!';
-                errEl.style.display = 'block';
+            try {
+                const res = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'login', username: user, password: pass })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    success = true;
+                    userName = data.userName || user;
+                    userRole = data.role || (user === 'admin' || user === 'huytran97' ? 'ADMIN' : (user === 'emp1' ? 'EMP_LV1' : 'EMP_LV2'));
+                    currentToken = (data.userLogin || user) + ':' + pass;
+                } else {
+                    errEl.textContent = data.message || 'Sai tên đăng nhập hoặc mật khẩu!';
+                    errEl.style.display = 'block';
+                }
+            } catch (fetchErr) {
+                console.warn('Network error, checking offline cache:', fetchErr);
             }
-        } else {
-            // Pure offline
-            if (offlineUsers[user] && offlineUsers[user].pw === pass) {
+        }
+        
+        if (!success && !errEl.textContent) {
+            // Pure offline & customUsers fallback
+            let customUsers = {};
+            try { customUsers = JSON.parse(localStorage.getItem('custom_users') || '{}'); } catch(e){}
+            if (customUsers[user] && customUsers[user].password === pass) {
+                success = true;
+                userName = customUsers[user].name;
+                userRole = customUsers[user].role;
+                currentToken = user + ':' + pass;
+            } else if (offlineUsers[user] && offlineUsers[user].pw === pass) {
                 success = true;
                 userName = offlineUsers[user].name;
                 userRole = offlineUsers[user].role;
@@ -2028,9 +2042,19 @@ async function doLogin() {
             sessionStorage.setItem('m_token', currentToken);
             sessionStorage.setItem('m_name', userName);
             sessionStorage.setItem('m_role', userRole);
+            sessionStorage.setItem('user-token', currentToken);
+            sessionStorage.setItem('user-name', userName);
+            sessionStorage.setItem('user-role', userRole);
             localStorage.setItem('mobile_saved_token', currentToken);
             localStorage.setItem('mobile_saved_name', userName);
             localStorage.setItem('mobile_saved_role', userRole);
+
+            const roleUpper = (userRole || '').trim().toUpperCase();
+            if (roleUpper === 'ADMIN') {
+                window.location.href = 'index.html';
+                return;
+            }
+
             initApp();
         }
     } catch(e) {
@@ -2041,6 +2065,17 @@ async function doLogin() {
         btn.disabled = false;
     }
 }
+
+function doLogout() {
+    if (confirm('Bạn có chắc chắn muốn đăng xuất không?')) {
+        sessionStorage.clear();
+        localStorage.removeItem('mobile_saved_token');
+        localStorage.removeItem('mobile_saved_name');
+        localStorage.removeItem('mobile_saved_role');
+        location.reload();
+    }
+}
+window.doLogout = doLogout;
 
 document.getElementById('login-pass').addEventListener('keydown', e => {
     if (e.key === 'Enter') doLogin();

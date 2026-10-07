@@ -823,6 +823,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const checkAuth = () => {
         const role = getRole();
         if (role) {
+            const roleUpper = role.trim().toUpperCase();
+            if (roleUpper !== "ADMIN") {
+                // Tài khoản role emp tự động chuyển hướng sang trang mobile entry
+                window.location.href = "mobile_entry.html";
+                return false;
+            }
+
             loginOverlay.style.display = "none";
             appContainer.style.display = "flex";
             if (chatbotContainer) chatbotContainer.style.display = "flex";
@@ -1116,9 +1123,26 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (userConfig) {
                     localStorage.setItem("failed-login-attempts", "0");
                     localStorage.removeItem("login-block-until");
-                    sessionStorage.setItem("user-role", userConfig.role);
-                    sessionStorage.setItem("user-name", userConfig.name);
-                    sessionStorage.setItem("user-token", userConfig.username + ":" + userConfig.password); // Use username:password as token
+                    const userRole = userConfig.role || "EMP_LV1";
+                    const userName = userConfig.name || "Người dùng";
+                    const userToken = userConfig.username + ":" + userConfig.password;
+
+                    sessionStorage.setItem("user-role", userRole);
+                    sessionStorage.setItem("user-name", userName);
+                    sessionStorage.setItem("user-token", userToken);
+                    sessionStorage.setItem("m_role", userRole);
+                    sessionStorage.setItem("m_name", userName);
+                    sessionStorage.setItem("m_token", userToken);
+                    localStorage.setItem("mobile_saved_token", userToken);
+                    localStorage.setItem("mobile_saved_name", userName);
+                    localStorage.setItem("mobile_saved_role", userRole);
+
+                    const roleUpper = userRole.trim().toUpperCase();
+                    if (roleUpper !== "ADMIN") {
+                        // Tài khoản role emp tự động vào trang mobile entry
+                        window.location.href = "mobile_entry.html";
+                        return;
+                    }
 
                     loginOverlay.style.display = "none";
                     appContainer.style.display = "flex";
@@ -1161,23 +1185,38 @@ document.addEventListener("DOMContentLoaded", () => {
                     localStorage.removeItem("login-block-until");
 
                     const userName = result.userName || "Người dùng";
+                    const userRole = result.role || "EMP_LV1";
+                    const userToken = (result.userLogin || user) + ":" + pw;
 
-                    sessionStorage.setItem("user-role", result.role);
+                    sessionStorage.setItem("user-role", userRole);
                     sessionStorage.setItem("user-name", userName);
-                    sessionStorage.setItem("user-token", result.userLogin + ":" + pw); // Dùng username:password làm token
+                    sessionStorage.setItem("user-token", userToken);
+                    sessionStorage.setItem("m_role", userRole);
+                    sessionStorage.setItem("m_name", userName);
+                    sessionStorage.setItem("m_token", userToken);
+                    localStorage.setItem("mobile_saved_token", userToken);
+                    localStorage.setItem("mobile_saved_name", userName);
+                    localStorage.setItem("mobile_saved_role", userRole);
 
                     // Cache credentials in local storage for offline fallback use
                     try {
                         const customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
-                        customUsers[result.userLogin] = {
+                        customUsers[result.userLogin || user] = {
                             name: userName,
-                            role: result.role,
-                            username: result.userLogin,
+                            role: userRole,
+                            username: result.userLogin || user,
                             password: pw
                         };
                         localStorage.setItem("custom_users", JSON.stringify(customUsers));
                     } catch (e) {
                         console.error("Failed to cache credentials for offline use:", e);
+                    }
+
+                    const roleUpper = userRole.trim().toUpperCase();
+                    if (roleUpper !== "ADMIN") {
+                        // Tài khoản role emp tự động vào trang mobile entry
+                        window.location.href = "mobile_entry.html";
+                        return;
                     }
 
                     loginOverlay.style.display = "none";
@@ -1226,6 +1265,13 @@ document.addEventListener("DOMContentLoaded", () => {
             sessionStorage.removeItem("user-role");
             sessionStorage.removeItem("user-name");
             sessionStorage.removeItem("user-token");
+            sessionStorage.removeItem("m_role");
+            sessionStorage.removeItem("m_name");
+            sessionStorage.removeItem("m_token");
+            sessionStorage.removeItem("system-config");
+            localStorage.removeItem("mobile_saved_token");
+            localStorage.removeItem("mobile_saved_name");
+            localStorage.removeItem("mobile_saved_role");
             location.reload();
         });
     }

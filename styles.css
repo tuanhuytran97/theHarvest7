@@ -34,30 +34,15 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: url('background.jpg') no-repeat center center;
-  background-size: cover;
+  background: linear-gradient(160deg, #1a3a1a 0%, #2d5a2d 50%, #1a3a1a 100%);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  animation: slowZoom 20s infinite alternate ease-in-out;
-}
-
-@keyframes slowZoom {
-  from { transform: scale(1); }
-  to { transform: scale(1.08); }
 }
 
 .login-overlay::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.1); /* Reduced darkness */
-  backdrop-filter: blur(0);      /* Removed blur */
-  z-index: -1;
+  display: none;
 }
 
 .login-card {
@@ -65,6 +50,105 @@
   max-width: 400px;
   padding: 3rem;
   animation: fadeInDown 0.5s ease-out;
+}
+
+.login-overlay .login-card {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
+  color: #fff !important;
+}
+
+.login-overlay .login-card .logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fff;
+}
+
+.login-overlay .login-card .logo i {
+  color: #4ade80 !important;
+  font-size: 1.75rem;
+}
+
+.login-overlay .login-card .logo span {
+  color: #fff !important;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.login-overlay .login-card p {
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 0.95rem;
+}
+
+.login-overlay .login-card input,
+.login-overlay .login-card select {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+  border-radius: 14px !important;
+  transition: all 0.2s ease;
+}
+
+.login-overlay .login-card input::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.login-overlay .login-card input:focus,
+.login-overlay .login-card select:focus {
+  border-color: #22c55e !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25) !important;
+}
+
+.login-overlay .login-card select option {
+  background: #1a3a1a;
+  color: #fff;
+}
+
+.login-overlay .login-card .btn-primary {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+  border: none !important;
+  border-radius: 16px !important;
+  color: #fff !important;
+  font-size: 1.1rem !important;
+  font-weight: 800 !important;
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4) !important;
+  transition: all 0.2s ease;
+}
+
+.login-overlay .login-card .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.5) !important;
+}
+
+.login-overlay .login-card .btn-primary:active {
+  transform: scale(0.98);
+}
+
+.login-overlay .login-card a {
+  color: #86efac !important;
+  transition: color 0.2s;
+}
+
+.login-overlay .login-card a:hover {
+  color: #bbf7d0 !important;
+  text-decoration: underline;
+}
+
+.login-overlay .login-card .toggle-password-btn {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.login-overlay .login-card .toggle-password-btn.active,
+.login-overlay .login-card .toggle-password-btn:hover {
+  color: #4ade80 !important;
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Responsive Mobile Optimization (iPhone 14 Pro Max and below) */
