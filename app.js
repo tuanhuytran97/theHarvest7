@@ -3668,31 +3668,46 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnCreateOrder = document.getElementById('btn-create-farm-order');
     if (btnCreateOrder) {
         btnCreateOrder.addEventListener('click', () => {
-            if (currentSelectedBuyer) {
+            const buyerName = currentSelectedBuyer ? currentSelectedBuyer.name : '';
+            if (buyerName) {
                 // 1. Switch to 'data' view
                 switchView('data');
 
-                // 2. Select 'farm' entry type
+                // 2. Switch to 'farm' tab on desktop/mobile entry form
+                if (typeof window.switchDesktopEntryTab === 'function') {
+                    window.switchDesktopEntryTab('farm');
+                }
                 const entryTypeSelect = document.getElementById('entry-type');
                 if (entryTypeSelect) {
                     entryTypeSelect.value = 'farm';
                     entryTypeSelect.dispatchEvent(new Event('change'));
                 }
 
-                // 3. Populate buyer name
-                const buyerInput = document.getElementById('buyer-input');
-                if (buyerInput) {
-                    buyerInput.value = currentSelectedBuyer.name;
-                    // Trigger input and change events so listeners can catch the change
-                    buyerInput.dispatchEvent(new Event('input'));
-                    buyerInput.dispatchEvent(new Event('change'));
+                // 3. Populate buyer name to #farm-buyer (new entry form) and legacy #buyer-input
+                const farmBuyerInput = document.getElementById('farm-buyer');
+                if (farmBuyerInput) {
+                    farmBuyerInput.value = buyerName;
+                    farmBuyerInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    farmBuyerInput.dispatchEvent(new Event('change', { bubbles: true }));
                 }
 
-                // 4. Scroll to entry-card
-                const entryCard = document.querySelector('.entry-card');
-                if (entryCard) {
-                    entryCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const buyerInput = document.getElementById('buyer-input');
+                if (buyerInput) {
+                    buyerInput.value = buyerName;
+                    buyerInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    buyerInput.dispatchEvent(new Event('change', { bubbles: true }));
                 }
+
+                // 4. Scroll to entry-card & focus input
+                setTimeout(() => {
+                    const entryTarget = document.getElementById('view-farm') || document.querySelector('.mobile-entry-container') || document.querySelector('.entry-card');
+                    if (entryTarget) {
+                        entryTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                    if (farmBuyerInput) {
+                        farmBuyerInput.focus();
+                    }
+                }, 60);
             }
         });
     }
@@ -3701,31 +3716,56 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnCreateVuaOrder = document.getElementById('btn-create-vua-order');
     if (btnCreateVuaOrder) {
         btnCreateVuaOrder.addEventListener('click', () => {
-            if (currentSelectedBuyer) {
+            const buyerName = currentSelectedBuyer ? currentSelectedBuyer.name : '';
+            if (buyerName) {
                 // 1. Switch to 'data' view
                 switchView('data');
 
-                // 2. Select 'vua' entry type
+                // 2. Switch to 'vua' tab on desktop/mobile entry form
+                if (typeof window.switchDesktopEntryTab === 'function') {
+                    window.switchDesktopEntryTab('vua');
+                }
                 const entryTypeSelect = document.getElementById('entry-type');
                 if (entryTypeSelect) {
                     entryTypeSelect.value = 'vua';
                     entryTypeSelect.dispatchEvent(new Event('change'));
                 }
 
-                // 3. Populate buyer name
-                const buyerInput = document.getElementById('buyer-input');
-                if (buyerInput) {
-                    buyerInput.value = currentSelectedBuyer.name;
-                    // Trigger input and change events so listeners can catch the change
-                    buyerInput.dispatchEvent(new Event('input'));
-                    buyerInput.dispatchEvent(new Event('change'));
+                // 3. Populate buyer name to #vua-buyer (new entry form) and legacy #buyer-input
+                const vuaBuyerInput = document.getElementById('vua-buyer');
+                if (vuaBuyerInput) {
+                    vuaBuyerInput.value = buyerName;
+                    vuaBuyerInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    vuaBuyerInput.dispatchEvent(new Event('change', { bubbles: true }));
                 }
 
-                // 4. Scroll to entry-card
-                const entryCard = document.querySelector('.entry-card');
-                if (entryCard) {
-                    entryCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Sync quick-pills active state if matches known vựa
+                const quickPills = document.querySelectorAll('#vua-quick-buyers .quick-pill');
+                quickPills.forEach(p => {
+                    if (p.textContent.trim().toLowerCase() === buyerName.trim().toLowerCase()) {
+                        p.classList.add('active-pill');
+                    } else {
+                        p.classList.remove('active-pill');
+                    }
+                });
+
+                const buyerInput = document.getElementById('buyer-input');
+                if (buyerInput) {
+                    buyerInput.value = buyerName;
+                    buyerInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    buyerInput.dispatchEvent(new Event('change', { bubbles: true }));
                 }
+
+                // 4. Scroll to entry-card & focus input
+                setTimeout(() => {
+                    const entryTarget = document.getElementById('view-vua') || document.querySelector('.mobile-entry-container') || document.querySelector('.entry-card');
+                    if (entryTarget) {
+                        entryTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                    if (vuaBuyerInput) {
+                        vuaBuyerInput.focus();
+                    }
+                }, 60);
             }
         });
     }
