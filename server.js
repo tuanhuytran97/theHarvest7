@@ -6,8 +6,12 @@ const PORT = 8000;
 
 http.createServer((req, res) => {
     // Clean URL query params
-    let filePath = '.' + req.url.split('?')[0];
+    let rawPath = req.url.split('?')[0];
+    let filePath = '.' + rawPath;
     if (filePath === './') filePath = './index.html';
+    if (!fs.existsSync(filePath) && fs.existsSync('./assets' + rawPath)) {
+        filePath = './assets' + rawPath;
+    }
 
     const extname = String(path.extname(filePath)).toLowerCase();
     const mimeTypes = {

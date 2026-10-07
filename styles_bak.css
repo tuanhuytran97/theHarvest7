@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --primary-color: #0ea5e9;
   --primary-hover: #0284c7;
   --secondary-color: #10b981;
@@ -34,7 +34,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: url('background.jpg') no-repeat center center;
+  background: url('assets/background.jpg') no-repeat center center;
   background-size: cover;
   display: flex;
   justify-content: center;
@@ -189,7 +189,7 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background: url('background.jpg') no-repeat center center fixed;
+  background: url('assets/background.jpg') no-repeat center center fixed;
   background-size: cover;
   color: var(--text-dark);
   min-height: 100vh;

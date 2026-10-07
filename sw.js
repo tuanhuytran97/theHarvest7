@@ -1,4 +1,4 @@
-const CACHE_NAME = 'theharvest7-cache-v15';
+const CACHE_NAME = 'theharvest7-cache-v16';
 const ASSETS = [
   './',
   './index.html',
@@ -14,13 +14,15 @@ const ASSETS = [
   './investment.js',
   './config.js',
   './manifest.json',
-  './favicon.png',
-  './favicon.ico',
-  './leaf_icon.png',
-  './Buffet1.png',
-  './icon-192.png',
-  './icon-512.png',
-  './apple-touch-icon.png'
+  './assets/favicon.png',
+  './assets/favicon.ico',
+  './assets/leaf_icon.png',
+  './assets/Buffet1.png',
+  './assets/icon-192.png',
+  './assets/icon-512.png',
+  './assets/apple-touch-icon.png',
+  './assets/background.jpg',
+  './assets/bamboo_growth.png'
 ];
 
 // Install Event
