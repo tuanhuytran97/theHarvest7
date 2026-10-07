@@ -7072,6 +7072,10 @@ tr.swiping td:first-child::before {
 .mobile-entry-container .view-section.active { display: block; animation: fadeIn 0.2s ease-out; }
 
 /* Grid container for desktop */
+#view-data .cash-status-bar-container {
+  display: none !important;
+}
+
 .entry-card {
   padding: 1.25rem;
 }
