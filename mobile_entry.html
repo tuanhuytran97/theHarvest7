@@ -291,6 +291,15 @@
         .tab-btn.active.vua { color: var(--blue); border-color: var(--blue); background: var(--blue-bg); }
         .tab-btn.active.expense { color: var(--red); border-color: var(--red); background: var(--red-bg); }
         .tab-btn.active.report { color: var(--amber); border-color: var(--amber); background: var(--amber-bg); }
+        .tab-btn.admin {
+            color: #2563eb;
+            background: rgba(37, 99, 235, 0.08);
+            border-bottom: 3px solid #2563eb;
+            font-weight: 800;
+        }
+        .tab-btn.admin:hover, .tab-btn.admin:active {
+            background: rgba(37, 99, 235, 0.16);
+        }
 
         /* ── MAIN CONTENT ── */
         .main-content { padding: 16px; }
@@ -1232,6 +1241,9 @@
                     <span id="sync-status-badge" style="display:none; font-size:12px; font-weight:800; padding:4px 10px; border-radius:50px; background:rgba(234,179,8,0.25); color:#fef08a; align-items:center;"></span>
                 </div>
                 <div style="display: flex; gap: 6px; align-items: center; justify-content: flex-end;">
+                    <button id="header-admin-bctc-btn" class="sync-btn" onclick="goToAdminBCTC()" style="display:none; background: linear-gradient(135deg, rgba(37, 99, 235, 0.35) 0%, rgba(29, 78, 216, 0.45) 100%); border: 1.5px solid rgba(96, 165, 250, 0.6); color: #bfdbfe; font-weight: 800;" title="Quay lại trang Quản trị BCTC">
+                        <i class="fa-solid fa-arrow-left"></i> BCTC
+                    </button>
                     <button class="sync-btn" onclick="loadTodayData()">
                         <i class="fa-solid fa-rotate-right" id="sync-icon"></i> Làm mới
                     </button>
@@ -1256,6 +1268,9 @@
         </button>
         <button class="tab-btn report active" onclick="switchTab('report', this); loadTodayData();">
             <i class="fa-solid fa-chart-bar"></i> Báo cáo ngày
+        </button>
+        <button id="tab-admin-bctc" class="tab-btn admin" onclick="goToAdminBCTC()" style="display:none; margin-left:auto;">
+            <i class="fa-solid fa-arrow-left"></i> Quản trị BCTC
         </button>
     </div>
 
@@ -1486,6 +1501,23 @@
                 <div class="section-title">
                     <h2>Báo cáo ngày</h2>
                     <p>Dữ liệu hôm nay đã nhập</p>
+                </div>
+            </div>
+
+            <!-- Admin BCTC Full View Card (Visible only for admin) -->
+            <div id="report-admin-bctc-card" class="card" style="display:none; padding:14px 16px; margin-bottom:14px; background:linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color:#fff; border:1px solid rgba(255,255,255,0.2); box-shadow:0 4px 15px rgba(30,58,138,0.3); border-radius:16px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                    <div>
+                        <div style="font-size:14px; font-weight:800; display:flex; align-items:center; gap:6px;">
+                            <i class="fa-solid fa-chart-pie" style="color:#60a5fa;"></i> Quản trị BCTC Toàn Diện
+                        </div>
+                        <div style="font-size:11.5px; opacity:0.85; margin-top:2px;">
+                            Xem P&L, dòng tiền, bảng cân đối & chu kỳ hoa
+                        </div>
+                    </div>
+                    <button type="button" onclick="goToAdminBCTC()" style="background:#ffffff; color:#1e40af; border:none; border-radius:10px; padding:7px 12px; font-weight:800; font-size:12.5px; font-family:'Nunito',sans-serif; cursor:pointer; flex-shrink:0; display:flex; align-items:center; gap:5px; box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+                        <i class="fa-solid fa-arrow-left"></i> Về BCTC
+                    </button>
                 </div>
             </div>
 
@@ -1729,6 +1761,24 @@ function isAdmin() {
     const r = (currentUserRole || sessionStorage.getItem('m_role') || sessionStorage.getItem('user-role') || localStorage.getItem('mobile_saved_role') || '').toUpperCase();
     return r === 'ADMIN';
 }
+
+function goToAdminBCTC() {
+    window.location.href = 'index.html';
+}
+window.goToAdminBCTC = goToAdminBCTC;
+
+function updateAdminUI() {
+    const adminMode = isAdmin();
+    const headerBtn = document.getElementById('header-admin-bctc-btn');
+    if (headerBtn) headerBtn.style.display = adminMode ? 'inline-flex' : 'none';
+
+    const tabBtn = document.getElementById('tab-admin-bctc');
+    if (tabBtn) tabBtn.style.display = adminMode ? 'inline-flex' : 'none';
+
+    const reportCard = document.getElementById('report-admin-bctc-card');
+    if (reportCard) reportCard.style.display = adminMode ? 'block' : 'none';
+}
+window.updateAdminUI = updateAdminUI;
 
 function isDateToday(rowDateVal) {
     if (!rowDateVal) return true;
@@ -2176,6 +2226,9 @@ function initApp() {
     // Default to Báo cáo ngày tab on refresh / load
     switchTab('report');
 
+    // Update Admin UI (Quay lại trang quản trị BCTC)
+    updateAdminUI();
+
     // Load today data
     loadTodayData();
     processSyncQueue();
@@ -2191,6 +2244,7 @@ window.addEventListener('DOMContentLoaded', () => {
         currentUserName = savedName || 'Người dùng';
         currentUserRole = savedRole || (savedToken.toLowerCase().startsWith('admin') || savedToken.toLowerCase().startsWith('huytran97') ? 'ADMIN' : 'EMP_LV1');
         initApp();
+        updateAdminUI();
     }
 });
 
@@ -3466,6 +3520,7 @@ function openEditFarmBuyer(buyerName) {
 //  RENDER REPORT
 // ═══════════════════════════════════════════
 function renderReport() {
+    updateAdminUI();
     const reportDateInput = document.getElementById('report-date-picker');
     const selectedInputVal = reportDateInput ? reportDateInput.value : todayInputValue();
 
