@@ -2505,26 +2505,103 @@
                 <!-- Charts Section -->
                 <section id="yearly-report-charts" class="charts-grid" style="margin-bottom: 2rem; display: none;">
                     <!-- Sản Lượng Theo Tháng -->
-                    <div class="card glassmorphism" style="margin-bottom: 0;">
-                        <h2><i class="fa-solid fa-cubes"></i> Sản Lượng Bán Ra T.Tháng</h2>
-                        <div class="chart-container">
+                    <div class="card glassmorphism" id="card-annual-qty" style="margin-bottom: 0; padding: 1.5rem; border-radius: 20px; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="background: rgba(245, 158, 11, 0.12); width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #f59e0b; font-size: 1.1rem;">
+                                    <i class="fa-solid fa-boxes-stacked"></i>
+                                </div>
+                                <div>
+                                    <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-dark); font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                                        Sản Lượng Bán Ra T.Tháng
+                                    </h3>
+                                    <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: #64748b; font-weight: 600;">Sản lượng hoa xuất bán theo từng tháng trong năm</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <div id="annual-qty-summary-badges" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                    <!-- Badges populated by JS -->
+                                </div>
+                                <div style="display: inline-flex; background: #f1f5f9; padding: 3px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                    <button type="button" id="btn-annual-qty-bar" style="border: none; background: white; color: #0f172a; padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                        <i class="fa-solid fa-chart-simple"></i> Cột
+                                    </button>
+                                    <button type="button" id="btn-annual-qty-line" style="border: none; background: transparent; color: #64748b; padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                        <i class="fa-solid fa-chart-line"></i> Đường
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-container" style="position: relative; height: 320px;">
                             <canvas id="annualQtyChart"></canvas>
                         </div>
                     </div>
 
                     <!-- Doanh Thu và Lợi Nhuận -->
-                    <div class="card glassmorphism" style="margin-bottom: 0;">
-                        <h2><i class="fa-solid fa-wallet"></i> Doanh Thu & Lợi Nhuận</h2>
-                        <div class="chart-container">
+                    <div class="card glassmorphism" id="card-annual-rev-profit" style="margin-bottom: 0; padding: 1.5rem; border-radius: 20px; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="background: rgba(14, 165, 233, 0.12); width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #0284c7; font-size: 1.1rem;">
+                                    <i class="fa-solid fa-wallet"></i>
+                                </div>
+                                <div>
+                                    <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-dark); font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                                        Doanh Thu & Lợi Nhuận
+                                    </h3>
+                                    <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: #64748b; font-weight: 600;">So sánh doanh thu bán hàng và lợi nhuận thực thu các tháng</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <div id="annual-rp-summary-badges" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                    <!-- Badges populated by JS -->
+                                </div>
+                                <div style="display: inline-flex; background: #f1f5f9; padding: 3px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                    <button type="button" id="btn-annual-rp-bar" style="border: none; background: white; color: #0f172a; padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                        <i class="fa-solid fa-chart-simple"></i> Cột
+                                    </button>
+                                    <button type="button" id="btn-annual-rp-combo" style="border: none; background: transparent; color: #64748b; padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                        <i class="fa-solid fa-layer-group"></i> Kết hợp
+                                    </button>
+                                    <button type="button" id="btn-annual-rp-line" style="border: none; background: transparent; color: #64748b; padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                        <i class="fa-solid fa-chart-line"></i> Đường
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-container" style="position: relative; height: 320px;">
                             <canvas id="annualRevProfitChart"></canvas>
                         </div>
                     </div>
 
                     <!-- Chi Phí Theo Tháng -->
-                    <div class="card glassmorphism full-width-card" style="margin-bottom: 0;">
-                        <h2><i class="fa-solid fa-arrow-trend-down" style="color: var(--danger)"></i> Phân Bổ Chi
-                            Phí</h2>
-                        <div class="chart-container">
+                    <div class="card glassmorphism full-width-card" id="card-annual-expense" style="margin-bottom: 0; padding: 1.5rem; border-radius: 20px; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="background: rgba(239, 68, 68, 0.12); width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #ef4444; font-size: 1.1rem;">
+                                    <i class="fa-solid fa-arrow-trend-down"></i>
+                                </div>
+                                <div>
+                                    <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-dark); font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                                        Phân Bổ Chi Phí T.Tháng
+                                    </h3>
+                                    <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: #64748b; font-weight: 600;">Tổng hợp và theo dõi xu hướng chi phí vận hành qua các tháng</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <div id="annual-exp-summary-badges" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                    <!-- Badges populated by JS -->
+                                </div>
+                                <div style="display: inline-flex; background: #f1f5f9; padding: 3px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                    <button type="button" id="btn-annual-exp-bar" style="border: none; background: white; color: #0f172a; padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                        <i class="fa-solid fa-chart-simple"></i> Cột
+                                    </button>
+                                    <button type="button" id="btn-annual-exp-line" style="border: none; background: transparent; color: #64748b; padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                        <i class="fa-solid fa-chart-line"></i> Đường
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-container" style="position: relative; height: 320px;">
                             <canvas id="annualExpenseChart"></canvas>
                         </div>
                     </div>

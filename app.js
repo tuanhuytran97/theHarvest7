@@ -1312,6 +1312,10 @@ document.addEventListener("DOMContentLoaded", () => {
     let annualQtyChartInstance = null;
     let annualRevProfitChartInstance = null;
     let annualExpenseChartInstance = null;
+    let yearlyChartsCache = { labels: [], data: [], year: null };
+    let currentAnnualQtyChartMode = 'bar'; // 'bar' | 'line'
+    let currentAnnualRevProfitChartMode = 'bar'; // 'bar' | 'combo' | 'line'
+    let currentAnnualExpenseChartMode = 'bar'; // 'bar' | 'line'
     let monthlyCombinedChartInstance = null;
     let financialGrowthChartInstance = null;
     let vcshGrowthChartData = { years: [], equityData: [], goalData: [] };
@@ -10292,50 +10296,643 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    function renderYearlyCharts(labels, data, year) {
-        const qtyData = data.map(m => m.qty);
-        const revData = data.map(m => m.revenue);
-        const expData = data.map(m => m.expense);
-        const profitData = data.map(m => m.revenue - m.expense);
+    function formatShortCompactQty(val) {
+        if (!val || isNaN(val)) return '0';
+        const absVal = Math.abs(val);
+        if (absVal >= 1000000) return (val / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + 'M';
+        if (absVal >= 1000) return (val / 1000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + 'k';
+        return formatNumber(val);
+    }
 
-        const ctxQty = document.getElementById('annualQtyChart').getContext('2d');
+    function formatShortCompactMoney(val) {
+        if (val === null || val === undefined || isNaN(val)) return '0 ₫';
+        const sign = val < 0 ? '-' : '';
+        const absVal = Math.abs(val);
+        if (absVal >= 1000000000) {
+            return sign + (absVal / 1000000000).toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + ' Tỷ';
+        }
+        if (absVal >= 1000000) {
+            return sign + (absVal / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 1 }) + ' Tr';
+        }
+        if (absVal >= 1000) {
+            return sign + (absVal / 1000).toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + ' K';
+        }
+        return sign + formatNumber(absVal) + ' ₫';
+    }
+
+    function setSegmentedButtonActive(activeBtn, otherBtns) {
+        if (activeBtn) {
+            activeBtn.style.background = 'white';
+            activeBtn.style.color = '#0f172a';
+            activeBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+        }
+        (otherBtns || []).forEach(b => {
+            if (b) {
+                b.style.background = 'transparent';
+                b.style.color = '#64748b';
+                b.style.boxShadow = 'none';
+            }
+        });
+    }
+
+    function initYearlyChartsModeButtons() {
+        // 1. Qty buttons
+        const btnQtyBar = document.getElementById('btn-annual-qty-bar');
+        const btnQtyLine = document.getElementById('btn-annual-qty-line');
+        if (btnQtyBar && !btnQtyBar._hasListener) {
+            btnQtyBar._hasListener = true;
+            btnQtyBar.addEventListener('click', () => {
+                setSegmentedButtonActive(btnQtyBar, [btnQtyLine]);
+                currentAnnualQtyChartMode = 'bar';
+                renderYearlyQtyChart();
+            });
+        }
+        if (btnQtyLine && !btnQtyLine._hasListener) {
+            btnQtyLine._hasListener = true;
+            btnQtyLine.addEventListener('click', () => {
+                setSegmentedButtonActive(btnQtyLine, [btnQtyBar]);
+                currentAnnualQtyChartMode = 'line';
+                renderYearlyQtyChart();
+            });
+        }
+
+        // 2. Revenue & Profit buttons
+        const btnRpBar = document.getElementById('btn-annual-rp-bar');
+        const btnRpCombo = document.getElementById('btn-annual-rp-combo');
+        const btnRpLine = document.getElementById('btn-annual-rp-line');
+        if (btnRpBar && !btnRpBar._hasListener) {
+            btnRpBar._hasListener = true;
+            btnRpBar.addEventListener('click', () => {
+                setSegmentedButtonActive(btnRpBar, [btnRpCombo, btnRpLine]);
+                currentAnnualRevProfitChartMode = 'bar';
+                renderYearlyRevProfitChart();
+            });
+        }
+        if (btnRpCombo && !btnRpCombo._hasListener) {
+            btnRpCombo._hasListener = true;
+            btnRpCombo.addEventListener('click', () => {
+                setSegmentedButtonActive(btnRpCombo, [btnRpBar, btnRpLine]);
+                currentAnnualRevProfitChartMode = 'combo';
+                renderYearlyRevProfitChart();
+            });
+        }
+        if (btnRpLine && !btnRpLine._hasListener) {
+            btnRpLine._hasListener = true;
+            btnRpLine.addEventListener('click', () => {
+                setSegmentedButtonActive(btnRpLine, [btnRpBar, btnRpCombo]);
+                currentAnnualRevProfitChartMode = 'line';
+                renderYearlyRevProfitChart();
+            });
+        }
+
+        // 3. Expense buttons
+        const btnExpBar = document.getElementById('btn-annual-exp-bar');
+        const btnExpLine = document.getElementById('btn-annual-exp-line');
+        if (btnExpBar && !btnExpBar._hasListener) {
+            btnExpBar._hasListener = true;
+            btnExpBar.addEventListener('click', () => {
+                setSegmentedButtonActive(btnExpBar, [btnExpLine]);
+                currentAnnualExpenseChartMode = 'bar';
+                renderYearlyExpenseChart();
+            });
+        }
+        if (btnExpLine && !btnExpLine._hasListener) {
+            btnExpLine._hasListener = true;
+            btnExpLine.addEventListener('click', () => {
+                setSegmentedButtonActive(btnExpLine, [btnExpBar]);
+                currentAnnualExpenseChartMode = 'line';
+                renderYearlyExpenseChart();
+            });
+        }
+    }
+
+    function syncYearlyButtonsUI() {
+        const btnQtyBar = document.getElementById('btn-annual-qty-bar');
+        const btnQtyLine = document.getElementById('btn-annual-qty-line');
+        if (currentAnnualQtyChartMode === 'bar') {
+            setSegmentedButtonActive(btnQtyBar, [btnQtyLine]);
+        } else {
+            setSegmentedButtonActive(btnQtyLine, [btnQtyBar]);
+        }
+
+        const btnRpBar = document.getElementById('btn-annual-rp-bar');
+        const btnRpCombo = document.getElementById('btn-annual-rp-combo');
+        const btnRpLine = document.getElementById('btn-annual-rp-line');
+        if (currentAnnualRevProfitChartMode === 'combo') {
+            setSegmentedButtonActive(btnRpCombo, [btnRpBar, btnRpLine]);
+        } else if (currentAnnualRevProfitChartMode === 'line') {
+            setSegmentedButtonActive(btnRpLine, [btnRpBar, btnRpCombo]);
+        } else {
+            setSegmentedButtonActive(btnRpBar, [btnRpCombo, btnRpLine]);
+        }
+
+        const btnExpBar = document.getElementById('btn-annual-exp-bar');
+        const btnExpLine = document.getElementById('btn-annual-exp-line');
+        if (currentAnnualExpenseChartMode === 'bar') {
+            setSegmentedButtonActive(btnExpBar, [btnExpLine]);
+        } else {
+            setSegmentedButtonActive(btnExpLine, [btnExpBar]);
+        }
+    }
+
+    function renderYearlyQtyChart() {
+        const { labels, data, year } = yearlyChartsCache;
+        if (!labels || !data || labels.length === 0) return;
+
+        const qtyData = data.map(m => m.qty || 0);
+        const totalQty = qtyData.reduce((a, b) => a + b, 0);
+        const activeMonths = qtyData.filter(q => q > 0).length || 1;
+        const avgQty = Math.round(totalQty / activeMonths);
+        const maxQty = Math.max(...qtyData);
+        const maxIdx = qtyData.indexOf(maxQty);
+        const maxMonth = maxIdx >= 0 && maxQty > 0 ? labels[maxIdx] : '';
+
+        const badgesEl = document.getElementById('annual-qty-summary-badges');
+        if (badgesEl) {
+            badgesEl.innerHTML = `
+                <span style="font-size: 0.78rem; font-weight: 700; color: #b45309; background: rgba(245, 158, 11, 0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(245, 158, 11, 0.2); display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-boxes-stacked"></i> Tổng năm: <strong>${formatNumber(totalQty)} bông</strong>
+                </span>
+                <span style="font-size: 0.78rem; font-weight: 700; color: #0284c7; background: rgba(14, 165, 233, 0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(14, 165, 233, 0.2); display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-chart-simple"></i> TB tháng: <strong>${formatShortCompactQty(avgQty)} bông/th</strong>
+                </span>
+                ${maxMonth ? `
+                <span style="font-size: 0.78rem; font-weight: 700; color: #059669; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.2); display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-arrow-trend-up"></i> Đỉnh: <strong>${maxMonth} (${formatShortCompactQty(maxQty)})</strong>
+                </span>` : ''}
+            `;
+        }
+
+        const canvasQty = document.getElementById('annualQtyChart');
+        if (!canvasQty) return;
+        const ctxQty = canvasQty.getContext('2d');
         if (annualQtyChartInstance) annualQtyChartInstance.destroy();
+
+        const isLine = currentAnnualQtyChartMode === 'line';
+        const qtyDataset = isLine ? {
+            type: 'line',
+            label: `Sản Lượng (${year})`,
+            data: qtyData,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.15)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#f59e0b',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            datalabels: {
+                anchor: 'end',
+                align: 'top',
+                offset: 4,
+                font: { weight: '800', size: 10 },
+                color: '#b45309',
+                formatter: (val) => val > 0 ? formatShortCompactQty(val) : ''
+            }
+        } : {
+            type: 'bar',
+            label: `Sản Lượng (${year})`,
+            data: qtyData,
+            backgroundColor: 'rgba(245, 158, 11, 0.78)',
+            borderColor: '#d97706',
+            borderWidth: 1.5,
+            borderRadius: 6,
+            datalabels: {
+                anchor: 'end',
+                align: 'top',
+                offset: 2,
+                font: { weight: '800', size: 10 },
+                color: '#b45309',
+                formatter: (val) => val > 0 ? formatShortCompactQty(val) : ''
+            }
+        };
+
         annualQtyChartInstance = new Chart(ctxQty, {
-            type: 'bar',
             data: {
                 labels: labels,
-                datasets: [{ label: `Sản Lượng (${year})`, data: qtyData, backgroundColor: 'rgba(245, 158, 11, 0.7)', borderRadius: 4 }]
+                datasets: [qtyDataset]
             },
-            options: getChartOptions(),
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { top: 25, bottom: 8 } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: {
+                            callback: (v) => formatShortCompactQty(v)
+                        }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            boxWidth: 14,
+                            usePointStyle: true,
+                            font: { weight: '700', size: 12 },
+                            color: '#334155'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                        titleFont: { size: 13, weight: '800' },
+                        bodyFont: { size: 12, weight: '600' },
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: (context) => ` ${context.dataset.label}: ${formatNumber(context.raw || 0)} bông`,
+                            afterBody: (items) => {
+                                if (items && items.length > 0 && typeof getRichTooltipData === 'function') {
+                                    return getRichTooltipData(items[0].label, items);
+                                }
+                                return [];
+                            }
+                        }
+                    },
+                    ChartDataLabels: {
+                        display: true
+                    }
+                }
+            },
             plugins: [ChartDataLabels]
         });
+    }
 
-        const ctxRP = document.getElementById('annualRevProfitChart').getContext('2d');
+    function renderYearlyRevProfitChart() {
+        const { labels, data, year } = yearlyChartsCache;
+        if (!labels || !data || labels.length === 0) return;
+
+        const revData = data.map(m => m.revenue || 0);
+        const profitData = data.map(m => (m.revenue || 0) - (m.expense || 0));
+        const totalRev = revData.reduce((a, b) => a + b, 0);
+        const totalProfit = profitData.reduce((a, b) => a + b, 0);
+        const profitMargin = totalRev > 0 ? ((totalProfit / totalRev) * 100).toFixed(1) : '0';
+
+        const badgesEl = document.getElementById('annual-rp-summary-badges');
+        if (badgesEl) {
+            badgesEl.innerHTML = `
+                <span style="font-size: 0.78rem; font-weight: 700; color: #0284c7; background: rgba(14, 165, 233, 0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(14, 165, 233, 0.2); display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-coins"></i> Doanh thu: <strong>${formatShortCompactMoney(totalRev)}</strong>
+                </span>
+                <span style="font-size: 0.78rem; font-weight: 700; color: ${totalProfit >= 0 ? '#059669' : '#dc2626'}; background: ${totalProfit >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; padding: 4px 10px; border-radius: 20px; border: 1px solid ${totalProfit >= 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-hand-holding-dollar"></i> Lợi nhuận: <strong>${formatShortCompactMoney(totalProfit)}</strong>
+                </span>
+                <span style="font-size: 0.78rem; font-weight: 700; color: #7c3aed; background: rgba(124, 58, 237, 0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(124, 58, 237, 0.2); display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-percent"></i> Biên LN: <strong>${profitMargin}%</strong>
+                </span>
+            `;
+        }
+
+        const canvasRP = document.getElementById('annualRevProfitChart');
+        if (!canvasRP) return;
+        const ctxRP = canvasRP.getContext('2d');
         if (annualRevProfitChartInstance) annualRevProfitChartInstance.destroy();
-        annualRevProfitChartInstance = new Chart(ctxRP, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    { label: 'Doanh Thu', data: revData, backgroundColor: 'rgba(14, 165, 233, 0.7)', borderRadius: 4 },
-                    { label: 'Lợi Nhuận', data: profitData, backgroundColor: 'rgba(16, 185, 129, 0.7)', borderRadius: 4 }
-                ]
-            },
-            options: getChartOptions(),
-            plugins: [ChartDataLabels]
-        });
 
-        const ctxExp = document.getElementById('annualExpenseChart').getContext('2d');
-        if (annualExpenseChartInstance) annualExpenseChartInstance.destroy();
-        annualExpenseChartInstance = new Chart(ctxExp, {
-            type: 'bar',
+        let datasets = [];
+        if (currentAnnualRevProfitChartMode === 'combo') {
+            datasets = [
+                {
+                    type: 'bar',
+                    label: 'Doanh Thu',
+                    data: revData,
+                    backgroundColor: 'rgba(14, 165, 233, 0.75)',
+                    borderColor: '#0284c7',
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    order: 2,
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        offset: 2,
+                        font: { weight: '800', size: 10 },
+                        color: '#0284c7',
+                        formatter: (val) => val > 0 ? formatShortCompactMoney(val) : ''
+                    }
+                },
+                {
+                    type: 'line',
+                    label: 'Lợi Nhuận',
+                    data: profitData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.18)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    order: 1,
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        offset: 4,
+                        font: { weight: '800', size: 10 },
+                        color: '#059669',
+                        formatter: (val) => val !== 0 ? formatShortCompactMoney(val) : ''
+                    }
+                }
+            ];
+        } else if (currentAnnualRevProfitChartMode === 'line') {
+            datasets = [
+                {
+                    type: 'line',
+                    label: 'Doanh Thu',
+                    data: revData,
+                    borderColor: '#0ea5e9',
+                    backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.35,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#0ea5e9',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        offset: 4,
+                        font: { weight: '800', size: 10 },
+                        color: '#0284c7',
+                        formatter: (val) => val > 0 ? formatShortCompactMoney(val) : ''
+                    }
+                },
+                {
+                    type: 'line',
+                    label: 'Lợi Nhuận',
+                    data: profitData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        offset: 4,
+                        font: { weight: '800', size: 10 },
+                        color: '#059669',
+                        formatter: (val) => val !== 0 ? formatShortCompactMoney(val) : ''
+                    }
+                }
+            ];
+        } else {
+            // 'bar' mode (default 2 bars side-by-side)
+            datasets = [
+                {
+                    type: 'bar',
+                    label: 'Doanh Thu',
+                    data: revData,
+                    backgroundColor: 'rgba(14, 165, 233, 0.75)',
+                    borderColor: '#0284c7',
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        offset: 2,
+                        font: { weight: '800', size: 10 },
+                        color: '#0284c7',
+                        formatter: (val) => val > 0 ? formatShortCompactMoney(val) : ''
+                    }
+                },
+                {
+                    type: 'bar',
+                    label: 'Lợi Nhuận',
+                    data: profitData,
+                    backgroundColor: 'rgba(16, 185, 129, 0.75)',
+                    borderColor: '#059669',
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        offset: 2,
+                        font: { weight: '800', size: 10 },
+                        color: '#059669',
+                        formatter: (val) => val !== 0 ? formatShortCompactMoney(val) : ''
+                    }
+                }
+            ];
+        }
+
+        annualRevProfitChartInstance = new Chart(ctxRP, {
             data: {
                 labels: labels,
-                datasets: [{ label: `Chi Phí (${year})`, data: expData, backgroundColor: 'rgba(239, 68, 68, 0.7)', borderRadius: 4 }]
+                datasets: datasets
             },
-            options: getChartOptions(),
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { top: 25, bottom: 8 } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: {
+                            callback: (v) => formatShortCompactMoney(v)
+                        }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            boxWidth: 14,
+                            usePointStyle: true,
+                            font: { weight: '700', size: 12 },
+                            color: '#334155'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                        titleFont: { size: 13, weight: '800' },
+                        bodyFont: { size: 12, weight: '600' },
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: (context) => ` ${context.dataset.label}: ${formatCurrency(context.raw || 0)}`,
+                            afterBody: (items) => {
+                                let lines = [];
+                                if (items && items.length >= 2) {
+                                    const rVal = items.find(it => it.dataset.label && it.dataset.label.includes('Doanh Thu'))?.raw || 0;
+                                    const pVal = items.find(it => it.dataset.label && it.dataset.label.includes('Lợi Nhuận'))?.raw || 0;
+                                    if (rVal > 0) {
+                                        lines.push(`──────────────────`);
+                                        lines.push(`📊 Tỷ suất LN tháng: ${((pVal / rVal) * 100).toFixed(1)}%`);
+                                    }
+                                }
+                                if (items && items.length > 0 && typeof getRichTooltipData === 'function') {
+                                    const extra = getRichTooltipData(items[0].label, items);
+                                    if (extra && extra.length > 0) lines.push(...extra);
+                                }
+                                return lines;
+                            }
+                        }
+                    },
+                    ChartDataLabels: {
+                        display: true
+                    }
+                }
+            },
             plugins: [ChartDataLabels]
         });
+    }
+
+    function renderYearlyExpenseChart() {
+        const { labels, data, year } = yearlyChartsCache;
+        if (!labels || !data || labels.length === 0) return;
+
+        const expData = data.map(m => m.expense || 0);
+        const totalExp = expData.reduce((a, b) => a + b, 0);
+        const activeMonths = expData.filter(e => e > 0).length || 1;
+        const avgExp = Math.round(totalExp / activeMonths);
+        const maxExp = Math.max(...expData);
+        const maxIdx = expData.indexOf(maxExp);
+        const maxMonth = maxIdx >= 0 && maxExp > 0 ? labels[maxIdx] : '';
+
+        const badgesEl = document.getElementById('annual-exp-summary-badges');
+        if (badgesEl) {
+            badgesEl.innerHTML = `
+                <span style="font-size: 0.78rem; font-weight: 700; color: #dc2626; background: rgba(239, 68, 68, 0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(239, 68, 68, 0.2); display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-receipt"></i> Tổng chi: <strong>${formatShortCompactMoney(totalExp)}</strong>
+                </span>
+                <span style="font-size: 0.78rem; font-weight: 700; color: #d97706; background: rgba(245, 158, 11, 0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(245, 158, 11, 0.2); display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-chart-simple"></i> TB tháng: <strong>${formatShortCompactMoney(avgExp)}/th</strong>
+                </span>
+                ${maxMonth ? `
+                <span style="font-size: 0.78rem; font-weight: 700; color: #9333ea; background: rgba(147, 51, 234, 0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(147, 51, 234, 0.2); display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-arrow-up-right-dots"></i> Chi nhiều nhất: <strong>${maxMonth} (${formatShortCompactMoney(maxExp)})</strong>
+                </span>` : ''}
+            `;
+        }
+
+        const canvasExp = document.getElementById('annualExpenseChart');
+        if (!canvasExp) return;
+        const ctxExp = canvasExp.getContext('2d');
+        if (annualExpenseChartInstance) annualExpenseChartInstance.destroy();
+
+        const isLine = currentAnnualExpenseChartMode === 'line';
+        const expDataset = isLine ? {
+            type: 'line',
+            label: `Chi Phí (${year})`,
+            data: expData,
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.15)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#ef4444',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            datalabels: {
+                anchor: 'end',
+                align: 'top',
+                offset: 4,
+                font: { weight: '800', size: 10 },
+                color: '#dc2626',
+                formatter: (val) => val > 0 ? formatShortCompactMoney(val) : ''
+            }
+        } : {
+            type: 'bar',
+            label: `Chi Phí (${year})`,
+            data: expData,
+            backgroundColor: 'rgba(239, 68, 68, 0.78)',
+            borderColor: '#dc2626',
+            borderWidth: 1.5,
+            borderRadius: 6,
+            datalabels: {
+                anchor: 'end',
+                align: 'top',
+                offset: 2,
+                font: { weight: '800', size: 10 },
+                color: '#dc2626',
+                formatter: (val) => val > 0 ? formatShortCompactMoney(val) : ''
+            }
+        };
+
+        annualExpenseChartInstance = new Chart(ctxExp, {
+            data: {
+                labels: labels,
+                datasets: [expDataset]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { top: 25, bottom: 8 } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: {
+                            callback: (v) => formatShortCompactMoney(v)
+                        }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            boxWidth: 14,
+                            usePointStyle: true,
+                            font: { weight: '700', size: 12 },
+                            color: '#334155'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                        titleFont: { size: 13, weight: '800' },
+                        bodyFont: { size: 12, weight: '600' },
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: (context) => ` ${context.dataset.label}: ${formatCurrency(context.raw || 0)}`,
+                            afterBody: (items) => {
+                                if (items && items.length > 0 && typeof getRichTooltipData === 'function') {
+                                    return getRichTooltipData(items[0].label, items);
+                                }
+                                return [];
+                            }
+                        }
+                    },
+                    ChartDataLabels: {
+                        display: true
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+    }
+
+    function renderYearlyCharts(labels, data, year) {
+        yearlyChartsCache = { labels, data, year };
+        initYearlyChartsModeButtons();
+        syncYearlyButtonsUI();
+        renderYearlyQtyChart();
+        renderYearlyRevProfitChart();
+        renderYearlyExpenseChart();
     }
 
     function renderMonthlyCombinedChart(labels, data, month, year) {
