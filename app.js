@@ -1314,6 +1314,11 @@ document.addEventListener("DOMContentLoaded", () => {
     let annualExpenseChartInstance = null;
     let monthlyCombinedChartInstance = null;
     let financialGrowthChartInstance = null;
+    let vcshGrowthChartData = { years: [], equityData: [], goalData: [] };
+    let currentVcshGrowthChartMode = 'combo';
+    let financialAssetDebtChartInstance = null;
+    let assetDebtChartData = { years: [], assetData: [], debtData: [] };
+    let currentAssetDebtChartMode = 'bar';
     let capitalAllocationChartInstance = null;
     let expenseDistributionChartInstance = null;
     let cashflowExpenseChartInstance = null;
@@ -3773,6 +3778,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 // 3. Populate buyer name to #farm-buyer (new entry form) and legacy #buyer-input
+                const farmDateInput = document.getElementById('farm-date');
+                if (farmDateInput) {
+                    farmDateInput.value = formatDateInput(new Date());
+                    farmDateInput.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
                 const farmBuyerInput = document.getElementById('farm-buyer');
                 if (farmBuyerInput) {
                     farmBuyerInput.value = buyerName;
@@ -3821,6 +3832,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 // 3. Populate buyer name to #vua-buyer (new entry form) and legacy #buyer-input
+                const vuaDateInput = document.getElementById('vua-date');
+                if (vuaDateInput) {
+                    vuaDateInput.value = formatDateInput(new Date());
+                    vuaDateInput.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
                 const vuaBuyerInput = document.getElementById('vua-buyer');
                 if (vuaBuyerInput) {
                     vuaBuyerInput.value = buyerName;
@@ -8842,6 +8859,29 @@ document.addEventListener("DOMContentLoaded", () => {
                 updateFinancialGrowthChart(years, equityData, goalData);
             }
 
+            // Trích xuất dữ liệu Tổng Tài Sản và Nợ Phải Trả cho biểu đồ mới
+            const assetRow = values.find(row => {
+                const label = String(row[0] || "").toUpperCase().trim();
+                return (label === "TỔNG CỘNG TÀI SẢN" || label === "TỔNG TÀI SẢN" || label.startsWith("TỔNG CỘNG TÀI SẢN") || label.startsWith("TỔNG TÀI SẢN")) && !label.includes("TỶ LỆ");
+            }) || values.find(row => {
+                const label = String(row[0] || "").toUpperCase().trim();
+                return label.includes("TÀI SẢN") && label.includes("TỔNG") && !label.includes("TỶ LỆ");
+            });
+
+            const debtRow = values.find(row => {
+                const label = String(row[0] || "").toUpperCase().trim();
+                return (label === "TỔNG NỢ PHẢI TRẢ" || label === "NỢ PHẢI TRẢ" || label.startsWith("TỔNG NỢ PHẢI TRẢ") || label.startsWith("NỢ PHẢI TRẢ") || label === "TỔNG NỢ") && !label.includes("VCSH") && !label.includes("TỶ LỆ") && !label.includes("%");
+            }) || values.find(row => {
+                const label = String(row[0] || "").toUpperCase().trim();
+                return label.includes("NỢ") && (label.includes("TỔNG") || label.includes("PHẢI TRẢ")) && !label.includes("VCSH") && !label.includes("TỶ LỆ");
+            });
+
+            if (years.length > 0 && (assetRow || debtRow)) {
+                const assetData = assetRow ? assetRow.slice(1).map(v => parseFinancialCellNumber(v)) : years.map(() => 0);
+                const debtData = debtRow ? debtRow.slice(1).map(v => parseFinancialCellNumber(v)) : years.map(() => 0);
+                updateFinancialAssetDebtChart(years, assetData, debtData);
+            }
+
             if (equityRow && years.length > 0) {
                 updateAccumulationJourney(years, equityRow, values);
             }
@@ -8861,78 +8901,536 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function updateFinancialGrowthChart(years, equityData, goalData) {
+    function initVcshGrowthChartModeButtons() {
+        const btnCombo = document.getElementById('btn-vcsh-mode-combo');
+        const btnBar = document.getElementById('btn-vcsh-mode-bar');
+        const btnLine = document.getElementById('btn-vcsh-mode-line');
+
+        const setActiveBtn = (activeBtn) => {
+            [btnCombo, btnBar, btnLine].forEach(b => {
+                if (!b) return;
+                if (b === activeBtn) {
+                    b.style.background = 'white';
+                    b.style.color = '#0f172a';
+                    b.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                } else {
+                    b.style.background = 'transparent';
+                    b.style.color = '#64748b';
+                    b.style.boxShadow = 'none';
+                }
+            });
+        };
+
+        if (btnCombo && !btnCombo._hasListener) {
+            btnCombo._hasListener = true;
+            btnCombo.addEventListener('click', () => {
+                setActiveBtn(btnCombo);
+                updateFinancialGrowthChart(null, null, null, 'combo');
+            });
+        }
+        if (btnBar && !btnBar._hasListener) {
+            btnBar._hasListener = true;
+            btnBar.addEventListener('click', () => {
+                setActiveBtn(btnBar);
+                updateFinancialGrowthChart(null, null, null, 'bar');
+            });
+        }
+        if (btnLine && !btnLine._hasListener) {
+            btnLine._hasListener = true;
+            btnLine.addEventListener('click', () => {
+                setActiveBtn(btnLine);
+                updateFinancialGrowthChart(null, null, null, 'line');
+            });
+        }
+    }
+
+    function updateFinancialGrowthChart(years = null, equityData = null, goalData = null, mode = null) {
+        if (years && equityData && goalData) {
+            vcshGrowthChartData = { years, equityData, goalData };
+        } else {
+            years = vcshGrowthChartData.years;
+            equityData = vcshGrowthChartData.equityData;
+            goalData = vcshGrowthChartData.goalData;
+        }
+        if (!years || years.length === 0) return;
+        if (mode) currentVcshGrowthChartMode = mode;
+
+        initVcshGrowthChartModeButtons();
+
         const canvas = document.getElementById('financial-growth-chart');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (financialGrowthChartInstance) financialGrowthChartInstance.destroy();
 
+        // Cập nhật badges tóm tắt
+        const badgesContainer = document.getElementById('vcsh-goal-summary-badges');
+        if (badgesContainer && equityData.length > 0) {
+            const latestYear = years[years.length - 1];
+            const latestEquity = equityData[equityData.length - 1] || 0;
+            const latestGoal = goalData[goalData.length - 1] || 0;
+            const completionPct = latestGoal > 0 ? ((latestEquity / latestGoal) * 100).toFixed(1) : '100';
+            const diff = latestEquity - latestGoal;
+            const isPassed = diff >= 0;
+
+            badgesContainer.innerHTML = `
+                <span style="font-size: 0.78rem; font-weight: 700; color: #0284c7; background: rgba(14, 165, 233, 0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(14, 165, 233, 0.2); display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-gem"></i> VCSH ${latestYear}: <strong>${formatNumber(latestEquity)} tr</strong>
+                </span>
+                <span style="font-size: 0.78rem; font-weight: 700; color: #6d28d9; background: rgba(139, 92, 246, 0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(139, 92, 246, 0.2); display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-bullseye"></i> Mục Tiêu: <strong>${formatNumber(latestGoal)} tr</strong>
+                </span>
+                <span style="font-size: 0.78rem; font-weight: 700; color: ${isPassed ? '#047857' : '#b91c1c'}; background: ${isPassed ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)'}; padding: 4px 10px; border-radius: 20px; border: 1px solid ${isPassed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid ${isPassed ? 'fa-circle-check' : 'fa-circle-exclamation'}"></i> Đạt: <strong>${completionPct}%</strong>
+                </span>
+            `;
+        }
+
+        let datasets = [];
+        if (currentVcshGrowthChartMode === 'bar') {
+            // Grouped Bar mode
+            datasets = [
+                {
+                    type: 'bar',
+                    label: 'Vốn Chủ Sở Hữu',
+                    data: equityData,
+                    backgroundColor: 'rgba(14, 165, 233, 0.75)',
+                    borderColor: '#0284c7',
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    order: 1,
+                    datalabels: {
+                        anchor: 'center',
+                        align: 'center',
+                        font: { weight: '900', size: 10 },
+                        color: '#ffffff',
+                        formatter: (val) => val > 0 ? formatNumber(val) : ''
+                    }
+                },
+                {
+                    type: 'bar',
+                    label: 'Mục Tiêu',
+                    data: goalData,
+                    backgroundColor: 'rgba(139, 92, 246, 0.75)',
+                    borderColor: '#7c3aed',
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    order: 2,
+                    datalabels: {
+                        anchor: 'center',
+                        align: 'center',
+                        font: { weight: '900', size: 10 },
+                        color: '#ffffff',
+                        formatter: (val) => val > 0 ? formatNumber(val) : ''
+                    }
+                }
+            ];
+        } else if (currentVcshGrowthChartMode === 'line') {
+            // Lines mode
+            datasets = [
+                {
+                    type: 'line',
+                    label: 'Vốn Chủ Sở Hữu',
+                    data: equityData,
+                    borderColor: '#0284c7',
+                    backgroundColor: 'rgba(14, 165, 233, 0.12)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 3,
+                    pointBackgroundColor: '#0284c7',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    order: 1,
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        offset: 6,
+                        font: { weight: '900', size: 10 },
+                        color: '#0284c7',
+                        formatter: (val) => val > 0 ? formatNumber(val) : ''
+                    }
+                },
+                {
+                    type: 'line',
+                    label: 'Mục Tiêu',
+                    data: goalData,
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.08)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2.5,
+                    borderDash: [5, 5],
+                    pointBackgroundColor: '#8b5cf6',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    order: 2,
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'bottom',
+                        offset: 6,
+                        font: { weight: '900', size: 10 },
+                        color: '#6d28d9',
+                        formatter: (val) => val > 0 ? formatNumber(val) : ''
+                    }
+                }
+            ];
+        } else {
+            // Combo mode (Cột VCSH + Đường Mục Tiêu)
+            datasets = [
+                {
+                    type: 'bar',
+                    label: 'Vốn Chủ Sở Hữu',
+                    data: equityData,
+                    backgroundColor: 'rgba(14, 165, 233, 0.75)',
+                    borderColor: '#0284c7',
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    order: 2,
+                    datalabels: {
+                        anchor: 'center',
+                        align: 'center',
+                        font: { weight: '900', size: 10 },
+                        color: '#ffffff',
+                        formatter: (val) => val > 0 ? formatNumber(val) : ''
+                    }
+                },
+                {
+                    type: 'line',
+                    label: 'Mục Tiêu',
+                    data: goalData,
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#8b5cf6',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    fill: false,
+                    tension: 0.35,
+                    order: 1,
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        offset: 8,
+                        font: { weight: '900', size: 11 },
+                        color: '#6d28d9',
+                        formatter: (val) => val > 0 ? formatNumber(val) : ''
+                    }
+                }
+            ];
+        }
+
         financialGrowthChartInstance = new Chart(ctx, {
-            type: 'bar',
             data: {
                 labels: years,
-                datasets: [
-                    {
-                        type: 'bar',
-                        label: 'Vốn Chủ Sở Hữu',
-                        data: equityData,
-                        backgroundColor: 'rgba(14, 165, 233, 0.7)',
-                        borderColor: '#0ea5e9',
-                        borderWidth: 1,
-                        borderRadius: 6,
-                        order: 2,
-                        datalabels: {
-                            anchor: 'center',
-                            align: 'center',
-                            font: { weight: '900', size: 10 },
-                            color: '#ffffff',
-                            formatter: (val) => val > 0 ? formatNumber(val) : ''
-                        }
-                    },
-                    {
-                        type: 'line',
-                        label: 'Mục Tiêu',
-                        data: goalData,
-                        borderColor: '#8b5cf6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        borderWidth: 3,
-                        pointBackgroundColor: '#8b5cf6',
-                        pointRadius: 5,
-                        fill: false,
-                        tension: 0.3,
-                        order: 1,
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'top',
-                            offset: 8, // Nhích lên để không bị che
-                            font: { weight: '900', size: 11 },
-                            color: '#6d28d9',
-                            formatter: (val) => val > 0 ? formatNumber(val) : ''
-                        }
-                    }
-                ]
+                datasets: datasets
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 layout: {
                     padding: {
-                        top: 25 // Chừa chỗ cho label nhích lên
+                        top: 25,
+                        bottom: 10
                     }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        grid: { color: 'rgba(0,0,0,0.05)' }
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: {
+                            callback: function (val) {
+                                return formatNumber(val) + ' tr';
+                            }
+                        }
                     },
                     x: {
                         grid: { display: false }
                     }
                 },
                 plugins: {
-                    legend: { position: 'top', labels: { boxWidth: 12, usePointStyle: true } },
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            boxWidth: 14,
+                            usePointStyle: true,
+                            font: { weight: '700', size: 12 },
+                            color: '#334155'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleFont: { size: 13, weight: '800' },
+                        bodyFont: { size: 12, weight: '600' },
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: function (context) {
+                                const val = context.raw || 0;
+                                return ` ${context.dataset.label}: ${formatNumber(val)} triệu ₫`;
+                            },
+                            afterBody: function (items) {
+                                if (items && items.length >= 2) {
+                                    const eqVal = items[0].raw || 0;
+                                    const gVal = items[1].raw || 0;
+                                    if (gVal > 0) {
+                                        const pct = ((eqVal / gVal) * 100).toFixed(1);
+                                        const diff = eqVal - gVal;
+                                        const diffText = diff >= 0 ? `Vượt mục tiêu: +${formatNumber(diff)} tr` : `Còn thiếu: ${formatNumber(diff)} tr`;
+                                        return [
+                                            `──────────────────`,
+                                            ` ${diffText}`,
+                                            ` Tỷ lệ hoàn thành: ${pct}%`
+                                        ];
+                                    }
+                                }
+                                return [];
+                            }
+                        }
+                    },
                     ChartDataLabels: {
-                        // Global override handled in datasets
+                        display: true
+                    }
+                }
+            },
+            plugins: [ChartDataLabels]
+        });
+    }
+
+    function initAssetDebtChartModeButtons() {
+        const btnBar = document.getElementById('btn-chart-mode-bar');
+        const btnLine = document.getElementById('btn-chart-mode-line');
+        if (btnBar && !btnBar._hasListener) {
+            btnBar._hasListener = true;
+            btnBar.addEventListener('click', () => {
+                btnBar.style.background = 'white';
+                btnBar.style.color = '#0f172a';
+                btnBar.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                if (btnLine) {
+                    btnLine.style.background = 'transparent';
+                    btnLine.style.color = '#64748b';
+                    btnLine.style.boxShadow = 'none';
+                }
+                updateFinancialAssetDebtChart(null, null, null, 'bar');
+            });
+        }
+        if (btnLine && !btnLine._hasListener) {
+            btnLine._hasListener = true;
+            btnLine.addEventListener('click', () => {
+                btnLine.style.background = 'white';
+                btnLine.style.color = '#0f172a';
+                btnLine.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+                if (btnBar) {
+                    btnBar.style.background = 'transparent';
+                    btnBar.style.color = '#64748b';
+                    btnBar.style.boxShadow = 'none';
+                }
+                updateFinancialAssetDebtChart(null, null, null, 'line');
+            });
+        }
+    }
+
+    function updateFinancialAssetDebtChart(years = null, assetData = null, debtData = null, mode = null) {
+        if (years && assetData && debtData) {
+            assetDebtChartData = { years, assetData, debtData };
+        } else {
+            years = assetDebtChartData.years;
+            assetData = assetDebtChartData.assetData;
+            debtData = assetDebtChartData.debtData;
+        }
+        if (!years || years.length === 0) return;
+        if (mode) currentAssetDebtChartMode = mode;
+
+        initAssetDebtChartModeButtons();
+
+        const canvas = document.getElementById('financial-asset-debt-chart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (financialAssetDebtChartInstance) financialAssetDebtChartInstance.destroy();
+
+        // Cập nhật badges tóm tắt
+        const badgesContainer = document.getElementById('asset-debt-summary-badges');
+        if (badgesContainer && assetData.length > 0) {
+            const latestYear = years[years.length - 1];
+            const latestAsset = assetData[assetData.length - 1] || 0;
+            const latestDebt = debtData[debtData.length - 1] || 0;
+            const debtAssetRatio = latestAsset > 0 ? ((latestDebt / latestAsset) * 100).toFixed(1) : '0';
+
+            badgesContainer.innerHTML = `
+                <span style="font-size: 0.78rem; font-weight: 700; color: #047857; background: rgba(16, 185, 129, 0.1); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(16, 185, 129, 0.2); display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-vault"></i> Tài sản ${latestYear}: <strong>${formatNumber(latestAsset)} tr</strong>
+                </span>
+                <span style="font-size: 0.78rem; font-weight: 700; color: #b91c1c; background: rgba(239, 68, 68, 0.08); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(239, 68, 68, 0.15); display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Nợ: <strong>${formatNumber(latestDebt)} tr</strong>
+                </span>
+                <span style="font-size: 0.78rem; font-weight: 700; color: #4338ca; background: rgba(99, 102, 241, 0.08); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(99, 102, 241, 0.15); display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid fa-percent"></i> Tỷ lệ Nợ/TS: <strong>${debtAssetRatio}%</strong>
+                </span>
+            `;
+        }
+
+        let datasets = [];
+        if (currentAssetDebtChartMode === 'line') {
+            datasets = [
+                {
+                    type: 'line',
+                    label: 'Tổng Tài Sản',
+                    data: assetData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 3,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    order: 1,
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        offset: 6,
+                        font: { weight: '900', size: 10 },
+                        color: '#047857',
+                        formatter: (val) => val > 0 ? formatNumber(val) : ''
+                    }
+                },
+                {
+                    type: 'line',
+                    label: 'Tổng Nợ Phải TrẢ',
+                    data: debtData,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                    fill: true,
+                    tension: 0.35,
+                    borderWidth: 2.5,
+                    borderDash: [5, 5],
+                    pointBackgroundColor: '#ef4444',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    order: 2,
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        offset: 6,
+                        font: { weight: '900', size: 10 },
+                        color: '#dc2626',
+                        formatter: (val) => val > 0 ? formatNumber(val) : ''
+                    }
+                }
+            ];
+        } else {
+            // Grouped Bar mode
+            datasets = [
+                {
+                    type: 'bar',
+                    label: 'Tổng Tài Sản',
+                    data: assetData,
+                    backgroundColor: 'rgba(16, 185, 129, 0.75)',
+                    borderColor: '#059669',
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    order: 1,
+                    datalabels: {
+                        anchor: 'center',
+                        align: 'center',
+                        font: { weight: '900', size: 10 },
+                        color: '#ffffff',
+                        formatter: (val) => val > 0 ? formatNumber(val) : ''
+                    }
+                },
+                {
+                    type: 'bar',
+                    label: 'Tổng Nợ Phải Trả',
+                    data: debtData,
+                    backgroundColor: 'rgba(239, 68, 68, 0.75)',
+                    borderColor: '#dc2626',
+                    borderWidth: 1.5,
+                    borderRadius: 6,
+                    order: 2,
+                    datalabels: {
+                        anchor: 'center',
+                        align: 'center',
+                        font: { weight: '900', size: 10 },
+                        color: '#ffffff',
+                        formatter: (val) => val > 0 ? formatNumber(val) : ''
+                    }
+                }
+            ];
+        }
+
+        financialAssetDebtChartInstance = new Chart(ctx, {
+            data: {
+                labels: years,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: { top: 25, bottom: 10 }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: {
+                            callback: function(val) {
+                                return formatNumber(val) + ' tr';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            boxWidth: 14,
+                            usePointStyle: true,
+                            font: { weight: '700', size: 12 },
+                            color: '#334155'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleFont: { size: 13, weight: '800' },
+                        bodyFont: { size: 12, weight: '600' },
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: function (context) {
+                                const val = context.raw || 0;
+                                return ` ${context.dataset.label}: ${formatNumber(val)} triệu ₫`;
+                            },
+                            afterBody: function (items) {
+                                if (items && items.length >= 2) {
+                                    const aVal = items[0].raw || 0;
+                                    const dVal = items[1].raw || 0;
+                                    if (aVal > 0) {
+                                        const r = ((dVal / aVal) * 100).toFixed(1);
+                                        const netA = aVal - dVal;
+                                        return [
+                                            `──────────────────`,
+                                            ` Vốn tự có (Ròng): ${formatNumber(netA)} triệu ₫`,
+                                            ` Tỷ lệ Nợ/Tài sản: ${r}%`
+                                        ];
+                                    }
+                                }
+                                return [];
+                            }
+                        }
+                    },
+                    ChartDataLabels: {
                         display: true
                     }
                 }
@@ -13484,24 +13982,27 @@ document.addEventListener("DOMContentLoaded", () => {
     function openImportModal(target = 'farm') {
         currentImportTarget = target;
         let buyer = '';
-        let date = '';
         let status = '';
+        const todayStr = formatDateInput(new Date());
 
         if (target === 'vua') {
             buyer = (document.getElementById('vua-buyer')?.value || '').trim();
-            date = document.getElementById('vua-date')?.value || '';
             status = document.getElementById('vua-status')?.value || '';
+            const vuaDateEl = document.getElementById('vua-date');
+            if (vuaDateEl && !vuaDateEl.value) vuaDateEl.value = todayStr;
         } else {
             buyer = (document.getElementById('farm-buyer')?.value || document.getElementById('buyer-input')?.value || '').trim();
-            date = document.getElementById('farm-date')?.value || document.getElementById('date-input')?.value || '';
             status = document.getElementById('farm-status')?.value || document.getElementById('status-input')?.value || '';
+            const farmDateEl = document.getElementById('farm-date');
+            if (farmDateEl && !farmDateEl.value) farmDateEl.value = todayStr;
         }
 
         if (modalImportBuyer && buyer) {
             modalImportBuyer.value = buyer;
         }
         if (modalImportDate) {
-            modalImportDate.value = date || formatDateInput(new Date());
+            // Mặc định luôn set ngày hôm nay liền, không cần biết có refresh page hay không
+            modalImportDate.value = todayStr;
         }
         if (modalImportStatus) {
             modalImportStatus.value = (status === 'Xong' ? 'Xong' : 'Chưa Xong');
@@ -13744,7 +14245,7 @@ HƯỚNG DẪN QUAN TRỌNG VỀ NHẬN DIỆN CHỮ VIẾT TAY & CÔNG THỨC:
    - "Ecu", "Ecu ", "Equ", "Ecou" -> "Ecuador"
    - "pháp", "phap" -> "Pháp"
    - "Trắng", "Trắng ủ", "Trắm", "Trang u" -> "Trắng ủ"
-   - "Vịt", "Vijo", "Vit" -> "Vịt"
+   - "Vitto", "vitto", "Vit to", "Vit", "Vito", "Vijo" -> "Vitto" (LƯU Ý ĐẶC BIỆT: Tên loại hoa là "Vitto", tuyệt đối KHÔNG nhận diện thành "Vịt")
    - "Hỷ", "Hỷ s", "Hỷ Trứng", "Hy" -> "Hỷ Trứng"
    - "HL", "Hà Lan", "Vàng Hà Lan" -> "Vàng Hà Lan"
    - "Kem" -> "Kem"
@@ -13841,10 +14342,18 @@ Chỉ trả về JSON thuần túy (mảng các object). Không bao quanh bởi 
             const rawPrice = (item.price !== undefined && item.price !== null && item.price !== '') ? parseFloat(item.price) : '';
             const priceVal = normalizeUnitPrice(rawPrice);
 
+            let itemType = (item.type || "Bông").trim();
+            const lowerType = itemType.toLowerCase();
+            if (lowerType === 'vịt' || lowerType === 'vit' || lowerType === 'vitto' || lowerType === 'vito' || lowerType === 'vit to' || lowerType === 'vijo') {
+                itemType = 'Vitto';
+            } else if (flowerMap[lowerType]) {
+                itemType = flowerMap[lowerType];
+            }
+
             return {
                 date: parsedDate,
                 qty: qtyVal,
-                type: item.type || "Bông",
+                type: itemType,
                 price: priceVal,
                 total: priceVal !== '' ? qtyVal * priceVal : ''
             };
@@ -13934,9 +14443,12 @@ Chỉ trả về JSON thuần túy (mảng các object). Không bao quanh bởi 
             'capu': 'Capu',
             'xô đỏ': 'Xô Đỏ',
             'xo do': 'Xô Đỏ',
-            'vịt': 'Vịt',
-            'vit': 'Vịt',
-            'vijo': 'Vịt',
+            'vitto': 'Vitto',
+            'vit to': 'Vitto',
+            'vito': 'Vitto',
+            'vit': 'Vitto',
+            'vịt': 'Vitto',
+            'vijo': 'Vitto',
             'keo': 'Keo',
             'kẹo': 'Keo',
             'bày': 'Bày',

@@ -178,8 +178,22 @@
             if (match) match.classList.add('active');
         }
 
-        if (tabId === 'farm') calcFarmTotals();
-        if (tabId === 'vua') recalcVua();
+        if (tabId === 'farm') {
+            const d = document.getElementById('farm-date');
+            if (d) {
+                const buyer = document.getElementById('farm-buyer')?.value?.trim();
+                if (!buyer || !d.value) d.value = getTodayISO();
+            }
+            calcFarmTotals();
+        }
+        if (tabId === 'vua') {
+            const d = document.getElementById('vua-date');
+            if (d) {
+                const buyer = document.getElementById('vua-buyer')?.value?.trim();
+                if (!buyer || !d.value) d.value = getTodayISO();
+            }
+            recalcVua();
+        }
         if (tabId === 'expense') recalcExpenseTotals();
     }
 
@@ -193,7 +207,7 @@
             addFarmFlower();
         }
         const d = document.getElementById('farm-date');
-        if (d && !d.value) d.value = getTodayISO();
+        if (d) d.value = getTodayISO();
         calcFarmTotals();
     }
 
@@ -437,6 +451,8 @@
         document.getElementById('farm-buyer').value = '';
         document.getElementById('farm-note').value = '';
         document.getElementById('farm-status').value = '';
+        const farmDateInput = document.getElementById('farm-date');
+        if (farmDateInput) farmDateInput.value = getTodayISO();
         const container = document.getElementById('farm-flowers-container');
         if (container) container.innerHTML = '';
         farmFlowerCount = 0;
@@ -545,7 +561,7 @@
         }
 
         const d = document.getElementById('vua-date');
-        if (d && !d.value) d.value = getTodayISO();
+        if (d) d.value = getTodayISO();
 
         recalcVua();
     }
@@ -838,6 +854,8 @@
         document.getElementById('vua-shipping').value = '0';
         resetDesktopVuaVattuLock();
         document.getElementById('vua-profit').value = '0';
+        const vuaDateInput = document.getElementById('vua-date');
+        if (vuaDateInput) vuaDateInput.value = getTodayISO();
         const container = document.getElementById('vua-flowers-container');
         if (container) container.innerHTML = '';
         vuaFlowerCount = 0;
@@ -1231,6 +1249,25 @@
                 if (e.target === modal) closeDesktopConfirmModal();
             });
         }
+
+        // Tự động đảm bảo ngày hôm nay cho các form nhập đơn kể cả khi không refresh page
+        function ensureTodayEntryDates() {
+            const todayIso = getTodayISO();
+            const farmD = document.getElementById('farm-date');
+            if (farmD) {
+                const buyer = document.getElementById('farm-buyer')?.value?.trim();
+                if (!buyer || !farmD.value) farmD.value = todayIso;
+            }
+            const vuaD = document.getElementById('vua-date');
+            if (vuaD) {
+                const buyer = document.getElementById('vua-buyer')?.value?.trim();
+                if (!buyer || !vuaD.value) vuaD.value = todayIso;
+            }
+        }
+        window.addEventListener('focus', ensureTodayEntryDates);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') ensureTodayEntryDates();
+        });
     }
 
     // Expose functions globally for HTML onclick handlers

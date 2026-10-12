@@ -765,12 +765,23 @@
 
         /* Financial Growth Chart Height */
         .financial-growth-chart-wrapper {
-            height: 700px !important;
+            height: 520px !important;
+            width: 100%;
+            position: relative;
+        }
+
+        .financial-asset-debt-chart-wrapper {
+            height: 520px !important;
+            width: 100%;
+            position: relative;
         }
 
         @media (max-width: 768px) {
             .financial-growth-chart-wrapper {
-                height: 320px !important;
+                height: 340px !important;
+            }
+            .financial-asset-debt-chart-wrapper {
+                height: 340px !important;
             }
         }
 
@@ -2998,15 +3009,73 @@
                     </section>
 
                     <!-- Financial Growth Chart Section -->
-                    <section class="card glassmorphism"
+                    <section class="card glassmorphism" id="vcsh-growth-section"
                         style="margin-top: 2rem; padding: 2rem; animation: slideUp 0.8s ease-out; border-radius: 20px; border: 1px solid #e2e8f0;">
-                        <h3
-                            style="margin-top: 0; margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--text-dark); display: flex; align-items: center; gap: 10px; font-weight: 800;">
-                            <i class="fa-solid fa-chart-column" style="color: #6366f1;"></i>
-                            Biểu Đồ Tăng Trưởng VCSH so với Mục Tiêu
-                        </h3>
-                        <div class="financial-growth-chart-wrapper" style="width: 100%; position: relative;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 1.25rem;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="background: rgba(99, 102, 241, 0.1); width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #6366f1; font-size: 1.1rem;">
+                                    <i class="fa-solid fa-chart-column"></i>
+                                </div>
+                                <div>
+                                    <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-dark); font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                                        Biểu Đồ Tăng Trưởng VCSH so với Mục Tiêu
+                                    </h3>
+                                    <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: #64748b; font-weight: 600;">So sánh quy mô vốn chủ sở hữu thực tế với mục tiêu tích lũy qua các năm</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <div id="vcsh-goal-summary-badges" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                    <!-- Badges populated by JS -->
+                                </div>
+                                <div style="display: inline-flex; background: #f1f5f9; padding: 3px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                    <button type="button" id="btn-vcsh-mode-combo" style="border: none; background: white; color: #0f172a; padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                        <i class="fa-solid fa-layer-group"></i> Kết hợp
+                                    </button>
+                                    <button type="button" id="btn-vcsh-mode-bar" style="border: none; background: transparent; color: #64748b; padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                        <i class="fa-solid fa-chart-simple"></i> Cột
+                                    </button>
+                                    <button type="button" id="btn-vcsh-mode-line" style="border: none; background: transparent; color: #64748b; padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                        <i class="fa-solid fa-chart-line"></i> Đường
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="financial-growth-chart-wrapper">
                             <canvas id="financial-growth-chart"></canvas>
+                        </div>
+                    </section>
+
+                    <!-- Biểu Đồ Tăng Trưởng Tổng Tài Sản & Nợ -->
+                    <section class="card glassmorphism" id="asset-debt-growth-section"
+                        style="margin-top: 2rem; padding: 2rem; animation: slideUp 0.8s ease-out; border-radius: 20px; border: 1px solid #e2e8f0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 1.25rem;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="background: rgba(16, 185, 129, 0.1); width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #10b981; font-size: 1.1rem;">
+                                    <i class="fa-solid fa-scale-balanced"></i>
+                                </div>
+                                <div>
+                                    <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-dark); font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                                        Biểu Đồ Tăng Trưởng Tổng Tài Sản & Nợ
+                                    </h3>
+                                    <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: #64748b; font-weight: 600;">So sánh quy mô tài sản tích lũy và dư nợ qua các năm</p>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <div id="asset-debt-summary-badges" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                    <!-- Badges populated by JS -->
+                                </div>
+                                <div style="display: inline-flex; background: #f1f5f9; padding: 3px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                    <button type="button" id="btn-chart-mode-bar" style="border: none; background: white; color: #0f172a; padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                        <i class="fa-solid fa-chart-simple"></i> Cột
+                                    </button>
+                                    <button type="button" id="btn-chart-mode-line" style="border: none; background: transparent; color: #64748b; padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                        <i class="fa-solid fa-chart-line"></i> Đường
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="financial-asset-debt-chart-wrapper">
+                            <canvas id="financial-asset-debt-chart"></canvas>
                         </div>
                     </section>
                 </div>
@@ -4345,6 +4414,7 @@
         <option value="Kem"></option>
         <option value="Simmo"></option>
         <option value="Victor Vàng"></option>
+        <option value="Vitto"></option>
         <option value="Lạc Thần"></option>
         <option value="Hỷ Trứng"></option>
         <option value="Capu"></option>
@@ -6238,7 +6308,7 @@ placeholder="Ví dụ:&#10;Ngày 3-7&#10;50 ôhg x 10&#10;Ngày 4-7&#10;60 ôhg 
                     <option value="Pháp"></option>
                     <option value="Quốc Vương"></option>
                     <option value="Vàng Hà Lan"></option>
-                    <option value="Vịt"></option>
+                    <option value="Vitto"></option>
                     <option value="Keo"></option>
                     <option value="Bày"></option>
                 </datalist>
