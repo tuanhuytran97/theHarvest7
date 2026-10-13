@@ -4086,7 +4086,6 @@ function renderVuaCard(group) {
                 </div>
             </div>
             <div style="text-align:right">
-                <div class="tx-amount blue" style="color:var(--blue); font-weight: 900;">${fmtMoney(pt)}</div>
                 ${isPending 
                     ? `<span class="status-badge" style="background:#dbeafe;color:#1e40af;"><i class="fa-solid fa-cloud-arrow-up fa-fade"></i> Đang gửi...</span>`
                     : `<span class="status-badge ${isDone ? 'status-done' : 'status-pending'}">${isDone ? '✅ Đã thu' : '⏳ Chưa thu'}</span>`}
@@ -4126,6 +4125,11 @@ function renderVuaCard(group) {
                 <span class="tx-line-value" style="color:${ln >= 0 ? 'var(--green)':'var(--red)'}; font-weight:800;">+${fmtMoney(ln)}</span>
             </div>` : ''}
             ${note ? `<div class="tx-line"><span class="tx-line-label">📝 Ghi chú</span><span class="tx-line-value" style="font-size:13px;color:var(--text-soft)">${note}</span></div>` : ''}
+            <div style="border-top: 1px dashed #cbd5e1; margin: 6px 0;"></div>
+            <div class="tx-line">
+                <span class="tx-line-label" style="font-weight: 800; color: var(--text, #1e293b);">💰 Tiền phải thu</span>
+                <span class="tx-line-value" style="color: var(--blue, #2563eb); font-weight: 900; font-size: 16px;">${fmtMoney(pt)}</span>
+            </div>
         </div>
         <div class="tx-footer">
             ${isPending ? `

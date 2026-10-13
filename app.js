@@ -6405,7 +6405,6 @@ document.addEventListener("DOMContentLoaded", () => {
                                 </div>
                             </div>
                             <div style="text-align:right">
-                                <div class="tx-amount blue" style="color:var(--blue, #2563eb); font-weight: 900;">${fmtMoney(c.pt)}</div>
                                 <span class="status-badge ${c.isDone ? 'status-done' : 'status-pending'}">${c.isDone ? '✅ Đã thu' : '⏳ Chưa thu'}</span>
                             </div>
                         </div>
@@ -6443,6 +6442,11 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <span class="tx-line-value" style="color:${c.ln >= 0 ? '#10b981' : '#ef4444'}; font-weight:800;">${c.ln >= 0 ? '+' : ''}${fmtMoney(c.ln)}</span>
                             </div>` : ''}
                             ${c.note ? `<div class="tx-line"><span class="tx-line-label">📝 Ghi chú</span><span class="tx-line-value" style="font-size:13px;color:#64748b">${escapeAttr(c.note)}</span></div>` : ''}
+                            <div style="border-top: 1px dashed #cbd5e1; margin: 6px 0;"></div>
+                            <div class="tx-line">
+                                <span class="tx-line-label" style="font-weight: 800; color: var(--text-dark, #1e293b);">💰 Tiền phải thu</span>
+                                <span class="tx-line-value" style="color: var(--blue, #2563eb); font-weight: 900; font-size: 16px;">${fmtMoney(c.pt)}</span>
+                            </div>
                         </div>
                         <div class="tx-footer">
                             <button class="action-pill edit" type="button" onclick="openEditVuaOrderModal('${escapeAttr(c.orderId)}')">
