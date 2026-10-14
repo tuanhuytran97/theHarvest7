@@ -8,9 +8,15 @@
     // ═══════════════════════════════════════════
     //  CONSTANTS
     // ═══════════════════════════════════════════
+    const FLOWER_SUGGESTIONS = [
+        'Ô Hồng', 'Lạc Thần', 'Vitto', 'Trắng', 'Hỷ', 'Lạc', 'Xô', 'Đỏ',
+        'Ecu', 'Pháp', 'Cam QV', 'Vàng HL', 'Kem'
+    ];
+
     const FLOWER_TYPES = [
         'Ô Hồng', 'Lạc Thần', 'Vitto', 'Trắng', 'Hỷ', 'Lạc', 'Xô', 'Đỏ',
-        'Bạch Tuyết', 'Phấn', 'Cam', 'Tím', 'Vàng HL', 'Thần', 'Thái'
+        'Ecu', 'Pháp', 'Cam QV', 'Vàng HL', 'Kem',
+        'Bạch Tuyết', 'Phấn', 'Cam', 'Tím', 'Thần', 'Thái'
     ];
 
     const EXPENSE_TYPES = [
@@ -235,7 +241,7 @@
                     oninput="calcFarmTotals()">
             </div>
             <div class="quick-pills" style="margin-top:-2px; margin-bottom:12px;">
-                ${FLOWER_TYPES.slice(0, 8).map(f => `<button type="button" class="quick-pill" onclick="setFarmType(this,'${f}')">${f}</button>`).join('')}
+                ${FLOWER_SUGGESTIONS.map(f => `<button type="button" class="quick-pill" onclick="setFarmType(this,'${f}')">${f}</button>`).join('')}
             </div>
             <div class="field-row">
                 <div class="form-field">
@@ -589,7 +595,7 @@
                 <input type="text" class="field-input blue vua-type" placeholder="Tên loại hoa..." list="flower-types-datalist" oninput="recalcVua()">
             </div>
             <div class="quick-pills" style="margin-top:-2px; margin-bottom:12px;">
-                ${FLOWER_TYPES.slice(0, 8).map(f => `<button type="button" class="quick-pill blue" onclick="setVuaType(this,'${f}')">${f}</button>`).join('')}
+                ${FLOWER_SUGGESTIONS.map(f => `<button type="button" class="quick-pill blue" onclick="setVuaType(this,'${f}')">${f}</button>`).join('')}
             </div>
             <div class="field-row">
                 <div class="form-field">
