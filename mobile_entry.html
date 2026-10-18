@@ -1442,6 +1442,12 @@
                         <span class="cost-label" style="font-weight:900">💰 Tiền Phải Thu</span>
                         <span class="cost-val" id="bd-total">0 ₫</span>
                     </div>
+                    <div class="cost-row" id="bd-row-bought" style="display: none; background: #fff5f5; border-radius: 8px; padding: 6px 10px; margin-top: 8px; border: 1.5px dashed #fca5a5;">
+                        <span class="cost-label" style="color: #dc2626; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;">
+                            <i class="fa-solid fa-cart-shopping"></i> CP Mua Bông
+                        </span>
+                        <span class="cost-val" id="bd-bought" style="color: #dc2626; font-weight: 900;">0 ₫</span>
+                    </div>
                 </div>
             </div>
 
@@ -2832,6 +2838,15 @@ function addVuaFlower() {
                 <input type="text" class="field-input blue vua-price money-input" placeholder="0" oninput="recalcVua()">
             </div>
         </div>
+        <div class="vua-bought-wrap">
+            <label>
+                <input type="checkbox" class="vua-is-bought" onchange="toggleVuaBought(this)">
+                <span>🛒 Bông mua ngoài <span style="font-size:11.5px; color:#dc2626; font-weight:800;">(vào CP "Mua Bông")</span></span>
+            </label>
+            <span class="vua-bought-badge" style="display:none;">
+                <i class="fa-solid fa-cart-shopping"></i> Mua ngoài
+            </span>
+        </div>
         <div class="item-total-display blue vua-row-total">= 0 ₫</div>
     `;
     container.appendChild(div);
@@ -2840,6 +2855,21 @@ function addVuaFlower() {
     if (typeInp) {
         typeInp.focus();
         setTimeout(() => typeInp.focus(), 20);
+    }
+    recalcVua();
+}
+
+function toggleVuaBought(cb) {
+    const item = cb.closest('.flower-item');
+    if (!item) return;
+    const wrap = cb.closest('.vua-bought-wrap');
+    const badge = wrap ? wrap.querySelector('.vua-bought-badge') : null;
+    if (cb.checked) {
+        if (wrap) wrap.classList.add('is-bought');
+        if (badge) badge.style.display = 'inline-flex';
+    } else {
+        if (wrap) wrap.classList.remove('is-bought');
+        if (badge) badge.style.display = 'none';
     }
     recalcVua();
 }
@@ -2866,13 +2896,27 @@ function removeVuaFlower(btn) {
 
 function recalcVua() {
     let totalCost = 0;
+    let totalBoughtCost = 0;
+    let totalBoughtQty = 0;
+
     document.querySelectorAll('#vua-flowers-container .flower-item').forEach(item => {
         const qty = parseFloat(item.querySelector('.vua-qty')?.value) || 0;
         const price = parseMoney(item.querySelector('.vua-price')?.value);
+        const isBought = !!item.querySelector('.vua-is-bought')?.checked;
         const rowTotal = qty * price;
         const rowTotalEl = item.querySelector('.vua-row-total');
-        if (rowTotalEl) rowTotalEl.textContent = `= ${fmtMoney(rowTotal)}`;
+        if (rowTotalEl) {
+            if (isBought && rowTotal > 0) {
+                rowTotalEl.innerHTML = `= ${fmtMoney(rowTotal)} <span style="font-size:12px; color:#dc2626; font-weight:800; margin-left:6px;">(🛒 CP Mua Bông)</span>`;
+            } else {
+                rowTotalEl.textContent = `= ${fmtMoney(rowTotal)}`;
+            }
+        }
         totalCost += rowTotal;
+        if (isBought) {
+            totalBoughtCost += rowTotal;
+            totalBoughtQty += qty;
+        }
     });
 
     const shipping = parseMoney(document.getElementById('vua-shipping').value);
@@ -2887,6 +2931,18 @@ function recalcVua() {
     profitEl.textContent = fmtMoney(profit);
     profitEl.style.color = profit >= 0 ? 'var(--green)' : 'var(--red)';
     document.getElementById('bd-total').textContent = fmtMoney(total);
+
+    const bdBoughtRow = document.getElementById('bd-row-bought');
+    const bdBoughtVal = document.getElementById('bd-bought');
+    if (bdBoughtRow && bdBoughtVal) {
+        if (totalBoughtCost > 0) {
+            bdBoughtRow.style.display = 'flex';
+            bdBoughtVal.textContent = fmtMoney(totalBoughtCost) + (totalBoughtQty > 0 ? ` (${fmtNum(totalBoughtQty)} bông)` : '');
+        } else {
+            bdBoughtRow.style.display = 'none';
+            bdBoughtVal.textContent = '0 ₫';
+        }
+    }
 }
 
 function submitVuaOrder() {
@@ -2913,8 +2969,9 @@ function submitVuaOrder() {
         const type = item.querySelector('.vua-type')?.value?.trim();
         const qty = parseFloat(item.querySelector('.vua-qty')?.value) || 0;
         const price = parseMoney(item.querySelector('.vua-price')?.value);
+        const isBought = !!item.querySelector('.vua-is-bought')?.checked;
         if (!type || qty <= 0 || price <= 0) { hasError = true; return; }
-        flowers.push({ type, qty, price, total: qty * price });
+        flowers.push({ type, qty, price, total: qty * price, isBought });
     });
 
     if (hasError || flowers.length === 0) {
@@ -2923,6 +2980,8 @@ function submitVuaOrder() {
     }
 
     const totalCost = flowers.reduce((s, f) => s + f.total, 0);
+    const totalBoughtCost = flowers.filter(f => f.isBought).reduce((s, f) => s + f.total, 0);
+    const totalBoughtQty = flowers.filter(f => f.isBought).reduce((s, f) => s + f.qty, 0);
     const shipping = parseMoney(document.getElementById('vua-shipping').value);
     const vattu = parseMoney(document.getElementById('vua-vattu').value);
     const profit = parseMoney(document.getElementById('vua-profit').value);
@@ -2935,10 +2994,16 @@ function submitVuaOrder() {
     const flowersHtml = flowers.map(f => `
         <div class="confirm-flower-item">
             <div>
-                <div style="font-weight:800; font-size:15px; color:var(--text);">${f.type}</div>
+                <div style="font-weight:800; font-size:15px; color:var(--text); display:flex; align-items:center; gap:6px;">
+                    <span>${f.type}</span>
+                    ${f.isBought ? `<span style="background:#fee2e2; color:#dc2626; border:1px solid #fecaca; font-size:11px; font-weight:800; padding:1px 6px; border-radius:6px;"><i class="fa-solid fa-cart-shopping"></i> Mua ngoài</span>` : ''}
+                </div>
                 <div style="font-size:13px; color:var(--text-soft); font-weight:700;">${fmtNum(f.qty)} bông × ${fmtMoney(f.price)}</div>
             </div>
-            <div style="font-weight:900; font-size:16px; color:var(--blue);">${fmtMoney(f.total)}</div>
+            <div style="text-align:right;">
+                <div style="font-weight:900; font-size:16px; color:var(--blue);">${fmtMoney(f.total)}</div>
+                ${f.isBought ? `<div style="font-size:11.5px; font-weight:800; color:#dc2626;">(CP Mua Bông)</div>` : ''}
+            </div>
         </div>
     `).join('');
 
@@ -2960,6 +3025,11 @@ function submitVuaOrder() {
                 <span class="confirm-summary-label">💐 Tiền bông</span>
                 <span class="confirm-summary-val">${fmtMoney(totalCost)}</span>
             </div>
+            ${totalBoughtCost > 0 ? `
+            <div class="confirm-summary-row" style="background:#fef2f2; padding:4px 8px; border-radius:8px;">
+                <span class="confirm-summary-label" style="color:#dc2626; font-weight:800;"><i class="fa-solid fa-cart-shopping"></i> Tiền mua bông (Chi phí)</span>
+                <span class="confirm-summary-val" style="color:#dc2626; font-weight:900;">${fmtMoney(totalBoughtCost)} (${fmtNum(totalBoughtQty)} bông)</span>
+            </div>` : ''}
             ${shipping > 0 ? `
             <div class="confirm-summary-row">
                 <span class="confirm-summary-label">🚚 Vận chuyển</span>
@@ -3005,7 +3075,7 @@ function submitVuaOrder() {
         onProceed: () => {
             executeSubmitVuaOrder({
                 vuaDateVal, dateVN, buyer, status, note, flowers,
-                totalCost, shipping, vattu, profit, totalCollect, totalQty, loaiCP
+                totalCost, totalBoughtCost, totalBoughtQty, shipping, vattu, profit, totalCollect, totalQty, loaiCP
             });
         }
     });
@@ -3013,18 +3083,34 @@ function submitVuaOrder() {
 
 function executeSubmitVuaOrder({
     vuaDateVal, dateVN, buyer, status, note, flowers,
-    totalCost, shipping, vattu, profit, totalCollect, totalQty, loaiCP
+    totalCost, totalBoughtCost, totalBoughtQty, shipping, vattu, profit, totalCollect, totalQty, loaiCP
 }) {
     const btn = document.getElementById('vua-submit-btn');
 
     // 1. OPTIMISTIC IN-MEMORY INSERTION (instantly visible on Báo cáo ngày)
     const orderId = 'vua_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
     const createdTempIds = [];
+    const shippingIdx = flowers.findIndex(f => !f.isBought);
+
     for (let i = flowers.length - 1; i >= 0; i--) {
         const f = flowers[i];
         const isFirst = (i === 0);
         const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
         createdTempIds.unshift(tempId);
+
+        let rowChiPhi = '';
+        let rowLoaiCP = '';
+        let rowGhiChuCP = '';
+
+        if (f.isBought && f.total > 0) {
+            rowChiPhi = String(f.total);
+            rowLoaiCP = 'Mua Bông';
+            rowGhiChuCP = `Mua bông ${f.type} (${fmtNum(f.qty)} bông) - Đơn vựa ${buyer}`;
+        } else if (i === shippingIdx && shipping > 0) {
+            rowChiPhi = String(shipping);
+            rowLoaiCP = loaiCP || 'Vận Chuyển';
+            rowGhiChuCP = '';
+        }
 
         todayData.unshift({
             _row: tempId,
@@ -3034,47 +3120,111 @@ function executeSubmitVuaOrder({
             'Ngày': dateVN,
             'Status': status || '',
             'Người Mua': buyer,
-            'Số lượng': String(f.qty),
-            'Giá': String(f.price),
-            'Doanh Thu Bông': String(f.total),
-            'Phân Loại Bông': f.type,
+            'Số lượng': f.isBought ? '' : String(f.qty),
+            'Giá': f.isBought ? '' : String(f.price),
+            'Doanh Thu Bông': f.isBought ? '' : String(f.total),
+            'Phân Loại Bông': f.isBought ? '' : f.type,
             'Ghi Chú': isFirst ? (note || '') : '',
             'Đã Thu': (status === 'Xong' && isFirst) ? String(totalCollect) : '',
             'Tiền Phải Thu': isFirst ? String(totalCollect) : '',
             'Ghi Chú thu': orderId,
             'Doanh Thu Khác': (isFirst && profit !== 0) ? String(profit) : '',
             'Loại DT': 'Vựa',
-            'Chi Phí': (isFirst && shipping > 0) ? String(shipping) : '',
-            'Loại CP': (isFirst && shipping > 0) ? 'Vận Chuyển' : '',
-            'Ghi Chú Chi Phí': ''
+            'Chi Phí': rowChiPhi,
+            'Loại CP': rowLoaiCP,
+            'Ghi Chú Chi Phí': rowGhiChuCP
         });
     }
 
-    // 2. ENQUEUE FOR BACKGROUND SYNC
+    // 2. ENQUEUE FOR BACKGROUND SYNC (Flowers)
     for (let i = 0; i < flowers.length; i++) {
         const f = flowers[i];
         const isFirst = (i === 0);
+
+        let rowChiPhi = '';
+        let rowLoaiCP = '';
+        let rowGhiChuCP = '';
+
+        if (f.isBought && f.total > 0) {
+            rowChiPhi = f.total;
+            rowLoaiCP = 'Mua Bông';
+            rowGhiChuCP = `Mua bông ${f.type} (${fmtNum(f.qty)} bông) - Đơn vựa ${buyer}`;
+        } else if (i === shippingIdx && shipping > 0) {
+            rowChiPhi = shipping;
+            rowLoaiCP = loaiCP || 'Vận Chuyển';
+            rowGhiChuCP = '';
+        }
+
         enqueueSync({
             action: 'add',
             data: {
                 'Ngày': dateVN,
                 'Status': status || '',
                 'Người Mua': buyer,
-                'Số lượng': f.qty,
-                'Giá': f.price,
-                'Doanh Thu Bông': f.total,
-                'Phân Loại Bông': f.type,
+                'Số lượng': f.isBought ? '' : f.qty,
+                'Giá': f.isBought ? '' : f.price,
+                'Doanh Thu Bông': f.isBought ? '' : f.total,
+                'Phân Loại Bông': f.isBought ? '' : f.type,
                 'Ghi Chú': isFirst ? (note || '') : '',
                 'Đã Thu': (status === 'Xong' && isFirst) ? totalCollect : '',
                 'Tiền Phải Thu': isFirst ? totalCollect : '',
                 'Ghi Chú thu': orderId,
                 'Doanh Thu Khác': (isFirst && profit !== 0) ? profit : '',
                 'Loại DT': 'Vựa',
-                'Chi Phí': (isFirst && shipping > 0) ? shipping : '',
-                'Loại CP': (isFirst && shipping > 0) ? 'Vận Chuyển' : '',
-                'Ghi Chú Chi Phí': ''
+                'Chi Phí': rowChiPhi,
+                'Loại CP': rowLoaiCP,
+                'Ghi Chú Chi Phí': rowGhiChuCP
             }
         }, [createdTempIds[i]]);
+    }
+
+    // Nếu tất cả loại hoa đều là mua ngoài và có phí vận chuyển, tạo dòng vận chuyển riêng thuộc đơn Vựa
+    if (shippingIdx === -1 && shipping > 0) {
+        const shipTempId = 'temp_ship_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        todayData.unshift({
+            _row: shipTempId,
+            _clientId: shipTempId,
+            _orderId: orderId,
+            _isPendingSync: true,
+            'Ngày': dateVN,
+            'Status': status || '',
+            'Người Mua': buyer,
+            'Số lượng': '',
+            'Giá': '',
+            'Doanh Thu Bông': '',
+            'Phân Loại Bông': 'Vận chuyển',
+            'Ghi Chú': '',
+            'Đã Thu': '',
+            'Tiền Phải Thu': '',
+            'Ghi Chú thu': orderId,
+            'Doanh Thu Khác': '',
+            'Loại DT': 'Vựa',
+            'Chi Phí': String(shipping),
+            'Loại CP': loaiCP || 'Vận Chuyển',
+            'Ghi Chú Chi Phí': ''
+        });
+
+        enqueueSync({
+            action: 'add',
+            data: {
+                'Ngày': dateVN,
+                'Status': status || '',
+                'Người Mua': buyer,
+                'Số lượng': '',
+                'Giá': '',
+                'Doanh Thu Bông': '',
+                'Phân Loại Bông': 'Vận chuyển',
+                'Ghi Chú': '',
+                'Đã Thu': '',
+                'Tiền Phải Thu': '',
+                'Ghi Chú thu': orderId,
+                'Doanh Thu Khác': '',
+                'Loại DT': 'Vựa',
+                'Chi Phí': shipping,
+                'Loại CP': loaiCP || 'Vận Chuyển',
+                'Ghi Chú Chi Phí': ''
+            }
+        }, [shipTempId]);
     }
 
     // 3. SET REPORT DATE PICKER TO MATCH ORDER DATE & RENDER REPORT INSTANTLY
@@ -3693,7 +3843,7 @@ function renderFarmGroupCard(grp, totalFarmRev) {
                     </span>
                     <div style="min-width:0;">
                         <div style="font-weight:800; font-size:0.95rem; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeAttr(buyer)}</div>
-                        <div style="font-size:0.72rem; color:#64748b; font-weight:600;">${grp.items.length} mặt hàng · ${buyerPct}% tổng doanh thu</div>
+                        <div style="font-size:0.72rem; color:#64748b; font-weight:600;">${grp.items.length} mặt hàng${grp.totalQty > 0 ? ` · ${fmtNum(grp.totalQty)} bông` : ''}</div>
                     </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
@@ -3714,6 +3864,7 @@ function renderFarmGroupCard(grp, totalFarmRev) {
 }
 
 function renderFarmGroupedContainer(farmGroups, totalFarmRev) {
+    const totalFarmQty = farmGroups.reduce((s, g) => s + (g.totalQty || 0), 0);
     const cardsHtml = farmGroups.map(grp => renderFarmGroupCard(grp, totalFarmRev)).join('');
 
     return `
@@ -3723,7 +3874,7 @@ function renderFarmGroupedContainer(farmGroups, totalFarmRev) {
                     <span class="rev-frame-icon farm" style="width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.15rem; background:#f0f9ff; border:1px solid #bae6fd; box-shadow:0 2px 6px rgba(0,0,0,0.05);">🌸</span>
                     <div>
                         <div class="rev-frame-name" style="font-size:0.92rem; font-weight:800; color:#1e293b; letter-spacing:0.5px; text-transform:uppercase;">ĐƠN FARM / KHÁCH LẺ</div>
-                        <div class="rev-frame-subtitle" style="font-size:0.75rem; color:#64748b; font-weight:600;">${farmGroups.length} khách hàng</div>
+                        <div class="rev-frame-subtitle" style="font-size:0.75rem; color:#64748b; font-weight:600;">${farmGroups.length} khách hàng${totalFarmQty > 0 ? ` · ${fmtNum(totalFarmQty)} bông` : ''}</div>
                     </div>
                 </div>
                 <div class="rev-frame-total farm" style="font-size:1.15rem; font-weight:900; color:#0284c7; white-space:nowrap; border-bottom:2px solid #0284c7; padding-bottom:1px;">${fmtMoney(totalFarmRev)}</div>
@@ -4048,32 +4199,78 @@ function renderVuaCard(group) {
     const orderId = group.orderId;
     const isLockedDay = !isAdmin() && !isDateToday(master ? master['Ngày'] : '');
 
-    const flowers = group.rows.map(r => {
-        const q = parseSheetNum(r['Số lượng']);
-        const p = parseSheetNum(r['Giá']);
-        const t = parseSheetNum(r['Doanh Thu Bông']) || (q * p);
-        return {
-            rowNum: r._row,
-            type: r['Phân Loại Bông'] || '—',
-            qty: q,
-            price: p,
-            total: t
-        };
+    const flowers = group.rows
+        .map(r => {
+            let q = parseSheetNum(r['Số lượng']);
+            let p = parseSheetNum(r['Giá']);
+            let t = parseSheetNum(r['Doanh Thu Bông']) || (q * p);
+            const loaiCP = String(r['Loại CP'] || '').trim().toLowerCase();
+            const ghiChuCP = String(r['Ghi Chú Chi Phí'] || '').trim().toLowerCase();
+            const cpVal = parseSheetNum(r['Chi Phí']);
+            const isBought = loaiCP === 'mua bông' || loaiCP === 'mua bong' || ghiChuCP.includes('mua bông') || ghiChuCP.includes('mua bong');
+            let type = (r['Phân Loại Bông'] || '').trim();
+
+            if (isBought) {
+                if (!type || q <= 0 || t <= 0) {
+                    const rawNote = String(r['Ghi Chú Chi Phí'] || '').trim();
+                    const m = rawNote.match(/(?:Mua bông|mua bong)\s+([^(]+?)(?:\s*\(([\d.,]+)\s*bông\))?(?:\s*-\s*Đơn vựa.*)?$/i);
+                    if (m) {
+                        if (!type) type = m[1].trim();
+                        if (q <= 0 && m[2]) q = parseSheetNum(m[2]);
+                    }
+                    if (t <= 0 && cpVal > 0) t = cpVal;
+                    if (p <= 0 && q > 0 && t > 0) p = Math.round(t / q);
+                }
+            }
+
+            const boughtCost = isBought ? (cpVal > 0 ? cpVal : t) : 0;
+            return {
+                rowNum: r._row,
+                type: type || '—',
+                qty: q,
+                price: p,
+                total: t,
+                isBought,
+                boughtCost,
+                rawRow: r
+            };
+        })
+        .filter(f => f.isBought || f.qty > 0 || (f.type && f.type !== '—'));
+
+    let shippingCost = 0;
+    let shippingLoaiCP = 'Vận Chuyển';
+    let boughtTotal = 0;
+
+    group.rows.forEach(r => {
+        const cpVal = parseSheetNum(r['Chi Phí']);
+        if (cpVal <= 0) return;
+        const loaiCP = String(r['Loại CP'] || '').trim();
+        const lcpLower = loaiCP.toLowerCase();
+        const noteCP = String(r['Ghi Chú Chi Phí'] || '').toLowerCase();
+        if (lcpLower === 'mua bông' || lcpLower === 'mua bong' || noteCP.includes('mua bông') || noteCP.includes('mua bong')) {
+            boughtTotal += cpVal;
+        } else {
+            shippingCost += cpVal;
+            if (loaiCP) shippingLoaiCP = loaiCP;
+        }
     });
+
+    if (boughtTotal === 0) {
+        boughtTotal = flowers.filter(f => f.isBought).reduce((s, f) => s + f.boughtCost, 0);
+    }
 
     const totalQty = flowers.reduce((s, f) => s + f.qty, 0);
     const flowerTotal = flowers.reduce((s, f) => s + f.total, 0);
-    const cp = parseSheetNum(master['Chi Phí']);
     let pt = parseSheetNum(master['Tiền Phải Thu']);
     let ln = parseSheetNum(master['Doanh Thu Khác']);
     let vattu = 150000;
 
     if (pt > 0) {
-        const calcVattu = pt - flowerTotal - cp - ln;
+        const calcVattu = pt - flowerTotal - shippingCost - ln;
         if (calcVattu > 0) vattu = calcVattu;
-        else ln = pt - flowerTotal - cp - vattu;
+        else ln = pt - flowerTotal - shippingCost - vattu;
     } else {
-        pt = flowerTotal + cp + vattu + ln;
+        pt = flowerTotal + shippingCost + vattu + ln;
     }
 
     const note = master['Ghi Chú'] || '';
@@ -4103,8 +4300,9 @@ function renderVuaCard(group) {
                 <div style="font-size: 11px; font-weight: 800; color: var(--text-soft); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Chi tiết hoa (${flowers.length} loại):</div>
                 ${flowers.map(f => `
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 13px;">
-                        <div>
+                        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
                             <span style="font-weight: 700; color: var(--text);">🌸 ${f.type}</span>
+                            ${f.isBought ? `<span style="display:inline-flex; align-items:center; gap:3px; background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; border-radius:4px; font-size:10px; font-weight:800; padding:1px 5px;"><i class="fa-solid fa-cart-shopping"></i> Mua ngoài</span>` : ''}
                             <span style="color: var(--text-soft); font-weight: 600; font-size: 12px;"> · ${fmtNum(f.qty)} bông × ${fmtMoney(f.price)}</span>
                         </div>
                         <div style="font-weight: 800; color: var(--blue);">${fmtMoney(f.total)}</div>
@@ -4116,10 +4314,15 @@ function renderVuaCard(group) {
                 <span class="tx-line-label">💐 Tổng tiền hoa</span>
                 <span class="tx-line-value font-bold">${fmtMoney(flowerTotal)}</span>
             </div>
-            ${cp > 0 ? `
+            ${boughtTotal > 0 ? `
             <div class="tx-line">
-                <span class="tx-line-label">🚚 Chi phí (${master['Loại CP'] || 'Vận chuyển'})</span>
-                <span class="tx-line-value" style="color:var(--red); font-weight:700;">-${fmtMoney(cp)}</span>
+                <span class="tx-line-label">🛒 Tiền hoa mua ngoài</span>
+                <span class="tx-line-value" style="color:var(--red); font-weight:700;">-${fmtMoney(boughtTotal)}</span>
+            </div>` : ''}
+            ${shippingCost > 0 ? `
+            <div class="tx-line">
+                <span class="tx-line-label">🚚 Chi phí (${master['Loại CP'] || shippingLoaiCP || 'Vận chuyển'})</span>
+                <span class="tx-line-value" style="color:var(--red); font-weight:700;">-${fmtMoney(shippingCost)}</span>
             </div>` : ''}
             <div class="tx-line">
                 <span class="tx-line-label">📦 Vật tư khác</span>
@@ -4128,7 +4331,7 @@ function renderVuaCard(group) {
             ${ln !== 0 ? `
             <div class="tx-line">
                 <span class="tx-line-label">✨ Lợi nhuận / Đóng gói</span>
-                <span class="tx-line-value" style="color:${ln >= 0 ? 'var(--green)':'var(--red)'}; font-weight:800;">+${fmtMoney(ln)}</span>
+                <span class="tx-line-value" style="color:${ln >= 0 ? 'var(--green)':'var(--red)'}; font-weight:800;">${ln >= 0 ? '+' : ''}${fmtMoney(ln)}</span>
             </div>` : ''}
             ${note ? `<div class="tx-line"><span class="tx-line-label">📝 Ghi chú</span><span class="tx-line-value" style="font-size:13px;color:var(--text-soft)">${note}</span></div>` : ''}
             <div style="border-top: 1px dashed #cbd5e1; margin: 6px 0;"></div>
@@ -4213,13 +4416,13 @@ function recalcEditFarm() {
     if (el) el.textContent = fmtMoney(total);
 }
 
-function addEditVuaFlower(type = '', qty = 0, price = 0) {
+function addEditVuaFlower(type = '', qty = 0, price = 0, isBought = false) {
     const container = document.getElementById('edit-vua-flowers-container');
     if (!container) return;
     const count = container.querySelectorAll('.edit-vua-flower-item').length + 1;
     const div = document.createElement('div');
     div.className = 'edit-vua-flower-item';
-    div.style.cssText = 'background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 12px; margin-bottom: 10px; position: relative;';
+    div.style.cssText = `background: ${isBought ? '#fff5f5' : '#f8fafc'}; border: 1.5px ${isBought ? 'solid #fca5a5' : 'solid #e2e8f0'}; border-radius: 14px; padding: 12px; margin-bottom: 10px; position: relative;`;
     div.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <span style="font-size: 12px; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: 0.5px;">Loại hoa #${count}</span>
@@ -4241,12 +4444,30 @@ function addEditVuaFlower(type = '', qty = 0, price = 0) {
                 <input type="text" class="field-input blue money-input edit-vua-price" value="${price > 0 ? fmtNum(price) : ''}" placeholder="0" oninput="recalcEditVuaGroup('price')">
             </div>
         </div>
+        <div class="fw-bought-wrap" style="margin-top: 8px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; background: ${isBought ? '#fff5f5' : '#f8fafc'}; padding: 6px 10px; border-radius: 8px; border: 1px ${isBought ? 'solid #fca5a5' : 'dashed #cbd5e1'};">
+            <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; margin: 0; font-size: 12px; font-weight: 700; color: ${isBought ? '#991b1b' : '#475569'};">
+                <input type="checkbox" class="edit-vua-is-bought" ${isBought ? 'checked' : ''} style="width: 16px; height: 16px; accent-color: #ef4444; cursor: pointer;" onchange="toggleEditVuaFlowerBought(this)">
+                <span>🛒 Bông mua ngoài <span style="font-size: 11px; color: #dc2626; font-weight: 800;">(vào CP "Mua Bông")</span></span>
+            </label>
+        </div>
         <div class="edit-vua-row-subtotal" style="font-size: 12px; font-weight: 800; color: var(--blue); text-align: right; margin-top: 4px;">
             = ${fmtMoney((qty || 0) * (price || 0))}
         </div>
     `;
     container.appendChild(div);
     recalcEditVuaGroup('default');
+}
+
+function toggleEditVuaFlowerBought(cb) {
+    const wrap = cb.closest('.fw-bought-wrap');
+    const item = cb.closest('.edit-vua-flower-item');
+    if (cb.checked) {
+        if (wrap) { wrap.style.background = '#fff5f5'; wrap.style.border = '1px solid #fca5a5'; }
+        if (item) { item.style.background = '#fff5f5'; item.style.borderColor = '#fca5a5'; }
+    } else {
+        if (wrap) { wrap.style.background = '#f8fafc'; wrap.style.border = '1px dashed #cbd5e1'; }
+        if (item) { item.style.background = '#f8fafc'; item.style.borderColor = '#e2e8f0'; }
+    }
 }
 
 function removeEditVuaFlower(btn) {
@@ -4547,12 +4768,39 @@ function openEditVuaGroupModal(orderId) {
     const modal = document.getElementById('edit-modal');
     document.getElementById('edit-modal-title').textContent = '✏️ Sửa đơn Vựa';
 
-    const flowers = group.rows.map(r => ({
-        type: r['Phân Loại Bông'] || '',
-        qty: parseSheetNum(r['Số lượng']),
-        price: parseSheetNum(r['Giá']),
-        total: parseSheetNum(r['Doanh Thu Bông']) || (parseSheetNum(r['Số lượng']) * parseSheetNum(r['Giá']))
-    }));
+    const flowers = group.rows
+        .map(r => {
+            const loaiCP = String(r['Loại CP'] || '').trim().toLowerCase();
+            const ghiChuCP = String(r['Ghi Chú Chi Phí'] || '').trim().toLowerCase();
+            const cpVal = parseSheetNum(r['Chi Phí']);
+            const isBought = loaiCP === 'mua bông' || loaiCP === 'mua bong' || ghiChuCP.includes('mua bông') || ghiChuCP.includes('mua bong');
+            let type = (r['Phân Loại Bông'] || '').trim();
+            let q = parseSheetNum(r['Số lượng']);
+            let p = parseSheetNum(r['Giá']);
+            let t = parseSheetNum(r['Doanh Thu Bông']) || (q * p);
+
+            if (isBought) {
+                if (!type || q <= 0 || t <= 0) {
+                    const rawNote = String(r['Ghi Chú Chi Phí'] || '').trim();
+                    const m = rawNote.match(/(?:Mua bông|mua bong)\s+([^(]+?)(?:\s*\(([\d.,]+)\s*bông\))?(?:\s*-\s*Đơn vựa.*)?$/i);
+                    if (m) {
+                        if (!type) type = m[1].trim();
+                        if (q <= 0 && m[2]) q = parseSheetNum(m[2]);
+                    }
+                    if (t <= 0 && cpVal > 0) t = cpVal;
+                    if (p <= 0 && q > 0 && t > 0) p = Math.round(t / q);
+                }
+            }
+
+            return {
+                type,
+                qty: q,
+                price: p,
+                total: t,
+                isBought
+            };
+        })
+        .filter(f => f.isBought || f.qty > 0 || (f.type && f.type !== '—'));
 
     const flowerTotal = flowers.reduce((s, f) => s + f.total, 0);
     const cp = parseSheetNum(master['Chi Phí']);
@@ -4633,7 +4881,7 @@ function openEditVuaGroupModal(orderId) {
 
     // Populate existing flower items
     flowers.forEach(f => {
-        addEditVuaFlower(f.type, f.qty, f.price);
+        addEditVuaFlower(f.type, f.qty, f.price, f.isBought);
     });
 
     const confirmBtn = document.getElementById('edit-modal-confirm');
@@ -4653,11 +4901,12 @@ function openEditVuaGroupModal(orderId) {
             const t = it.querySelector('.edit-vua-type')?.value?.trim();
             const q = parseFloat(it.querySelector('.edit-vua-qty')?.value) || 0;
             const p = parseMoney(it.querySelector('.edit-vua-price')?.value);
+            const isBought = !!it.querySelector('.edit-vua-is-bought')?.checked;
             if (!t || q <= 0 || p <= 0) {
                 hasError = true;
                 return;
             }
-            newFlowers.push({ type: t, qty: q, price: p, total: q * p });
+            newFlowers.push({ type: t, qty: q, price: p, total: q * p, isBought });
         });
 
         if (hasError || newFlowers.length === 0) {
@@ -4678,8 +4927,9 @@ function openEditVuaGroupModal(orderId) {
 
         const flowersSummaryHtml = newFlowers.map(f => `
             <div style="display:flex; justify-content:space-between; align-items:center; padding:3px 0; font-size:13px;">
-                <div>
+                <div style="display:flex; align-items:center; gap:4px;">
                     <span style="font-weight:700;">🌸 ${f.type}</span>
+                    ${f.isBought ? `<span style="font-size:10px; font-weight:800; color:#dc2626; background:#fee2e2; border:1px solid #fecaca; padding:1px 5px; border-radius:4px;">🛒 Mua ngoài</span>` : ''}
                     <span style="color:var(--text-soft); font-size:12px;"> · ${fmtNum(f.qty)} bông × ${fmtMoney(f.price)}</span>
                 </div>
                 <div style="font-weight:800; color:var(--blue);">${fmtMoney(f.total)}</div>
@@ -4797,20 +5047,37 @@ function doUpdateVuaGroupOptimistic({
     const K = newFlowers.length;
     const orderDate = origRows[0]['Ngày'] || today();
     const maxLen = Math.max(M, K);
+    const shippingIdx = newFlowers.findIndex(f => !f.isBought);
 
     for (let i = 0; i < maxLen; i++) {
         if (i < K && i < M) {
             const r = origRows[i];
             const nf = newFlowers[i];
             const isFirst = (i === 0);
+
+            let rowChiPhi = '';
+            let rowLoaiCP = '';
+            let rowGhiChuCP = '';
+
+            if (nf.isBought && nf.total > 0) {
+                rowChiPhi = String(nf.total);
+                rowLoaiCP = 'Mua Bông';
+                rowGhiChuCP = `Mua bông ${nf.type} (${fmtNum(nf.qty)} bông) - Đơn vựa ${newBuyer}`;
+            } else if (i === shippingIdx && newCost > 0) {
+                rowChiPhi = String(newCost);
+                rowLoaiCP = 'Vận Chuyển';
+                rowGhiChuCP = '';
+            }
+
             const updates = {
                 'Người Mua': newBuyer,
-                'Phân Loại Bông': nf.type,
-                'Số lượng': String(nf.qty),
-                'Giá': String(nf.price),
-                'Doanh Thu Bông': String(nf.total),
-                'Chi Phí': (isFirst && newCost > 0) ? String(newCost) : '',
-                'Loại CP': (isFirst && newCost > 0) ? 'Vận Chuyển' : '',
+                'Phân Loại Bông': nf.isBought ? '' : nf.type,
+                'Số lượng': nf.isBought ? '' : String(nf.qty),
+                'Giá': nf.isBought ? '' : String(nf.price),
+                'Doanh Thu Bông': nf.isBought ? '' : String(nf.total),
+                'Chi Phí': rowChiPhi,
+                'Loại CP': rowLoaiCP,
+                'Ghi Chú Chi Phí': rowGhiChuCP,
                 'Doanh Thu Khác': (isFirst && newProfit !== 0) ? String(newProfit) : '',
                 'Tiền Phải Thu': isFirst ? String(newPt) : '',
                 'Status': newStatus,
@@ -4839,24 +5106,36 @@ function doUpdateVuaGroupOptimistic({
             }
         } else if (i >= M && i < K) {
             const nf = newFlowers[i];
+            let rowChiPhi = '';
+            let rowLoaiCP = '';
+            let rowGhiChuCP = '';
+            if (nf.isBought && nf.total > 0) {
+                rowChiPhi = String(nf.total);
+                rowLoaiCP = 'Mua Bông';
+                rowGhiChuCP = `Mua bông ${nf.type} (${fmtNum(nf.qty)} bông) - Đơn vựa ${newBuyer}`;
+            } else if (i === shippingIdx && newCost > 0) {
+                rowChiPhi = String(newCost);
+                rowLoaiCP = 'Vận Chuyển';
+                rowGhiChuCP = '';
+            }
             const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
             const newRowData = {
                 'Ngày': orderDate,
                 'Status': newStatus,
                 'Người Mua': newBuyer,
-                'Số lượng': String(nf.qty),
-                'Giá': String(nf.price),
-                'Doanh Thu Bông': String(nf.total),
-                'Phân Loại Bông': nf.type,
+                'Số lượng': nf.isBought ? '' : String(nf.qty),
+                'Giá': nf.isBought ? '' : String(nf.price),
+                'Doanh Thu Bông': nf.isBought ? '' : String(nf.total),
+                'Phân Loại Bông': nf.isBought ? '' : nf.type,
                 'Ghi Chú': '',
                 'Đã Thu': '',
                 'Tiền Phải Thu': '',
                 'Ghi Chú thu': orderId,
                 'Doanh Thu Khác': '',
                 'Loại DT': 'Vựa',
-                'Chi Phí': '',
-                'Loại CP': '',
-                'Ghi Chú Chi Phí': ''
+                'Chi Phí': rowChiPhi,
+                'Loại CP': rowLoaiCP,
+                'Ghi Chú Chi Phí': rowGhiChuCP
             };
             todayData.push({
                 _row: tempId,

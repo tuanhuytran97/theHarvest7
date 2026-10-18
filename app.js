@@ -5993,45 +5993,77 @@ document.addEventListener("DOMContentLoaded", () => {
             return 'ops'; // Phân bón, Thuốc, Lương/Công, Lãi, Vận Chuyển, Chi Phí Khác...
         }
 
-        // Render individual category box with its sub-items
+        // Render individual category box with its sub-items (Vertical card layout)
         function renderExpCategoryCard(key, grp) {
             const cfg = getCatCfg(key);
             const pct = totalExpense > 0 ? ((grp.total / totalExpense) * 100).toFixed(0) : 0;
+            const isSingle = grp.items.length === 1;
+            const singleItem = isSingle ? grp.items[0] : null;
+            const hasNote = singleItem && singleItem.ghiChu && singleItem.ghiChu.trim();
+
             let cardHtml = `
-                <div style="border-radius:12px; overflow:hidden; border:1px solid ${cfg.color}25; background:#ffffff; box-shadow:0 1px 4px rgba(0,0,0,0.02);">
+                <div class="exp-vcard" style="border-radius:12px; overflow:hidden; border:1.5px solid ${cfg.color}25; background:#ffffff; box-shadow:0 1px 4px rgba(0,0,0,0.02); transition:all 0.15s ease;">
                     <div style="display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:${cfg.bg}; gap:8px;">
                         <div style="display:flex; align-items:center; gap:8px; min-width:0;">
-                            <span style="width:28px; height:28px; border-radius:8px; background:${cfg.color}20; color:${cfg.color}; display:flex; align-items:center; justify-content:center; font-size:0.75rem; flex-shrink:0;">
+                            <span style="width:28px; height:28px; border-radius:8px; background:${cfg.color}20; color:${cfg.color}; display:flex; align-items:center; justify-content:center; font-size:0.8rem; flex-shrink:0; border:1px solid ${cfg.color}35;">
                                 <i class="fa-solid ${cfg.icon}"></i>
                             </span>
                             <div style="min-width:0;">
-                                <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark, #1e293b);">${cfg.label}</div>
-                                <div style="font-size:0.72rem; color:#94a3b8;">${grp.items.length} khoản · ${pct}% tổng CP</div>
+                                <div style="font-weight:800; font-size:0.88rem; color:var(--text-dark, #1e293b); display:flex; align-items:center; gap:5px;">
+                                    ${cfg.label}
+                                    ${grp.items.length > 1 ? `<span style="font-size:0.68rem; font-weight:700; color:#64748b; background:#ffffff; border:1px solid #e2e8f0; padding:1px 5px; border-radius:4px;">${grp.items.length} khoản</span>` : ''}
+                                </div>
+                                <div style="font-size:0.68rem; color:#94a3b8; font-weight:600;">${pct}% tổng chi phí</div>
                             </div>
                         </div>
-                        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                        <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
                             <button type="button" onclick="editExpenseCategoryDirect('${escapeAttr(key)}', ${day}, ${month}, ${year})"
-                                style="background:white; color:${cfg.color}; border:1px solid ${cfg.color}40; padding:3px 8px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:3px; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                                style="background:white; color:${cfg.color}; border:1px solid ${cfg.color}40; padding:2px 7px; border-radius:5px; font-size:0.7rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:3px; box-shadow:0 1px 3px rgba(0,0,0,0.05); transition:all 0.15s;" title="Sửa danh mục này">
                                 <i class="fa-solid fa-pen-to-square"></i> Sửa
                             </button>
-                            <span style="font-weight:800; font-size:0.95rem; color:${cfg.color}; white-space:nowrap;">${fmt(grp.total)}</span>
                         </div>
-                    </div>`;
-
-            cardHtml += grp.items.map(item => `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 12px 6px 48px; border-top:1px dashed ${cfg.color}15; background:white;">
-                    <div style="display:flex; align-items:center; gap:6px; min-width:0;">
-                        <span style="font-size:0.82rem; color:#64748b; font-style:${item.ghiChu ? 'normal' : 'italic'}; overflow:hidden; text-overflow:ellipsis;">${escapeAttr(item.ghiChu) || '(Không có ghi chú)'}</span>
-                        <button type="button" onclick="editSingleExpense(${item.sheetRowNumber})"
-                            style="background:none; border:none; color:${cfg.color}; cursor:pointer; padding:2px 5px; font-size:0.75rem; border-radius:4px; opacity:0.8;" title="Sửa khoản chi này">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
                     </div>
-                    <span style="font-size:0.82rem; font-weight:600; color:${cfg.color}; white-space:nowrap;">${fmt(item.cp)}</span>
-                </div>
-            `).join('');
+                    <!-- Phần hiển thị dọc: Số tiền và Chi tiết -->
+                    <div style="padding:9px 12px; background:#ffffff; display:flex; flex-direction:column; gap:6px;">
+                        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                            <span style="font-size:0.72rem; color:#64748b; font-weight:700; text-transform:uppercase; letter-spacing:0.3px;">Số tiền</span>
+                            <span style="font-weight:900; font-size:1.08rem; color:${cfg.color};">${fmt(grp.total)}</span>
+                        </div>`;
 
-            cardHtml += `</div>`;
+            if (isSingle) {
+                if (hasNote) {
+                    cardHtml += `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 9px; border:1px dashed #e2e8f0; border-radius:7px; background:#f8fafc; margin-top:2px;">
+                            <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+                                <span style="font-size:0.7rem; color:#94a3b8;"><i class="fa-solid fa-note-sticky"></i></span>
+                                <span style="font-size:0.8rem; color:#334155; font-weight:600; word-break:break-word;">${escapeAttr(singleItem.ghiChu)}</span>
+                            </div>
+                            <button type="button" onclick="editSingleExpense(${singleItem.sheetRowNumber})"
+                                style="background:none; border:none; color:${cfg.color}; cursor:pointer; padding:2px 4px; font-size:0.72rem; opacity:0.85; flex-shrink:0;" title="Sửa khoản chi này">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                        </div>`;
+                }
+            } else {
+                cardHtml += `
+                    <div style="display:flex; flex-direction:column; gap:4px; margin-top:3px; border-top:1px dashed #e2e8f0; padding-top:6px;">
+                        ${grp.items.map((item, idx) => `
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:#f8fafc; border-radius:6px; border:1px solid #f1f5f9;">
+                                <div style="display:flex; align-items:center; gap:5px; min-width:0;">
+                                    <span style="font-size:0.65rem; font-weight:700; color:#94a3b8; background:#e2e8f0; padding:1px 4px; border-radius:3px;">#${idx + 1}</span>
+                                    <span style="font-size:0.78rem; color:#334155; font-weight:600; word-break:break-word; font-style:${item.ghiChu ? 'normal' : 'italic'};">${escapeAttr(item.ghiChu) || '(Không có ghi chú)'}</span>
+                                    <button type="button" onclick="editSingleExpense(${item.sheetRowNumber})"
+                                        style="background:none; border:none; color:${cfg.color}; cursor:pointer; padding:1px 3px; font-size:0.7rem; opacity:0.85;" title="Sửa khoản chi này">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                </div>
+                                <span style="font-size:0.8rem; font-weight:800; color:${cfg.color}; white-space:nowrap; margin-left:6px;">${fmt(item.cp)}</span>
+                            </div>
+                        `).join('')}
+                    </div>`;
+            }
+
+            cardHtml += `</div></div>`;
             return cardHtml;
         }
 
@@ -6152,7 +6184,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             expHtml += `
-                <div class="daily-exp-grid-container">
+                <div class="daily-exp-grid-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 14px; align-items: start;">
                     ${framesHtml}
                 </div>`;
         }
@@ -6258,49 +6290,111 @@ document.addEventListener("DOMContentLoaded", () => {
             const orderId = group.orderId;
 
             const flowers = group.rows
-                .filter(r => (r['Phân Loại Bông'] && r['Phân Loại Bông'].trim()) || (parseFloat(r['Số lượng']) || 0) > 0)
                 .map(r => {
-                    const q = parseFloat(r['Số lượng']) || 0;
-                    const p = parseFloat(r['Giá']) || 0;
-                    const t = (parseFloat(r['Doanh Thu Bông']) || 0) || (q * p);
+                    let q = parseFloat(r['Số lượng']) || 0;
+                    let p = parseFloat(r['Giá']) || 0;
+                    let t = (parseFloat(r['Doanh Thu Bông']) || 0) || (q * p);
+                    const loaiCP = String(r['Loại CP'] || '').trim().toLowerCase();
+                    const ghiChuCP = String(r['Ghi Chú Chi Phí'] || '').trim().toLowerCase();
+                    const cpVal = parseFloat(r['Chi Phí']) || 0;
+                    const isBought = loaiCP === 'mua bông' || loaiCP === 'mua bong' || ghiChuCP.includes('mua bông') || ghiChuCP.includes('mua bong');
+                    let type = (r['Phân Loại Bông'] || '').trim();
+
+                    if (isBought) {
+                        if (!type || q <= 0 || t <= 0) {
+                            const rawNote = String(r['Ghi Chú Chi Phí'] || '').trim();
+                            const m = rawNote.match(/(?:Mua bông|mua bong)\s+([^(]+?)(?:\s*\(([\d.,]+)\s*bông\))?(?:\s*-\s*Đơn vựa.*)?$/i);
+                            if (m) {
+                                if (!type) type = m[1].trim();
+                                if (q <= 0 && m[2]) q = parseFloat(String(m[2]).replace(/\./g, '').replace(/,/g, '.')) || 0;
+                            }
+                            if (t <= 0 && cpVal > 0) t = cpVal;
+                            if (p <= 0 && q > 0 && t > 0) p = Math.round(t / q);
+                        }
+                    }
+
+                    const boughtCost = isBought ? (cpVal > 0 ? cpVal : t) : 0;
                     return {
                         rowNum: r._sheetRowNumber || r._row,
-                        type: (r['Phân Loại Bông'] || '—').trim(),
+                        type: type || '—',
                         qty: q,
                         price: p,
                         total: t,
+                        isBought,
+                        boughtCost,
                         rawRow: r
                     };
-                });
+                })
+                .filter(f => f.isBought || f.qty > 0 || (f.type && f.type !== '—'));
 
             if (flowers.length === 0) {
                 const q = parseFloat(master['Số lượng']) || 0;
                 const p = parseFloat(master['Giá']) || 0;
                 const t = (parseFloat(master['Doanh Thu Bông']) || 0) || (q * p);
+                const loaiCP = String(master['Loại CP'] || '').trim().toLowerCase();
+                const ghiChuCP = String(master['Ghi Chú Chi Phí'] || '').trim().toLowerCase();
+                const isBought = loaiCP === 'mua bông' || loaiCP === 'mua bong' || ghiChuCP.includes('mua bông') || ghiChuCP.includes('mua bong');
                 flowers.push({
                     rowNum: master._sheetRowNumber || master._row,
                     type: (master['Phân Loại Bông'] || 'Hoa').trim(),
                     qty: q,
                     price: p,
                     total: t,
+                    isBought,
+                    boughtCost: isBought ? t : 0,
                     rawRow: master
                 });
             }
 
+            let shippingCost = 0;
+            let shippingLoaiCP = 'Vận Chuyển';
+            let boughtTotal = 0;
+
+            group.rows.forEach(r => {
+                const cpVal = parseFloat(r['Chi Phí']) || 0;
+                if (cpVal <= 0) return;
+                const lcp = String(r['Loại CP'] || '').trim();
+                const lcpLower = lcp.toLowerCase();
+                const noteCP = String(r['Ghi Chú Chi Phí'] || '').toLowerCase();
+                if (lcpLower === 'mua bông' || lcpLower === 'mua bong' || noteCP.includes('mua bông') || noteCP.includes('mua bong')) {
+                    boughtTotal += cpVal;
+                } else {
+                    shippingCost += cpVal;
+                    if (lcp) shippingLoaiCP = lcp;
+                }
+            });
+
+            // Backward compatibility: kiểm tra xem có dòng chi phí mua bông riêng của đơn này không
+            const extBoughtExp = (dayRows || []).filter(r => {
+                const rOrd = r._orderId || r['Ghi Chú thu'] || '';
+                const lcp = String(r['Loại CP'] || '').toLowerCase();
+                const ncp = String(r['Ghi Chú Chi Phí'] || '').toLowerCase();
+                return rOrd === orderId && (lcp === 'mua bông' || lcp === 'mua bong' || ncp.includes('mua bông') || ncp.includes('mua bong')) && !group.rows.includes(r);
+            });
+            extBoughtExp.forEach(e => {
+                boughtTotal += (parseFloat(e['Chi Phí']) || 0);
+                const eNote = String(e['Ghi Chú Chi Phí'] || '');
+                flowers.forEach(f => {
+                    if (eNote.includes(f.type)) f.isBought = true;
+                });
+            });
+
+            if (boughtTotal === 0) {
+                boughtTotal = flowers.filter(f => f.isBought).reduce((s, f) => s + f.boughtCost, 0);
+            }
+
             const totalQty = flowers.reduce((s, f) => s + f.qty, 0);
             const flowerTotal = flowers.reduce((s, f) => s + f.total, 0);
-            const cp = parseFloat(master['Chi Phí']) || 0;
-            const loaiCP = master['Loại CP'] || 'Vận Chuyển';
             let pt = parseFloat(master['Tiền Phải Thu']) || 0;
             let ln = parseFloat(master['Doanh Thu Khác']) || 0;
             let vattu = 150000;
 
             if (pt > 0) {
-                const calcVattu = pt - flowerTotal - cp - ln;
+                const calcVattu = pt - flowerTotal - shippingCost - ln;
                 if (calcVattu > 0) vattu = calcVattu;
-                else ln = pt - flowerTotal - cp - vattu;
+                else ln = pt - flowerTotal - shippingCost - vattu;
             } else {
-                pt = flowerTotal + cp + vattu + ln;
+                pt = flowerTotal + shippingCost + vattu + ln;
             }
 
             const note = (master['Ghi Chú'] || '').trim();
@@ -6312,8 +6406,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 flowers,
                 totalQty,
                 flowerTotal,
-                cp,
-                loaiCP,
+                cp: shippingCost,
+                loaiCP: shippingLoaiCP,
+                shippingCost,
+                shippingLoaiCP,
+                boughtTotal,
                 vattu,
                 pt,
                 ln,
@@ -6336,8 +6433,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const status = (row['Status'] || '').trim();
             const sheetRowNumber = row._sheetRowNumber || null;
 
-            if (!farmBuyerGroups[buyer]) farmBuyerGroups[buyer] = { total: 0, items: [], typeDT };
+            if (!farmBuyerGroups[buyer]) farmBuyerGroups[buyer] = { total: 0, totalQty: 0, items: [], typeDT };
             farmBuyerGroups[buyer].total += rev;
+            farmBuyerGroups[buyer].totalQty += qty;
             farmBuyerGroups[buyer].items.push({ rev, flower, qty, price, typeDT, status, sheetRowNumber, rawRow: row });
         });
 
@@ -6345,6 +6443,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const vuaFlowerQtyTotal = vuaGroups.reduce((sum, g) => sum + (g.computed ? g.computed.totalQty : 0), 0);
         const sortedFarmBuyers = Object.entries(farmBuyerGroups).sort((a, b) => b[1].total - a[1].total);
         const farmRevenueTotal = sortedFarmBuyers.reduce((sum, [_, grp]) => sum + grp.total, 0);
+        const farmFlowerQtyTotal = sortedFarmBuyers.reduce((sum, [_, grp]) => sum + (grp.totalQty || 0), 0);
 
         const profitColor = totalProfit >= 0 ? '#10b981' : '#ef4444';
         const profitBg = totalProfit >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)';
@@ -6414,8 +6513,9 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Chi tiết hoa (${c.flowers.length} loại):</div>
                                 ${c.flowers.map(f => `
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 13px;">
-                                        <div>
+                                        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
                                             <span style="font-weight: 700; color: var(--text-dark, #1e293b);">🌸 ${escapeAttr(f.type)}</span>
+                                            ${f.isBought ? `<span style="display:inline-flex; align-items:center; gap:3px; background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; border-radius:4px; font-size:10.5px; font-weight:800; padding:1px 6px;"><i class="fa-solid fa-cart-shopping"></i> Mua ngoài</span>` : ''}
                                             <span style="color: #64748b; font-weight: 600; font-size: 12px;"> · ${fmtNum(f.qty)} bông × ${fmtMoney(f.price)}</span>
                                         </div>
                                         <div style="font-weight: 800; color: #2563eb;">${fmtMoney(f.total)}</div>
@@ -6427,6 +6527,11 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <span class="tx-line-label">💐 Tổng tiền hoa</span>
                                 <span class="tx-line-value font-bold">${fmtMoney(c.flowerTotal)}</span>
                             </div>
+                            ${c.boughtTotal > 0 ? `
+                            <div class="tx-line">
+                                <span class="tx-line-label">🛒 Tiền hoa mua ngoài</span>
+                                <span class="tx-line-value" style="color:var(--danger, #ef4444); font-weight:700;">-${fmtMoney(c.boughtTotal)}</span>
+                            </div>` : ''}
                             ${c.cp > 0 ? `
                             <div class="tx-line">
                                 <span class="tx-line-label">🚚 Chi phí (${escapeAttr(c.loaiCP || 'Vận chuyển')})</span>
@@ -6486,7 +6591,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                     </span>
                                     <div style="min-width:0;">
                                         <div style="font-weight:700; font-size:0.88rem; color:var(--text-dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeAttr(buyer)}</div>
-                                        <div style="font-size:0.72rem; color:#94a3b8;">${grp.items.length} mặt hàng · ${buyerPct}% tổng doanh thu</div>
+                                        <div style="font-size:0.72rem; color:#94a3b8;">${grp.items.length} mặt hàng${grp.totalQty > 0 ? ` · ${fmtNum(grp.totalQty)} bông` : ''}</div>
                                     </div>
                                 </div>
                                 <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
@@ -6558,7 +6663,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <span class="rev-frame-icon farm">🌸</span>
                                 <div>
                                     <div class="rev-frame-name">Đơn Farm / Khách Lẻ</div>
-                                    <div class="rev-frame-subtitle">${sortedFarmBuyers.length} khách hàng</div>
+                                    <div class="rev-frame-subtitle">${sortedFarmBuyers.length} khách hàng${farmFlowerQtyTotal > 0 ? ` · ${fmtNum(farmFlowerQtyTotal)} bông` : ''}</div>
                                 </div>
                             </div>
                             <div class="rev-frame-total farm">${fmtMoney(farmRevenueTotal)}</div>
@@ -6684,10 +6789,14 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('edit-vua-input-note').value = c.note || '';
         document.getElementById('modal-edit-vua-subtitle').textContent = `Đơn Vựa: ${c.buyer} · ${c.flowers.length} loại hoa`;
 
-        const container = document.getElementById('edit-vua-flowers-container');
         container.innerHTML = '';
 
-        function renderFlowerRow(type = '', qty = '', price = '') {
+        const existingBoughtExpenses = (farmData || []).filter(r => {
+            const rOrd = r._orderId || r['Ghi Chú thu'] || '';
+            return rOrd === orderId && (r['Loại CP'] === 'Mua Bông' || String(r['Ghi Chú Chi Phí'] || '').includes('Mua bông'));
+        });
+
+        function renderFlowerRow(type = '', qty = '', price = '', isBought = false) {
             const count = container.querySelectorAll('.edit-vua-flower-row').length + 1;
             const itemDiv = document.createElement('div');
             itemDiv.className = 'edit-vua-flower-row edit-vua-flower-item';
@@ -6713,10 +6822,35 @@ document.addEventListener("DOMContentLoaded", () => {
                         <input type="text" class="fw-price money-input" value="${price ? (typeof formatMoneyStr === 'function' ? formatMoneyStr(price) : price) : ''}" placeholder="0" style="width: 100%; box-sizing: border-box; padding: 0 14px; height: 44px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14.5px; font-weight: 700; color: #1e293b; outline: none; background: #f8fafc; transition: all 0.2s;">
                     </div>
                 </div>
+                <div class="fw-bought-wrap" style="margin-top: 8px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; background: ${isBought ? '#fff5f5' : '#f8fafc'}; padding: 6px 12px; border-radius: 10px; border: 1.5px ${isBought ? 'solid #fca5a5' : 'dashed #cbd5e1'};">
+                    <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; margin: 0; font-size: 13px; font-weight: 700; color: ${isBought ? '#991b1b' : '#475569'};">
+                        <input type="checkbox" class="fw-is-bought" ${isBought ? 'checked' : ''} style="width: 17px; height: 17px; accent-color: #ef4444; cursor: pointer;">
+                        <span>🛒 Bông mua ngoài <span style="font-size: 11px; color: #dc2626; font-weight: 800;">(vào CP "Mua Bông")</span></span>
+                    </label>
+                    <span class="fw-bought-badge" style="display: ${isBought ? 'inline-flex' : 'none'}; font-size: 11px; font-weight: 800; color: #dc2626; background: #fee2e2; border: 1px solid #fecaca; padding: 1px 6px; border-radius: 6px;">
+                        <i class="fa-solid fa-cart-shopping"></i> Mua ngoài
+                    </span>
+                </div>
                 <div class="fw-item-total" style="font-size: 13px; font-weight: 800; color: #2563eb; text-align: right; margin-top: 6px;">
                     = ${(qty * price || 0).toLocaleString('vi-VN')} ₫
                 </div>
             `;
+            const cbBought = itemDiv.querySelector('.fw-is-bought');
+            const wrapBought = itemDiv.querySelector('.fw-bought-wrap');
+            const badgeBought = itemDiv.querySelector('.fw-bought-badge');
+            if (cbBought) {
+                cbBought.onchange = () => {
+                    if (cbBought.checked) {
+                        wrapBought.style.background = '#fff5f5';
+                        wrapBought.style.border = '1.5px solid #fca5a5';
+                        badgeBought.style.display = 'inline-flex';
+                    } else {
+                        wrapBought.style.background = '#f8fafc';
+                        wrapBought.style.border = '1.5px dashed #cbd5e1';
+                        badgeBought.style.display = 'none';
+                    }
+                };
+            }
             itemDiv.querySelector('.btn-del-fw').onclick = () => {
                 const totalItems = container.querySelectorAll('.edit-vua-flower-row').length;
                 if (totalItems <= 1) {
@@ -6759,8 +6893,11 @@ document.addEventListener("DOMContentLoaded", () => {
             container.appendChild(itemDiv);
         }
 
-        c.flowers.forEach(f => renderFlowerRow(f.type, f.qty, f.price));
-        if (c.flowers.length === 0) renderFlowerRow('', '', '');
+        c.flowers.forEach(f => {
+            const isBought = f.isBought || existingBoughtExpenses.some(e => String(e['Ghi Chú Chi Phí'] || '').includes(f.type));
+            renderFlowerRow(f.type, f.qty, f.price, isBought);
+        });
+        if (c.flowers.length === 0) renderFlowerRow('', '', '', false);
 
         document.getElementById('btn-add-edit-vua-flower').onclick = () => {
             renderFlowerRow('', '', '');
@@ -6841,11 +6978,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 const t = row.querySelector('.fw-type').value.trim();
                 const q = parseFloat(row.querySelector('.fw-qty').value) || 0;
                 const p = parseMoney(row.querySelector('.fw-price').value);
+                const isBought = !!row.querySelector('.fw-is-bought')?.checked;
                 if (!t || q <= 0 || p <= 0) {
                     hasError = true;
                     return;
                 }
-                newFlowers.push({ type: t, qty: q, price: p, total: q * p });
+                newFlowers.push({ type: t, qty: q, price: p, total: q * p, isBought });
             });
             if (hasError || newFlowers.length === 0) {
                 alert("Vui lòng điền đầy đủ thông tin từng loại hoa (tên hoa, số lượng, đơn giá > 0)!");
@@ -6867,19 +7005,37 @@ document.addEventListener("DOMContentLoaded", () => {
                 const K = newFlowers.length;
                 const maxLen = Math.max(M, K);
 
+                const shippingIdx = newFlowers.findIndex(f => !f.isBought);
+
                 for (let i = 0; i < maxLen; i++) {
                     if (i < K && i < M) {
                         const r = origRows[i];
                         const nf = newFlowers[i];
                         const isFirst = (i === 0);
+
+                        let rowChiPhi = '';
+                        let rowLoaiCP = '';
+                        let rowGhiChuCP = '';
+
+                        if (nf.isBought && nf.total > 0) {
+                            rowChiPhi = String(nf.total);
+                            rowLoaiCP = 'Mua Bông';
+                            rowGhiChuCP = `Mua bông ${nf.type} (${nf.qty.toLocaleString('vi-VN')} bông) - Đơn vựa ${newBuyer}`;
+                        } else if (i === shippingIdx && newCost > 0) {
+                            rowChiPhi = String(newCost);
+                            rowLoaiCP = 'Vận Chuyển';
+                            rowGhiChuCP = '';
+                        }
+
                         const updates = {
                             'Người Mua': newBuyer,
-                            'Phân Loại Bông': nf.type,
-                            'Số lượng': String(nf.qty),
-                            'Giá': String(nf.price),
-                            'Doanh Thu Bông': String(nf.total),
-                            'Chi Phí': (isFirst && newCost > 0) ? String(newCost) : '',
-                            'Loại CP': (isFirst && newCost > 0) ? 'Vận Chuyển' : '',
+                            'Phân Loại Bông': nf.isBought ? '' : nf.type,
+                            'Số lượng': nf.isBought ? '' : String(nf.qty),
+                            'Giá': nf.isBought ? '' : String(nf.price),
+                            'Doanh Thu Bông': nf.isBought ? '' : String(nf.total),
+                            'Chi Phí': rowChiPhi,
+                            'Loại CP': rowLoaiCP,
+                            'Ghi Chú Chi Phí': rowGhiChuCP,
                             'Doanh Thu Khác': (isFirst && newProfit !== 0) ? String(newProfit) : '',
                             'Tiền Phải Thu': isFirst ? String(newPt) : '',
                             'Status': newStatus,
@@ -6888,11 +7044,14 @@ document.addEventListener("DOMContentLoaded", () => {
                             'Ghi Chú': isFirst ? newNote : ''
                         };
                         Object.assign(r, updates);
-                        r['Số lượng'] = nf.qty;
-                        r['Giá'] = nf.price;
-                        r['Doanh Thu Bông'] = nf.total;
+                        r['Phân Loại Bông'] = nf.isBought ? '' : nf.type;
+                        r['Số lượng'] = nf.isBought ? '' : nf.qty;
+                        r['Giá'] = nf.isBought ? '' : nf.price;
+                        r['Doanh Thu Bông'] = nf.isBought ? '' : nf.total;
                         r['Tiền Phải Thu'] = isFirst ? newPt : 0;
-                        r['Chi Phí'] = (isFirst && newCost > 0) ? newCost : 0;
+                        r['Chi Phí'] = parseFloat(rowChiPhi) || 0;
+                        r['Loại CP'] = rowLoaiCP;
+                        r['Ghi Chú Chi Phí'] = rowGhiChuCP;
                         r['Doanh Thu Khác'] = (isFirst && newProfit !== 0) ? newProfit : 0;
 
                         if (r._sheetRowNumber && !String(r._sheetRowNumber).startsWith('OFFLINE_')) {
@@ -6913,6 +7072,66 @@ document.addEventListener("DOMContentLoaded", () => {
                                 headers: { "Content-Type": "text/plain;charset=utf-8" }
                             });
                         }
+                    } else if (i >= M && i < K) {
+                        const nf = newFlowers[i];
+                        let rowChiPhi = '';
+                        let rowLoaiCP = '';
+                        let rowGhiChuCP = '';
+                        if (nf.isBought && nf.total > 0) {
+                            rowChiPhi = String(nf.total);
+                            rowLoaiCP = 'Mua Bông';
+                            rowGhiChuCP = `Mua bông ${nf.type} (${nf.qty.toLocaleString('vi-VN')} bông) - Đơn vựa ${newBuyer}`;
+                        } else if (i === shippingIdx && newCost > 0) {
+                            rowChiPhi = String(newCost);
+                            rowLoaiCP = 'Vận Chuyển';
+                            rowGhiChuCP = '';
+                        }
+                        const newRowData = {
+                            'Ngày': master ? master['Ngày'] : '',
+                            'Status': newStatus,
+                            'Người Mua': newBuyer,
+                            'Số lượng': nf.isBought ? '' : String(nf.qty),
+                            'Giá': nf.isBought ? '' : String(nf.price),
+                            'Doanh Thu Bông': nf.isBought ? '' : String(nf.total),
+                            'Phân Loại Bông': nf.isBought ? '' : nf.type,
+                            'Ghi Chú': '',
+                            'Đã Thu': '',
+                            'Tiền Phải Thu': '',
+                            'Ghi Chú thu': orderId,
+                            'Doanh Thu Khác': '',
+                            'Loại DT': 'Vựa',
+                            'Chi Phí': rowChiPhi,
+                            'Loại CP': rowLoaiCP,
+                            'Ghi Chú Chi Phí': rowGhiChuCP
+                        };
+                        const addRes = await fetch(CONFIG.WEB_APP_URL, {
+                            method: "POST",
+                            body: JSON.stringify({ action: "add", data: newRowData, token: getToken() }),
+                            headers: { "Content-Type": "text/plain;charset=utf-8" }
+                        });
+                        const addJson = await addRes.json().catch(() => ({}));
+                        newRowData._sheetRowNumber = addJson.rowNumber || `OFFLINE_${Date.now()}_${i}`;
+                        newRowData.parsedDate = master ? master.parsedDate : new Date();
+                        newRowData['Phân Loại Bông'] = nf.isBought ? '' : nf.type;
+                        newRowData['Số lượng'] = nf.isBought ? '' : nf.qty;
+                        newRowData['Giá'] = nf.isBought ? '' : nf.price;
+                        newRowData['Doanh Thu Bông'] = nf.isBought ? '' : nf.total;
+                        newRowData['Chi Phí'] = parseFloat(rowChiPhi) || 0;
+                        farmData.unshift(newRowData);
+                        origRows.push(newRowData);
+                    }
+                }
+
+                // Dọn dẹp chi phí mua bông cũ dạng dòng riêng (nếu có từ trước)
+                for (const oldExp of existingBoughtExpenses) {
+                    const fIdx = farmData.indexOf(oldExp);
+                    if (fIdx !== -1) farmData.splice(fIdx, 1);
+                    if (oldExp._sheetRowNumber && !String(oldExp._sheetRowNumber).startsWith('OFFLINE_')) {
+                        await fetch(CONFIG.WEB_APP_URL, {
+                            method: "POST",
+                            body: JSON.stringify({ action: "deleteByRow", rowNumber: Number(oldExp._sheetRowNumber), context: "all", token: getToken() }),
+                            headers: { "Content-Type": "text/plain;charset=utf-8" }
+                        });
                     }
                 }
 
@@ -6966,6 +7185,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     await fetch(CONFIG.WEB_APP_URL, {
                         method: "POST",
                         body: JSON.stringify({ action: "deleteByRow", rowNumber: Number(r._sheetRowNumber), context: "all", token: getToken() }),
+                        headers: { "Content-Type": "text/plain;charset=utf-8" }
+                    });
+                }
+            }
+
+            // Xóa luôn các dòng chi phí "Mua Bông" liên quan đến đơn Vựa này
+            const expRowsToDelete = farmData.filter(r => {
+                const rOrd = r._orderId || r['Ghi Chú thu'] || '';
+                return rOrd === orderId && (r['Loại CP'] === 'Mua Bông' || r['Loại DT'] === 'Chi Phí');
+            });
+            for (const er of expRowsToDelete) {
+                const fIdx = farmData.indexOf(er);
+                if (fIdx !== -1) farmData.splice(fIdx, 1);
+                if (er._sheetRowNumber && !String(er._sheetRowNumber).startsWith('OFFLINE_')) {
+                    await fetch(CONFIG.WEB_APP_URL, {
+                        method: "POST",
+                        body: JSON.stringify({ action: "deleteByRow", rowNumber: Number(er._sheetRowNumber), context: "all", token: getToken() }),
                         headers: { "Content-Type": "text/plain;charset=utf-8" }
                     });
                 }

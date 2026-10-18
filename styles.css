@@ -7484,10 +7484,11 @@ tr.swiping td:first-child::before {
 
 /* ── 3 EXPENSE FRAMES (EXPENSED, CHI PHÍ VỰA, CHI PHÍ VẬN HÀNH) ── */
 .daily-exp-grid-container {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
   margin-bottom: 14px;
+  align-items: start;
 }
 
 .exp-frame {
@@ -7635,6 +7636,15 @@ tr.swiping td:first-child::before {
 .exp-frame-empty i {
   font-size: 1.6rem;
   color: #cbd5e1;
+}
+
+.exp-vcard {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.exp-vcard:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05) !important;
+  transform: translateY(-1px);
 }
 
 
@@ -8508,4 +8518,73 @@ tr.swiping td:first-child::before {
   font-size: 18px;
   font-weight: 900;
   color: #16a34a;
+}
+
+/* ── VỰA BOUGHT FLOWER TOGGLE & BREAKDOWN ── */
+.mobile-entry-container .vua-bought-wrap {
+  margin-top: 10px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1.5px dashed #cbd5e1;
+  transition: all 0.2s ease;
+}
+
+.mobile-entry-container .vua-bought-wrap:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.mobile-entry-container .vua-bought-wrap.is-bought {
+  background: #fff5f5 !important;
+  border-color: #fca5a5 !important;
+  border-style: solid !important;
+  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.08);
+}
+
+.mobile-entry-container .vua-bought-wrap label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.mobile-entry-container .vua-bought-wrap.is-bought label {
+  color: #991b1b !important;
+}
+
+.mobile-entry-container .vua-bought-wrap input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #ef4444;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.mobile-entry-container .vua-bought-badge {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #dc2626;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  padding: 2px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  animation: fadeInBadge 0.2s ease-in;
+}
+
+@keyframes fadeInBadge {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
 }
