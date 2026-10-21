@@ -6267,20 +6267,41 @@ document.addEventListener("DOMContentLoaded", () => {
             return groups;
         }
 
+        const isDebtPaymentRow = (r) => {
+            const q = parseFloat(r['Số lượng']) || 0;
+            const dtBong = parseFloat(r['Doanh Thu Bông']) || 0;
+            const pt = parseFloat(r['Tiền Phải Thu']) || 0;
+            const cp = parseFloat(r['Chi Phí']) || 0;
+            const daThu = parseFloat(r['Đã Thu']) || 0;
+            const flower = String(r['Phân Loại Bông'] || '').trim();
+            const note = String(r['Ghi Chú'] || '').toLowerCase();
+            if (q <= 0 && dtBong <= 0 && pt <= 0 && cp <= 0 && daThu > 0 && (!flower || flower === '—')) return true;
+            if ((note.includes('thanh toán') || note.includes('gạch nợ') || note.includes('thu nợ') || note.includes('thu tiền') || note.includes('chốt thanh toán')) && q <= 0 && dtBong <= 0 && pt <= 0) return true;
+            return false;
+        };
+
         const vuaRows = dayRows.filter(r => {
             const loaiDT = String(r['Loại DT'] || '').trim().toLowerCase();
-            return loaiDT.includes('vựa') || loaiDT.includes('vua');
+            if (!loaiDT.includes('vựa') && !loaiDT.includes('vua')) return false;
+            if (isDebtPaymentRow(r)) return false;
+            const q = parseFloat(r['Số lượng']) || 0;
+            const dtBong = parseFloat(r['Doanh Thu Bông']) || 0;
+            const pt = parseFloat(r['Tiền Phải Thu']) || 0;
+            const cp = parseFloat(r['Chi Phí']) || 0;
+            const flower = String(r['Phân Loại Bông'] || '').trim();
+            return (q > 0 || dtBong > 0 || pt > 0 || cp > 0 || (flower && flower !== '—'));
         });
 
         const farmRows = dayRows.filter(r => {
             const loaiDT = String(r['Loại DT'] || '').trim().toLowerCase();
             if (loaiDT.includes('vựa') || loaiDT.includes('vua')) return false;
+            if (isDebtPaymentRow(r)) return false;
             const rev = (parseFloat(r['Doanh Thu Bông']) || 0) + (parseFloat(r['Doanh Thu Khác']) || 0);
             const q = parseFloat(r['Số lượng']) || 0;
             return rev > 0 || q > 0;
         });
 
-        const vuaGroups = groupVuaOrdersForDaily(vuaRows);
+        let vuaGroups = groupVuaOrdersForDaily(vuaRows);
         window._currentDailyVuaGroups = vuaGroups;
 
         vuaGroups.forEach(group => {
@@ -6334,16 +6355,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 const loaiCP = String(master['Loại CP'] || '').trim().toLowerCase();
                 const ghiChuCP = String(master['Ghi Chú Chi Phí'] || '').trim().toLowerCase();
                 const isBought = loaiCP === 'mua bông' || loaiCP === 'mua bong' || ghiChuCP.includes('mua bông') || ghiChuCP.includes('mua bong');
-                flowers.push({
-                    rowNum: master._sheetRowNumber || master._row,
-                    type: (master['Phân Loại Bông'] || 'Hoa').trim(),
-                    qty: q,
-                    price: p,
-                    total: t,
-                    isBought,
-                    boughtCost: isBought ? t : 0,
-                    rawRow: master
-                });
+                const flowerType = (master['Phân Loại Bông'] || '').trim();
+                if (q > 0 || t > 0 || isBought || (flowerType && flowerType !== '—')) {
+                    flowers.push({
+                        rowNum: master._sheetRowNumber || master._row,
+                        type: flowerType || 'Hoa',
+                        qty: q,
+                        price: p,
+                        total: t,
+                        isBought,
+                        boughtCost: isBought ? t : 0,
+                        rawRow: master
+                    });
+                }
             }
 
             let shippingCost = 0;
@@ -6387,7 +6411,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const flowerTotal = flowers.reduce((s, f) => s + f.total, 0);
             let pt = parseFloat(master['Tiền Phải Thu']) || 0;
             let ln = parseFloat(master['Doanh Thu Khác']) || 0;
-            let vattu = 150000;
+            let vattu = (totalQty > 0 || flowerTotal > 0) ? 150000 : 0;
 
             if (pt > 0) {
                 const calcVattu = pt - flowerTotal - shippingCost - ln;
@@ -6417,6 +6441,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 note
             };
         });
+
+        vuaGroups = vuaGroups.filter(g => {
+            if (isDebtPaymentRow(g.masterRow)) return false;
+            const c = g.computed;
+            if (!c) return false;
+            return c.pt > 0 || c.totalQty > 0 || (c.flowers && c.flowers.length > 0);
+        });
+        window._currentDailyVuaGroups = vuaGroups;
 
         const farmBuyerGroups = {};
         farmRows.forEach(row => {
@@ -15060,6 +15092,102 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    const flowerMap = {
+        'ôhg': 'Ô Hồng',
+        'ohg': 'Ô Hồng',
+        'ô hồng': 'Ô Hồng',
+        'o hong': 'Ô Hồng',
+        'ôh': 'Ô Hồng',
+        'oh': 'Ô Hồng',
+        'xô ngoại': 'Xô ngoại',
+        'xo ngoai': 'Xô ngoại',
+        'xngoai': 'Xô ngoại',
+        'ngoại': 'Xô ngoại',
+        'xô nội': 'Xô nội',
+        'xo noi': 'Xô nội',
+        'xnoi': 'Xô nội',
+        'nội': 'Xô nội',
+        'ecu': 'Ecuador',
+        'ecuador': 'Ecuador',
+        'e cu': 'Ecuador',
+        'pháp': 'Pháp',
+        'phap': 'Pháp',
+        'trắng ủ': 'Trắng ủ',
+        'trang u': 'Trắng ủ',
+        'trắng': 'Trắng ủ',
+        'trang': 'Trắng ủ',
+        'trắm': 'Trắng ủ',
+        'tram': 'Trắng ủ',
+        'qv': 'Quốc Vương',
+        'qv,': 'Quốc Vương',
+        'quốc vương': 'Quốc Vương',
+        'quoc vuong': 'Quốc Vương',
+        'vàng hà lan': 'Vàng Hà Lan',
+        'vang ha lan': 'Vàng Hà Lan',
+        'vhl': 'Vàng Hà Lan',
+        'hl': 'Vàng Hà Lan',
+        'hà lan': 'Vàng Hà Lan',
+        'ha lan': 'Vàng Hà Lan',
+        'kem': 'Kem',
+        'simmo': 'Simmo',
+        'simo': 'Simmo',
+        'simô': 'Simmo',
+        'sin': 'Simmo',
+        'sino': 'Simmo',
+        'victor vàng': 'Victor Vàng',
+        'victor vang': 'Victor Vàng',
+        'victor': 'Victor Vàng',
+        'lạc': 'Lạc Thần',
+        'lac': 'Lạc Thần',
+        'lạc thần': 'Lạc Thần',
+        'lac than': 'Lạc Thần',
+        'lac t': 'Lạc Thần',
+        'lạc t': 'Lạc Thần',
+        'hỷ trứng': 'Hỷ Trứng',
+        'hy trung': 'Hỷ Trứng',
+        'hỷ trùng': 'Hỷ Trứng',
+        'hỷ': 'Hỷ Trứng',
+        'hy': 'Hỷ Trứng',
+        'hỷ s': 'Hỷ Trứng',
+        'hy s': 'Hỷ Trứng',
+        'capu': 'Capu',
+        'caipu': 'Capu',
+        'xô đỏ': 'Xô Đỏ',
+        'xo do': 'Xô Đỏ',
+        'ô đỏ': 'Xô Đỏ',
+        'o do': 'Xô Đỏ',
+        'ô do': 'Xô Đỏ',
+        'o đỏ': 'Xô Đỏ',
+        'vitto': 'Vitto',
+        'vit to': 'Vitto',
+        'vito': 'Vitto',
+        'vit': 'Vitto',
+        'vịt': 'Vitto',
+        'vijo': 'Vitto',
+        'vịto': 'Vitto',
+        'keo': 'Keo',
+        'kẹo': 'Keo',
+        'bày': 'Bày',
+        'bay': 'Bày'
+    };
+
+    function resolveFlowerType(raw) {
+        if (!raw) return "Bông";
+        const trimmed = String(raw).trim();
+        const lower = trimmed.toLowerCase();
+        if (lower === 'vịt' || lower === 'vit' || lower === 'vitto' || lower === 'vito' || lower === 'vit to' || lower === 'vijo' || lower === 'vịto') {
+            return 'Vitto';
+        }
+        if (flowerMap[lower]) {
+            return flowerMap[lower];
+        }
+        const clean = lower.replace(/[^a-z0-9àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ\s]/gi, '').trim();
+        if (flowerMap[clean]) {
+            return flowerMap[clean];
+        }
+        return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+    }
+
     async function parseImportImageWithAI(base64Data, mimeType) {
         const apiKey = (typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : "") || "";
         if (!apiKey) {
@@ -15079,37 +15207,39 @@ Cấu trúc mỗi phần tử:
 
 HƯỚNG DẪN QUAN TRỌNG VỀ NHẬN DIỆN CHỮ VIẾT TAY & CÔNG THỨC:
 1. Tên loại hoa phổ biến và ký hiệu viết tắt:
-   - "Ecu", "Ecu ", "Equ", "Ecou" -> "Ecuador"
    - "pháp", "phap" -> "Pháp"
-   - "Trắng", "Trắng ủ", "Trắm", "Trang u" -> "Trắng ủ"
-   - "Vitto", "vitto", "Vit to", "Vit", "Vito", "Vijo" -> "Vitto" (LƯU Ý ĐẶC BIỆT: Tên loại hoa là "Vitto", tuyệt đối KHÔNG nhận diện thành "Vịt")
-   - "Hỷ", "Hỷ s", "Hỷ Trứng", "Hy" -> "Hỷ Trứng"
+   - "Vitto", "vitto", "Vit to", "Vit", "Vito", "Vijo", "Vịto" -> "Vitto" (LƯU Ý ĐẶC BIỆT: Tên hoa là "Vitto", tuyệt đối KHÔNG nhận diện thành "Vịt")
+   - "Lạc", "Lạc Thần", "Lac", "Lac T" -> "Lạc Thần"
+   - "Quốc Vương", "QV", "qv", "QV," -> "Quốc Vương"
+   - "Trắng", "Trắng ủ", "Trắm", "Trang" -> "Trắng ủ"
+   - "Hỷ", "Hỷ s", "hỷ s", "Hỷ Trứng", "Hy" -> "Hỷ Trứng"
+   - "Ô Đỏ", "Xô Đỏ", "ô do", "o do", "ô đỏ" -> "Xô Đỏ"
+   - "Keo", "kẹo", "keo" -> "Keo"
+   - "Capu", "Caipu", "capu" -> "Capu"
+   - "Ecu", "Ecu ", "Equ", "Ecou" -> "Ecuador"
    - "HL", "Hà Lan", "Vàng Hà Lan" -> "Vàng Hà Lan"
    - "Kem" -> "Kem"
-   - "Keo", "Kẹo" -> "Keo"
    - "Simô", "Simo", "Simmo", "Sin" -> "Simmo"
    - "Ô Hồng", "ohg", "ôhg", "ôh" -> "Ô Hồng"
    - "Xô", "Xô ngoại", "xo" -> "Xô ngoại"
    - "Xô nội" -> "Xô nội"
-   - "Quốc Vương", "QV" -> "Quốc Vương"
    - "Victor Vàng" -> "Victor Vàng"
-   - "Capu" -> "Capu"
-   - "Lạc Thần" -> "Lạc Thần"
 
-2. Quy tắc đơn giá & phép nhân:
-   - Trong sổ tay ghi chép, người bán thường ghi: [Tên hoa] [Số lượng] x [Đơn giá rút gọn] = [Thành tiền nghìn đồng]
-   - Ví dụ: 
-     * "800 x 19 = 1520" nghĩa là số lượng 800 bông, đơn giá 1.900đ/bông, thành tiền 1.520.000đ.
-     * "1150 x 16 = 1840" nghĩa là số lượng 1150 bông, đơn giá 1.600đ/bông, thành tiền 1.840.000đ.
-     * "400 x 25 = 1000" nghĩa là số lượng 400 bông (chú ý số 4 viết tay thường nhầm với 9, nhưng 400 x 2.5k = 1000k khớp phép tính), đơn giá 2.500đ/bông.
-     * "200 x 25 = 500" nghĩa là số lượng 200 bông, đơn giá 2.500đ/bông, thành tiền 500.000đ.
-     * "200 x 22 = 440" nghĩa là số lượng 200 bông, đơn giá 2.200đ/bông.
-     * "150 x 26 = 390" nghĩa là số lượng 150 bông, đơn giá 2.600đ/bông.
-     * "50 x 25 = 125" nghĩa là 50 bông, đơn giá 2.500đ/bông.
-     * "50 x 20 = 100" nghĩa là 50 bông, đơn giá 2.000đ/bông.
-     * "50 x 22 = 110" nghĩa là 50 bông, đơn giá 2.200đ/bông.
-   - Hãy kiểm tra chéo giữa số lượng, đơn giá và kết quả phép tính bằng nhau (=) trên dòng để suy ra chính xác chữ số viết tay khó đọc (như 4 vs 9, 1 vs 7).
-   - Đơn giá thực tế cho mỗi bông luôn trong khoảng 500đ đến 15.000đ (ví dụ 19 -> 1900, 16 -> 1600, 25 -> 2500, 22 -> 2200, 26 -> 2600, 20 -> 2000).
+2. Quy tắc đơn giá & bảng viết tay 3 cột:
+   - Trong sổ tay thường ghi theo cấu trúc cột: [Tên hoa] | [Số lượng] | [x Đơn giá].
+     Ví dụ:
+     * "pháp | 100 | x 24" -> type: "Pháp", qty: 100, price: 2400 (hoặc 24)
+     * "Vịto | 300 | x 22" -> type: "Vitto", qty: 300, price: 2200 (hoặc 22)
+     * "Lạc | 100 | x 23" -> type: "Lạc Thần", qty: 100, price: 2300 (hoặc 23)
+     * "QV, | 100 | x 25" -> type: "Quốc Vương", qty: 100, price: 2500 (hoặc 25)
+     * "Trắng | 100 | x 13" -> type: "Trắng ủ", qty: 100, price: 1300 (hoặc 13)
+     * "hỷ s | 100 | x 18" -> type: "Hỷ Trứng", qty: 100, price: 1800 (hoặc 18)
+     * "ô do | 100 | x 20" -> type: "Xô Đỏ", qty: 100, price: 2000 (hoặc 20)
+     * "keo | 50 | x 18" -> type: "Keo", qty: 50, price: 1800 (hoặc 18)
+     * "Capu | 50 | x 22" -> type: "Capu", qty: 50, price: 2200 (hoặc 22)
+   - Cột hoặc phần viết sau dấu "x" là ĐƠN GIÁ (đơn vị trăm đồng, ví dụ: "x 24" -> 2.400đ, "x 22" -> 2.200đ, "x 23" -> 2.300đ, "x 25" -> 2.500đ, "x 13" -> 1.300đ, "x 18" -> 1.800đ, "x 20" -> 2.000đ).
+   - Hãy trích xuất đơn giá thực tế vào trường "price" (VNĐ).
+   - Lưu ý nét chữ số viết tay: số 0 có thể có vòng khuyên móc lên (loop) trông hơi giống số 6, nhưng số lượng hoa giao luôn là số tròn chục hoặc tròn trăm (ví dụ: 50, 100, 150, 200, 300, 400, 500, 800...). Hãy ưu tiên nhận diện thành 100, 300... thay vì 160, 360.
 
 Chỉ trả về JSON thuần túy (mảng các object). Không bao quanh bởi markdown formatting.`;
 
@@ -15178,14 +15308,7 @@ Chỉ trả về JSON thuần túy (mảng các object). Không bao quanh bởi 
             const qtyVal = parseFloat(item.qty) || 0;
             const rawPrice = (item.price !== undefined && item.price !== null && item.price !== '') ? parseFloat(item.price) : '';
             const priceVal = normalizeUnitPrice(rawPrice);
-
-            let itemType = (item.type || "Bông").trim();
-            const lowerType = itemType.toLowerCase();
-            if (lowerType === 'vịt' || lowerType === 'vit' || lowerType === 'vitto' || lowerType === 'vito' || lowerType === 'vit to' || lowerType === 'vijo') {
-                itemType = 'Vitto';
-            } else if (flowerMap[lowerType]) {
-                itemType = flowerMap[lowerType];
-            }
+            const itemType = resolveFlowerType(item.type);
 
             return {
                 date: parsedDate,
@@ -15225,73 +15348,6 @@ Chỉ trả về JSON thuần túy (mảng các object). Không bao quanh bởi 
         const currentYear = new Date().getFullYear();
         let lastParsedType = "Bông";
 
-        const flowerMap = {
-            'ôhg': 'Ô Hồng',
-            'ohg': 'Ô Hồng',
-            'ô hồng': 'Ô Hồng',
-            'o hong': 'Ô Hồng',
-            'ôh': 'Ô Hồng',
-            'oh': 'Ô Hồng',
-            'xô ngoại': 'Xô ngoại',
-            'xo ngoai': 'Xô ngoại',
-            'xngoai': 'Xô ngoại',
-            'xô nội': 'Xô nội',
-            'xo noi': 'Xô nội',
-            'xnoi': 'Xô nội',
-            'ecu': 'Ecuador',
-            'ecuador': 'Ecuador',
-            'e cu': 'Ecuador',
-            'pháp': 'Pháp',
-            'phap': 'Pháp',
-            'trắng ủ': 'Trắng ủ',
-            'trang u': 'Trắng ủ',
-            'trắng': 'Trắng ủ',
-            'trang': 'Trắng ủ',
-            'trắm': 'Trắng ủ',
-            'tram': 'Trắng ủ',
-            'qv': 'Quốc Vương',
-            'quốc vương': 'Quốc Vương',
-            'quoc vuong': 'Quốc Vương',
-            'vàng hà lan': 'Vàng Hà Lan',
-            'vang ha lan': 'Vàng Hà Lan',
-            'vhl': 'Vàng Hà Lan',
-            'hl': 'Vàng Hà Lan',
-            'hà lan': 'Vàng Hà Lan',
-            'ha lan': 'Vàng Hà Lan',
-            'kem': 'Kem',
-            'simmo': 'Simmo',
-            'simo': 'Simmo',
-            'simô': 'Simmo',
-            'sin': 'Simmo',
-            'sino': 'Simmo',
-            'victor vàng': 'Victor Vàng',
-            'victor vang': 'Victor Vàng',
-            'victor': 'Victor Vàng',
-            'lạc thần': 'Lạc Thần',
-            'lac than': 'Lạc Thần',
-            'lac t': 'Lạc Thần',
-            'lạc t': 'Lạc Thần',
-            'hỷ trứng': 'Hỷ Trứng',
-            'hy trung': 'Hỷ Trứng',
-            'hỷ trùng': 'Hỷ Trứng',
-            'hỷ': 'Hỷ Trứng',
-            'hy': 'Hỷ Trứng',
-            'hỷ s': 'Hỷ Trứng',
-            'capu': 'Capu',
-            'xô đỏ': 'Xô Đỏ',
-            'xo do': 'Xô Đỏ',
-            'vitto': 'Vitto',
-            'vit to': 'Vitto',
-            'vito': 'Vitto',
-            'vit': 'Vitto',
-            'vịt': 'Vitto',
-            'vijo': 'Vitto',
-            'keo': 'Keo',
-            'kẹo': 'Keo',
-            'bày': 'Bày',
-            'bay': 'Bày'
-        };
-
         function evaluateQtyExpression(expr) {
             if (!expr) return 0;
             const sanitized = expr.replace(/[^0-9\+\-\s\.]/g, '');
@@ -15329,13 +15385,8 @@ Chỉ trả về JSON thuần túy (mảng các object). Không bao quanh bởi 
             const itemMatch = trimmed.match(/^(\d+(?:\.\d+)?)\s+([^x\d]+)\s*[xX]\s*(\d+(?:\.\d+)?k?)/);
             if (itemMatch) {
                 const qty = parseFloat(itemMatch[1]);
-                const rawType = itemMatch[2].trim().toLowerCase();
                 let priceRaw = itemMatch[3].trim().toLowerCase();
-
-                let resolvedType = flowerMap[rawType] || itemMatch[2].trim();
-                if (!flowerMap[rawType]) {
-                    resolvedType = resolvedType.charAt(0).toUpperCase() + resolvedType.slice(1);
-                }
+                let resolvedType = resolveFlowerType(itemMatch[2]);
 
                 let priceVal = 0;
                 if (priceRaw.endsWith('k')) {
@@ -15355,19 +15406,12 @@ Chỉ trả về JSON thuần túy (mảng các object). Không bao quanh bởi 
             if (!matched) {
                 const nameThenQtyMatch = trimmed.match(/^([^\d\+\-\*\/]+?)\s+([\+\-]?\s*\d+[\d\s\+\-\.]*)$/);
                 if (nameThenQtyMatch) {
-                    let rawType = nameThenQtyMatch[1].trim().toLowerCase();
-                    const qtyExpr = nameThenQtyMatch[2].trim();
-
-                    let resolvedType = flowerMap[rawType] || nameThenQtyMatch[1].trim();
-                    if (!flowerMap[rawType]) {
-                        resolvedType = resolvedType.charAt(0).toUpperCase() + resolvedType.slice(1);
-                    }
-
+                    let resolvedType = resolveFlowerType(nameThenQtyMatch[1]);
                     if (resolvedType.endsWith(' X') || resolvedType.endsWith(' x')) {
                         resolvedType = resolvedType.slice(0, -2).trim();
                     }
 
-                    parsedQty = evaluateQtyExpression(qtyExpr);
+                    parsedQty = evaluateQtyExpression(nameThenQtyMatch[2].trim());
                     parsedType = resolvedType;
                     parsedPrice = "";
                     matched = true;
@@ -15389,14 +15433,8 @@ Chỉ trả về JSON thuần túy (mảng các object). Không bao quanh bởi 
             if (!matched) {
                 const nameOnlyMatch = trimmed.match(/^([^\d\+\-\*\/]+)$/);
                 if (nameOnlyMatch) {
-                    const rawType = nameOnlyMatch[1].trim().toLowerCase();
-                    let resolvedType = flowerMap[rawType] || nameOnlyMatch[1].trim();
-                    if (!flowerMap[rawType]) {
-                        resolvedType = resolvedType.charAt(0).toUpperCase() + resolvedType.slice(1);
-                    }
-
                     parsedQty = 0;
-                    parsedType = resolvedType;
+                    parsedType = resolveFlowerType(nameOnlyMatch[1]);
                     parsedPrice = "";
                     matched = true;
                 }

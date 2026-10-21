@@ -3956,17 +3956,36 @@ function renderReport() {
     const vuaRows = [];
     const expenseRows = [];
 
+    const isDebtPaymentRow = (r) => {
+        const q = parseSheetNum(r['Số lượng']);
+        const dt = parseSheetNum(r['Doanh Thu Bông']);
+        const pt = parseSheetNum(r['Tiền Phải Thu']);
+        const cp = parseSheetNum(r['Chi Phí']);
+        const daThu = parseSheetNum(r['Đã Thu']);
+        const flower = String(r['Phân Loại Bông'] || '').trim();
+        const note = String(r['Ghi Chú'] || '').toLowerCase();
+        if (q <= 0 && dt <= 0 && pt <= 0 && cp <= 0 && daThu > 0 && (!flower || flower === '—')) return true;
+        if ((note.includes('thanh toán') || note.includes('gạch nợ') || note.includes('thu nợ') || note.includes('thu tiền') || note.includes('chốt thanh toán')) && q <= 0 && dt <= 0 && pt <= 0) return true;
+        return false;
+    };
+
     dayData.forEach(r => {
         const loaiDT = String(r['Loại DT'] || '').trim().toLowerCase();
         const isVua = loaiDT.includes('vựa') || loaiDT.includes('vua');
         const sl = parseSheetNum(r['Số lượng']);
         const dtBong = parseSheetNum(r['Doanh Thu Bông']);
+        const pt = parseSheetNum(r['Tiền Phải Thu']);
         const cp = parseSheetNum(r['Chi Phí']);
         const daThu = parseSheetNum(r['Đã Thu']);
+        const flower = String(r['Phân Loại Bông'] || '').trim();
+        const isPayment = isDebtPaymentRow(r);
 
         if (isVua) {
-            vuaRows.push(r);
-        } else if (sl > 0 || dtBong > 0 || (daThu > 0 && cp === 0)) {
+            // Không hiển thị các dòng thanh toán nợ toa cũ vào đơn vựa bán trong ngày
+            if (!isPayment && (sl > 0 || dtBong > 0 || pt > 0 || cp > 0 || (flower && flower !== '—'))) {
+                vuaRows.push(r);
+            }
+        } else if (!isPayment && (sl > 0 || dtBong > 0 || (daThu > 0 && cp === 0))) {
             farmRows.push(r);
         }
 
@@ -4051,7 +4070,13 @@ function renderReport() {
     const farmGroups = groupFarmOrders(farmRows);
 
     // Group vua orders for card rendering
-    const vuaGroups = groupVuaOrders(vuaRows);
+    const vuaGroups = groupVuaOrders(vuaRows).filter(g => {
+        if (isDebtPaymentRow(g.masterRow)) return false;
+        const q = g.rows.reduce((s, r) => s + parseSheetNum(r['Số lượng']), 0);
+        const pt = parseSheetNum(g.masterRow['Tiền Phải Thu']);
+        const dt = g.rows.reduce((s, r) => s + parseSheetNum(r['Doanh Thu Bông']), 0);
+        return q > 0 || pt > 0 || dt > 0 || g.rows.some(r => parseSheetNum(r['Chi Phí']) > 0);
+    });
 
     // Counts
     const farmChip = document.getElementById('farm-count-chip');
@@ -4263,7 +4288,7 @@ function renderVuaCard(group) {
     const flowerTotal = flowers.reduce((s, f) => s + f.total, 0);
     let pt = parseSheetNum(master['Tiền Phải Thu']);
     let ln = parseSheetNum(master['Doanh Thu Khác']);
-    let vattu = 150000;
+    let vattu = (totalQty > 0 || flowerTotal > 0) ? 150000 : 0;
 
     if (pt > 0) {
         const calcVattu = pt - flowerTotal - shippingCost - ln;
