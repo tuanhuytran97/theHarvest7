@@ -15068,7 +15068,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 let allRowsExtracted = [];
                 try {
                     for (let i = 0; i < uploadedImages.length; i++) {
-                        btnParseImport.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích ảnh ${i + 1}/${uploadedImages.length} bằng Gemini AI...`;
+                        btnParseImport.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích ảnh ${i + 1}/${uploadedImages.length} bằng Gemini 3.8 Flash AI...`;
                         const img = uploadedImages[i];
                         const rows = await parseImportImageWithAI(img.base64Data, img.mimeType);
                         if (Array.isArray(rows)) {
@@ -15080,6 +15080,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     } else {
                         parsedImportRows = [...parsedImportRows, ...allRowsExtracted];
                         renderImportPreview();
+                        if (typeof showToast === 'function') {
+                            showToast(`Đã nhận diện thành công ${allRowsExtracted.length} dòng hoa từ hình ảnh!`, 'success');
+                        } else if (window.showToast) {
+                            window.showToast(`Đã nhận diện thành công ${allRowsExtracted.length} dòng hoa từ hình ảnh!`, 'success');
+                        }
                     }
                 } catch (err) {
                     console.error("Gemini AI OCR error:", err);
@@ -15261,18 +15266,23 @@ Chỉ trả về JSON thuần túy (mảng các object). Không bao quanh bởi 
         };
 
         const result = await callGeminiAPI(payload, apiKey);
-        let text = result.candidates[0].content.parts[0].text.trim();
-        if (text.startsWith("```json")) {
-            text = text.substring(7);
-        } else if (text.startsWith("```")) {
-            text = text.substring(3);
+        let text = "";
+        const parts = result?.candidates?.[0]?.content?.parts || [];
+        const textPart = parts.find(p => !p.thought && p.text) || parts[0];
+        if (textPart && textPart.text) {
+            text = textPart.text.trim();
         }
-        if (text.endsWith("```")) {
-            text = text.substring(0, text.length - 3);
-        }
-        text = text.trim();
 
-        const items = JSON.parse(text);
+        // Clean any code block markers or extract JSON array
+        const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+        let items;
+        if (jsonMatch) {
+            items = JSON.parse(jsonMatch[0]);
+        } else {
+            text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+            items = JSON.parse(text);
+        }
+
         if (!Array.isArray(items)) {
             throw new Error("Dữ liệu AI trả về không phải là một danh sách hợp lệ.");
         }

@@ -37,7 +37,7 @@ const configObj = {
 const content = `const CONFIG = ${JSON.stringify(configObj, null, 4)};
 
 /**
- * Generic robust Gemini API caller with automatic model fallbacks and exponential backoff retry.
+ * Generic robust Gemini API caller with automatic model fallbacks and fast-timeout cascade.
  */
 async function callGeminiAPI(payload, overrideApiKey) {
     const apiKey = overrideApiKey || (typeof CONFIG !== 'undefined' ? CONFIG.GEMINI_API_KEY : '') || '';
@@ -47,62 +47,65 @@ async function callGeminiAPI(payload, overrideApiKey) {
 
     const modelsToTry = [
         "gemini-3.8-flash",
-        "gemini-3.7-flash",
+        "gemini-3.6-flash",
         "gemini-3.5-flash",
         "gemini-2.5-flash",
-        "gemini-flash-latest",
         "gemini-2.5-flash-lite",
-        "gemini-flash-lite-latest",
-        "gemini-3.6-flash",
+        "gemini-3-flash-preview",
+        "gemini-flash-latest",
+        "gemini-3.7-flash",
         "gemini-2.5-pro"
     ];
     let lastError = null;
 
     for (const model of modelsToTry) {
         const url = \`https://generativelanguage.googleapis.com/v1beta/models/\${model}:generateContent?key=\${apiKey}\`;
-        let delay = 1500;
+        
+        // Fast timeout (5s) for heavy/preview models (3.8, 3.7) to never freeze the UI,
+        // generous timeout (15s) for production workhorse models
+        const timeoutMs = (model === "gemini-3.8-flash" || model === "gemini-3.7-flash") ? 5000 : 15000;
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-        for (let attempt = 1; attempt <= 2; attempt++) {
-            try {
-                const response = await fetch(url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+                signal: controller.signal
+            });
+            clearTimeout(timer);
 
-                if (response.ok) {
-                    return await response.json();
-                }
-
-                const status = response.status;
-                let errorMsg = \`HTTP \${status}\`;
-                try {
-                    const errData = await response.json();
-                    if (errData && errData.error && errData.error.message) {
-                        errorMsg = errData.error.message;
+            if (response.ok) {
+                const data = await response.json();
+                // Ensure legacy code accessing parts[0].text gets the actual content text (bypassing any thought parts)
+                if (data?.candidates?.[0]?.content?.parts) {
+                    const parts = data.candidates[0].content.parts;
+                    const mainTextPart = parts.find(p => !p.thought && p.text) || parts[0];
+                    if (mainTextPart && mainTextPart !== parts[0]) {
+                        data.candidates[0].content.parts = [mainTextPart, ...parts.filter(p => p !== mainTextPart)];
                     }
-                } catch (_) {}
-
-                console.warn(\`Gemini API [\${model}] attempt \${attempt} returned status \${status}: \${errorMsg}\`);
-
-                if ((status === 503 || status === 429 || status === 500) && attempt < 2) {
-                    await new Promise(r => setTimeout(r, delay));
-                    delay *= 2;
-                    continue;
                 }
-
-                lastError = new Error(\`Lỗi máy chủ Gemini (\${model}): \${errorMsg}\`);
-                break;
-            } catch (networkErr) {
-                console.warn(\`Gemini API network error on model \${model} (attempt \${attempt}):\`, networkErr);
-                lastError = networkErr;
-                if (attempt < 2) {
-                    await new Promise(r => setTimeout(r, delay));
-                    delay *= 2;
-                } else {
-                    break;
-                }
+                console.log(\`%c[Gemini AI] Phân tích thành công bằng model: \${model}\`, 'color: #10b981; font-weight: bold;');
+                return data;
             }
+
+            const status = response.status;
+            let errorMsg = \`HTTP \${status}\`;
+            try {
+                const errData = await response.json();
+                if (errData?.error?.message) {
+                    errorMsg = errData.error.message;
+                }
+            } catch (_) {}
+
+            console.warn(\`[Gemini AI] Model [\${model}] trả về mã \${status}: \${errorMsg}. Đang chuyển tiếp sang model kế tiếp...\`);
+            lastError = new Error(\`Lỗi máy chủ Gemini (\${model}): \${errorMsg}\`);
+        } catch (networkErr) {
+            clearTimeout(timer);
+            const isTimeout = networkErr.name === 'AbortError' || networkErr.message?.includes('aborted');
+            console.warn(\`[Gemini AI] Model [\${model}] \${isTimeout ? 'quá thời gian phản hồi (timeout)' : 'lỗi kết nối'}. Đang chuyển sang model tiếp theo...\`);
+            lastError = networkErr;
         }
     }
 
