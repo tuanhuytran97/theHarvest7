@@ -601,6 +601,50 @@ header h1 {
   border-radius: 8px;
 }
 
+/* --- Nav Control Group (Prev/Next buttons) --- */
+.nav-control-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1.5px solid rgba(99, 102, 241, 0.25);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+  color: var(--primary-color, #6366f1);
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.nav-btn:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.22) 0%, rgba(139, 92, 246, 0.22) 100%);
+  border-color: rgba(99, 102, 241, 0.55);
+  color: #4f46e5;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+}
+
+.nav-btn:active {
+  transform: scale(0.95);
+  box-shadow: none;
+}
+
+.nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
 #report-year {
   color: var(--primary-color) !important;
 }

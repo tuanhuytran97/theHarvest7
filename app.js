@@ -4810,6 +4810,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const reportRangeSelect = document.getElementById('report-range');
     const reportMonthSelect = document.getElementById('report-month');
+    const reportYearSelect = document.getElementById('report-year');
     const monthSelectContainer = document.getElementById('month-select-container');
 
     const cmpMonth1Select = document.getElementById('cmp-month1');
@@ -4827,6 +4828,37 @@ document.addEventListener("DOMContentLoaded", () => {
             const daySelectContainer = document.getElementById('day-select-container');
             if (daySelectContainer) {
                 daySelectContainer.style.display = isDay ? 'flex' : 'none';
+            }
+            const yearSelectContainer = document.getElementById('year-select-container');
+            if (yearSelectContainer) {
+                yearSelectContainer.style.display = isDay ? 'none' : 'flex';
+            }
+
+            // Sync date values when switching report range
+            if (isDay) {
+                if (reportDateInput && reportYearSelect) {
+                    const y = reportYearSelect.value;
+                    const m = reportMonthSelect ? String(reportMonthSelect.value).padStart(2, '0') : '01';
+                    let curDay = '01';
+                    if (reportDateInput.value) {
+                        const p = reportDateInput.value.split('-');
+                        if (p.length === 3) curDay = p[2];
+                    }
+                    const maxDays = new Date(parseInt(y, 10), parseInt(m, 10), 0).getDate();
+                    const validDay = String(Math.min(parseInt(curDay, 10) || 1, maxDays)).padStart(2, '0');
+                    reportDateInput.value = `${y}-${m}-${validDay}`;
+                }
+            } else {
+                if (reportDateInput && reportDateInput.value) {
+                    const [y, m] = reportDateInput.value.split('-');
+                    if (reportYearSelect && [...reportYearSelect.options].some(o => o.value === y)) {
+                        reportYearSelect.value = y;
+                        reportYearSelect.dispatchEvent(new Event('change'));
+                    }
+                    if (reportMonthSelect) {
+                        reportMonthSelect.value = String(parseInt(m, 10));
+                    }
+                }
             }
 
             // Adjust chart displays
@@ -4881,6 +4913,19 @@ document.addEventListener("DOMContentLoaded", () => {
         reportDateInput.value = `${yyyy}-${mm}-${dd}`;
 
         const handleDateChange = () => {
+            if (reportDateInput && reportDateInput.value) {
+                const parts = reportDateInput.value.split('-');
+                if (parts.length === 3) {
+                    const [y, m] = parts;
+                    if (reportYearSelect && [...reportYearSelect.options].some(o => o.value === y)) {
+                        reportYearSelect.value = y;
+                        reportYearSelect.dispatchEvent(new Event('change'));
+                    }
+                    if (reportMonthSelect) {
+                        reportMonthSelect.value = String(parseInt(m, 10));
+                    }
+                }
+            }
             updateDashboard();
             syncMainToComparison();
         };
@@ -4895,7 +4940,180 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Scroll to Expense Distribution Chart on KPI Click
+    // ── Prev / Next navigation buttons ──────────────────────────────────────
+    // Helper: trigger refresh
+    const refreshReport = () => { updateDashboard(); syncMainToComparison(); };
+
+    // --- Day navigation ---
+    const prevDayBtn = document.getElementById('prev-day-btn');
+    const nextDayBtn = document.getElementById('next-day-btn');
+    if (prevDayBtn && nextDayBtn && reportDateInput) {
+        const shiftDay = (delta) => {
+            if (!reportDateInput.value) return;
+            const d = new Date(reportDateInput.value + 'T00:00:00');
+            d.setDate(d.getDate() + delta);
+            const yyyy = d.getFullYear();
+            const mm   = String(d.getMonth() + 1).padStart(2, '0');
+            const dd   = String(d.getDate()).padStart(2, '0');
+            reportDateInput.value = `${yyyy}-${mm}-${dd}`;
+            if (reportYearSelect && [...reportYearSelect.options].some(o => o.value === String(yyyy))) {
+                reportYearSelect.value = String(yyyy);
+                reportYearSelect.dispatchEvent(new Event('change'));
+            }
+            if (reportMonthSelect) {
+                reportMonthSelect.value = String(parseInt(mm, 10));
+            }
+            refreshReport();
+        };
+        prevDayBtn.addEventListener('click', () => shiftDay(-1));
+        nextDayBtn.addEventListener('click', () => shiftDay(+1));
+    }
+
+    // --- Month navigation ---
+    const prevMonthBtn = document.getElementById('prev-month-btn');
+    const nextMonthBtn = document.getElementById('next-month-btn');
+    if (prevMonthBtn && nextMonthBtn && reportMonthSelect) {
+        const shiftMonth = (delta) => {
+            let m = parseInt(reportMonthSelect.value, 10) + delta;
+            if (m < 1) {
+                m = 12;
+                // Also go to previous year
+                if (reportYearSelect) {
+                    const curYear = parseInt(reportYearSelect.value, 10);
+                    const prevYearOpt = [...reportYearSelect.options].find(o => parseInt(o.value, 10) === curYear - 1);
+                    if (prevYearOpt) { reportYearSelect.value = String(curYear - 1); }
+                }
+            } else if (m > 12) {
+                m = 1;
+                // Also go to next year
+                if (reportYearSelect) {
+                    const curYear = parseInt(reportYearSelect.value, 10);
+                    const nextYearOpt = [...reportYearSelect.options].find(o => parseInt(o.value, 10) === curYear + 1);
+                    if (nextYearOpt) { reportYearSelect.value = String(curYear + 1); }
+                }
+            }
+            reportMonthSelect.value = String(m);
+            refreshReport();
+        };
+        prevMonthBtn.addEventListener('click', () => shiftMonth(-1));
+        nextMonthBtn.addEventListener('click', () => shiftMonth(+1));
+    }
+
+    // --- Year navigation (list sorted descending: index 0 = newest year) ---
+    const prevYearBtn = document.getElementById('prev-year-btn');
+    const nextYearBtn = document.getElementById('next-year-btn');
+    if (prevYearBtn && nextYearBtn && reportYearSelect) {
+        const updateYearNavBtns = () => {
+            const opts = [...reportYearSelect.options];
+            const idx  = reportYearSelect.selectedIndex;
+            // prev (left) = older year = higher index; disable when at last (oldest)
+            prevYearBtn.disabled = (idx >= opts.length - 1);
+            // next (right) = newer year = lower index; disable when at first (newest)
+            nextYearBtn.disabled = (idx <= 0);
+        };
+        const shiftYear = (delta) => {
+            const opts = [...reportYearSelect.options];
+            const idx  = reportYearSelect.selectedIndex + delta;
+            if (idx >= 0 && idx < opts.length) {
+                reportYearSelect.selectedIndex = idx;
+                updateYearNavBtns();
+                refreshReport();
+            }
+        };
+        // prev (left <) = go to older = higher index = +1
+        prevYearBtn.addEventListener('click', () => shiftYear(+1));
+        // next (right >) = go to newer = lower index = -1
+        nextYearBtn.addEventListener('click', () => shiftYear(-1));
+        reportYearSelect.addEventListener('change', updateYearNavBtns);
+        updateYearNavBtns();
+    }
+
+    // --- Cashflow Year navigation (Thời điểm 1) ---
+    const prevCfYearBtn = document.getElementById('prev-cf-year-btn');
+    const nextCfYearBtn = document.getElementById('next-cf-year-btn');
+    const cfYearSel = document.getElementById('cashflow-year');
+    if (prevCfYearBtn && nextCfYearBtn && cfYearSel) {
+        const updateCfYearBtns = () => {
+            prevCfYearBtn.disabled = (cfYearSel.selectedIndex >= cfYearSel.options.length - 1);
+            nextCfYearBtn.disabled = (cfYearSel.selectedIndex <= 0);
+        };
+        const shiftCfYear = (delta) => {
+            const newIdx = cfYearSel.selectedIndex + delta;
+            if (newIdx >= 0 && newIdx < cfYearSel.options.length) {
+                cfYearSel.selectedIndex = newIdx;
+                updateCfYearBtns();
+                cfYearSel.dispatchEvent(new Event('change'));
+            }
+        };
+        // left < = older year = +1 index
+        prevCfYearBtn.addEventListener('click', () => shiftCfYear(+1));
+        // right > = newer year = -1 index
+        nextCfYearBtn.addEventListener('click', () => shiftCfYear(-1));
+        cfYearSel.addEventListener('change', updateCfYearBtns);
+    }
+
+    // --- Cashflow Month navigation (Thời điểm 1) ---
+    const prevCfMonthBtn = document.getElementById('prev-cf-month-btn');
+    const nextCfMonthBtn = document.getElementById('next-cf-month-btn');
+    const cfMonthSel = document.getElementById('cashflow-month');
+    if (prevCfMonthBtn && nextCfMonthBtn && cfMonthSel) {
+        const shiftCfMonth = (delta) => {
+            const opts = [...cfMonthSel.options];
+            const curIdx = cfMonthSel.selectedIndex;
+            let newIdx = curIdx + delta;
+            // wrap around (skip 'all'=index 0 when navigating)
+            if (newIdx < 0) newIdx = opts.length - 1;
+            if (newIdx >= opts.length) newIdx = 0;
+            cfMonthSel.selectedIndex = newIdx;
+            cfMonthSel.dispatchEvent(new Event('change'));
+        };
+        prevCfMonthBtn.addEventListener('click', () => shiftCfMonth(-1));
+        nextCfMonthBtn.addEventListener('click', () => shiftCfMonth(+1));
+    }
+
+    // --- Cashflow Year navigation (Thời điểm 2) ---
+    const prevCfYear2Btn = document.getElementById('prev-cf-year2-btn');
+    const nextCfYear2Btn = document.getElementById('next-cf-year2-btn');
+    const cfYearSel2 = document.getElementById('cashflow-year-2');
+    if (prevCfYear2Btn && nextCfYear2Btn && cfYearSel2) {
+        const updateCfYear2Btns = () => {
+            prevCfYear2Btn.disabled = (cfYearSel2.selectedIndex >= cfYearSel2.options.length - 1);
+            nextCfYear2Btn.disabled = (cfYearSel2.selectedIndex <= 0);
+        };
+        const shiftCfYear2 = (delta) => {
+            const newIdx = cfYearSel2.selectedIndex + delta;
+            if (newIdx >= 0 && newIdx < cfYearSel2.options.length) {
+                cfYearSel2.selectedIndex = newIdx;
+                updateCfYear2Btns();
+                cfYearSel2.dispatchEvent(new Event('change'));
+            }
+        };
+        // left < = older year = +1 index
+        prevCfYear2Btn.addEventListener('click', () => shiftCfYear2(+1));
+        // right > = newer year = -1 index
+        nextCfYear2Btn.addEventListener('click', () => shiftCfYear2(-1));
+        cfYearSel2.addEventListener('change', updateCfYear2Btns);
+    }
+
+    // --- Cashflow Month navigation (Thời điểm 2) ---
+    const prevCfMonth2Btn = document.getElementById('prev-cf-month2-btn');
+    const nextCfMonth2Btn = document.getElementById('next-cf-month2-btn');
+    const cfMonthSel2 = document.getElementById('cashflow-month-2');
+    if (prevCfMonth2Btn && nextCfMonth2Btn && cfMonthSel2) {
+        const shiftCfMonth2 = (delta) => {
+            const opts = [...cfMonthSel2.options];
+            let newIdx = cfMonthSel2.selectedIndex + delta;
+            if (newIdx < 0) newIdx = opts.length - 1;
+            if (newIdx >= opts.length) newIdx = 0;
+            cfMonthSel2.selectedIndex = newIdx;
+            cfMonthSel2.dispatchEvent(new Event('change'));
+        };
+        prevCfMonth2Btn.addEventListener('click', () => shiftCfMonth2(-1));
+        nextCfMonth2Btn.addEventListener('click', () => shiftCfMonth2(+1));
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
+
     const kpiExpenseCard = document.getElementById('kpi-card-expense');
     if (kpiExpenseCard) {
         kpiExpenseCard.addEventListener('click', () => {
@@ -5031,6 +5249,35 @@ document.addEventListener("DOMContentLoaded", () => {
             if (reportMonthPrev) {
                 reportMonthPrev.value = currentMonthNum;
             }
+        }
+
+        // Re-sync year nav button disabled states after options are populated
+        // (years sorted descending: prev/left=older=higher index, next/right=newer=lower index)
+        const _prevYearBtn = document.getElementById('prev-year-btn');
+        const _nextYearBtn = document.getElementById('next-year-btn');
+        if (_prevYearBtn && _nextYearBtn && yearSelect) {
+            const _idx = yearSelect.selectedIndex;
+            const _len = yearSelect.options.length;
+            _prevYearBtn.disabled = (_idx >= _len - 1); // disable left when at oldest (last index)
+            _nextYearBtn.disabled = (_idx <= 0);        // disable right when at newest (index 0)
+        }
+
+        // Re-sync cashflow year nav buttons
+        const _prevCfYearBtn = document.getElementById('prev-cf-year-btn');
+        const _nextCfYearBtn = document.getElementById('next-cf-year-btn');
+        if (_prevCfYearBtn && _nextCfYearBtn && cfYearSelect) {
+            const _idx2 = cfYearSelect.selectedIndex;
+            const _len2 = cfYearSelect.options.length;
+            _prevCfYearBtn.disabled = (_idx2 >= _len2 - 1);
+            _nextCfYearBtn.disabled = (_idx2 <= 0);
+        }
+        const _prevCfYear2Btn = document.getElementById('prev-cf-year2-btn');
+        const _nextCfYear2Btn = document.getElementById('next-cf-year2-btn');
+        if (_prevCfYear2Btn && _nextCfYear2Btn && cfYearSelect2) {
+            const _idx3 = cfYearSelect2.selectedIndex;
+            const _len3 = cfYearSelect2.options.length;
+            _prevCfYear2Btn.disabled = (_idx3 >= _len3 - 1);
+            _nextCfYear2Btn.disabled = (_idx3 <= 0);
         }
     }
 
@@ -11844,6 +12091,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const monthContainer = document.getElementById('month-select-container');
         const dayContainer = document.getElementById('day-select-container');
+        const yearContainer = document.getElementById('year-select-container');
         const yearlyCharts = document.getElementById('yearly-report-charts');
         const monthlyCharts = document.getElementById('monthly-report-charts');
         const insightsSection = document.querySelector('#view-report .report-insights-grid');
@@ -11852,6 +12100,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (monthContainer) monthContainer.style.display = (isMonth || val === 'ytd') ? 'flex' : 'none';
         if (dayContainer) dayContainer.style.display = isDay ? 'flex' : 'none';
+        if (yearContainer) yearContainer.style.display = isDay ? 'none' : 'flex';
         if (yearlyCharts) yearlyCharts.style.display = (isMonth || isQuarter || isDay) ? 'none' : 'grid';
         if (monthlyCharts) monthlyCharts.style.display = (isMonth || isQuarter) ? 'grid' : 'none';
         if (insightsSection) insightsSection.style.display = isDay ? 'none' : '';

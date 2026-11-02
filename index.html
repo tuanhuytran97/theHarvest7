@@ -2260,32 +2260,44 @@
                             <option value="q4">Quý 4</option>
                         </select>
                     </div>
-                    <div class="form-group row-align" id="month-select-container" style="display: flex;">
+                    <div class="form-group row-align" id="month-select-container" style="display: none;">
                         <label for="report-month">Tháng</label>
-                        <select id="report-month">
-                            <option value="1">T1</option>
-                            <option value="2">T2</option>
-                            <option value="3">T3</option>
-                            <option value="4">T4</option>
-                            <option value="5">T5</option>
-                            <option value="6">T6</option>
-                            <option value="7">T7</option>
-                            <option value="8">T8</option>
-                            <option value="9">T9</option>
-                            <option value="10">T10</option>
-                            <option value="11">T11</option>
-                            <option value="12">T12</option>
-                        </select>
+                        <div class="nav-control-group">
+                            <button class="nav-btn" id="prev-month-btn" title="Tháng trước"><i class="fa-solid fa-chevron-left"></i></button>
+                            <select id="report-month">
+                                <option value="1">T1</option>
+                                <option value="2">T2</option>
+                                <option value="3">T3</option>
+                                <option value="4">T4</option>
+                                <option value="5">T5</option>
+                                <option value="6">T6</option>
+                                <option value="7">T7</option>
+                                <option value="8">T8</option>
+                                <option value="9">T9</option>
+                                <option value="10">T10</option>
+                                <option value="11">T11</option>
+                                <option value="12">T12</option>
+                            </select>
+                            <button class="nav-btn" id="next-month-btn" title="Tháng sau"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
                     </div>
-                    <div class="form-group row-align" id="day-select-container" style="display: none;">
+                    <div class="form-group row-align" id="day-select-container" style="display: flex;">
                         <label for="report-date">Ngày</label>
-                        <input type="date" id="report-date" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; font-weight: bold; color: #1e293b; background: white;" />
+                        <div class="nav-control-group">
+                            <button class="nav-btn" id="prev-day-btn" title="Ngày trước"><i class="fa-solid fa-chevron-left"></i></button>
+                            <input type="date" id="report-date" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; font-weight: bold; color: #1e293b; background: white;" />
+                            <button class="nav-btn" id="next-day-btn" title="Ngày sau"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
                     </div>
-                    <div class="form-group row-align">
+                    <div class="form-group row-align" id="year-select-container" style="display: none;">
                         <label for="report-year">Năm</label>
-                        <select id="report-year">
-                            <option value="2026">2026</option>
-                        </select>
+                        <div class="nav-control-group">
+                            <button class="nav-btn" id="prev-year-btn" title="Năm trước"><i class="fa-solid fa-chevron-left"></i></button>
+                            <select id="report-year">
+                                <option value="2026">2026</option>
+                            </select>
+                            <button class="nav-btn" id="next-year-btn" title="Năm sau"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
                     </div>
                     <div class="form-group row-align">
                         <label for="report-filter">Đối tượng</label>
@@ -2712,27 +2724,35 @@
                                 <label for="cashflow-month"
                                     style="font-size: 0.8rem; margin-bottom: 2px; display: block; font-weight: 700; color: #64748b;">Thời
                                     điểm 1</label>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <select id="cashflow-month"
-                                        style="min-width: 120px; padding: 0.6rem; font-weight: 700; border-radius: 10px; border: 1px solid #e2e8f0; outline: none; color: #1e293b;">
-                                        <option value="all">Cả Năm</option>
-                                        <option value="1">Tháng 1</option>
-                                        <option value="2">Tháng 2</option>
-                                        <option value="3">Tháng 3</option>
-                                        <option value="4">Tháng 4</option>
-                                        <option value="5">Tháng 5</option>
-                                        <option value="6">Tháng 6</option>
-                                        <option value="7">Tháng 7</option>
-                                        <option value="8">Tháng 8</option>
-                                        <option value="9">Tháng 9</option>
-                                        <option value="10">Tháng 10</option>
-                                        <option value="11">Tháng 11</option>
-                                        <option value="12">Tháng 12</option>
-                                    </select>
-                                    <select id="cashflow-year"
-                                        style="min-width: 90px; padding: 0.6rem; font-weight: 700; color: var(--primary-color); border-radius: 10px; border: 1px solid #e2e8f0; outline: none;">
-                                        <!-- Populated by JS -->
-                                    </select>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <div class="nav-control-group">
+                                        <button class="nav-btn" id="prev-cf-month-btn" title="Tháng trước"><i class="fa-solid fa-chevron-left"></i></button>
+                                        <select id="cashflow-month"
+                                            style="min-width: 120px; padding: 0.6rem; font-weight: 700; border-radius: 10px; border: 1px solid #e2e8f0; outline: none; color: #1e293b;">
+                                            <option value="all">Cả Năm</option>
+                                            <option value="1">Tháng 1</option>
+                                            <option value="2">Tháng 2</option>
+                                            <option value="3">Tháng 3</option>
+                                            <option value="4">Tháng 4</option>
+                                            <option value="5">Tháng 5</option>
+                                            <option value="6">Tháng 6</option>
+                                            <option value="7">Tháng 7</option>
+                                            <option value="8">Tháng 8</option>
+                                            <option value="9">Tháng 9</option>
+                                            <option value="10">Tháng 10</option>
+                                            <option value="11">Tháng 11</option>
+                                            <option value="12">Tháng 12</option>
+                                        </select>
+                                        <button class="nav-btn" id="next-cf-month-btn" title="Tháng sau"><i class="fa-solid fa-chevron-right"></i></button>
+                                    </div>
+                                    <div class="nav-control-group">
+                                        <button class="nav-btn" id="prev-cf-year-btn" title="Năm trước"><i class="fa-solid fa-chevron-left"></i></button>
+                                        <select id="cashflow-year"
+                                            style="min-width: 90px; padding: 0.6rem; font-weight: 700; color: var(--primary-color); border-radius: 10px; border: 1px solid #e2e8f0; outline: none;">
+                                            <!-- Populated by JS -->
+                                        </select>
+                                        <button class="nav-btn" id="next-cf-year-btn" title="Năm sau"><i class="fa-solid fa-chevron-right"></i></button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -2752,27 +2772,35 @@
                                 <label for="cashflow-month-2"
                                     style="font-size: 0.8rem; margin-bottom: 2px; display: block; font-weight: 700; color: #64748b;">Thời
                                     điểm 2</label>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <select id="cashflow-month-2"
-                                        style="min-width: 120px; padding: 0.6rem; font-weight: 700; border-radius: 10px; border: 1px solid #e2e8f0; outline: none; color: #1e293b;">
-                                        <option value="all">Cả Năm</option>
-                                        <option value="1">Tháng 1</option>
-                                        <option value="2">Tháng 2</option>
-                                        <option value="3">Tháng 3</option>
-                                        <option value="4">Tháng 4</option>
-                                        <option value="5">Tháng 5</option>
-                                        <option value="6">Tháng 6</option>
-                                        <option value="7">Tháng 7</option>
-                                        <option value="8">Tháng 8</option>
-                                        <option value="9">Tháng 9</option>
-                                        <option value="10">Tháng 10</option>
-                                        <option value="11">Tháng 11</option>
-                                        <option value="12">Tháng 12</option>
-                                    </select>
-                                    <select id="cashflow-year-2"
-                                        style="min-width: 90px; padding: 0.6rem; font-weight: 700; color: var(--secondary-color); border-radius: 10px; border: 1px solid #e2e8f0; outline: none;">
-                                        <!-- Populated by JS -->
-                                    </select>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <div class="nav-control-group">
+                                        <button class="nav-btn" id="prev-cf-month2-btn" title="Tháng trước"><i class="fa-solid fa-chevron-left"></i></button>
+                                        <select id="cashflow-month-2"
+                                            style="min-width: 120px; padding: 0.6rem; font-weight: 700; border-radius: 10px; border: 1px solid #e2e8f0; outline: none; color: #1e293b;">
+                                            <option value="all">Cả Năm</option>
+                                            <option value="1">Tháng 1</option>
+                                            <option value="2">Tháng 2</option>
+                                            <option value="3">Tháng 3</option>
+                                            <option value="4">Tháng 4</option>
+                                            <option value="5">Tháng 5</option>
+                                            <option value="6">Tháng 6</option>
+                                            <option value="7">Tháng 7</option>
+                                            <option value="8">Tháng 8</option>
+                                            <option value="9">Tháng 9</option>
+                                            <option value="10">Tháng 10</option>
+                                            <option value="11">Tháng 11</option>
+                                            <option value="12">Tháng 12</option>
+                                        </select>
+                                        <button class="nav-btn" id="next-cf-month2-btn" title="Tháng sau"><i class="fa-solid fa-chevron-right"></i></button>
+                                    </div>
+                                    <div class="nav-control-group">
+                                        <button class="nav-btn" id="prev-cf-year2-btn" title="Năm trước"><i class="fa-solid fa-chevron-left"></i></button>
+                                        <select id="cashflow-year-2"
+                                            style="min-width: 90px; padding: 0.6rem; font-weight: 700; color: var(--secondary-color); border-radius: 10px; border: 1px solid #e2e8f0; outline: none;">
+                                            <!-- Populated by JS -->
+                                        </select>
+                                        <button class="nav-btn" id="next-cf-year2-btn" title="Năm sau"><i class="fa-solid fa-chevron-right"></i></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
