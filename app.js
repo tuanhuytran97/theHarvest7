@@ -7055,6 +7055,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const modal = document.getElementById('modal-edit-vua-order');
         if (!modal) return;
+        const container = document.getElementById('edit-vua-flowers-container');
+        if (!container) return;
 
         const c = group.computed;
         document.getElementById('edit-vua-input-buyer').value = c.buyer;
@@ -7070,7 +7072,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         container.innerHTML = '';
 
-        const existingBoughtExpenses = (farmData || []).filter(r => {
+        const fdRef = window.getFarmData ? window.getFarmData() : (window.farmData || farmData || []);
+        const existingBoughtExpenses = (fdRef || []).filter(r => {
             const rOrd = r._orderId || r['Ghi Chú thu'] || '';
             return rOrd === orderId && (r['Loại CP'] === 'Mua Bông' || String(r['Ghi Chú Chi Phí'] || '').includes('Mua bông'));
         });
@@ -7089,7 +7092,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 <div style="margin-bottom: 8px;">
                     <label style="font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: 5px; display: block; text-transform: uppercase; letter-spacing: 0.4px;">Tên loại hoa</label>
-                    <input type="text" class="fw-type" value="${escapeAttr(type)}" list="flower-types-datalist" placeholder="Chọn hoặc nhập tên hoa (vd: Đỏ, Xô...)" style="width: 100%; box-sizing: border-box; padding: 0 14px; height: 44px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14.5px; font-weight: 700; color: #1e293b; outline: none; background: #f8fafc; transition: all 0.2s;">
+                    <input type="text" class="fw-type" value="${escapeAttr(type)}" list="flower-types" placeholder="Chọn hoặc nhập tên hoa (vd: Đỏ, Xô...)" style="width: 100%; box-sizing: border-box; padding: 0 14px; height: 44px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14.5px; font-weight: 700; color: #1e293b; outline: none; background: #f8fafc; transition: all 0.2s;">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px;">
                     <div>
@@ -7128,6 +7131,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         wrapBought.style.border = '1.5px dashed #cbd5e1';
                         badgeBought.style.display = 'none';
                     }
+                    recalcEditVuaModal('flower');
                 };
             }
             itemDiv.querySelector('.btn-del-fw').onclick = () => {
@@ -7201,6 +7205,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const pt = parseMoney(document.getElementById('edit-vua-input-pt').value);
                 const ln = pt - fTotal - cost - vattu;
                 document.getElementById('edit-vua-input-profit').value = ln !== 0 ? formatMoneyStr(ln) : '0';
+            } else if (source === 'init') {
+                // Giữ nguyên số tiền ln và pt ban đầu khi mở modal
             } else {
                 const ln = parseSignedMoney(document.getElementById('edit-vua-input-profit').value);
                 const pt = fTotal + cost + vattu + ln;
@@ -7244,6 +7250,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const btnCancel = document.getElementById('btn-cancel-edit-vua');
 
         btnCancel.onclick = () => { modal.style.display = 'none'; };
+        modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 
         btnConfirm.onclick = async () => {
             const newBuyer = document.getElementById('edit-vua-input-buyer').value.trim();
@@ -7324,30 +7331,37 @@ document.addEventListener("DOMContentLoaded", () => {
                         };
                         Object.assign(r, updates);
                         r['Phân Loại Bông'] = nf.isBought ? '' : nf.type;
-                        r['Số lượng'] = nf.isBought ? '' : nf.qty;
-                        r['Giá'] = nf.isBought ? '' : nf.price;
-                        r['Doanh Thu Bông'] = nf.isBought ? '' : nf.total;
+                        r['Số lượng'] = nf.isBought ? 0 : nf.qty;
+                        r['Giá'] = nf.isBought ? 0 : nf.price;
+                        r['Doanh Thu Bông'] = nf.isBought ? 0 : nf.total;
                         r['Tiền Phải Thu'] = isFirst ? newPt : 0;
                         r['Chi Phí'] = parseFloat(rowChiPhi) || 0;
                         r['Loại CP'] = rowLoaiCP;
                         r['Ghi Chú Chi Phí'] = rowGhiChuCP;
                         r['Doanh Thu Khác'] = (isFirst && newProfit !== 0) ? newProfit : 0;
+                        r['Người Mua'] = newBuyer;
+                        r['Status'] = newStatus;
+                        r['Đã Thu'] = (isFirst && newStatus === 'Xong') ? newPt : 0;
+                        r['Ghi Chú'] = isFirst ? newNote : '';
 
-                        if (r._sheetRowNumber && !String(r._sheetRowNumber).startsWith('OFFLINE_')) {
+                        const sheetRow = r._sheetRowNumber || r._row;
+                        if (sheetRow && !String(sheetRow).startsWith('OFFLINE_') && !String(sheetRow).startsWith('temp_')) {
                             await fetch(CONFIG.WEB_APP_URL, {
                                 method: "POST",
-                                body: JSON.stringify({ action: "update", rowNumber: Number(r._sheetRowNumber), updates, context: "all", token: getToken() }),
+                                body: JSON.stringify({ action: "update", rowNumber: Number(sheetRow), updates, context: "all", token: getToken() }),
                                 headers: { "Content-Type": "text/plain;charset=utf-8" }
                             });
                         }
                     } else if (i >= K && i < M) {
                         const r = origRows[i];
-                        const fIdx = farmData.indexOf(r);
-                        if (fIdx !== -1) farmData.splice(fIdx, 1);
-                        if (r._sheetRowNumber && !String(r._sheetRowNumber).startsWith('OFFLINE_')) {
+                        const fd = window.farmData || farmData;
+                        const fIdx = fd ? fd.indexOf(r) : -1;
+                        if (fIdx !== -1) fd.splice(fIdx, 1);
+                        const sheetRow = r._sheetRowNumber || r._row;
+                        if (sheetRow && !String(sheetRow).startsWith('OFFLINE_') && !String(sheetRow).startsWith('temp_')) {
                             await fetch(CONFIG.WEB_APP_URL, {
                                 method: "POST",
-                                body: JSON.stringify({ action: "deleteByRow", rowNumber: Number(r._sheetRowNumber), context: "all", token: getToken() }),
+                                body: JSON.stringify({ action: "deleteByRow", rowNumber: Number(sheetRow), context: "all", token: getToken() }),
                                 headers: { "Content-Type": "text/plain;charset=utf-8" }
                             });
                         }
@@ -7392,23 +7406,30 @@ document.addEventListener("DOMContentLoaded", () => {
                         newRowData._sheetRowNumber = addJson.rowNumber || `OFFLINE_${Date.now()}_${i}`;
                         newRowData.parsedDate = master ? master.parsedDate : new Date();
                         newRowData['Phân Loại Bông'] = nf.isBought ? '' : nf.type;
-                        newRowData['Số lượng'] = nf.isBought ? '' : nf.qty;
-                        newRowData['Giá'] = nf.isBought ? '' : nf.price;
-                        newRowData['Doanh Thu Bông'] = nf.isBought ? '' : nf.total;
+                        newRowData['Số lượng'] = nf.isBought ? 0 : nf.qty;
+                        newRowData['Giá'] = nf.isBought ? 0 : nf.price;
+                        newRowData['Doanh Thu Bông'] = nf.isBought ? 0 : nf.total;
                         newRowData['Chi Phí'] = parseFloat(rowChiPhi) || 0;
-                        farmData.unshift(newRowData);
+                        if (Array.isArray(window.farmData) && !window.farmData.includes(newRowData)) {
+                            window.farmData.unshift(newRowData);
+                        }
+                        if (Array.isArray(farmData) && !farmData.includes(newRowData)) {
+                            farmData.unshift(newRowData);
+                        }
                         origRows.push(newRowData);
                     }
                 }
 
                 // Dọn dẹp chi phí mua bông cũ dạng dòng riêng (nếu có từ trước)
                 for (const oldExp of existingBoughtExpenses) {
-                    const fIdx = farmData.indexOf(oldExp);
-                    if (fIdx !== -1) farmData.splice(fIdx, 1);
-                    if (oldExp._sheetRowNumber && !String(oldExp._sheetRowNumber).startsWith('OFFLINE_')) {
+                    const fd = window.farmData || farmData;
+                    const fIdx = fd ? fd.indexOf(oldExp) : -1;
+                    if (fIdx !== -1) fd.splice(fIdx, 1);
+                    const sheetRow = oldExp._sheetRowNumber || oldExp._row;
+                    if (sheetRow && !String(sheetRow).startsWith('OFFLINE_') && !String(sheetRow).startsWith('temp_')) {
                         await fetch(CONFIG.WEB_APP_URL, {
                             method: "POST",
-                            body: JSON.stringify({ action: "deleteByRow", rowNumber: Number(oldExp._sheetRowNumber), context: "all", token: getToken() }),
+                            body: JSON.stringify({ action: "deleteByRow", rowNumber: Number(sheetRow), context: "all", token: getToken() }),
                             headers: { "Content-Type": "text/plain;charset=utf-8" }
                         });
                     }
@@ -7457,30 +7478,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             document.body.style.cursor = 'wait';
+            const fd = window.farmData || farmData;
             for (const r of group.rows) {
-                const fIdx = farmData.indexOf(r);
-                if (fIdx !== -1) farmData.splice(fIdx, 1);
-                if (r._sheetRowNumber && !String(r._sheetRowNumber).startsWith('OFFLINE_')) {
+                const fIdx = fd ? fd.indexOf(r) : -1;
+                if (fIdx !== -1) fd.splice(fIdx, 1);
+                const sheetRow = r._sheetRowNumber || r._row;
+                if (sheetRow && !String(sheetRow).startsWith('OFFLINE_') && !String(sheetRow).startsWith('temp_')) {
                     await fetch(CONFIG.WEB_APP_URL, {
                         method: "POST",
-                        body: JSON.stringify({ action: "deleteByRow", rowNumber: Number(r._sheetRowNumber), context: "all", token: getToken() }),
+                        body: JSON.stringify({ action: "deleteByRow", rowNumber: Number(sheetRow), context: "all", token: getToken() }),
                         headers: { "Content-Type": "text/plain;charset=utf-8" }
                     });
                 }
             }
 
             // Xóa luôn các dòng chi phí "Mua Bông" liên quan đến đơn Vựa này
-            const expRowsToDelete = farmData.filter(r => {
+            const expRowsToDelete = (fd || []).filter(r => {
                 const rOrd = r._orderId || r['Ghi Chú thu'] || '';
                 return rOrd === orderId && (r['Loại CP'] === 'Mua Bông' || r['Loại DT'] === 'Chi Phí');
             });
             for (const er of expRowsToDelete) {
-                const fIdx = farmData.indexOf(er);
-                if (fIdx !== -1) farmData.splice(fIdx, 1);
-                if (er._sheetRowNumber && !String(er._sheetRowNumber).startsWith('OFFLINE_')) {
+                const fIdx = fd ? fd.indexOf(er) : -1;
+                if (fIdx !== -1) fd.splice(fIdx, 1);
+                const sheetRow = er._sheetRowNumber || er._row;
+                if (sheetRow && !String(sheetRow).startsWith('OFFLINE_') && !String(sheetRow).startsWith('temp_')) {
                     await fetch(CONFIG.WEB_APP_URL, {
                         method: "POST",
-                        body: JSON.stringify({ action: "deleteByRow", rowNumber: Number(er._sheetRowNumber), context: "all", token: getToken() }),
+                        body: JSON.stringify({ action: "deleteByRow", rowNumber: Number(sheetRow), context: "all", token: getToken() }),
                         headers: { "Content-Type": "text/plain;charset=utf-8" }
                     });
                 }
