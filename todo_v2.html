@@ -775,7 +775,7 @@
     <div id="export-text-modal" class="modal-overlay"
         style="display: none; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px); z-index: 10001;">
         <div class="modal-content glassmorphism"
-            style="max-width: 550px !important; background: white; width: 90%; border-radius: 16px; padding: 2rem; box-shadow: var(--shadow-lg);">
+            style="max-width: 600px !important; background: white; width: 92%; border-radius: 16px; padding: 2rem; box-shadow: var(--shadow-lg);">
             <div class="modal-header"
                 style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
                 <h2 style="font-size: 1.4rem; font-weight: 800; color: #6366f1; margin: 0;">
@@ -788,9 +788,31 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p id="export-text-desc" style="font-size: 0.85rem; color: #64748b; margin-top: 0; margin-bottom: 1rem; font-weight: 600;">
+                <p id="export-text-desc" style="font-size: 0.85rem; color: #64748b; margin-top: 0; margin-bottom: 0.75rem; font-weight: 600;">
                     Dưới đây là danh sách lịch trình theo tháng hiện tại, sắp xếp theo thứ tự ngày từ thấp đến cao:
                 </p>
+                <!-- Date range filter -->
+                <div id="export-date-filter" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:1rem; padding:10px 12px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0;">
+                    <label style="font-size:0.8rem; font-weight:700; color:#64748b; white-space:nowrap;">📅 Phạm vi:</label>
+                    <select id="export-range-type" onchange="onExportRangeTypeChange()" style="font-size:0.82rem; padding:5px 8px; border-radius:7px; border:1px solid #cbd5e1; color:#374151; background:white; font-weight:600; cursor:pointer;">
+                        <option value="month">Cả tháng</option>
+                        <option value="day">Một ngày</option>
+                        <option value="range">Nhiều ngày (từ–đến)</option>
+                    </select>
+                    <input type="number" id="export-day-single" min="1" max="31" placeholder="Ngày" title="Chọn ngày"
+                        style="display:none; width:70px; font-size:0.82rem; padding:5px 8px; border-radius:7px; border:1px solid #cbd5e1; color:#374151; font-weight:600;" />
+                    <span id="export-range-wrap" style="display:none; gap:6px; align-items:center;">
+                        <input type="number" id="export-day-from" min="1" max="31" placeholder="Từ ngày"
+                            style="width:76px; font-size:0.82rem; padding:5px 8px; border-radius:7px; border:1px solid #cbd5e1; color:#374151; font-weight:600;" />
+                        <span style="color:#94a3b8; font-weight:700;">–</span>
+                        <input type="number" id="export-day-to" min="1" max="31" placeholder="Đến ngày"
+                            style="width:84px; font-size:0.82rem; padding:5px 8px; border-radius:7px; border:1px solid #cbd5e1; color:#374151; font-weight:600;" />
+                    </span>
+                    <button type="button" onclick="regenerateExportText()"
+                        style="font-size:0.8rem; padding:5px 12px; border-radius:7px; border:none; background:linear-gradient(135deg,#6366f1,#4f46e5); color:white; font-weight:700; cursor:pointer; white-space:nowrap;">
+                        🔄 Tạo lại
+                    </button>
+                </div>
                 <div class="form-group" style="margin-bottom: 1.5rem;">
                     <textarea id="export-text-content" class="input-modern"
                         style="width: 100%; padding: 12px; border-radius: 10px; font-family: monospace; font-size: 0.9rem; resize: vertical; box-sizing: border-box; line-height: 1.5;"

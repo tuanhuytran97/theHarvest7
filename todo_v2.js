@@ -2809,7 +2809,7 @@ function renderCalCategoryMultiSelect(categories) {
  * Export calendar schedule to plain text bullet-point format grouped by date
  * and sorted chronologically (lowest date to highest date)
  */
-function openExportTextModal() {
+function openExportTextModal(isRegenerate) {
     const monthVal = document.getElementById('cal-month')?.value;
     const yearVal = document.getElementById('cal-year')?.value;
     if (monthVal === undefined || yearVal === undefined) return;
@@ -2817,14 +2817,37 @@ function openExportTextModal() {
     const month = parseInt(monthVal);
     const year = parseInt(yearVal);
 
-    // Filter tasks based on month and year of deadline
+    // Reset range selector to "month" only when opening fresh (not from regenerate)
+    const rangeTypeEl = document.getElementById('export-range-type');
+    if (!isRegenerate && rangeTypeEl) {
+        rangeTypeEl.value = 'month';
+        onExportRangeTypeChange();
+    }
+
+    // Read current range type from UI
+    const rangeType = rangeTypeEl?.value || 'month';
+    let dayFrom = null, dayTo = null;
+
+    if (rangeType === 'day') {
+        const d = parseInt(document.getElementById('export-day-single')?.value);
+        if (!isNaN(d) && d >= 1 && d <= 31) { dayFrom = d; dayTo = d; }
+    } else if (rangeType === 'range') {
+        const f = parseInt(document.getElementById('export-day-from')?.value);
+        const t2 = parseInt(document.getElementById('export-day-to')?.value);
+        if (!isNaN(f) && f >= 1) dayFrom = f;
+        if (!isNaN(t2) && t2 <= 31) dayTo = t2;
+    }
+
+    // Filter tasks based on month/year/day range and existing filters
     const filtered = todoCache.filter(t => {
         if (!t.deadline) return false;
         const dl = parseLocalDate(t.deadline);
         if (!dl) return false;
 
         // Match month and year
-        const matchesDate = dl.getMonth() === month && dl.getFullYear() === year;
+        const matchesDate = dl.getMonth() === month && dl.getFullYear() === year
+            && (dayFrom === null || dl.getDate() >= dayFrom)
+            && (dayTo === null || dl.getDate() <= dayTo);
         if (!matchesDate) return false;
 
         // Match category filter
@@ -2855,10 +2878,23 @@ function openExportTextModal() {
     const workerFilter = (document.getElementById('cal-worker-select')?.value || document.getElementById('filter-worker-select')?.value || "").trim();
     const descEl = document.getElementById('export-text-desc') || document.querySelector('#export-text-modal .modal-body p');
     if (descEl) {
-        if (workerFilter) {
-            descEl.innerHTML = `Dưới đây là danh sách lịch trình theo tháng hiện tại (<b>Lọc theo thợ: ${escapeHtml(workerFilter)}</b>):`;
+        const pad = (n) => String(n).padStart(2, '0');
+        const displayMonth = pad(month + 1);
+        let rangeLabel = '';
+        if (rangeType === 'day' && dayFrom !== null) {
+            rangeLabel = `ngày ${pad(dayFrom)}/${displayMonth}/${year}`;
+        } else if (rangeType === 'range') {
+            const fromStr = dayFrom !== null ? `${pad(dayFrom)}/${displayMonth}` : `01/${displayMonth}`;
+            const toStr = dayTo !== null ? `${pad(dayTo)}/${displayMonth}` : `31/${displayMonth}`;
+            rangeLabel = `từ ngày ${fromStr} đến ${toStr}/${year}`;
         } else {
-            descEl.innerText = "Dưới đây là danh sách lịch trình theo tháng hiện tại, sắp xếp theo thứ tự ngày từ thấp đến cao:";
+            rangeLabel = `tháng ${displayMonth}/${year}`;
+        }
+
+        if (workerFilter) {
+            descEl.innerHTML = `Dưới đây là danh sách lịch trình <b>${rangeLabel}</b> (<b>Lọc theo thợ: ${escapeHtml(workerFilter)}</b>):`;
+        } else {
+            descEl.innerHTML = `Dưới đây là danh sách lịch trình <b>${rangeLabel}</b>, sắp xếp theo thứ tự ngày từ thấp đến cao:`;
         }
     }
 
@@ -2891,7 +2927,15 @@ function openExportTextModal() {
     const sortedDays = Object.keys(groups).map(Number).sort((a, b) => a - b);
 
     if (sortedDays.length === 0) {
-        textResult = `Lịch trình tháng ${displayMonth}/${year} không có công việc nào.`;
+        if (rangeType === 'day' && dayFrom !== null) {
+            textResult = `Ngày ${pad(dayFrom)}/${displayMonth}/${year} không có công việc nào.`;
+        } else if (rangeType === 'range') {
+            const fromStr = dayFrom !== null ? pad(dayFrom) : '01';
+            const toStr = dayTo !== null ? pad(dayTo) : '31';
+            textResult = `Từ ngày ${fromStr}/${displayMonth} đến ngày ${toStr}/${displayMonth}/${year} không có công việc nào.`;
+        } else {
+            textResult = `Lịch trình tháng ${displayMonth}/${year} không có công việc nào.`;
+        }
     } else {
         sortedDays.forEach(day => {
             const dayTasks = groups[day];
@@ -2913,9 +2957,10 @@ function openExportTextModal() {
 
     // Append Phần Tổng Kết (Monthly Summary) for Advances & Leave Days
     // ONLY append summary if selectedCalStickers is empty/all OR includes 'Thợ'
+    // AND only when exporting the full month (not a single day or range)
     const isAllStickers = selectedCalStickers.length === 0 || selectedCalStickers.length >= 9;
     const hasThoSticker = selectedCalStickers.includes('Thợ');
-    const shouldShowSummary = isAllStickers || hasThoSticker;
+    const shouldShowSummary = (isAllStickers || hasThoSticker) && rangeType === 'month';
 
     if (shouldShowSummary) {
         const workerAdvances = getMonthlyWorkerAdvances(month, year);
@@ -3020,6 +3065,26 @@ function showCopySuccess() {
 
 // Expose helper functions globally
 window.openExportTextModal = openExportTextModal;
+
+/**
+ * Toggle visibility of single-day / date-range inputs in export modal
+ */
+function onExportRangeTypeChange() {
+    const type = document.getElementById('export-range-type')?.value;
+    const singleEl = document.getElementById('export-day-single');
+    const rangeEl = document.getElementById('export-range-wrap');
+    if (singleEl) singleEl.style.display = type === 'day' ? 'inline-block' : 'none';
+    if (rangeEl) rangeEl.style.display = type === 'range' ? 'flex' : 'none';
+}
+window.onExportRangeTypeChange = onExportRangeTypeChange;
+
+/**
+ * Re-generate export text using current date filter selections
+ */
+function regenerateExportText() {
+    openExportTextModal(true);
+}
+window.regenerateExportText = regenerateExportText;
 window.copyExportText = copyExportText;
 
 function renderCalStickerMultiSelect() {
