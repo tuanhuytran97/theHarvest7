@@ -2817,6 +2817,41 @@ function openExportTextModal(isRegenerate) {
     const month = parseInt(monthVal);
     const year = parseInt(yearVal);
 
+    // --- Inject filter UI into modal body if not already present (handles HTML cache) ---
+    const modalBody = document.querySelector('#export-text-modal .modal-body');
+    if (modalBody && !document.getElementById('export-date-filter')) {
+        const filterDiv = document.createElement('div');
+        filterDiv.id = 'export-date-filter';
+        filterDiv.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:1rem;padding:10px 12px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;';
+        filterDiv.innerHTML = `
+            <label style="font-size:0.8rem;font-weight:700;color:#64748b;white-space:nowrap;">📅 Phạm vi:</label>
+            <select id="export-range-type" onchange="onExportRangeTypeChange()" style="font-size:0.82rem;padding:5px 8px;border-radius:7px;border:1px solid #cbd5e1;color:#374151;background:white;font-weight:600;cursor:pointer;">
+                <option value="month">Cả tháng</option>
+                <option value="day">Một ngày</option>
+                <option value="range">Nhiều ngày (từ–đến)</option>
+            </select>
+            <input type="number" id="export-day-single" min="1" max="31" placeholder="Ngày" title="Chọn ngày"
+                style="display:none;width:70px;font-size:0.82rem;padding:5px 8px;border-radius:7px;border:1px solid #cbd5e1;color:#374151;font-weight:600;" />
+            <span id="export-range-wrap" style="display:none;gap:6px;align-items:center;">
+                <input type="number" id="export-day-from" min="1" max="31" placeholder="Từ ngày"
+                    style="width:76px;font-size:0.82rem;padding:5px 8px;border-radius:7px;border:1px solid #cbd5e1;color:#374151;font-weight:600;" />
+                <span style="color:#94a3b8;font-weight:700;">–</span>
+                <input type="number" id="export-day-to" min="1" max="31" placeholder="Đến ngày"
+                    style="width:84px;font-size:0.82rem;padding:5px 8px;border-radius:7px;border:1px solid #cbd5e1;color:#374151;font-weight:600;" />
+            </span>
+            <button type="button" onclick="regenerateExportText()"
+                style="font-size:0.8rem;padding:5px 12px;border-radius:7px;border:none;background:linear-gradient(135deg,#6366f1,#4f46e5);color:white;font-weight:700;cursor:pointer;white-space:nowrap;">
+                🔄 Tạo lại
+            </button>`;
+        // Insert before the textarea form-group (or at top of modal body after desc)
+        const descEl2 = document.getElementById('export-text-desc');
+        if (descEl2 && descEl2.nextSibling) {
+            modalBody.insertBefore(filterDiv, descEl2.nextSibling);
+        } else {
+            modalBody.prepend(filterDiv);
+        }
+    }
+
     // Reset range selector to "month" only when opening fresh (not from regenerate)
     const rangeTypeEl = document.getElementById('export-range-type');
     if (!isRegenerate && rangeTypeEl) {
