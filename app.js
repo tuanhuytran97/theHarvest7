@@ -1276,8 +1276,79 @@ document.addEventListener("DOMContentLoaded", () => {
             } catch (err) {
                 submitBtn.innerText = originalText;
                 submitBtn.disabled = false;
-                console.error(err);
-                alert("Lỗi kết nối Server! Vui lòng kiểm tra lại Google Apps Script.");
+                console.warn("[Login] Không kết nối được server, thử xác thực ngoại tuyến...", err);
+
+                // Fallback: local auth (cached credentials or default users)
+                const customUsers = JSON.parse(localStorage.getItem("custom_users") || "{}");
+                const defaultUsers = (typeof CONFIG !== 'undefined' && CONFIG.USERS && Object.keys(CONFIG.USERS).length > 0) ? CONFIG.USERS : {
+                    "admin": { name: "Huy Trần", role: "ADMIN", password: "huytran97" },
+                    "emp1": { name: "Nhân viên 1", role: "EMP_LV1", password: "nth66" },
+                    "emp2": { name: "Nhân viên 2", role: "EMP_LV2", password: "haitran63" }
+                };
+
+                let offlineUser = null;
+                // Check cached (previously logged in) custom users
+                if (customUsers[user] && customUsers[user].password === pw) {
+                    offlineUser = customUsers[user];
+                }
+                // Check default users from config
+                if (!offlineUser) {
+                    const du = defaultUsers[user];
+                    if (du && du.password === pw) {
+                        offlineUser = { role: du.role, name: du.name, username: user, password: pw };
+                    }
+                }
+                // Check by username field in customUsers
+                if (!offlineUser) {
+                    for (const k in customUsers) {
+                        const u2 = customUsers[k];
+                        if (u2 && u2.username === user && u2.password === pw) { offlineUser = u2; break; }
+                    }
+                }
+
+                if (offlineUser) {
+                    localStorage.setItem("failed-login-attempts", "0");
+                    localStorage.removeItem("login-block-until");
+                    const userRole = offlineUser.role || "EMP_LV1";
+                    const userName = offlineUser.name || "Người dùng";
+                    const userToken = (offlineUser.username || user) + ":" + pw;
+
+                    sessionStorage.setItem("user-role", userRole);
+                    sessionStorage.setItem("user-name", userName);
+                    sessionStorage.setItem("user-token", userToken);
+                    sessionStorage.setItem("m_role", userRole);
+                    sessionStorage.setItem("m_name", userName);
+                    sessionStorage.setItem("m_token", userToken);
+                    localStorage.setItem("mobile_saved_token", userToken);
+                    localStorage.setItem("mobile_saved_name", userName);
+                    localStorage.setItem("mobile_saved_role", userRole);
+
+                    const roleUpper = userRole.trim().toUpperCase();
+                    if (roleUpper !== "ADMIN") {
+                        window.location.href = "mobile_entry.html";
+                        return;
+                    }
+                    loginOverlay.style.display = "none";
+                    appContainer.style.display = "flex";
+                    if (chatbotContainer) chatbotContainer.style.display = "flex";
+                    applyRolePermissions(userRole);
+                    updateUserProfile();
+                    if (typeof initDashboard === "function") initDashboard();
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    let attempts = parseInt(localStorage.getItem("failed-login-attempts") || "0") + 1;
+                    localStorage.setItem("failed-login-attempts", attempts);
+                    if (attempts >= 5) {
+                        const blockTime = Date.now() + 15 * 60 * 1000;
+                        localStorage.setItem("login-block-until", blockTime.toString());
+                        checkLoginBlock();
+                    } else {
+                        loginError.style.display = "block";
+                        loginError.innerText = `Không kết nối được server. Tên đăng nhập hoặc mật khẩu không đúng! (Còn ${5 - attempts} lần thử)`;
+                        passwordInput.value = "";
+                        passwordInput.focus();
+                    }
+                }
             } finally {
                 submitBtn.innerText = originalText;
                 submitBtn.disabled = false;
