@@ -13028,6 +13028,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const submitBtn = form.querySelector('button[type="submit"]');
 
+            // ── Double-submit guard ──────────────────────────────────────────
+            if (submitBtn.dataset.submitting === '1') return;
+            submitBtn.dataset.submitting = '1';
+            submitBtn.disabled = true;
+            const _clearSubmitGuard = () => {
+                submitBtn.dataset.submitting = '0';
+                submitBtn.disabled = false;
+            };
+            // Auto-clear after 5s nếu có lỗi xảy ra trước khi vào finally
+            const _submitGuardTimeout = setTimeout(_clearSubmitGuard, 5000);
+            // ────────────────────────────────────────────────────────────────
+
             let payloadRowsStr = [];
             let payloadRowsParsed = [];
 
@@ -13165,8 +13177,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     const expNote = item.querySelector('.exp-note').value;
 
                     if (expAmount > 0) {
+                        const expClientId = `EXP_${Date.now()}_${Math.floor(Math.random()*9999)}`;
                         payloadRowsStr.push({
                             "action": "add_expense",
+                            "clientId": expClientId,
                             "data": {
                                 "Ngày": dateStr,
                                 "Status": "Xong",
@@ -13223,8 +13237,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // Add new rows to queue
             const timestampId = "OFFLINE_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
             payloadRowsStr.forEach((p, pIdx) => {
-                const rowClientId = `${timestampId}_${pIdx}`;
-                queue.push({ action: 'add', payload: p, clientId: rowClientId });
+                // Expense items already carry their own action & clientId; Farm/Vua use timestampId
+                const rowClientId = p.clientId || `${timestampId}_${pIdx}`;
+                const queueAction = p.action || 'add';
+                queue.push({ action: queueAction, payload: p, clientId: rowClientId });
 
                 // Map the clientId to the optimistic parsed row
                 if (payloadRowsParsed[pIdx]) {
@@ -13248,8 +13264,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const cancelBtn = document.getElementById('cancel-edit-btn');
             if (cancelBtn) cancelBtn.remove();
 
-            // Immediate reset of form inputs & submit button to allow next input instantly
-            submitBtn.disabled = false;
+            // Clear double-submit guard & reset form inputs
+            clearTimeout(_submitGuardTimeout);
+            _clearSubmitGuard();
             form.reset();
             document.getElementById('date-input').value = formatDateInput(new Date());
 
@@ -14321,12 +14338,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let isProcessingQueue = false;
 
+    // ── Multi-tab sync guard ─────────────────────────────────────────────────
+    const _appSyncChannel = typeof BroadcastChannel !== 'undefined'
+        ? new BroadcastChannel('harvest_sync_lock') : null;
+    if (_appSyncChannel) {
+        _appSyncChannel.onmessage = (e) => {
+            if (e.data === 'sync_started') isProcessingQueue = true;
+            if (e.data === 'sync_done') { isProcessingQueue = false; updateConnectionStatus(); }
+        };
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     async function processSyncQueue() {
         if (!navigator.onLine) {
             updateConnectionStatus();
             return;
         }
-        if (isProcessingQueue) return;
+
+        // ── localStorage lock: prevent multi-tab race (10 s TTL) ───────────
+        const _lockKey = 'harvest_sync_running';
+        const _lockTs = parseInt(localStorage.getItem(_lockKey) || '0');
+        if (Date.now() - _lockTs < 10000) return; // Another tab is syncing
+        localStorage.setItem(_lockKey, String(Date.now()));
+        if (_appSyncChannel) _appSyncChannel.postMessage('sync_started');
+        // ───────────────────────────────────────────────────────────────────
+
+        if (isProcessingQueue) { localStorage.removeItem(_lockKey); return; }
         isProcessingQueue = true;
 
         try {
@@ -14432,6 +14469,8 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Queue sync error:", e);
         } finally {
             isProcessingQueue = false;
+            localStorage.removeItem(_lockKey);
+            if (_appSyncChannel) _appSyncChannel.postMessage('sync_done');
             updateConnectionStatus();
         }
     }
