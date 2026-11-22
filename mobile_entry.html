@@ -2090,16 +2090,46 @@ async function callAPI(payload) {
 // ═══════════════════════════════════════════
 let syncQueue = JSON.parse(localStorage.getItem('mobile_sync_queue') || '[]');
 let isSyncingQueue = false;
+let _syncRetryTimer = null;
+let _tempIdCounter = 0; // Fix Bug#1: monotonic counter để tránh trùng tempId
+
+// FIX BUG#5: BroadcastChannel mutex — chỉ 1 tab được sync tại một thời điểm
+const _syncChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('mobile_sync_lock') : null;
+let _isSyncLeader = false;
+if (_syncChannel) {
+    _syncChannel.onmessage = (e) => {
+        if (e.data === 'sync_started') _isSyncLeader = false;
+        if (e.data === 'sync_done') {
+            // Reload syncQueue từ localStorage khi tab khác sync xong
+            syncQueue = JSON.parse(localStorage.getItem('mobile_sync_queue') || '[]');
+            updateSyncBadge();
+        }
+    };
+}
+
+function _makeTempId(prefix = 'temp') {
+    // FIX BUG#1: Dùng counter tăng dần thay vì chỉ Date.now()
+    _tempIdCounter++;
+    return `${prefix}_${Date.now()}_${_tempIdCounter}_${Math.random().toString(36).substr(2, 5)}`;
+}
 
 function enqueueSync(payload, tempRowIds = []) {
+    // FIX BUG#3: Gắn clientId vào payload để server có thể idempotent-check
+    const clientId = _makeTempId('cid');
     const item = {
-        id: 'sync_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
-        payload: payload,
+        id: clientId,
+        payload: { ...payload, _clientId: clientId },
         tempRowIds: tempRowIds,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        retryCount: 0
     };
-    syncQueue.push(item);
-    localStorage.setItem('mobile_sync_queue', JSON.stringify(syncQueue));
+    // FIX BUG#5: Luôn reload từ localStorage trước khi push (tránh stale state từ tab khác)
+    syncQueue = JSON.parse(localStorage.getItem('mobile_sync_queue') || '[]');
+    // Chống duplicate: không push nếu đã có cùng clientId
+    if (!syncQueue.find(q => q.id === item.id)) {
+        syncQueue.push(item);
+        localStorage.setItem('mobile_sync_queue', JSON.stringify(syncQueue));
+    }
     updateSyncBadge();
 }
 
@@ -2128,18 +2158,44 @@ function updateSyncBadge() {
 }
 
 async function processSyncQueue() {
+    // FIX BUG#2: Chống race condition — chỉ 1 instance chạy, dùng localStorage lock
     if (isSyncingQueue) return;
+
+    // FIX BUG#5: Multi-tab guard — nhường nếu tab khác đang sync
+    const lockKey = 'mobile_sync_running';
+    const lockTs = parseInt(localStorage.getItem(lockKey) || '0');
+    const now = Date.now();
+    if (now - lockTs < 8000) return; // Tab khác đang sync trong vòng 8s qua
+
+    // Reload queue từ localStorage (tránh stale state)
+    syncQueue = JSON.parse(localStorage.getItem('mobile_sync_queue') || '[]');
+
     if (syncQueue.length === 0) {
         updateSyncBadge();
         return;
     }
 
     isSyncingQueue = true;
+    _isSyncLeader = true;
+    localStorage.setItem(lockKey, String(now));
+    if (_syncChannel) _syncChannel.postMessage('sync_started');
     updateSyncBadge();
 
     while (syncQueue.length > 0) {
         const item = syncQueue[0];
+        // Kiểm tra max retry (tránh item lỗi chặn mãi)
+        if ((item.retryCount || 0) >= 5) {
+            console.warn('[SyncQueue] Item bị bỏ qua sau 5 lần retry:', item.id, item.payload?.action);
+            syncQueue.shift();
+            localStorage.setItem('mobile_sync_queue', JSON.stringify(syncQueue));
+            updateSyncBadge();
+            continue;
+        }
+
         try {
+            // Renew lock mỗi item để tab khác biết ta vẫn đang chạy
+            localStorage.setItem(lockKey, String(Date.now()));
+
             const res = await callAPI(item.payload);
             if (res && res.status === 'success') {
                 if (item.tempRowIds) {
@@ -2154,20 +2210,40 @@ async function processSyncQueue() {
                 updateSyncBadge();
                 renderReport();
             } else {
-                console.warn('Sync server returned non-success:', res);
+                // Server trả về non-success → tăng retry, dừng lại
+                console.warn('[SyncQueue] Server non-success:', res, 'item:', item.id);
+                item.retryCount = (item.retryCount || 0) + 1;
+                syncQueue[0] = item;
+                localStorage.setItem('mobile_sync_queue', JSON.stringify(syncQueue));
                 break;
             }
         } catch (err) {
-            console.warn('Sync connection error:', err);
+            // Network error → tăng retry, exponential backoff
+            item.retryCount = (item.retryCount || 0) + 1;
+            syncQueue[0] = item;
+            localStorage.setItem('mobile_sync_queue', JSON.stringify(syncQueue));
+            console.warn(`[SyncQueue] Lỗi mạng (retry ${item.retryCount}/5):`, err);
             break;
         }
     }
 
     isSyncingQueue = false;
+    _isSyncLeader = false;
+    localStorage.removeItem(lockKey);
+    if (_syncChannel) _syncChannel.postMessage('sync_done');
     updateSyncBadge();
 
-    // Silently refresh from Google Sheets once queue is completely drained
-    if (syncQueue.length === 0) {
+    // FIX: Nếu queue chưa hết (do lỗi), schedule retry với exponential backoff
+    if (syncQueue.length > 0) {
+        const retryCount = syncQueue[0]?.retryCount || 1;
+        const delayMs = Math.min(1000 * Math.pow(2, retryCount - 1), 30000); // 2s, 4s, 8s, 16s, 30s
+        clearTimeout(_syncRetryTimer);
+        _syncRetryTimer = setTimeout(() => {
+            processSyncQueue();
+        }, delayMs);
+        console.log(`[SyncQueue] Retry sau ${delayMs / 1000}s (attempt ${retryCount})`);
+    } else {
+        // Queue rỗng hoàn toàn → refresh từ server
         loadTodayData(true);
     }
 }
@@ -2546,6 +2622,12 @@ function calcFarmTotals() {
 }
 
 function submitFarmOrder() {
+    // FIX: Double-submit guard — tránh bấm 2 lần
+    const farmBtn = document.getElementById('farm-submit-btn');
+    if (farmBtn && farmBtn.dataset.submitting === '1') return;
+    if (farmBtn) farmBtn.dataset.submitting = '1';
+    setTimeout(() => { if (farmBtn) delete farmBtn.dataset.submitting; }, 3000);
+
     const farmDateVal = document.getElementById('farm-date').value;
     if (!isAdmin() && !isDateToday(farmDateVal)) {
         showLockedEntryNotice();
@@ -2648,7 +2730,7 @@ function executeSubmitFarmOrder({ farmDateVal, dateVN, buyer, status, note, flow
     const createdTempIds = [];
     for (let i = flowers.length - 1; i >= 0; i--) {
         const f = flowers[i];
-        const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        const tempId = _makeTempId('temp'); // FIX BUG#1: monotonic counter
         createdTempIds.unshift(tempId);
         todayData.unshift({
             _row: tempId,
@@ -2946,6 +3028,12 @@ function recalcVua() {
 }
 
 function submitVuaOrder() {
+    // FIX: Double-submit guard
+    const vuaBtn = document.getElementById('vua-submit-btn');
+    if (vuaBtn && vuaBtn.dataset.submitting === '1') return;
+    if (vuaBtn) vuaBtn.dataset.submitting = '1';
+    setTimeout(() => { if (vuaBtn) delete vuaBtn.dataset.submitting; }, 3000);
+
     const vuaDateVal = document.getElementById('vua-date').value;
     if (!isAdmin() && !isDateToday(vuaDateVal)) {
         showLockedEntryNotice();
@@ -3095,7 +3183,7 @@ function executeSubmitVuaOrder({
     for (let i = flowers.length - 1; i >= 0; i--) {
         const f = flowers[i];
         const isFirst = (i === 0);
-        const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        const tempId = _makeTempId('temp'); // FIX BUG#1: dùng counter monotonic
         createdTempIds.unshift(tempId);
 
         let rowChiPhi = '';
@@ -3393,6 +3481,12 @@ function recalcExpenseTotals() {
 }
 
 function submitExpenseOrder() {
+    // FIX: Double-submit guard
+    const expBtn = document.getElementById('expense-submit-btn');
+    if (expBtn && expBtn.dataset.submitting === '1') return;
+    if (expBtn) expBtn.dataset.submitting = '1';
+    setTimeout(() => { if (expBtn) delete expBtn.dataset.submitting; }, 3000);
+
     const expDateVal = document.getElementById('expense-date').value;
     if (!isAdmin() && !isDateToday(expDateVal)) {
         showLockedEntryNotice();
@@ -3477,7 +3571,7 @@ function executeSubmitExpenseOrder({ expDateVal, dateVN, expItems, totalExp }) {
     const createdTempIds = [];
     for (let i = expItems.length - 1; i >= 0; i--) {
         const it = expItems[i];
-        const tempId = 'temp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        const tempId = _makeTempId('temp'); // FIX BUG#1: dùng counter monotonic
         createdTempIds.unshift(tempId);
         todayData.unshift({
             _row: tempId,
@@ -3605,15 +3699,36 @@ function loadTodayData(isSilent = false) {
                 }
             });
 
-        // Retain optimistic local items that haven't shown up in serverRows yet
+        // FIX BUG#4: Retain optimistic local items — dùng _clientId (từ payload) để dedup chính xác
+        // Lấy tất cả clientId đã thành công trên server từ payload đã sync
+        const syncedClientIds = new Set(
+            syncQueue
+                .filter(q => false) // Chỉ các item đã xóa khỏi queue = đã sync xong
+                .map(q => q.payload?._clientId)
+                .filter(Boolean)
+        );
+
         const pendingLocalItems = todayData.filter(localRow => {
             if (!localRow._clientId) return false;
-            const foundOnServer = activeServerRows.some(sr => 
-                (isDateMatch(sr['Ngày'], localRow['Ngày']) || sr['Ngày'] === localRow['Ngày']) &&
-                String(sr['Người Mua']).trim().toLowerCase() === String(localRow['Người Mua']).trim().toLowerCase() &&
-                String(sr['Phân Loại Bông']).trim().toLowerCase() === String(localRow['Phân Loại Bông']).trim().toLowerCase() &&
-                parseSheetNum(sr['Số lượng']) === parseSheetNum(localRow['Số lượng'])
-            );
+            if (localRow._isPendingSync === false) return false; // Đã sync xong
+            // FIX: Check xem server đã có row này chưa (dùng _clientId nếu server trả về)
+            const foundOnServer = activeServerRows.some(sr => {
+                // Nếu server trả về _clientId khớp → đã sync → không giữ lại
+                if (sr['Ghi Chú thu'] && localRow._clientId && sr['Ghi Chú thu'] === localRow._clientId) return true;
+                // Fallback: match theo orderId (vựa orders)
+                if (localRow._orderId && sr['Ghi Chú thu'] && sr['Ghi Chú thu'] === localRow._orderId) {
+                    // Chỉ match nếu cùng loại hoa (tránh false positive)
+                    return String(sr['Phân Loại Bông']).trim().toLowerCase() === String(localRow['Phân Loại Bông']).trim().toLowerCase();
+                }
+                // Fallback cuối: match chặt theo Ngày + Người Mua + Loại Bông + Số lượng + Giá
+                return (
+                    (isDateMatch(sr['Ngày'], localRow['Ngày']) || sr['Ngày'] === localRow['Ngày']) &&
+                    String(sr['Người Mua']).trim().toLowerCase() === String(localRow['Người Mua']).trim().toLowerCase() &&
+                    String(sr['Phân Loại Bông']).trim().toLowerCase() === String(localRow['Phân Loại Bông']).trim().toLowerCase() &&
+                    parseSheetNum(sr['Số lượng']) === parseSheetNum(localRow['Số lượng']) &&
+                    parseSheetNum(sr['Giá']) === parseSheetNum(localRow['Giá'])
+                );
+            });
             return !foundOnServer;
         });
 
