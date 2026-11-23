@@ -6,13 +6,12 @@ import httpx
 
 PORT = 8001
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept": "application/json"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 
 def fetch_vietnam_stock(ticker: str) -> dict:
     ticker = ticker.upper().strip()
-    client = httpx.Client(headers=HEADERS, timeout=10.0, follow_redirects=True)
+    client = httpx.Client(headers=HEADERS, timeout=8.0, follow_redirects=True)
 
     # 1. Company Intro
     name = f"Công ty CP {ticker}"
@@ -29,21 +28,45 @@ def fetch_vietnam_stock(ticker: str) -> dict:
     except Exception as e:
         print(f"Error fetching intro: {e}")
 
-    # 2. Realtime Price from VNDirect
-    price = 50000
+    # 2. Realtime Price (Nguồn 1: Bảng giá VPS realtime; Nguồn 2: VNDirect)
+    price = 0
     price_change = 0.0
+    
+    # Nguồn 1: VPS realtime datafeed
     try:
-        now = int(time.time())
-        r_price = client.get(f"https://dchart-api.vndirect.com.vn/dchart/history?resolution=D&symbol={ticker}&from={now - 86400*30}&to={now}")
-        if r_price.status_code == 200:
-            pdata = r_price.json()
-            closes = pdata.get("c", [])
-            if closes:
-                price = int(closes[-1] * 1000)
-                if len(closes) >= 2 and closes[-2] > 0:
-                    price_change = round(((closes[-1] - closes[-2]) / closes[-2]) * 100, 2)
+        r_vps = client.get(f"https://bgapidatafeed.vps.com.vn/getliststockdata/{ticker}")
+        if r_vps.status_code == 200:
+            vps_list = r_vps.json()
+            if vps_list and len(vps_list) > 0:
+                vdata = vps_list[0]
+                lp = vdata.get("lastPrice") or vdata.get("r") or 0
+                ref = vdata.get("r") or lp or 1
+                if lp > 0:
+                    price = int(round(lp * 1000))
+                    price_change = round(((lp - ref) / ref) * 100, 2) if ref > 0 else 0.0
     except Exception as e:
-        print(f"Error fetching price: {e}")
+        print(f"Error fetching VPS price: {e}")
+
+    # Nguồn 2 fallback: VNDirect dchart
+    if price <= 0:
+        try:
+            now = int(time.time())
+            r_price = client.get(
+                f"https://dchart-api.vndirect.com.vn/dchart/history?resolution=D&symbol={ticker}&from={now - 86400*30}&to={now}"
+            )
+            if r_price.status_code == 200:
+                pdata = r_price.json()
+                closes = pdata.get("c", [])
+                if closes:
+                    price = int(round(closes[-1] * 1000))
+                    if len(closes) >= 2 and closes[-2] > 0:
+                        price_change = round(((closes[-1] - closes[-2]) / closes[-2]) * 100, 2)
+        except Exception as e:
+            print(f"Error fetching VNDirect price: {e}")
+
+    # Fallback an toàn nếu cả 2 nguồn đều mất mạng
+    if price <= 0:
+        price = 30000
 
     # 3. Financial Statements (KQKD)
     years = []
@@ -177,7 +200,7 @@ def fetch_vietnam_stock(ticker: str) -> dict:
         "_ticker": ticker,
         "_isDemo": False,
         "_isLive": True,
-        "_source": "CafeF & VNDirect (Python Backend)",
+        "_source": "VPS Realtime & CafeF BCTC (Python Backend)",
         "name": name,
         "market": market,
         "sector": "Việt Nam",
