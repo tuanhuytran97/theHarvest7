@@ -8,3 +8,5 @@ config.js
 App_script
 theHarvest7_telegram.js
 investment_philosophy.txt
+__pycache__/
+*.pyc

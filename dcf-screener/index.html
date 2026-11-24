@@ -195,8 +195,8 @@
       <i class="fa-solid fa-check"></i> Sẵn sàng
     </span>
   </div>
-  <div style="color:var(--text-light);font-size:0.7rem;">
-    💡 Để bật Backend VN: Nhấp đúp vào file <b>start_stock_service.bat</b> trong thư mục dự án
+  <div style="color:var(--text-light);font-size:0.7rem;" id="backend-hint">
+    ⚡ Tự động kết nối Backend Python (Port 8001) khi mở trang
   </div>
 </div>
 
@@ -438,8 +438,10 @@ let chartRevenue = null, chartRatios = null;
 let isBackendOnline = false;
 
 // ═══════════════════════════════════════════════════
-// BACKEND HEALTH CHECK
+// BACKEND HEALTH CHECK & AUTO-LAUNCH
 // ═══════════════════════════════════════════════════
+let isAttemptingAutoStart = false;
+
 async function checkBackendHealth() {
   const el = document.getElementById('backend-status');
   try {
@@ -447,12 +449,43 @@ async function checkBackendHealth() {
     if (r.ok) {
       isBackendOnline = true;
       el.className = 'badge-status online';
+      el.style.background = '';
+      el.style.color = '';
+      el.style.borderColor = '';
       el.innerHTML = '<i class="fa-solid fa-circle-check"></i> Đang chạy (Port 8001)';
+      isAttemptingAutoStart = false;
       return true;
     }
   } catch (e) {}
+
+  // Nếu chưa chạy, tự động gửi tín hiệu kích hoạt qua server.js (Port 8000)
+  if (!isAttemptingAutoStart) {
+    isAttemptingAutoStart = true;
+    el.className = 'badge-status';
+    el.style.background = 'rgba(234, 179, 8, 0.15)';
+    el.style.color = '#b45309';
+    el.style.borderColor = 'rgba(234, 179, 8, 0.4)';
+    el.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tự động kết nối...';
+
+    try {
+      await fetch('/api/start-stock-service');
+    } catch(err) {}
+
+    // Thử lại sau 1.5s và 3.5s
+    setTimeout(async () => {
+      const ok = await checkBackendHealth();
+      if (!ok) {
+        setTimeout(checkBackendHealth, 2000);
+      }
+    }, 1500);
+    return false;
+  }
+
   isBackendOnline = false;
   el.className = 'badge-status offline';
+  el.style.background = '';
+  el.style.color = '';
+  el.style.borderColor = '';
   el.innerHTML = '<i class="fa-solid fa-circle-pause"></i> Chưa bật';
   return false;
 }
@@ -507,8 +540,8 @@ async function runScreener() {
     document.getElementById('state-error').classList.add('show');
     document.getElementById('state-error-msg').innerHTML =
       `Không tải được dữ liệu cho mã "<b>${raw}</b>".<br><br>` +
-      `<span style="color:#6366f1;font-weight:700;">💡 Hướng dẫn bật dữ liệu tự động cho cổ phiếu Việt Nam:</span><br>` +
-      `Nhấp đúp chuột vào file <b>start_stock_service.bat</b> trong thư mục dự án để khởi động Python Backend!`;
+      `<span style="color:#6366f1;font-weight:700;">💡 Trạng thái hệ thống:</span><br>` +
+      `Hệ thống đang tự động kích hoạt Backend Python (Port 8001). Vui lòng nhấn <b>Phân Tích Ngay</b> lại sau vài giây!`;
     return;
   }
 
