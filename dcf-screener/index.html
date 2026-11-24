@@ -159,6 +159,113 @@
 
   .source-note { font-size: 0.65rem; color: var(--text-light); margin-top: 8px; padding: 5px 10px; background: rgba(99,102,241,0.04); border-radius: 8px; border: 1px solid rgba(99,102,241,0.08); }
   .source-live { border-color: rgba(16,185,129,0.2); background: rgba(16,185,129,0.04); color: var(--success); font-weight: 700; }
+
+  /* ── Metric Floating Tooltip ── */
+  .metric-tooltip {
+    position: fixed;
+    z-index: 99999;
+    background: rgba(15, 23, 42, 0.96);
+    color: #f8fafc;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 12px 14px;
+    max-width: 320px;
+    width: max-content;
+    box-shadow: 0 20px 40px -6px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(99, 102, 241, 0.2);
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px) scale(0.98);
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.18s;
+    font-size: 0.76rem;
+    line-height: 1.45;
+  }
+  .metric-tooltip.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+  .mt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 5px;
+  }
+  .mt-title {
+    font-weight: 800;
+    color: #a5b4fc;
+    font-size: 0.82rem;
+  }
+  .mt-tag {
+    background: rgba(16, 185, 129, 0.2);
+    color: #6ee7b7;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .mt-formula {
+    background: rgba(255, 255, 255, 0.08);
+    border-left: 3px solid #6366f1;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: 'Consolas', monospace;
+    font-size: 0.72rem;
+    color: #38bdf8;
+    margin-bottom: 6px;
+    word-break: break-word;
+  }
+  .mt-desc {
+    color: #cbd5e1;
+    margin-bottom: 6px;
+  }
+  .mt-bench {
+    background: rgba(245, 158, 11, 0.12);
+    border-radius: 6px;
+    padding: 4px 8px;
+    color: #fde68a;
+    font-size: 0.7rem;
+    line-height: 1.35;
+  }
+  [data-metric] {
+    cursor: help !important;
+    transition: all 0.15s ease;
+  }
+  .kpi-item[data-metric]:hover {
+    background: rgba(99, 102, 241, 0.12);
+    border-color: rgba(99, 102, 241, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+  }
+  .health-check-row[data-metric]:hover {
+    background: rgba(99, 102, 241, 0.08);
+    border-radius: 6px;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+  .fin-table tr td[data-metric]:first-child:hover {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: var(--primary) !important;
+    font-weight: 800 !important;
+    border-radius: 6px;
+  }
+  .tip-icon {
+    font-size: 0.72rem;
+    color: var(--primary);
+    opacity: 0.65;
+    margin-left: 4px;
+    transition: opacity 0.15s, transform 0.15s;
+    vertical-align: middle;
+  }
+  [data-metric]:hover .tip-icon {
+    opacity: 1;
+    transform: scale(1.15);
+  }
 </style>
 </head>
 <body>
@@ -319,32 +426,47 @@
     <div class="card">
       <div class="card-title"><i class="fa-solid fa-sliders"></i> Mô hình DCF — Giả lập</div>
       <div class="slider-row">
-        <div class="slider-header"><span class="slider-label">Tốc độ tăng trưởng (5 năm)</span><span class="slider-val" id="val-growth">15%</span></div>
+        <div class="slider-header">
+          <span class="slider-label" data-metric="growth">Tốc độ tăng trưởng (5 năm) <i class="fa-solid fa-circle-question tip-icon"></i></span>
+          <span class="slider-val" id="val-growth">15%</span>
+        </div>
         <input type="range" id="sl-growth" min="0" max="50" step="0.5" value="15" oninput="onSlider()">
         <div class="slider-desc">CAGR doanh thu dự phóng giai đoạn tăng trưởng cao</div>
       </div>
       <div class="slider-row">
-        <div class="slider-header"><span class="slider-label">Tốc độ tăng trưởng bền vững</span><span class="slider-val" id="val-terminal">3%</span></div>
+        <div class="slider-header">
+          <span class="slider-label" data-metric="terminal">Tốc độ tăng trưởng bền vững <i class="fa-solid fa-circle-question tip-icon"></i></span>
+          <span class="slider-val" id="val-terminal">3%</span>
+        </div>
         <input type="range" id="sl-terminal" min="0" max="10" step="0.5" value="3" oninput="onSlider()">
         <div class="slider-desc">Terminal growth rate sau giai đoạn dự phóng</div>
       </div>
       <div class="slider-row">
-        <div class="slider-header"><span class="slider-label">Tỷ lệ chiết khấu (WACC)</span><span class="slider-val" id="val-wacc">12%</span></div>
+        <div class="slider-header">
+          <span class="slider-label" data-metric="wacc">Tỷ lệ chiết khấu (WACC) <i class="fa-solid fa-circle-question tip-icon"></i></span>
+          <span class="slider-val" id="val-wacc">12%</span>
+        </div>
         <input type="range" id="sl-wacc" min="6" max="25" step="0.5" value="12" oninput="onSlider()">
         <div class="slider-desc">Chi phí vốn bình quân gia quyền</div>
       </div>
       <div class="slider-row">
-        <div class="slider-header"><span class="slider-label">Biên an toàn (Margin of Safety)</span><span class="slider-val" id="val-mos">25%</span></div>
+        <div class="slider-header">
+          <span class="slider-label" data-metric="mos">Biên an toàn (Margin of Safety) <i class="fa-solid fa-circle-question tip-icon"></i></span>
+          <span class="slider-val" id="val-mos">25%</span>
+        </div>
         <input type="range" id="sl-mos" min="0" max="50" step="5" value="25" oninput="onSlider()">
         <div class="slider-desc">Chiết khấu thêm vào giá trị nội tại</div>
       </div>
       <div class="slider-row">
-        <div class="slider-header"><span class="slider-label">Biên lợi nhuận ròng dự phóng</span><span class="slider-val" id="val-margin">12%</span></div>
+        <div class="slider-header">
+          <span class="slider-label" data-metric="netMarginProj">Biên lợi nhuận ròng dự phóng <i class="fa-solid fa-circle-question tip-icon"></i></span>
+          <span class="slider-val" id="val-margin">12%</span>
+        </div>
         <input type="range" id="sl-margin" min="1" max="50" step="0.5" value="12" oninput="onSlider()">
         <div class="slider-desc">Net margin kỳ vọng</div>
       </div>
-      <div class="fv-box">
-        <div class="fv-label">💎 Giá Trị Hợp Lý (Fair Value)</div>
+      <div class="fv-box" data-metric="fairValue">
+        <div class="fv-label">💎 Giá Trị Hợp Lý (Fair Value) <i class="fa-solid fa-circle-question tip-icon" style="color:white;opacity:0.85;"></i></div>
         <div class="fv-price" id="fv-price">--</div>
         <div class="fv-range" id="fv-range">Nội tại: -- · Sau MOS: --</div>
         <div class="fv-verdict na" id="fv-verdict">Nhập mã cổ phiếu để tính</div>
@@ -371,6 +493,17 @@
 
 <!-- Toast -->
 <div id="toast"><div class="toast-msg hidden" id="toast-msg"><i class="fa-solid fa-circle-info"></i><span id="toast-text"></span></div></div>
+
+<!-- Floating Metric Tooltip -->
+<div id="metric-tooltip" class="metric-tooltip">
+  <div class="mt-header">
+    <span class="mt-title" id="mt-title"></span>
+    <span class="mt-tag" id="mt-tag"></span>
+  </div>
+  <div class="mt-formula" id="mt-formula"></div>
+  <div class="mt-desc" id="mt-desc"></div>
+  <div class="mt-bench" id="mt-bench"></div>
+</div>
 
 <script>
 // ═══════════════════════════════════════════════════
@@ -634,15 +767,15 @@ function renderFinTable(d) {
   head.innerHTML = `<th>Chỉ tiêu (${d.unit})</th>` + d.years.map(y => `<th>${y}</th>`).join('');
 
   const baseRows = [
-    {label:'📦 Doanh thu thuần', key:'revenue', bold:true},
-    {label:'💰 Lợi nhuận gộp', key:'grossProfit', bold:false},
-    {label:'📊 EBITDA', key:'ebitda', bold:false},
-    {label:'✅ Lợi nhuận ròng', key:'netProfit', bold:true},
-    {label:'🏦 Tổng tài sản', key:'totalAssets', bold:false},
-    {label:'📐 Vốn chủ sở hữu', key:'equity', bold:false},
-    {label:'💳 Nợ vay', key:'totalDebt', bold:false},
-    {label:'💵 CFO (Dòng tiền HĐ)', key:'cfo', bold:false},
-    {label:'🔧 CAPEX', key:'capex', bold:false},
+    {label:'📦 Doanh thu thuần', key:'revenue', metric:'revenue', bold:true},
+    {label:'💰 Lợi nhuận gộp', key:'grossProfit', metric:'grossProfit', bold:false},
+    {label:'📊 EBITDA', key:'ebitda', metric:'ebitda', bold:false},
+    {label:'✅ Lợi nhuận ròng', key:'netProfit', metric:'netProfit', bold:true},
+    {label:'🏦 Tổng tài sản', key:'totalAssets', metric:'totalAssets', bold:false},
+    {label:'📐 Vốn chủ sở hữu', key:'equity', metric:'equity', bold:false},
+    {label:'💳 Nợ vay', key:'totalDebt', metric:'totalDebt', bold:false},
+    {label:'💵 CFO (Dòng tiền HĐ)', key:'cfo', metric:'cfo', bold:false},
+    {label:'🔧 CAPEX', key:'capex', metric:'capex', bold:false},
   ];
 
   body.innerHTML = baseRows.map(row => {
@@ -655,19 +788,19 @@ function renderFinTable(d) {
       }
       return `<td>${fmtNum(v)}${g}</td>`;
     }).join('');
-    return `<tr class="${row.bold?'row-hl':''}"><td>${row.label}</td>${cells}</tr>`;
+    return `<tr class="${row.bold?'row-hl':''}"><td data-metric="${row.metric}">${row.label} <i class="fa-solid fa-circle-question tip-icon"></i></td>${cells}</tr>`;
   }).join('');
 
   const computed = [
-    {label:'📈 ROE (%)', values: d.years.map((_,i) => d.equity[i] ? (d.netProfit[i]/d.equity[i]*100).toFixed(1)+'%':'--')},
-    {label:'🏗️ ROA (%)', values: d.years.map((_,i) => d.totalAssets[i] ? (d.netProfit[i]/d.totalAssets[i]*100).toFixed(1)+'%':'--')},
-    {label:'📉 Biên LN ròng (%)', values: d.years.map((_,i) => d.revenue[i] ? (d.netProfit[i]/d.revenue[i]*100).toFixed(1)+'%':'--')},
-    {label:'⚙️ Hệ số D/E', values: d.years.map((_,i) => d.equity[i] ? (d.totalDebt[i]/d.equity[i]).toFixed(2):'--')},
-    {label:'📌 EPS', values: d.years.map((_,i) => fmtNum(d.eps[i]))},
-    {label:'💸 FCF (CFO - CAPEX)', values: d.years.map((_,i) => fmtNum(d.cfo[i]-d.capex[i]))},
+    {label:'📈 ROE (%)', metric:'roe', values: d.years.map((_,i) => d.equity[i] ? (d.netProfit[i]/d.equity[i]*100).toFixed(1)+'%':'--')},
+    {label:'🏗️ ROA (%)', metric:'roa', values: d.years.map((_,i) => d.totalAssets[i] ? (d.netProfit[i]/d.totalAssets[i]*100).toFixed(1)+'%':'--')},
+    {label:'📉 Biên LN ròng (%)', metric:'netMargin', values: d.years.map((_,i) => d.revenue[i] ? (d.netProfit[i]/d.revenue[i]*100).toFixed(1)+'%':'--')},
+    {label:'⚙️ Hệ số D/E', metric:'de', values: d.years.map((_,i) => d.equity[i] ? (d.totalDebt[i]/d.equity[i]).toFixed(2):'--')},
+    {label:'📌 EPS', metric:'eps', values: d.years.map((_,i) => fmtNum(d.eps[i]))},
+    {label:'💸 FCF (CFO - CAPEX)', metric:'fcf', values: d.years.map((_,i) => fmtNum(d.cfo[i]-d.capex[i]))},
   ];
   body.innerHTML += computed.map(row =>
-    `<tr class="row-computed"><td>${row.label}</td>${row.values.map(v=>`<td>${v}</td>`).join('')}</tr>`
+    `<tr class="row-computed"><td data-metric="${row.metric}">${row.label} <i class="fa-solid fa-circle-question tip-icon"></i></td>${row.values.map(v=>`<td>${v}</td>`).join('')}</tr>`
   ).join('');
 
   const srcEl = document.getElementById('data-source-note');
@@ -739,13 +872,13 @@ function renderHealth(d) {
   const em  = d.revenue[last] ? d.ebitda[last]/d.revenue[last]*100 : 0;
 
   const checks = [
-    {label:'ROE > 15%',         pass: roe>=15,    val: roe.toFixed(1)+'%'},
-    {label:'ROA > 8%',          pass: roa>=8,     val: roa.toFixed(1)+'%'},
-    {label:'D/E < 1.5',         pass: de<=1.5,    val: de.toFixed(2)},
-    {label:'Biên LN ròng > 8%', pass: nm>=8,      val: nm.toFixed(1)+'%'},
-    {label:'FCF dương',         pass: fcf>0,      val: fmtNum(fcf)},
-    {label:'DT tăng 5 năm',     pass: revGrow>0,  val: '+'+revGrow.toFixed(0)+'%'},
-    {label:'EBITDA Margin>15%', pass: em>=15,     val: em.toFixed(1)+'%'},
+    {label:'ROE > 15%',         metric:'roe',          pass: roe>=15,    val: roe.toFixed(1)+'%'},
+    {label:'ROA > 8%',          metric:'roa',          pass: roa>=8,     val: roa.toFixed(1)+'%'},
+    {label:'D/E < 1.5',         metric:'de',           pass: de<=1.5,    val: de.toFixed(2)},
+    {label:'Biên LN ròng > 8%', metric:'netMargin',    pass: nm>=8,      val: nm.toFixed(1)+'%'},
+    {label:'FCF dương',         metric:'fcf',          pass: fcf>0,      val: fmtNum(fcf)},
+    {label:'DT tăng 5 năm',     metric:'revGrowth5Y',  pass: revGrow>0,  val: '+'+revGrow.toFixed(0)+'%'},
+    {label:'EBITDA Margin>15%', metric:'ebitdaMargin', pass: em>=15,     val: em.toFixed(1)+'%'},
   ];
 
   const score = Math.round(checks.filter(c=>c.pass).length/checks.length*100);
@@ -761,18 +894,18 @@ function renderHealth(d) {
   arc.setAttribute('stroke', color);
 
   document.getElementById('health-checks').innerHTML = checks.map(c => `
-    <div class="health-check-row">
+    <div class="health-check-row" data-metric="${c.metric}">
       <div class="health-dot" style="background:${c.pass?'#10b981':'#ef4444'}"></div>
-      <span style="flex:1;color:${c.pass?'var(--text)':'var(--text-light)'};font-weight:${c.pass?700:500};font-size:0.73rem">${c.label}</span>
+      <span style="flex:1;color:${c.pass?'var(--text)':'var(--text-light)'};font-weight:${c.pass?700:500};font-size:0.73rem">${c.label} <i class="fa-solid fa-circle-question tip-icon" style="font-size:0.6rem;"></i></span>
       <span style="font-weight:800;color:${c.pass?'#10b981':'#ef4444'};font-size:0.73rem">${c.val}</span>
     </div>`).join('');
 
   document.getElementById('health-kpi-grid').innerHTML = [
-    {label:'ROE', val:roe.toFixed(1)+'%', cls:roe>=15?'good':roe>=10?'warn':'bad'},
-    {label:'ROA', val:roa.toFixed(1)+'%', cls:roa>=8?'good':roa>=5?'warn':'bad'},
-    {label:'D/E', val:de.toFixed(2),      cls:de<=1?'good':de<=2?'warn':'bad'},
-    {label:'FCF', val:fmtNum(fcf),        cls:fcf>0?'good':'bad'},
-  ].map(k=>`<div class="kpi-item"><div class="kpi-label">${k.label}</div><div class="kpi-value ${k.cls}">${k.val}</div></div>`).join('');
+    {label:'ROE', metric:'roe', val:roe.toFixed(1)+'%', cls:roe>=15?'good':roe>=10?'warn':'bad'},
+    {label:'ROA', metric:'roa', val:roa.toFixed(1)+'%', cls:roa>=8?'good':roa>=5?'warn':'bad'},
+    {label:'D/E', metric:'de',  val:de.toFixed(2),      cls:de<=1?'good':de<=2?'warn':'bad'},
+    {label:'FCF', metric:'fcf', val:fmtNum(fcf),        cls:fcf>0?'good':'bad'},
+  ].map(k=>`<div class="kpi-item" data-metric="${k.metric}"><div class="kpi-label">${k.label} <i class="fa-solid fa-circle-question tip-icon"></i></div><div class="kpi-value ${k.cls}">${k.val}</div></div>`).join('');
 }
 
 function renderValuation(d) {
@@ -787,25 +920,25 @@ function renderValuation(d) {
   const nm = d.revenue[last] ? (d.netProfit[last]/d.revenue[last]*100).toFixed(1)+'%' : '--';
 
   document.getElementById('valuation-kpi-grid').innerHTML = [
-    {label:'P/E', val:pe, cls: pe!='--' && pe<20?'good': pe<30?'warn':'bad'},
-    {label:'P/B', val:pb, cls: pb!='--' && pb<2?'good': pb<4?'warn':'bad'},
-    {label:'EPS', val:fmtNum(epsLast), cls: epsLast>0?'good':'bad'},
-    {label:'Biên LN ròng', val:nm, cls:'good'},
-  ].map(k=>`<div class="kpi-item"><div class="kpi-label">${k.label}</div><div class="kpi-value ${k.cls}">${k.val}</div></div>`).join('');
+    {label:'P/E', metric:'pe', val:pe, cls: pe!='--' && pe<20?'good': pe<30?'warn':'bad'},
+    {label:'P/B', metric:'pb', val:pb, cls: pb!='--' && pb<2?'good': pb<4?'warn':'bad'},
+    {label:'EPS', metric:'eps', val:fmtNum(epsLast), cls: epsLast>0?'good':'bad'},
+    {label:'Biên LN ròng', metric:'netMargin', val:nm, cls:'good'},
+  ].map(k=>`<div class="kpi-item" data-metric="${k.metric}"><div class="kpi-label">${k.label} <i class="fa-solid fa-circle-question tip-icon"></i></div><div class="kpi-value ${k.cls}">${k.val}</div></div>`).join('');
 
   document.getElementById('ebitda-kpi-grid').innerHTML = [
-    {label:'EBITDA Margin', val:em, cls: parseFloat(em)>=20?'good': parseFloat(em)>=10?'warn':'bad'},
-    {label:'FCF', val:fmtNum(fcf), cls: fcf>0?'good':'bad'},
-    {label:'CFO', val:fmtNum(d.cfo[last]), cls:'good'},
-    {label:'CAPEX', val:fmtNum(d.capex[last]), cls:'warn'},
-  ].map(k=>`<div class="kpi-item"><div class="kpi-label">${k.label}</div><div class="kpi-value ${k.cls}">${k.val}</div></div>`).join('');
+    {label:'EBITDA Margin', metric:'ebitdaMargin', val:em, cls: parseFloat(em)>=20?'good': parseFloat(em)>=10?'warn':'bad'},
+    {label:'FCF', metric:'fcf', val:fmtNum(fcf), cls: fcf>0?'good':'bad'},
+    {label:'CFO', metric:'cfo', val:fmtNum(d.cfo[last]), cls:'good'},
+    {label:'CAPEX', metric:'capex', val:fmtNum(d.capex[last]), cls:'warn'},
+  ].map(k=>`<div class="kpi-item" data-metric="${k.metric}"><div class="kpi-label">${k.label} <i class="fa-solid fa-circle-question tip-icon"></i></div><div class="kpi-value ${k.cls}">${k.val}</div></div>`).join('');
 
   document.getElementById('extra-kpi-grid').innerHTML = [
-    {label:'Tổng nợ', val:fmtNum(d.totalDebt[last]), cls: d.totalDebt[last]<=d.equity[last]?'good':'warn'},
-    {label:'Vốn CSH', val:fmtNum(d.equity[last]), cls:'good'},
-    {label:'Tổng tài sản', val:fmtNum(d.totalAssets[last]), cls:'good'},
-    {label:'Số lượng CP (Tr)', val:fmtNum(d.shares), cls:'good'},
-  ].map(k=>`<div class="kpi-item"><div class="kpi-label">${k.label}</div><div class="kpi-value ${k.cls}">${k.val}</div></div>`).join('');
+    {label:'Tổng nợ', metric:'totalDebt', val:fmtNum(d.totalDebt[last]), cls: d.totalDebt[last]<=d.equity[last]?'good':'warn'},
+    {label:'Vốn CSH', metric:'equity', val:fmtNum(d.equity[last]), cls:'good'},
+    {label:'Tổng tài sản', metric:'totalAssets', val:fmtNum(d.totalAssets[last]), cls:'good'},
+    {label:'Số lượng CP (Tr)', metric:'shares', val:fmtNum(d.shares), cls:'good'},
+  ].map(k=>`<div class="kpi-item" data-metric="${k.metric}"><div class="kpi-label">${k.label} <i class="fa-solid fa-circle-question tip-icon"></i></div><div class="kpi-value ${k.cls}">${k.val}</div></div>`).join('');
 }
 
 function setDefaultSliders(d) {
@@ -913,6 +1046,283 @@ function showToast(msg, type) {
   if (_toastTimer) clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => el.classList.add('hidden'), 4500);
 }
+
+// ═══════════════════════════════════════════════════
+// METRIC TOOLTIP DICTIONARY & INTERACTIVE HOVER
+// ═══════════════════════════════════════════════════
+const METRIC_TIPS = {
+  // Mô hình DCF & Giả lập
+  'growth': {
+    title: 'Tốc độ tăng trưởng 5 năm (CAGR)',
+    tag: 'Dự phóng Doanh thu',
+    formula: 'Tốc độ tăng trưởng kép doanh thu hàng năm',
+    desc: 'Ước tính tốc độ mở rộng doanh thu bình quân mỗi năm trong 5 năm tới. Phản ánh kỳ vọng tăng trưởng quy mô kinh doanh.',
+    bench: '💡 Doanh nghiệp tăng trưởng cao: 15% – 25% · Bền vững: 8% – 12%.'
+  },
+  'terminal': {
+    title: 'Tốc độ tăng trưởng bền vững (Terminal Growth)',
+    tag: 'Dài hạn vĩnh viễn',
+    formula: 'Tốc độ tăng trưởng vĩnh cửu sau năm thứ 5',
+    desc: 'Tốc độ mà doanh nghiệp có thể duy trì ổn định mãi mãi trong dài hạn sau khi đã qua giai đoạn mở rộng nhanh.',
+    bench: '💡 Thường chọn 2% – 3% (tương đương hoặc thấp hơn mức tăng trưởng GDP quốc gia).'
+  },
+  'wacc': {
+    title: 'Tỷ lệ chiết khấu (WACC)',
+    tag: 'Chi phí vốn bình quân',
+    formula: 'WACC = (E/V × Ke) + (D/V × Kd × (1 - t))',
+    desc: 'Mức lợi suất tối thiểu mà nhà đầu tư và chủ nợ yêu cầu để bù đắp rủi ro và lạm phát. Dùng để quy đổi các dòng tiền tương lai về giá trị tiền mặt hôm nay.',
+    bench: '💡 Thị trường Việt Nam thường dao động từ 10.5% – 13.5% tùy ngành nghề.'
+  },
+  'mos': {
+    title: 'Biên an toàn (Margin of Safety - MOS)',
+    tag: 'Nguyên tắc Warren Buffett',
+    formula: 'Giá mục tiêu = Giá trị nội tại × (1 - MOS%)',
+    desc: 'Khoản chiết khấu dự phòng sai số. Giúp bạn luôn mua cổ phiếu với mức giá rẻ hơn giá trị thực tế để bảo vệ vốn khi tương lai biến động ngoài dự kiến.',
+    bench: '💡 Cổ phiếu phòng thủ: 15% – 20% · Cổ phiếu chu kỳ/biến động: 25% – 35%.'
+  },
+  'netMarginProj': {
+    title: 'Biên lợi nhuận ròng dự phóng (Net Margin)',
+    tag: 'Khả năng giữ lãi',
+    formula: 'Lợi nhuận ròng dự phóng ÷ Doanh thu dự phóng',
+    desc: 'Ước lượng cứ 100 đồng doanh thu mang về trong tương lai thì doanh nghiệp thực sự giữ lại được mấy đồng tiền lãi sau thuế đút túi.',
+    bench: '💡 Tham khảo số liệu trung bình 3-5 năm gần nhất của công ty trong bảng phía dưới để kéo mốc hợp lý.'
+  },
+  'fairValue': {
+    title: 'Giá trị hợp lý (Fair Value)',
+    tag: 'Định giá mục tiêu',
+    formula: 'Tổng dòng tiền tương lai chiết khấu - Nợ ròng sau khi trừ MOS',
+    desc: 'Giá trị thực tế của một cổ phiếu dựa trên dòng tiền sinh ra trong tương lai. Là mốc đối chiếu trực tiếp với giá thị trường hiện tại.',
+    bench: '💡 Thị giá < Fair Value: Vùng MUA an toàn · Thị giá > Fair Value: Giá đang cao hơn giá trị thực.'
+  },
+
+  // Sức khỏe tài chính & Định giá
+  'roe': {
+    title: 'ROE — Lợi nhuận trên Vốn chủ sở hữu',
+    tag: 'Hiệu quả sinh lời vốn',
+    formula: 'Lợi nhuận sau thuế ÷ Vốn chủ sở hữu × 100%',
+    desc: 'Đo lường cứ 100 đồng vốn góp thực tế của cổ đông thì công ty làm ra được bao nhiêu đồng tiền lời mỗi năm.',
+    bench: '💡 Tiêu chuẩn Warren Buffett: Thường xuyên > 15% là doanh nghiệp có lợi thế cạnh tranh tuyệt vời.'
+  },
+  'roa': {
+    title: 'ROA — Lợi nhuận trên Tổng tài sản',
+    tag: 'Hiệu quả sử dụng tài sản',
+    formula: 'Lợi nhuận sau thuế ÷ Tổng tài sản × 100%',
+    desc: 'Đo lường hiệu quả khai thác toàn bộ tài sản (nhà xưởng, máy móc, hàng tồn kho, tiền mặt) để sinh ra lợi nhuận.',
+    bench: '💡 Doanh nghiệp sản xuất/thương mại > 8% là rất tốt · Ngân hàng > 1.8% - 2.0% là hàng đầu ngành.'
+  },
+  'de': {
+    title: 'Hệ số D/E — Nợ vay / Vốn chủ sở hữu',
+    tag: 'Đòn bẩy tài chính',
+    formula: 'Tổng nợ vay chịu lãi ÷ Vốn chủ sở hữu',
+    desc: 'Cho biết công ty đang dùng bao nhiêu đồng nợ vay ngân hàng/trái phiếu trên mỗi một đồng vốn tự có của cổ đông.',
+    bench: '💡 D/E < 1.0: Rất an toàn, ít rủi ro · 1.0 - 1.5: Trung bình · > 2.0: Đòn bẩy cao, áp lực trả lãi lớn.'
+  },
+  'fcf': {
+    title: 'FCF — Dòng tiền tự do (Free Cash Flow)',
+    tag: 'Tiền mặt thặng dư',
+    formula: 'CFO (Dòng tiền HĐKD) - CAPEX (Đầu tư TSCĐ)',
+    desc: 'Lượng tiền mặt thực tế còn thừa sau khi công ty đã thanh toán mọi chi phí vận hành và mua sắm máy móc thiết bị mới. Tiền này dùng để trả cổ tức tiền mặt cho bạn.',
+    bench: '💡 FCF dương và tăng trưởng liên tục qua các năm là dấu hiệu của "cỗ máy in tiền" chất lượng cao.'
+  },
+  'pe': {
+    title: 'P/E — Hệ số Giá trên Thu nhập (Price/Earnings)',
+    tag: 'Định giá thị trường',
+    formula: 'Thị giá cổ phiếu ÷ EPS (Thu nhập mỗi CP)',
+    desc: 'Cho biết bạn đang trả bao nhiêu đồng cho 1 đồng lợi nhuận của doanh nghiệp, hoặc mất bao nhiêu năm hòa vốn từ tiền lãi nếu lợi nhuận giữ nguyên.',
+    bench: '💡 VN-Index trung bình: 12 – 16 · P/E < 12 thường hấp dẫn · P/E > 25 đòi hỏi tăng trưởng lợi nhuận rất cao.'
+  },
+  'pb': {
+    title: 'P/B — Hệ số Giá trên Sổ sách (Price/Book)',
+    tag: 'Định giá tài sản',
+    formula: 'Thị giá cổ phiếu ÷ Giá trị sổ sách mỗi CP (BVPS)',
+    desc: 'So sánh thị giá cổ phiếu với giá trị tài sản thuần theo sổ sách kế toán (nếu thanh lý công ty và trả hết nợ).',
+    bench: '💡 P/B < 1.5 là vùng định giá tương đối an toàn với tài sản đối với sản xuất, ngân hàng.'
+  },
+  'eps': {
+    title: 'EPS — Lợi nhuận trên mỗi cổ phiếu',
+    tag: 'Thu nhập mỗi CP',
+    formula: 'Lợi nhuận sau thuế ÷ Số lượng cổ phiếu lưu hành',
+    desc: 'Số tiền lãi thực tế phân bổ về cho từng 1 cổ phiếu bạn đang sở hữu.',
+    bench: '💡 EPS tăng trưởng đều đặn qua các năm là tiêu chí cốt lõi của siêu cổ phiếu tăng trưởng.'
+  },
+  'netMargin': {
+    title: 'Biên lợi nhuận ròng (Net Profit Margin)',
+    tag: 'Tỷ suất lợi nhuận',
+    formula: 'Lợi nhuận sau thuế ÷ Doanh thu thuần × 100%',
+    desc: 'Cho biết cứ 100 đồng doanh thu bán hàng mang về thì công ty thực sự đút túi bao nhiêu đồng lãi ròng sau khi đã trừ sạch mọi chi phí và thuế.',
+    bench: '💡 > 15% là biên lãi rất cao · 8% - 15% là khá · < 5% là biên mỏng (ngành bán lẻ, thương mại).'
+  },
+  'ebitdaMargin': {
+    title: 'Biên EBITDA (EBITDA Margin)',
+    tag: 'Hiệu quả hoạt động lõi',
+    formula: 'EBITDA ÷ Doanh thu thuần × 100%',
+    desc: 'Đo lường năng lực sinh lời từ hoạt động kinh doanh cốt lõi trước khi trừ đi chi phí lãi vay, thuế và khấu hao hao mòn máy móc.',
+    bench: '💡 Thường > 15% - 20% cho thấy năng lực cạnh tranh sản phẩm rất mạnh.'
+  },
+  'cfo': {
+    title: 'CFO — Dòng tiền từ Hoạt động kinh doanh',
+    tag: 'Tiền mặt thực tế',
+    formula: 'Dòng tiền thuần trong Báo cáo Lưu chuyển tiền tệ',
+    desc: 'Lượng tiền mặt tươi thực sự chảy vào tài khoản ngân hàng của doanh nghiệp từ việc bán hàng (loại trừ các khoản bán chịu nợ đọng trên giấy tờ).',
+    bench: '💡 CFO phải dương và xấp xỉ hoặc cao hơn Lợi nhuận sau thuế thì lợi nhuận mới thực chất.'
+  },
+  'capex': {
+    title: 'CAPEX — Chi phí đầu tư tài sản cố định',
+    tag: 'Đầu tư phát triển',
+    formula: 'Tiền mua sắm, nâng cấp nhà xưởng và thiết bị',
+    desc: 'Khoản tiền công ty chi ra để xây dựng mở rộng nhà máy, mua thêm máy móc công nghệ phục vụ cho đà tăng trưởng tương lai.',
+    bench: '💡 CAPEX tăng đột biến ở doanh nghiệp tốt thường là tín hiệu sắp đón đầu chu kỳ tăng trưởng công suất mới.'
+  },
+  'totalDebt': {
+    title: 'Tổng nợ vay (Total Debt)',
+    tag: 'Nghĩa vụ nợ',
+    formula: 'Vay & nợ thuê tài chính ngắn hạn + dài hạn',
+    desc: 'Tổng số tiền thực tế đang vay ngân hàng hoặc phát hành trái phiếu và phải trả lãi định kỳ.',
+    bench: '💡 Tổng nợ nên nhỏ hơn Vốn chủ sở hữu để doanh nghiệp không bị gánh nặng lãi vay đè bẹp.'
+  },
+  'equity': {
+    title: 'Vốn chủ sở hữu (Equity)',
+    tag: 'Tài sản ròng cổ đông',
+    formula: 'Tổng tài sản - Tổng nợ phải trả',
+    desc: 'Phần tài sản thực sự thuộc về cổ đông sau khi lấy toàn bộ tài sản trừ sạch mọi nghĩa vụ nợ, bao gồm vốn góp và lợi nhuận tích lũy giữ lại.',
+    bench: '💡 Vốn chủ sở hữu tăng trưởng hàng năm cho thấy công ty liên tục làm giàu cho cổ đông.'
+  },
+  'totalAssets': {
+    title: 'Tổng tài sản (Total Assets)',
+    tag: 'Quy mô nguồn lực',
+    formula: 'Tài sản ngắn hạn + Tài sản dài hạn (= Nợ + Vốn CSH)',
+    desc: 'Toàn bộ giá trị tài sản, cơ sở vật chất, đất đai, nhà xưởng, máy móc, hàng tồn kho và tiền mặt mà doanh nghiệp đang nắm giữ.',
+    bench: '💡 Thể hiện quy mô lớn hay nhỏ của doanh nghiệp.'
+  },
+  'shares': {
+    title: 'Số lượng cổ phiếu lưu hành (Shares)',
+    tag: 'Khối lượng cổ phần',
+    formula: 'Tổng số cổ phần đang giao dịch trên thị trường',
+    desc: 'Tổng số đơn vị cổ phiếu đại diện cho quyền sở hữu toàn bộ công ty.',
+    bench: '💡 Dùng để tính toán các chỉ số trên mỗi cổ phần như EPS, BVPS, Giá trị mục tiêu mỗi CP.'
+  },
+  'revGrowth5Y': {
+    title: 'Tăng trưởng doanh thu 5 năm',
+    tag: 'Tốc độ mở rộng quy mô',
+    formula: '(Doanh thu năm 5 ÷ Doanh thu năm 1 - 1) × 100%',
+    desc: 'Đo lường mức độ mở rộng thị trường và sản phẩm của doanh nghiệp sau chu kỳ 5 năm kinh doanh.',
+    bench: '💡 > 0% là có tăng trưởng · > 50% là công ty đang trong giai đoạn bùng nổ quy mô.'
+  },
+
+  // Bảng dữ liệu 5 năm
+  'revenue': {
+    title: 'Doanh thu thuần',
+    tag: 'Quy mô bán hàng',
+    formula: 'Tổng doanh thu bán hàng & dịch vụ - Các khoản giảm trừ',
+    desc: 'Toàn bộ số tiền doanh nghiệp thu được từ hoạt động bán hàng sau khi trừ chiết khấu thương mại, giảm giá và hàng bán bị trả lại.',
+    bench: '💡 Động cơ tăng trưởng quan trọng nhất của mọi công ty.'
+  },
+  'grossProfit': {
+    title: 'Lợi nhuận gộp',
+    tag: 'Hiệu quả sản xuất',
+    formula: 'Doanh thu thuần - Giá vốn hàng bán (COGS)',
+    desc: 'Số tiền lãi thu được ngay sau khi lấy giá bán trừ đi chi phí sản xuất trực tiếp (chưa trừ chi phí bán hàng, quản lý và lãi vay).',
+    bench: '💡 Phản ánh lợi thế về giá vốn và công nghệ sản xuất của doanh nghiệp.'
+  },
+  'ebitda': {
+    title: 'EBITDA (Thu nhập trước Lãi vay, Thuế và Khấu hao)',
+    tag: 'Dòng tiền hoạt động cốt lõi',
+    formula: 'Lợi nhuận trước thuế + Chi phí lãi vay + Khấu hao',
+    desc: 'Thước đo năng lực kiếm tiền từ hoạt động kinh doanh thuần túy, loại bỏ các sai khác do đòn bẩy tài chính và chính sách khấu hao kế toán.',
+    bench: '💡 Thường được các quỹ đầu tư chuyên nghiệp dùng để so sánh các doanh nghiệp trong cùng một ngành.'
+  },
+  'netProfit': {
+    title: 'Lợi nhuận ròng (Lợi nhuận sau thuế)',
+    tag: 'Lợi nhuận thực tế đút túi',
+    formula: 'Doanh thu - Mọi chi phí hoạt động - Chi phí tài chính - Thuế TNDN',
+    desc: 'Con số dòng cuối cùng (Bottom line) thể hiện khoản lãi thực tế sau thuế thuộc về cổ đông của công ty.',
+    bench: '💡 Là kim chỉ nam quan trọng nhất phản ánh sức khỏe tài chính và năng lực sinh lời của doanh nghiệp.'
+  }
+};
+
+// Tooltip positioning & events
+let tooltipEl = document.getElementById('metric-tooltip');
+let activeTipTarget = null;
+
+function showTooltipFor(target) {
+  const key = target.getAttribute('data-metric');
+  const info = METRIC_TIPS[key];
+  if (!info || !tooltipEl) return;
+
+  activeTipTarget = target;
+  document.getElementById('mt-title').textContent = info.title;
+  document.getElementById('mt-tag').textContent = info.tag || 'Chỉ số tài chính';
+  document.getElementById('mt-formula').textContent = '📐 ' + info.formula;
+  document.getElementById('mt-desc').textContent = info.desc;
+  document.getElementById('mt-bench').innerHTML = info.bench || '';
+
+  tooltipEl.classList.add('show');
+  positionTooltip(target);
+}
+
+function hideTooltip() {
+  if (tooltipEl) tooltipEl.classList.remove('show');
+  activeTipTarget = null;
+}
+
+function positionTooltip(target) {
+  if (!tooltipEl) return;
+  const rect = target.getBoundingClientRect();
+  const tipWidth = tooltipEl.offsetWidth || 300;
+  const tipHeight = tooltipEl.offsetHeight || 150;
+
+  // Horizontal position: center on target
+  let left = rect.left + (rect.width / 2) - (tipWidth / 2);
+  // Clamp inside screen
+  left = Math.max(12, Math.min(left, window.innerWidth - tipWidth - 12));
+
+  // Vertical position: prefer above target
+  let top = rect.top - tipHeight - 10;
+  if (top < 12) {
+    // If not enough space above, position below
+    top = rect.bottom + 10;
+  }
+
+  tooltipEl.style.left = `${left}px`;
+  tooltipEl.style.top = `${top}px`;
+}
+
+// Mouse events (Desktop)
+document.addEventListener('mouseover', (e) => {
+  const target = e.target.closest('[data-metric]');
+  if (target) {
+    showTooltipFor(target);
+  }
+});
+
+document.addEventListener('mouseout', (e) => {
+  const target = e.target.closest('[data-metric]');
+  if (target && target === activeTipTarget) {
+    hideTooltip();
+  }
+});
+
+// Click / Touch events (Mobile & Tablet)
+document.addEventListener('click', (e) => {
+  const target = e.target.closest('[data-metric]');
+  if (target) {
+    if (activeTipTarget === target && tooltipEl.classList.contains('show')) {
+      hideTooltip();
+    } else {
+      showTooltipFor(target);
+    }
+  } else {
+    hideTooltip();
+  }
+});
+
+window.addEventListener('scroll', () => {
+  if (activeTipTarget) positionTooltip(activeTipTarget);
+}, { passive: true });
+
+window.addEventListener('resize', () => {
+  if (activeTipTarget) positionTooltip(activeTipTarget);
+}, { passive: true });
 
 // ═══════════════════════════════════════════════════
 // INIT
