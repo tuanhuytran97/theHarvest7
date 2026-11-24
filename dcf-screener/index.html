@@ -468,7 +468,7 @@ async function checkBackendHealth() {
     el.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tự động kết nối...';
 
     try {
-      await fetch('/api/start-stock-service');
+      await fetch('http://127.0.0.1:8000/api/start-stock-service');
     } catch(err) {}
 
     // Thử lại sau 1.5s và 3.5s
