@@ -2521,13 +2521,11 @@ function switchTab(tabId, btn) {
     }
     if (tabId === 'farm') {
         const d = document.getElementById('farm-date');
-        const b = document.getElementById('farm-buyer')?.value?.trim();
-        if (d && (!b || !d.value)) d.value = todayInputValue();
+        if (d && !d.value) d.value = todayInputValue();
     }
     if (tabId === 'vua') {
         const d = document.getElementById('vua-date');
-        const b = document.getElementById('vua-buyer')?.value?.trim();
-        if (d && (!b || !d.value)) d.value = todayInputValue();
+        if (d && !d.value) d.value = todayInputValue();
     }
     if (tabId === 'report') {
         renderReport();
@@ -2787,12 +2785,10 @@ function executeSubmitFarmOrder({ farmDateVal, dateVN, buyer, status, note, flow
     }
     renderReport();
 
-    // 4. INSTANT RESET OF FORM (ready for next input without any waiting)
+    // 4. INSTANT RESET OF FORM (ready for next input without any waiting, giữ nguyên ngày đang chọn)
     document.getElementById('farm-buyer').value = '';
     document.getElementById('farm-note').value = '';
     document.getElementById('farm-status').value = '';
-    const farmDateInput = document.getElementById('farm-date');
-    if (farmDateInput) farmDateInput.value = todayInputValue();
     document.getElementById('farm-flowers-container').innerHTML = '';
     farmFlowerCount = 0;
     addFarmFlower();
@@ -3322,15 +3318,13 @@ function executeSubmitVuaOrder({
     }
     renderReport();
 
-    // 4. INSTANT RESET OF FORM (ready for next input without any waiting)
+    // 4. INSTANT RESET OF FORM (ready for next input without any waiting, giữ nguyên ngày đang chọn)
     document.getElementById('vua-buyer').value = '';
     document.getElementById('vua-note').value = '';
     document.getElementById('vua-status').value = '';
     document.getElementById('vua-shipping').value = '0';
     resetMobileVuaVattuLock();
     document.getElementById('vua-profit').value = '0';
-    const vuaDateInput = document.getElementById('vua-date');
-    if (vuaDateInput) vuaDateInput.value = todayInputValue();
     document.getElementById('vua-flowers-container').innerHTML = '';
     vuaFlowerCount = 0;
     addVuaFlower();

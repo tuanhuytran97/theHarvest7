@@ -186,18 +186,12 @@
 
         if (tabId === 'farm') {
             const d = document.getElementById('farm-date');
-            if (d) {
-                const buyer = document.getElementById('farm-buyer')?.value?.trim();
-                if (!buyer || !d.value) d.value = getTodayISO();
-            }
+            if (d && !d.value) d.value = getTodayISO();
             calcFarmTotals();
         }
         if (tabId === 'vua') {
             const d = document.getElementById('vua-date');
-            if (d) {
-                const buyer = document.getElementById('vua-buyer')?.value?.trim();
-                if (!buyer || !d.value) d.value = getTodayISO();
-            }
+            if (d && !d.value) d.value = getTodayISO();
             recalcVua();
         }
         if (tabId === 'expense') recalcExpenseTotals();
@@ -453,12 +447,10 @@
         if (typeof window.updateBuyerSuggestions === 'function' && window.farmData) window.updateBuyerSuggestions(window.farmData);
         if (typeof window.processSyncQueue === 'function') window.processSyncQueue();
 
-        // Reset form
+        // Reset form (giữ nguyên ngày đang chọn để tiện nhập nhiều đơn cùng ngày)
         document.getElementById('farm-buyer').value = '';
         document.getElementById('farm-note').value = '';
         document.getElementById('farm-status').value = '';
-        const farmDateInput = document.getElementById('farm-date');
-        if (farmDateInput) farmDateInput.value = getTodayISO();
         const container = document.getElementById('farm-flowers-container');
         if (container) container.innerHTML = '';
         farmFlowerCount = 0;
@@ -992,15 +984,13 @@
         if (typeof window.updateBuyerSuggestions === 'function' && window.farmData) window.updateBuyerSuggestions(window.farmData);
         if (typeof window.processSyncQueue === 'function') window.processSyncQueue();
 
-        // Reset form
+        // Reset form (giữ nguyên ngày đang chọn để tiện nhập nhiều đơn cùng ngày)
         document.getElementById('vua-buyer').value = '';
         document.getElementById('vua-note').value = '';
         document.getElementById('vua-status').value = '';
         document.getElementById('vua-shipping').value = '0';
         resetDesktopVuaVattuLock();
         document.getElementById('vua-profit').value = '0';
-        const vuaDateInput = document.getElementById('vua-date');
-        if (vuaDateInput) vuaDateInput.value = getTodayISO();
         const container = document.getElementById('vua-flowers-container');
         if (container) container.innerHTML = '';
         vuaFlowerCount = 0;
@@ -1396,19 +1386,13 @@
             });
         }
 
-        // Tự động đảm bảo ngày hôm nay cho các form nhập đơn kể cả khi không refresh page
+        // Chỉ điền ngày hôm nay nếu ô ngày đang trống
         function ensureTodayEntryDates() {
             const todayIso = getTodayISO();
             const farmD = document.getElementById('farm-date');
-            if (farmD) {
-                const buyer = document.getElementById('farm-buyer')?.value?.trim();
-                if (!buyer || !farmD.value) farmD.value = todayIso;
-            }
+            if (farmD && !farmD.value) farmD.value = todayIso;
             const vuaD = document.getElementById('vua-date');
-            if (vuaD) {
-                const buyer = document.getElementById('vua-buyer')?.value?.trim();
-                if (!buyer || !vuaD.value) vuaD.value = todayIso;
-            }
+            if (vuaD && !vuaD.value) vuaD.value = todayIso;
         }
         window.addEventListener('focus', ensureTodayEntryDates);
         document.addEventListener('visibilitychange', () => {
